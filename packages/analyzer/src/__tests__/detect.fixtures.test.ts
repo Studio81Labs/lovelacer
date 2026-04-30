@@ -23,9 +23,7 @@ describe('detect — english-cluttered fixture', () => {
   it('misc bucket size is between 10% and 30% of entities', () => {
     const miscCount = assignments.filter((a) => a.roomId === 'misc').length
     const ratio = miscCount / assignments.length
-    expect(ratio, `${miscCount}/${assignments.length} entities in misc`).toBeGreaterThanOrEqual(
-      0.1,
-    )
+    expect(ratio, `${miscCount}/${assignments.length} entities in misc`).toBeGreaterThanOrEqual(0.1)
     expect(ratio).toBeLessThanOrEqual(0.3)
   })
 

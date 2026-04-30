@@ -25,6 +25,7 @@
 ## Task 1: `czech-tidy` fixture + self-tests
 
 **Files:**
+
 - Create: `tests/fixtures/czech-tidy.ts`
 - Create: `tests/fixtures/__tests__/czech-tidy.test.ts`
 
@@ -288,10 +289,15 @@ export const czechTidy = fixture({
   floors: [ground, upstairs],
   areas: [livingRoom, kitchen, bathroom, bedroom, office],
   devices: [
-    lrHue, lrAqara, lrThermostat,
-    kitchenHue, kitchenAqara,
-    bathHue, bathAqara,
-    bedHue, bedThermostat,
+    lrHue,
+    lrAqara,
+    lrThermostat,
+    kitchenHue,
+    kitchenAqara,
+    bathHue,
+    bathAqara,
+    bedHue,
+    bedThermostat,
     officeHue,
   ],
   entities: [
@@ -347,6 +353,7 @@ EOF
 ## Task 2: Detection types + `buildDetectionContext`
 
 **Files:**
+
 - Create: `packages/analyzer/src/detect.ts` (initial — types + context builder only)
 - Create: `packages/analyzer/src/__tests__/detect.test.ts` (initial — context tests)
 
@@ -473,7 +480,7 @@ export type _Internal_NormalizedEntity = NormalizedEntity
 export type _Internal_RoomAssignment = RoomAssignment
 ```
 
-> **Note on the "_Internal" type re-exports:** TypeScript's `noUnusedLocals` (set in the base tsconfig) flags imports that aren't used in the module. Since `NormalizedEntity` and `RoomAssignment` will be used by `detectEntity` and `detect` in Tasks 3-5 but aren't yet, the placeholder type re-exports keep typecheck green. **Remove these placeholder re-exports in Task 5** when both consumers exist.
+> **Note on the "\_Internal" type re-exports:** TypeScript's `noUnusedLocals` (set in the base tsconfig) flags imports that aren't used in the module. Since `NormalizedEntity` and `RoomAssignment` will be used by `detectEntity` and `detect` in Tasks 3-5 but aren't yet, the placeholder type re-exports keep typecheck green. **Remove these placeholder re-exports in Task 5** when both consumers exist.
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
@@ -514,6 +521,7 @@ EOF
 ## Task 3: `detectEntity` — Priorities 1 + 2 (area-based)
 
 **Files:**
+
 - Modify: `packages/analyzer/src/detect.ts`
 - Modify: `packages/analyzer/src/__tests__/detect.test.ts`
 
@@ -797,6 +805,7 @@ EOF
 ## Task 4: `detectEntity` — Priorities 3 + 4 + 5 (findRoom-based)
 
 **Files:**
+
 - Modify: `packages/analyzer/src/detect.ts`
 - Modify: `packages/analyzer/src/__tests__/detect.test.ts`
 
@@ -811,10 +820,7 @@ describe('detectEntity — priority 3 (friendly_name)', () => {
   const ctx = buildDetectionContext([])
 
   it('fires with weight 0.6 when findRoom matches the friendly name', () => {
-    const result = detectEntity(
-      { ...baseEntity, friendlyName: 'Living Room Light' },
-      ctx,
-    )
+    const result = detectEntity({ ...baseEntity, friendlyName: 'Living Room Light' }, ctx)
     expect(result.roomId).toBe('living_room')
     expect(result.confidence).toBe(0.6)
     expect(result.signals).toContainEqual(
@@ -826,10 +832,7 @@ describe('detectEntity — priority 3 (friendly_name)', () => {
   })
 
   it('does NOT fire when friendly name has no canonical match', () => {
-    const result = detectEntity(
-      { ...baseEntity, friendlyName: 'random gibberish' },
-      ctx,
-    )
+    const result = detectEntity({ ...baseEntity, friendlyName: 'random gibberish' }, ctx)
     expect(result.signals.find((s) => s.source === 'friendly_name')).toBeUndefined()
   })
 })
@@ -963,10 +966,7 @@ describe('detectEntity — multi-signal aggregation', () => {
     )
     expect(result.roomId).toBe('living_room')
     expect(result.confidence).toBe(1.0)
-    expect(result.signals.map((s) => s.source).sort()).toEqual([
-      'entity_area',
-      'friendly_name',
-    ])
+    expect(result.signals.map((s) => s.source).sort()).toEqual(['entity_area', 'friendly_name'])
   })
 })
 ```
@@ -1099,6 +1099,7 @@ EOF
 ## Task 5: Bulk `detect` + re-exports
 
 **Files:**
+
 - Modify: `packages/analyzer/src/detect.ts`
 - Modify: `packages/analyzer/src/__tests__/detect.test.ts`
 - Modify: `packages/analyzer/src/index.ts`
@@ -1209,6 +1210,7 @@ EOF
 ## Task 6: Fixture-driven tests
 
 **Files:**
+
 - Create: `packages/analyzer/src/__tests__/detect.fixtures.test.ts`
 
 End-to-end runs against `english-cluttered` and `czech-tidy`. Uses `fixtureToHaRegistries` from P1a-1.
@@ -1243,9 +1245,7 @@ describe('detect — english-cluttered fixture', () => {
   it('misc bucket size is between 10% and 30% of entities', () => {
     const miscCount = assignments.filter((a) => a.roomId === 'misc').length
     const ratio = miscCount / assignments.length
-    expect(ratio, `${miscCount}/${assignments.length} entities in misc`).toBeGreaterThanOrEqual(
-      0.1,
-    )
+    expect(ratio, `${miscCount}/${assignments.length} entities in misc`).toBeGreaterThanOrEqual(0.1)
     expect(ratio).toBeLessThanOrEqual(0.3)
   })
 
@@ -1301,7 +1301,8 @@ describe('detect — czech-tidy fixture', () => {
   })
 
   it('at least 50% of fired signals reference a Czech matchedValue', () => {
-    const czechMarker = /[áčďéěíňóřšťúůýž]|kuchyne|loznice|koupelna|obyvac|kancelar|pokoj|svetlo|teplota|vlhkost|pohyb/i
+    const czechMarker =
+      /[áčďéěíňóřšťúůýž]|kuchyne|loznice|koupelna|obyvac|kancelar|pokoj|svetlo|teplota|vlhkost|pohyb/i
     let totalFired = 0
     let czechFired = 0
     for (const a of assignments) {

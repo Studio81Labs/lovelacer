@@ -69,16 +69,14 @@ export function buildDetectionContext(areas: HaAreaRegistryEntry[]): DetectionCo
 ```
 
 For each input area, the builder calls `findRoom(area.name)`:
+
 - If a `RoomMatch` is returned → entry value is `{ name: area.name, canonical: match.canonical }`.
 - If `null` is returned → entry value is `{ name: area.name, canonical: null }`.
 
 ### 2. Per-entity detection — `detectEntity(entity, ctx)`
 
 ```ts
-export function detectEntity(
-  entity: NormalizedEntity,
-  ctx: DetectionContext,
-): RoomAssignment
+export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): RoomAssignment
 ```
 
 Runs each priority level in order. Each level either produces a `DetectionSignal` and pushes it to the `signals[]` array, or doesn't.
@@ -96,6 +94,7 @@ if entity.haAreaId !== null:
 #### Priority 2 — device_area (weight 0.85)
 
 Same as priority 1 but using `entity.device?.haAreaId`. Fires only when:
+
 - `entity.device !== null`
 - `entity.device.haAreaId !== null`
 - `ctx.areaIndex.get(...)` returns an entry whose `canonical` is non-null
@@ -190,19 +189,20 @@ export type { AreaIndexEntry, DetectInput, DetectionContext } from './detect.js'
 
 ### 5. `czech-tidy` fixture
 
-`tests/fixtures/czech-tidy.ts` — built using the existing P0-2 builder helpers. ~80 entities, 5 rooms, 2 floors. Deliberately *tidy*: 100% of entities have `area` set on the entity itself; no hidden/disabled/ambiguous-named entries.
+`tests/fixtures/czech-tidy.ts` — built using the existing P0-2 builder helpers. ~80 entities, 5 rooms, 2 floors. Deliberately _tidy_: 100% of entities have `area` set on the entity itself; no hidden/disabled/ambiguous-named entries.
 
-| Room (Czech name) | Floor | Approx entities | Notes |
-| --- | --- | --- | --- |
-| Obývací pokoj | Přízemí | ~22 | lights, climate, sensors |
-| Kuchyně | Přízemí | ~18 | lights, switches, fridge sensors |
-| Koupelna | Přízemí | ~10 | humidity, motion, fan |
-| Ložnice | Patro | ~18 | lights, climate, motion |
-| Kancelář | Patro | ~12 | lights, switches, sensors |
+| Room (Czech name) | Floor   | Approx entities | Notes                            |
+| ----------------- | ------- | --------------- | -------------------------------- |
+| Obývací pokoj     | Přízemí | ~22             | lights, climate, sensors         |
+| Kuchyně           | Přízemí | ~18             | lights, switches, fridge sensors |
+| Koupelna          | Přízemí | ~10             | humidity, motion, fan            |
+| Ložnice           | Patro   | ~18             | lights, climate, motion          |
+| Kancelář          | Patro   | ~12             | lights, switches, sensors        |
 
 A handful of entities have `entityCategory: 'diagnostic'` (e.g., `Aqara baterie`, `Tado signál`) — these still get assignments from detection; whether to display them is a generator concern.
 
 Self-tests in `tests/fixtures/__tests__/czech-tidy.test.ts` mirror `english-cluttered.test.ts`'s structure to assert:
+
 - Exactly 5 areas.
 - Exactly 2 floors (Přízemí, Patro).
 - ≥75 and ≤90 entities.
@@ -245,14 +245,14 @@ for each entity:
 
 ## Error handling
 
-| Condition | Behavior |
-| --- | --- |
-| Empty `input.entities` | Returns `[]`. |
-| Empty `input.areas` | Context is empty; priorities 1/2 never fire; lower priorities still try. |
-| Entity with `haAreaId` referencing an area not in `input.areas` | Treat as unmapped; priority 1 doesn't fire. |
-| Entity with no device | Priorities 2 and 5 don't fire. |
-| Entity's `objectId` or `friendlyName` is the empty string | `findRoom('')` returns null (already covered in P1a-2); the priority doesn't fire. |
-| Multiple priorities fire pointing to *different* rooms | Highest weight wins as `roomId`. All fired signals stay in `signals[]`. |
+| Condition                                                       | Behavior                                                                           |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Empty `input.entities`                                          | Returns `[]`.                                                                      |
+| Empty `input.areas`                                             | Context is empty; priorities 1/2 never fire; lower priorities still try.           |
+| Entity with `haAreaId` referencing an area not in `input.areas` | Treat as unmapped; priority 1 doesn't fire.                                        |
+| Entity with no device                                           | Priorities 2 and 5 don't fire.                                                     |
+| Entity's `objectId` or `friendlyName` is the empty string       | `findRoom('')` returns null (already covered in P1a-2); the priority doesn't fire. |
+| Multiple priorities fire pointing to _different_ rooms          | Highest weight wins as `roomId`. All fired signals stay in `signals[]`.            |
 
 No throws. The function is total over its declared input space.
 
@@ -263,12 +263,14 @@ No throws. The function is total over its declared input space.
 Use small inline `NormalizedEntity` and `HaAreaRegistryEntry` literals. Tests are organized by priority:
 
 **`buildDetectionContext`:**
+
 - Returns a map with one entry per input area.
 - Maps area whose name matches a canonical (e.g., `name: 'Living Room'`) → `'living_room'`.
 - Maps area whose name doesn't match (e.g., `name: "Bart's Den"`) → `null`.
 - Czech name (e.g., `name: 'Ložnice'`) → `'bedroom'`.
 
 **`detectEntity` per priority:**
+
 - Priority 1 fires when entity has area whose name maps; signal `source: 'entity_area'`, `weight: 1.0`, `matchedValue` is area name; `roomId` is canonical.
 - Priority 1 does NOT fire when area name doesn't map (`null` in context).
 - Priority 1 does NOT fire when area_id is absent from context.
@@ -281,11 +283,13 @@ Use small inline `NormalizedEntity` and `HaAreaRegistryEntry` literals. Tests ar
 - Priority 5 falls back to `device.name` when `nameByUser` is null.
 
 **`detectEntity` aggregation:**
+
 - All 5 priorities fire pointing to the same room → `roomId` is that room, `confidence: 1.0` (max), `signals.length === 5`.
 - Conflicting priorities (e.g., entity area says `kitchen` but friendly name says `bedroom`) → `roomId: 'kitchen'` (priority 1 wins), but BOTH signals appear in `signals[]`.
 - No signals fire → `roomId: 'misc'`, `confidence: 0`, `signals: []`.
 
 **`detect` bulk API:**
+
 - Empty input → empty output.
 - Output cardinality matches input.
 - Output preserves input order.
@@ -293,11 +297,13 @@ Use small inline `NormalizedEntity` and `HaAreaRegistryEntry` literals. Tests ar
 ### `packages/analyzer/src/__tests__/detect.fixtures.test.ts` — fixture-driven
 
 For **`english-cluttered`** (the heuristic-stress fixture):
+
 - Every input entity produces an assignment.
 - Misc bucket size is ≥10% and ≤30% of entities. Deliberately wide window: the fixture has many orphan entities, but the chain rescues most via priorities 3-5.
 - For entities with non-null `area` in the fixture: ≥80% land in their fixture-area's canonical (the same threshold P1a-2 used).
 
 For **`czech-tidy`** (the contrast fixture):
+
 - 0 entities in the misc bucket.
 - 100% of entities land in their fixture-area's canonical.
 - At least 50% of fired signals have a `matchedValue` that contains a Czech-language pattern (proves diacritic-stripping pipeline carries through end-to-end).
@@ -310,14 +316,14 @@ See § 5 above. Mirror `english-cluttered.test.ts`'s structure.
 
 ## File-by-file
 
-| File | Action | Notes |
-| --- | --- | --- |
-| `packages/analyzer/src/detect.ts` | Create | The chain |
-| `packages/analyzer/src/index.ts` | Modify | Re-export public surface |
-| `packages/analyzer/src/__tests__/detect.test.ts` | Create | Unit tests |
-| `packages/analyzer/src/__tests__/detect.fixtures.test.ts` | Create | Fixture-driven tests |
-| `tests/fixtures/czech-tidy.ts` | Create | ~80-entity Czech tidy fixture |
-| `tests/fixtures/__tests__/czech-tidy.test.ts` | Create | Self-tests |
+| File                                                      | Action | Notes                         |
+| --------------------------------------------------------- | ------ | ----------------------------- |
+| `packages/analyzer/src/detect.ts`                         | Create | The chain                     |
+| `packages/analyzer/src/index.ts`                          | Modify | Re-export public surface      |
+| `packages/analyzer/src/__tests__/detect.test.ts`          | Create | Unit tests                    |
+| `packages/analyzer/src/__tests__/detect.fixtures.test.ts` | Create | Fixture-driven tests          |
+| `tests/fixtures/czech-tidy.ts`                            | Create | ~80-entity Czech tidy fixture |
+| `tests/fixtures/__tests__/czech-tidy.test.ts`             | Create | Self-tests                    |
 
 ## Open questions resolved during brainstorming
 

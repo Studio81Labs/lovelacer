@@ -176,10 +176,7 @@ describe('detectEntity — priority 3 (friendly_name)', () => {
   const ctx = buildDetectionContext([])
 
   it('fires with weight 0.6 when findRoom matches the friendly name', () => {
-    const result = detectEntity(
-      { ...baseEntity, friendlyName: 'Living Room Light' },
-      ctx,
-    )
+    const result = detectEntity({ ...baseEntity, friendlyName: 'Living Room Light' }, ctx)
     expect(result.roomId).toBe('living_room')
     expect(result.confidence).toBe(0.6)
     expect(result.signals).toContainEqual(
@@ -191,10 +188,7 @@ describe('detectEntity — priority 3 (friendly_name)', () => {
   })
 
   it('does NOT fire when friendly name has no canonical match', () => {
-    const result = detectEntity(
-      { ...baseEntity, friendlyName: 'random gibberish' },
-      ctx,
-    )
+    const result = detectEntity({ ...baseEntity, friendlyName: 'random gibberish' }, ctx)
     expect(result.signals.find((s) => s.source === 'friendly_name')).toBeUndefined()
   })
 })
@@ -322,10 +316,7 @@ describe('detectEntity — multi-signal aggregation', () => {
     )
     expect(result.roomId).toBe('living_room')
     expect(result.confidence).toBe(1.0)
-    expect(result.signals.map((s) => s.source).sort()).toEqual([
-      'entity_area',
-      'friendly_name',
-    ])
+    expect(result.signals.map((s) => s.source).sort()).toEqual(['entity_area', 'friendly_name'])
   })
 })
 
