@@ -4,7 +4,7 @@ import { ref, onMounted } from 'vue'
 interface HealthResponse {
   ok: boolean
   version: string
-  ha: { connected: boolean; entityCount: number | null }
+  ha: { connected: boolean }
 }
 
 const health = ref<HealthResponse | null>(null)
@@ -12,7 +12,11 @@ const error = ref<string | null>(null)
 
 async function fetchHealth() {
   try {
-    const res = await fetch('/api/health')
+    // Use a document-relative URL (no leading slash) so the request stays
+    // inside the add-on path under HA Supervisor ingress, where the SPA is
+    // served from a `/api/hassio_ingress/<token>/` prefix. Vite's dev proxy
+    // also resolves this correctly to the backend at :3000.
+    const res = await fetch('api/health')
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     health.value = await res.json()
     error.value = null
@@ -59,10 +63,6 @@ onMounted(() => {
               {{ health.ha.connected ? 'connected' : 'disconnected' }}
             </span>
           </dd>
-        </div>
-        <div v-if="health.ha.entityCount !== null" class="flex justify-between">
-          <dt class="text-stone-600">Entities</dt>
-          <dd class="font-mono text-stone-900">{{ health.ha.entityCount }}</dd>
         </div>
       </dl>
 

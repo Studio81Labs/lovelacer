@@ -42,7 +42,7 @@ pnpm dev
 
 # Open http://localhost:5173 — the page should show:
 #   HA connection: connected
-#   Entities: <some number>
+# (Entity counts and other diagnostics will move to /api/status in P1a-9.)
 ```
 
 If all of the above passes, Phase 0 is done.
