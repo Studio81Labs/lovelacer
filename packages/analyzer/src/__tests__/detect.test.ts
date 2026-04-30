@@ -345,3 +345,119 @@ describe('detect — bulk API', () => {
     expect(result[2]!.roomId).toBe('misc')
   })
 })
+
+describe('detectEntity — corroboration boost', () => {
+  const livingRoomAreaForBoost: HaAreaRegistryEntry = {
+    area_id: 'living_room',
+    name: 'Living Room',
+    floor_id: null,
+    icon: null,
+  }
+  const ctxLR = buildDetectionContext([livingRoomAreaForBoost])
+  const ctxNoAreas = buildDetectionContext([])
+
+  it('1 signal → no boost (confidence equals base weight)', () => {
+    const result = detectEntity({ ...baseEntity, friendlyName: 'Kitchen Light' }, ctxNoAreas)
+    expect(result.confidence).toBe(0.6)
+  })
+
+  it('2 corroborators (same target) → +0.05', () => {
+    // friendly_name (0.6) → kitchen, entity_id (0.5) → kitchen.
+    // Both point to kitchen. Corroboration count = 2 → boost 0.05 → confidence 0.65.
+    const result = detectEntity(
+      { ...baseEntity, friendlyName: 'Kitchen Light', objectId: 'kitchen_light' },
+      ctxNoAreas,
+    )
+    expect(result.roomId).toBe('kitchen')
+    expect(result.confidence).toBeCloseTo(0.65, 5)
+  })
+
+  it('3 corroborators (same target) → +0.10, capped at 1.0', () => {
+    // entity_area (1.0) + friendly_name (0.6) + entity_id (0.5), all → living_room.
+    // Boost would be 0.10 → 1.0 + 0.10 = 1.10 → capped to 1.0.
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        haAreaId: 'living_room',
+        friendlyName: 'Living Room Light',
+        objectId: 'living_room_light',
+      },
+      ctxLR,
+    )
+    expect(result.roomId).toBe('living_room')
+    expect(result.confidence).toBe(1.0)
+    expect(result.signals.length).toBe(3)
+  })
+
+  it('4 corroborators stay at +0.10 (boost cap holds)', () => {
+    // entity_area + friendly_name + entity_id + device_name, all → living_room.
+    // Boost would naively be (4-1)*0.05 = 0.15 → capped to 0.10.
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        haAreaId: 'living_room',
+        friendlyName: 'Living Room Light',
+        objectId: 'living_room_light',
+        device: {
+          id: 'dev1',
+          name: 'Living Room Hub',
+          nameByUser: null,
+          manufacturer: null,
+          model: null,
+          haAreaId: null,
+        },
+      },
+      ctxLR,
+    )
+    expect(result.roomId).toBe('living_room')
+    expect(result.confidence).toBe(1.0) // 1.0 + 0.10 = 1.10, capped at 1.0
+    expect(result.signals.length).toBe(4)
+  })
+
+  it('different-target signals do NOT boost the winner', () => {
+    // entity_area → living_room (1.0); friendly_name → kitchen (0.6).
+    // Winner = living_room. Corroborators for living_room = 1. Boost = 0.
+    // Confidence = 1.0 (already at base).
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        haAreaId: 'living_room',
+        friendlyName: 'Kitchen Light',
+      },
+      ctxLR,
+    )
+    expect(result.roomId).toBe('living_room')
+    expect(result.confidence).toBe(1.0)
+    expect(result.signals.length).toBe(2)
+  })
+
+  it('mixed corroboration: only same-target signals boost', () => {
+    // entity_area → living_room (1.0); friendly_name → living_room (0.6); entity_id → kitchen (0.5).
+    // Winner = living_room. Corroborators for living_room = 2 (entity_area + friendly_name).
+    // The kitchen signal does NOT contribute. Boost = 0.05. Confidence = 1.0 + 0.05 = 1.0 (capped).
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        haAreaId: 'living_room',
+        friendlyName: 'Living Room Light',
+        objectId: 'kitchen_thermostat',
+      },
+      ctxLR,
+    )
+    expect(result.roomId).toBe('living_room')
+    expect(result.confidence).toBe(1.0)
+    // All three signals appear in signals[] regardless of which corroborated.
+    expect(result.signals.length).toBe(3)
+  })
+
+  it('corroboration boost makes a non-1.0 confidence visible', () => {
+    // 2 weak signals at the same target. friendly_name (0.6) + entity_id (0.5), both → bedroom.
+    // Boost +0.05. Confidence = 0.6 + 0.05 = 0.65.
+    const result = detectEntity(
+      { ...baseEntity, friendlyName: 'Bedroom Sensor', objectId: 'bedroom_sensor' },
+      ctxNoAreas,
+    )
+    expect(result.roomId).toBe('bedroom')
+    expect(result.confidence).toBeCloseTo(0.65, 5)
+  })
+})
