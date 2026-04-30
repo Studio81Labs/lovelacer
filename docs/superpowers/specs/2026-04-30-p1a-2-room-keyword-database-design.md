@@ -77,24 +77,24 @@ A single `export const ROOM_KEYWORDS: RoomKeyword[]` containing 28+ rules (14 ro
 
 **Coverage requirements:**
 
-| Canonical | EN seed patterns | CS seed patterns |
-| --- | --- | --- |
-| `kitchen` | `kitchen`, `kitchenette` | `kuchyne`, `kuch` |
-| `living_room` | `living room`, `livingroom`, `lounge`, `family room` | `obyvak`, `obyvaci pokoj` |
-| `bedroom` | `bedroom`, `master bedroom` (excludes: `bathroom`) | `loznice`, `master loznice` (excludes: `koupelna`) |
-| `bathroom` | `bathroom`, `bath`, `shower` | `koupelna`, `sprcha` |
-| `office` | `office`, `study`, `workroom` | `kancelar`, `pracovna` |
-| `hallway` | `hallway`, `corridor`, `entry`, `entryway` | `chodba`, `predsin` |
-| `garage` | `garage`, `garage bay` | `garaz`, `garaze` |
-| `garden` | `garden`, `yard`, `outdoor` | `zahrada`, `dvorek`, `venku` |
-| `dining_room` | `dining room`, `diningroom` | `jidelna` |
-| `laundry` | `laundry`, `laundry room`, `utility` | `pradelna`, `pradlo` |
-| `basement` | `basement`, `cellar` | `sklep`, `suteren` |
-| `attic` | `attic`, `loft` | `puda` |
-| `kids_room` | `kids room`, `children room`, `nursery`, `playroom` | `detsky pokoj`, `dětský pokoj` (the latter normalizes to the former; ship one — duplicate exposes a normalization bug) |
-| `guest_room` | `guest room`, `guestroom` | `host pokoj`, `pokoj pro hosty` |
+| Canonical     | EN seed patterns                                     | CS seed patterns                                                                                                       |
+| ------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `kitchen`     | `kitchen`, `kitchenette`                             | `kuchyne`, `kuch`                                                                                                      |
+| `living_room` | `living room`, `livingroom`, `lounge`, `family room` | `obyvak`, `obyvaci pokoj`                                                                                              |
+| `bedroom`     | `bedroom`, `master bedroom` (excludes: `bathroom`)   | `loznice`, `master loznice` (excludes: `koupelna`)                                                                     |
+| `bathroom`    | `bathroom`, `bath`, `shower`                         | `koupelna`, `sprcha`                                                                                                   |
+| `office`      | `office`, `study`, `workroom`                        | `kancelar`, `pracovna`                                                                                                 |
+| `hallway`     | `hallway`, `corridor`, `entry`, `entryway`           | `chodba`, `predsin`                                                                                                    |
+| `garage`      | `garage`, `garage bay`                               | `garaz`, `garaze`                                                                                                      |
+| `garden`      | `garden`, `yard`, `outdoor`                          | `zahrada`, `dvorek`, `venku`                                                                                           |
+| `dining_room` | `dining room`, `diningroom`                          | `jidelna`                                                                                                              |
+| `laundry`     | `laundry`, `laundry room`, `utility`                 | `pradelna`, `pradlo`                                                                                                   |
+| `basement`    | `basement`, `cellar`                                 | `sklep`, `suteren`                                                                                                     |
+| `attic`       | `attic`, `loft`                                      | `puda`                                                                                                                 |
+| `kids_room`   | `kids room`, `children room`, `nursery`, `playroom`  | `detsky pokoj`, `dětský pokoj` (the latter normalizes to the former; ship one — duplicate exposes a normalization bug) |
+| `guest_room`  | `guest room`, `guestroom`                            | `host pokoj`, `pokoj pro hosty`                                                                                        |
 
-Pattern lists are seed values; the implementer may extend each with one or two more synonyms while staying compact. The tests assert *minimum* coverage (≥1 EN rule, ≥1 CS rule per non-misc canonical), not exact counts, so reasonable additions don't break tests.
+Pattern lists are seed values; the implementer may extend each with one or two more synonyms while staying compact. The tests assert _minimum_ coverage (≥1 EN rule, ≥1 CS rule per non-misc canonical), not exact counts, so reasonable additions don't break tests.
 
 A header comment in the file documents the pre-normalization convention so future contributors don't ship raw `kuchyně` and wonder why nothing matches.
 
@@ -124,8 +124,8 @@ import type { CanonicalRoomId, LanguageCode, RoomKeyword } from '@lovelacer/shar
 export interface RoomMatch {
   canonical: Exclude<CanonicalRoomId, 'misc'>
   language: LanguageCode
-  pattern: string         // the specific pattern that matched
-  matchedAt: number       // index in the normalized text where the match starts
+  pattern: string // the specific pattern that matched
+  matchedAt: number // index in the normalized text where the match starts
 }
 
 export interface FindRoomOptions {
@@ -189,11 +189,11 @@ findRoom(text, opts?)
 
 ## Error handling
 
-| Condition                                  | Behavior |
-| ------------------------------------------ | -------- |
-| `text` is empty / whitespace-only          | Returns `null` (normalized to `''`, no patterns can match) |
-| `opts.language` is set but no rules in the table for it | Returns `null` |
-| `opts.keywords` is empty                  | Returns `null` |
+| Condition                                                              | Behavior                                                                     |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `text` is empty / whitespace-only                                      | Returns `null` (normalized to `''`, no patterns can match)                   |
+| `opts.language` is set but no rules in the table for it                | Returns `null`                                                               |
+| `opts.keywords` is empty                                               | Returns `null`                                                               |
 | Pattern in the data table contains an uppercase character or diacritic | The matcher silently won't match it; the schema test catches this at CI time |
 
 No throws. The function is total over its declared input space.
@@ -245,17 +245,17 @@ For each fixture entity whose `area` is non-null (the analyzer's later stages wo
 
 ## File-by-file
 
-| File                                           | Action  | Notes                                |
-| ---------------------------------------------- | ------- | ------------------------------------ |
-| `packages/shared/src/types.ts`                 | Modify  | Add `LanguageCode`, `RoomKeyword`    |
-| `packages/shared/src/room-keywords.ts`         | Create  | The `ROOM_KEYWORDS` data table       |
-| `packages/shared/src/index.ts`                 | Modify  | Re-export new types + data           |
-| `packages/shared/src/__tests__/room-keywords.test.ts` | Create | Schema integrity tests        |
-| `packages/analyzer/src/normalize-text.ts`      | Create  | `normalizeForMatching`               |
-| `packages/analyzer/src/match-room.ts`          | Create  | `findRoom` + types                   |
-| `packages/analyzer/src/index.ts`               | Modify  | Re-export `findRoom`                 |
-| `packages/analyzer/src/__tests__/normalize-text.test.ts` | Create | Normalization unit tests   |
-| `packages/analyzer/src/__tests__/match-room.test.ts`     | Create | Matcher unit + fixture tests |
+| File                                                     | Action | Notes                             |
+| -------------------------------------------------------- | ------ | --------------------------------- |
+| `packages/shared/src/types.ts`                           | Modify | Add `LanguageCode`, `RoomKeyword` |
+| `packages/shared/src/room-keywords.ts`                   | Create | The `ROOM_KEYWORDS` data table    |
+| `packages/shared/src/index.ts`                           | Modify | Re-export new types + data        |
+| `packages/shared/src/__tests__/room-keywords.test.ts`    | Create | Schema integrity tests            |
+| `packages/analyzer/src/normalize-text.ts`                | Create | `normalizeForMatching`            |
+| `packages/analyzer/src/match-room.ts`                    | Create | `findRoom` + types                |
+| `packages/analyzer/src/index.ts`                         | Modify | Re-export `findRoom`              |
+| `packages/analyzer/src/__tests__/normalize-text.test.ts` | Create | Normalization unit tests          |
+| `packages/analyzer/src/__tests__/match-room.test.ts`     | Create | Matcher unit + fixture tests      |
 
 ## Open questions resolved during brainstorming
 

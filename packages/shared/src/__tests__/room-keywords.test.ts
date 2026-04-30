@@ -58,10 +58,9 @@ describe('ROOM_KEYWORDS', () => {
   it('no duplicate patterns within a single rule', () => {
     for (const rule of ROOM_KEYWORDS) {
       const unique = new Set(rule.patterns)
-      expect(
-        unique.size,
-        `${rule.canonical}/${rule.language}: duplicate patterns in rule`,
-      ).toBe(rule.patterns.length)
+      expect(unique.size, `${rule.canonical}/${rule.language}: duplicate patterns in rule`).toBe(
+        rule.patterns.length,
+      )
     }
   })
 

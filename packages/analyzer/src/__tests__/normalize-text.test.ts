@@ -20,15 +20,11 @@ describe('normalizeForMatching', () => {
     expect(normalizeForMatching('Hallway / Stairs')).toBe('hallway stairs')
     expect(normalizeForMatching('Aqara/TH-158d')).toBe('aqara th 158d')
     expect(normalizeForMatching('  multiple   spaces  ')).toBe('multiple spaces')
-    expect(normalizeForMatching('mixed_-/whitespace tabs\there')).toBe(
-      'mixed whitespace tabs here',
-    )
+    expect(normalizeForMatching('mixed_-/whitespace tabs\there')).toBe('mixed whitespace tabs here')
   })
 
   it('preserves non-separator punctuation (apostrophes, parens, dots)', () => {
-    expect(normalizeForMatching("Bart's Office (master)_2")).toBe(
-      "bart's office (master) 2",
-    )
+    expect(normalizeForMatching("Bart's Office (master)_2")).toBe("bart's office (master) 2")
     expect(normalizeForMatching('sensor.living_room')).toBe('sensor.living room')
   })
 

@@ -26,6 +26,7 @@
 ## Task 1: Types — `LanguageCode` + `RoomKeyword`
 
 **Files:**
+
 - Modify: `packages/shared/src/types.ts`
 
 Pure type declarations. No tests (type-only). The shared barrel at `packages/shared/src/index.ts` uses `export * from './types.js'` (verified), so the new types are auto-re-exported and `index.ts` does not need to be touched in this task.
@@ -92,6 +93,7 @@ EOF
 ## Task 2: Data table + schema integrity tests
 
 **Files:**
+
 - Create: `packages/shared/src/room-keywords.ts`
 - Create: `packages/shared/src/__tests__/room-keywords.test.ts`
 - Modify: `packages/shared/src/index.ts` (re-export `ROOM_KEYWORDS`)
@@ -163,10 +165,9 @@ describe('ROOM_KEYWORDS', () => {
   it('no duplicate patterns within a single rule', () => {
     for (const rule of ROOM_KEYWORDS) {
       const unique = new Set(rule.patterns)
-      expect(
-        unique.size,
-        `${rule.canonical}/${rule.language}: duplicate patterns in rule`,
-      ).toBe(rule.patterns.length)
+      expect(unique.size, `${rule.canonical}/${rule.language}: duplicate patterns in rule`).toBe(
+        rule.patterns.length,
+      )
     }
   })
 
@@ -359,6 +360,7 @@ EOF
 ## Task 3: `normalizeForMatching` text helper
 
 **Files:**
+
 - Create: `packages/analyzer/src/normalize-text.ts`
 - Create: `packages/analyzer/src/__tests__/normalize-text.test.ts`
 
@@ -391,15 +393,11 @@ describe('normalizeForMatching', () => {
     expect(normalizeForMatching('Hallway / Stairs')).toBe('hallway stairs')
     expect(normalizeForMatching('Aqara/TH-158d')).toBe('aqara th 158d')
     expect(normalizeForMatching('  multiple   spaces  ')).toBe('multiple spaces')
-    expect(normalizeForMatching('mixed_-/whitespace tabs\there')).toBe(
-      'mixed whitespace tabs here',
-    )
+    expect(normalizeForMatching('mixed_-/whitespace tabs\there')).toBe('mixed whitespace tabs here')
   })
 
   it('preserves non-separator punctuation (apostrophes, parens, dots)', () => {
-    expect(normalizeForMatching("Bart's Office (master)_2")).toBe(
-      "bart's office (master) 2",
-    )
+    expect(normalizeForMatching("Bart's Office (master)_2")).toBe("bart's office (master) 2")
     expect(normalizeForMatching('sensor.living_room')).toBe('sensor.living room')
   })
 
@@ -496,6 +494,7 @@ EOF
 ## Task 4: `findRoom` matcher — core algorithm
 
 **Files:**
+
 - Create: `packages/analyzer/src/match-room.ts`
 - Create: `packages/analyzer/src/__tests__/match-room.test.ts`
 - Modify: `packages/analyzer/src/index.ts` (re-export `findRoom` + types)
@@ -748,6 +747,7 @@ EOF
 ## Task 5: `findRoom` — full-table integration + fixture sanity check
 
 **Files:**
+
 - Modify: `packages/analyzer/src/__tests__/match-room.test.ts`
 
 Adds tests that exercise the real `ROOM_KEYWORDS` data and a fixture-driven sanity check against `english-cluttered`.
@@ -862,6 +862,7 @@ pnpm --dir <worktree> vitest run packages/analyzer/src/__tests__/match-room.test
 Expected: PASS — analyzer match-room tests are now ~18 (11 from Task 4 + 7 new).
 
 If the fixture sanity check fails, the implementer should:
+
 1. Inspect which entities miss — add a temporary `console.log` of the misses inside the loop.
 2. Either widen the keyword patterns in `ROOM_KEYWORDS` (if a real synonym is missing — e.g., "Living Room Spot 1" should match but doesn't), or tighten the test's filter (if the misses are deliberately ambiguous fixture entries).
 
