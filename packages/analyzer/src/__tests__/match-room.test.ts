@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { RoomKeyword } from '@lovelacer/shared'
 import { findRoom } from '../match-room.js'
+import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 
 const SMALL_KEYWORDS: RoomKeyword[] = [
   { canonical: 'kitchen', language: 'en', patterns: ['kitchen'] },
@@ -95,5 +96,75 @@ describe('findRoom — defaults to ROOM_KEYWORDS when no keywords given', () => 
     const m = findRoom('Living Room Light')
     expect(m).not.toBeNull()
     expect(m!.canonical).toBe('living_room')
+  })
+})
+
+describe('findRoom — full ROOM_KEYWORDS integration', () => {
+  it('detects English: Living Room Light → living_room/en', () => {
+    const m = findRoom('Living Room Light')
+    expect(m!.canonical).toBe('living_room')
+    expect(m!.language).toBe('en')
+  })
+
+  it('detects Czech: Obývací pokoj lampa → living_room/cs', () => {
+    const m = findRoom('Obývací pokoj lampa')
+    expect(m!.canonical).toBe('living_room')
+    expect(m!.language).toBe('cs')
+  })
+
+  it('strips Czech diacritics during match: Ložnice → bedroom/cs', () => {
+    const m = findRoom('Ložnice')
+    expect(m!.canonical).toBe('bedroom')
+    expect(m!.language).toBe('cs')
+  })
+
+  it('English garage does not false-match any Czech rule', () => {
+    const m = findRoom('Garage Light', { language: 'cs' })
+    expect(m).toBeNull()
+  })
+
+  it('Czech garaze does not false-match any English rule', () => {
+    const m = findRoom('Garaze svetlo', { language: 'en' })
+    expect(m).toBeNull()
+  })
+
+  it('detects bathroom in CS without false-matching bedroom (excludes)', () => {
+    const m = findRoom('Master koupelna svetlo')
+    expect(m!.canonical).toBe('bathroom')
+  })
+})
+
+describe('findRoom — english-cluttered fixture sanity check', () => {
+  // Build a (areaId → canonical-room slug) map by reading the fixture's
+  // areas. Each area's slug IS the canonical-ish identifier we expect
+  // findRoom to surface from the entity's friendlyName.
+  const areaIdToCanonical = new Map<string, string>()
+  for (const area of englishCluttered.areas) {
+    areaIdToCanonical.set(area.id, area.id)
+  }
+
+  it('matches the room implied by area for ≥80% of entities with non-null area', () => {
+    let testable = 0
+    let correct = 0
+
+    for (const entity of englishCluttered.entities) {
+      if (entity.area === null) continue
+      // Skip entities whose own friendly name is intentionally ambiguous —
+      // those test detection's lower-priority branches, not the keyword DB.
+      // Permissive filter: entity must contain at least one alphabetic word ≥4 chars.
+      const hasNamedRoom = /\b[a-z]{4,}/i.test(entity.originalName)
+      if (!hasNamedRoom) continue
+
+      const expected = areaIdToCanonical.get(entity.area)
+      if (expected === undefined) continue
+      testable++
+
+      const m = findRoom(entity.originalName)
+      if (m && m.canonical === expected) correct++
+    }
+
+    expect(testable).toBeGreaterThan(20) // sanity: we have plenty of testable entities
+    const ratio = correct / testable
+    expect(ratio, `${correct}/${testable} entities matched their area`).toBeGreaterThanOrEqual(0.8)
   })
 })
