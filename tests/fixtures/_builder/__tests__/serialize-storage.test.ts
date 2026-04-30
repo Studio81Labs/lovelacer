@@ -57,25 +57,39 @@ describe('serializeStorage', () => {
     }
   })
 
-  it('serializes floor with id, name, level, icon', () => {
+  it('serializes floor with id, name, level, icon, and v1.2 timestamps', () => {
     const out = serializeStorage(FIXTURE)
-    const floors = out['core.floor_registry'].data as { floors: unknown[] }
-    expect(floors.floors).toEqual([
+    const floors = out['core.floor_registry'].data as { floors: Record<string, unknown>[] }
+    const f = floors.floors[0]!
+    expect(f).toEqual(
       expect.objectContaining({ floor_id: 'ground', name: 'Ground', level: 0, icon: null }),
-    ])
+    )
+    expect(typeof f['created_at']).toBe('string')
+    expect(typeof f['modified_at']).toBe('string')
   })
 
-  it('serializes area with area_id, name, floor_id, icon', () => {
+  it('serializes area with id (v1.9), name, floor_id, icon', () => {
     const out = serializeStorage(FIXTURE)
     const areas = out['core.area_registry'].data as { areas: unknown[] }
     expect(areas.areas).toEqual([
       expect.objectContaining({
-        area_id: 'living_room',
+        // v1.9 renamed area_id → id
+        id: 'living_room',
         name: 'Living Room',
         floor_id: 'ground',
         icon: 'mdi:sofa',
       }),
     ])
+  })
+
+  it('includes the v1.9 area fields HA expects (humidity/temperature entity refs, timestamps)', () => {
+    const out = serializeStorage(FIXTURE)
+    const areas = out['core.area_registry'].data as { areas: Record<string, unknown>[] }
+    const area = areas.areas[0]!
+    expect(area['humidity_entity_id']).toBeNull()
+    expect(area['temperature_entity_id']).toBeNull()
+    expect(typeof area['created_at']).toBe('string')
+    expect(typeof area['modified_at']).toBe('string')
   })
 
   it('serializes device with id, name, manufacturer, model, area_id', () => {
@@ -91,6 +105,18 @@ describe('serializeStorage', () => {
         area_id: 'living_room',
       }),
     ])
+  })
+
+  it('includes v1.12 device fields HA expects (model_id, serial_number, primary_config_entry, config_entries_subentries, timestamps)', () => {
+    const out = serializeStorage(FIXTURE)
+    const devices = out['core.device_registry'].data as { devices: Record<string, unknown>[] }
+    const device = devices.devices[0]!
+    expect(device['model_id']).toBeNull()
+    expect(device['serial_number']).toBeNull()
+    expect(device['primary_config_entry']).toBeNull()
+    expect(device['config_entries_subentries']).toEqual({})
+    expect(typeof device['created_at']).toBe('string')
+    expect(typeof device['modified_at']).toBe('string')
   })
 
   it('serializes entity with full registry shape', () => {
@@ -111,6 +137,32 @@ describe('serializeStorage', () => {
         hidden_by: null,
       }),
     ])
+  })
+
+  it('includes v1.22 entity fields HA expects (id, aliases_v2, categories, timestamps, …)', () => {
+    const out = serializeStorage(FIXTURE)
+    const entities = out['core.entity_registry'].data as { entities: Record<string, unknown>[] }
+    const e = entities.entities[0]!
+    expect(typeof e['id']).toBe('string')
+    expect((e['id'] as string).length).toBe(32) // md5 hex
+    expect(e['aliases_v2']).toEqual([null])
+    expect(e['categories']).toEqual({})
+    expect(e['config_subentry_id']).toBeNull()
+    expect(e['icon']).toBeNull()
+    expect(e['original_icon']).toBeNull()
+    expect(e['object_id_base']).toBeNull()
+    expect(e['suggested_object_id']).toBeNull()
+    expect(e['previous_unique_id']).toBeNull()
+    expect(typeof e['created_at']).toBe('string')
+    expect(typeof e['modified_at']).toBe('string')
+  })
+
+  it('derives entity `id` deterministically from entity_id', () => {
+    const out1 = serializeStorage(FIXTURE)
+    const out2 = serializeStorage(FIXTURE)
+    const id1 = (out1['core.entity_registry'].data as { entities: { id: string }[] }).entities[0]!.id
+    const id2 = (out2['core.entity_registry'].data as { entities: { id: string }[] }).entities[0]!.id
+    expect(id1).toBe(id2)
   })
 
   it('reflects nameByUser into the registry `name` field', () => {

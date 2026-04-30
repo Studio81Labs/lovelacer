@@ -40,10 +40,18 @@ describe('ensureFixtureInclude', () => {
 
   it('does not touch the file when sentinel already present in different position', () => {
     const root = tempRoot()
-    const original = `default_config:\n${FIXTURE_INCLUDE_SENTINEL}\nhomeassistant: !include lovelacer-fixtures.yaml\n`
+    const original = `default_config:\n${FIXTURE_INCLUDE_SENTINEL}\ntemplate: !include lovelacer-fixtures.yaml\n`
     writeFileSync(join(root, 'configuration.yaml'), original)
     ensureFixtureInclude(root)
     expect(readFileSync(join(root, 'configuration.yaml'), 'utf8')).toBe(original)
+  })
+
+  it('attaches the include via the canonical `template:` key', () => {
+    const root = tempRoot()
+    ensureFixtureInclude(root)
+    const yaml = readFileSync(join(root, 'configuration.yaml'), 'utf8')
+    expect(yaml).toContain('template: !include lovelacer-fixtures.yaml')
+    expect(yaml).not.toContain('homeassistant: !include lovelacer-fixtures.yaml')
   })
 
   it('writes nothing extra besides configuration.yaml', () => {

@@ -10,6 +10,13 @@ interface TemplateEntry {
   device_class?: string
 }
 
+/**
+ * Emits a YAML *sequence* of per-domain groups suitable for inclusion via
+ * `template: !include lovelacer-fixtures.yaml` in configuration.yaml. The
+ * file does NOT include the leading `template:` key — HA's `!include`
+ * substitutes the included content under the host key, so the file body
+ * is the list of group maps directly.
+ */
 export function serializeTemplateYaml(fx: Fixture): string {
   const groups: Record<string, TemplateEntry[]> = {}
 
@@ -31,5 +38,5 @@ export function serializeTemplateYaml(fx: Fixture): string {
   }
 
   const template = Object.entries(groups).map(([domain, entries]) => ({ [domain]: entries }))
-  return stringify({ template }, { lineWidth: 0 })
+  return stringify(template, { lineWidth: 0 })
 }

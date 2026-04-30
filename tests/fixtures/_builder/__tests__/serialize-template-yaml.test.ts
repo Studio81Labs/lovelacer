@@ -65,19 +65,20 @@ const FIXTURE: Fixture = {
   ],
 }
 
+type DomainGroup = { sensor?: unknown[]; binary_sensor?: unknown[]; switch?: unknown[] }
+
 describe('serializeTemplateYaml', () => {
-  it('produces a YAML document with a top-level template: sequence', () => {
+  it('produces a YAML document with a top-level sequence (no leading template: key)', () => {
     const yaml = serializeTemplateYaml(FIXTURE)
-    const parsed = parse(yaml) as { template: unknown }
-    expect(Array.isArray(parsed.template)).toBe(true)
+    const parsed = parse(yaml) as unknown
+    expect(Array.isArray(parsed)).toBe(true)
   })
 
   it('groups entities under sensor / binary_sensor / switch keys', () => {
     const yaml = serializeTemplateYaml(FIXTURE)
-    const parsed = parse(yaml) as { template: { sensor?: unknown; binary_sensor?: unknown; switch?: unknown }[] }
-    const groups = parsed.template
+    const parsed = parse(yaml) as DomainGroup[]
     const keysFound = new Set<string>()
-    for (const g of groups) for (const k of Object.keys(g)) keysFound.add(k)
+    for (const g of parsed) for (const k of Object.keys(g)) keysFound.add(k)
     expect(keysFound).toEqual(new Set(['sensor', 'binary_sensor', 'switch']))
   })
 
@@ -93,8 +94,8 @@ describe('serializeTemplateYaml', () => {
 
   it('emits unique_id, name, and state per entity', () => {
     const yaml = serializeTemplateYaml(FIXTURE)
-    const parsed = parse(yaml) as { template: { sensor?: { unique_id: string; name: string; state: string }[] }[] }
-    const sensorGroup = parsed.template.find((g) => g.sensor)
+    const parsed = parse(yaml) as { sensor?: { unique_id: string; name: string; state: string }[] }[]
+    const sensorGroup = parsed.find((g) => g.sensor)
     expect(sensorGroup?.sensor).toContainEqual(
       expect.objectContaining({
         unique_id: 'tiny__sensor.living_room_temperature',
@@ -106,16 +107,19 @@ describe('serializeTemplateYaml', () => {
 
   it('includes device_class for sensor and binary_sensor entries when set', () => {
     const yaml = serializeTemplateYaml(FIXTURE)
-    const parsed = parse(yaml) as { template: { sensor?: { device_class?: string }[]; binary_sensor?: { device_class?: string }[] }[] }
-    const sensorGroup = parsed.template.find((g) => g.sensor)
+    const parsed = parse(yaml) as {
+      sensor?: { device_class?: string }[]
+      binary_sensor?: { device_class?: string }[]
+    }[]
+    const sensorGroup = parsed.find((g) => g.sensor)
     expect(sensorGroup?.sensor?.[0]?.device_class).toBe('temperature')
-    const binaryGroup = parsed.template.find((g) => g.binary_sensor)
+    const binaryGroup = parsed.find((g) => g.binary_sensor)
     expect(binaryGroup?.binary_sensor?.[0]?.device_class).toBe('motion')
   })
 
-  it('returns an empty template: list when no state-supported entities exist', () => {
+  it('returns an empty list when no state-supported entities exist', () => {
     const empty: Fixture = { ...FIXTURE, entities: [FIXTURE.entities[3]!] }
     const yaml = serializeTemplateYaml(empty)
-    expect(parse(yaml)).toEqual({ template: [] })
+    expect(parse(yaml)).toEqual([])
   })
 })

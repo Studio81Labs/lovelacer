@@ -3,15 +3,22 @@ import { join } from 'node:path'
 
 export const FIXTURE_INCLUDE_SENTINEL = '# lovelacer:fixtures'
 
+/**
+ * The included file emits a list of per-domain template groups (without a
+ * leading `template:` key). We attach it via `template: !include …` so HA's
+ * include directive resolves the file content under the canonical key.
+ */
+const INCLUDE_LINE = 'template: !include lovelacer-fixtures.yaml'
+
 const DEFAULT_BODY = `default_config:
 
 ${FIXTURE_INCLUDE_SENTINEL}
-homeassistant: !include lovelacer-fixtures.yaml
+${INCLUDE_LINE}
 `
 
 const APPEND_BLOCK = `
 ${FIXTURE_INCLUDE_SENTINEL}
-homeassistant: !include lovelacer-fixtures.yaml
+${INCLUDE_LINE}
 `
 
 export function ensureFixtureInclude(haConfigDir: string): void {
