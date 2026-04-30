@@ -24,7 +24,13 @@ export interface GridSection {
   cards: LovelaceCard[]
 }
 
-export type LovelaceCard = HeadingCard | TileCard | ThermostatCard | EntitiesCard
+export type LovelaceCard =
+  | HeadingCard
+  | TileCard
+  | ThermostatCard
+  | EntitiesCard
+  | MarkdownCard
+  | GlanceCard
 
 export interface HeadingCard {
   type: 'heading'
@@ -46,6 +52,17 @@ export interface ThermostatCard {
 
 export interface EntitiesCard {
   type: 'entities'
+  title?: string
+  entities: string[]
+}
+
+export interface MarkdownCard {
+  type: 'markdown'
+  content: string
+}
+
+export interface GlanceCard {
+  type: 'glance'
   title?: string
   entities: string[]
 }

@@ -18,11 +18,15 @@ export const GENERATOR_VERSION = '0.0.0'
 export { buildRoomView, buildRoomViews } from './room-view.js'
 export type {
   EntitiesCard,
+  GlanceCard,
   GridSection,
   HeadingCard,
   LovelaceCard,
+  MarkdownCard,
   RoomView,
   ThermostatCard,
   TileCard,
   TileFeature,
 } from './lovelace-types.js'
+export { buildHomeView, pickQuickStatsEntities } from './home-view.js'
+export type { BuildHomeViewInput, HomeView } from './home-view.js'
