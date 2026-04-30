@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./dist-tools",
+    "rootDir": "./",
+    "noEmit": true
+  },
+  "include": ["tests/**/*.ts", "dev/scripts/**/*.ts"],
+  "exclude": ["node_modules", "**/dist/**"]
+}

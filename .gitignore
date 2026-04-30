@@ -4,6 +4,7 @@ node_modules/
 
 # Build output
 dist/
+dist-tools/
 build/
 .turbo/
 *.tsbuildinfo
@@ -51,6 +52,9 @@ dev/ha-config/
 
 # Add-on build artifacts
 apps/addon/rootfs/var/
+
+# Git worktrees (project-local)
+.worktrees/
 
 # OS
 .DS_Store
