@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Vite
+.vite/
+
+# Local SQLite
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+
+# HA dev container persistent state — mounted as HA's full /config, contains
+# secrets, tokens, devices, and SQLite history. Never commit anything from here.
+dev/ha-config/
+
+# Add-on build artifacts
+apps/addon/rootfs/var/
+
+# OS
+.DS_Store
