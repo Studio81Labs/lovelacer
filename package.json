@@ -22,7 +22,7 @@
     "lint:fix": "eslint . --ext .ts,.vue,.js --fix",
     "format": "prettier --write \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm -r typecheck && (find tests dev/scripts -name '*.ts' 2>/dev/null | grep -q . && tsc -b tsconfig.tools.json || true)",
     "clean": "pnpm -r exec rm -rf dist node_modules .turbo && rm -rf node_modules"
   },
   "devDependencies": {
