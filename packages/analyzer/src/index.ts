@@ -19,9 +19,4 @@ export type { FindRoomOptions, RoomMatch } from './match-room.js'
 export { buildDetectionContext, detect, detectEntity } from './detect.js'
 export type { AreaIndexEntry, DetectInput, DetectionContext } from './detect.js'
 export { domainGroup, groupByDomain } from './grouping.js'
-export type {
-  DomainGroupKey,
-  DomainGroup,
-  GroupByDomainInput,
-  RoomGrouping,
-} from './grouping.js'
+export type { DomainGroupKey, DomainGroup, GroupByDomainInput, RoomGrouping } from './grouping.js'

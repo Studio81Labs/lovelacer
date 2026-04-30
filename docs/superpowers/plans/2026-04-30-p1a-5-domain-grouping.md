@@ -25,6 +25,7 @@
 ## Task 1: Types + `domainGroup` (per-entity routing) + unit tests
 
 **Files:**
+
 - Create: `packages/analyzer/src/grouping.ts`
 - Create: `packages/analyzer/src/__tests__/grouping.test.ts`
 
@@ -66,57 +67,53 @@ describe('domainGroup — routing', () => {
   })
 
   it('routes sensor with deviceClass=temperature → environment', () => {
-    expect(
-      domainGroup({ ...baseEntity, domain: 'sensor', deviceClass: 'temperature' }),
-    ).toBe('environment')
+    expect(domainGroup({ ...baseEntity, domain: 'sensor', deviceClass: 'temperature' })).toBe(
+      'environment',
+    )
   })
 
   it('routes sensor with deviceClass=humidity → environment', () => {
-    expect(
-      domainGroup({ ...baseEntity, domain: 'sensor', deviceClass: 'humidity' }),
-    ).toBe('environment')
+    expect(domainGroup({ ...baseEntity, domain: 'sensor', deviceClass: 'humidity' })).toBe(
+      'environment',
+    )
   })
 
   it('routes sensor with deviceClass=illuminance → other (not in P1a env filter)', () => {
-    expect(
-      domainGroup({ ...baseEntity, domain: 'sensor', deviceClass: 'illuminance' }),
-    ).toBe('other')
-  })
-
-  it('routes sensor with no deviceClass → other', () => {
-    expect(domainGroup({ ...baseEntity, domain: 'sensor', deviceClass: null })).toBe(
+    expect(domainGroup({ ...baseEntity, domain: 'sensor', deviceClass: 'illuminance' })).toBe(
       'other',
     )
   })
 
+  it('routes sensor with no deviceClass → other', () => {
+    expect(domainGroup({ ...baseEntity, domain: 'sensor', deviceClass: null })).toBe('other')
+  })
+
   it('routes binary_sensor with deviceClass=motion → activity', () => {
-    expect(
-      domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: 'motion' }),
-    ).toBe('activity')
+    expect(domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: 'motion' })).toBe(
+      'activity',
+    )
   })
 
   it('routes binary_sensor with deviceClass=occupancy → activity', () => {
-    expect(
-      domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: 'occupancy' }),
-    ).toBe('activity')
+    expect(domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: 'occupancy' })).toBe(
+      'activity',
+    )
   })
 
   it('routes binary_sensor with deviceClass=door → activity', () => {
-    expect(
-      domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: 'door' }),
-    ).toBe('activity')
+    expect(domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: 'door' })).toBe(
+      'activity',
+    )
   })
 
   it('routes binary_sensor with deviceClass=window → other (not in P1a activity filter)', () => {
-    expect(
-      domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: 'window' }),
-    ).toBe('other')
+    expect(domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: 'window' })).toBe(
+      'other',
+    )
   })
 
   it('routes binary_sensor with no deviceClass → other', () => {
-    expect(
-      domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: null }),
-    ).toBe('other')
+    expect(domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: null })).toBe('other')
   })
 
   it('routes P1b-only domains → other (cover, media_player, lock, camera, vacuum, fan)', () => {
@@ -130,9 +127,9 @@ describe('domainGroup — routing', () => {
   })
 
   it('routes diagnostic light → lights (entityCategory does not affect routing)', () => {
-    expect(
-      domainGroup({ ...baseEntity, domain: 'light', entityCategory: 'diagnostic' }),
-    ).toBe('lights')
+    expect(domainGroup({ ...baseEntity, domain: 'light', entityCategory: 'diagnostic' })).toBe(
+      'lights',
+    )
   })
 })
 ```
@@ -287,6 +284,7 @@ EOF
 ## Task 2: `groupByDomain` (bulk orchestration) + re-exports + unit tests
 
 **Files:**
+
 - Modify: `packages/analyzer/src/grouping.ts`
 - Modify: `packages/analyzer/src/__tests__/grouping.test.ts`
 - Modify: `packages/analyzer/src/index.ts`
@@ -305,10 +303,7 @@ import { domainGroup, groupByDomain } from '../grouping.js'
 Then append:
 
 ```ts
-const ent = (
-  id: string,
-  overrides: Partial<NormalizedEntity> = {},
-): NormalizedEntity => ({
+const ent = (id: string, overrides: Partial<NormalizedEntity> = {}): NormalizedEntity => ({
   ...baseEntity,
   entityId: id,
   domain: id.split('.')[0]!,
@@ -427,14 +422,8 @@ describe('groupByDomain — orchestration', () => {
 
   it('places `other` last when populated', () => {
     const result = groupByDomain({
-      assignments: [
-        assignment('cover.x', 'kitchen'),
-        assignment('light.l', 'kitchen'),
-      ],
-      entities: [
-        ent('cover.x', { friendlyName: 'X' }),
-        ent('light.l', { friendlyName: 'L' }),
-      ],
+      assignments: [assignment('cover.x', 'kitchen'), assignment('light.l', 'kitchen')],
+      entities: [ent('cover.x', { friendlyName: 'X' }), ent('light.l', { friendlyName: 'L' })],
     })
     expect(result[0]!.groups.map((g) => g.key)).toEqual(['lights', 'other'])
   })
@@ -461,10 +450,7 @@ describe('groupByDomain — orchestration', () => {
 
   it('silently skips assignments referencing entities not in the input', () => {
     const result = groupByDomain({
-      assignments: [
-        assignment('light.real', 'kitchen'),
-        assignment('light.ghost', 'kitchen'),
-      ],
+      assignments: [assignment('light.real', 'kitchen'), assignment('light.ghost', 'kitchen')],
       entities: [ent('light.real', { friendlyName: 'Real' })],
     })
     expect(result).toHaveLength(1)
@@ -559,12 +545,7 @@ Read `packages/analyzer/src/index.ts` first to confirm the existing pattern. App
 
 ```ts
 export { domainGroup, groupByDomain } from './grouping.js'
-export type {
-  DomainGroupKey,
-  DomainGroup,
-  GroupByDomainInput,
-  RoomGrouping,
-} from './grouping.js'
+export type { DomainGroupKey, DomainGroup, GroupByDomainInput, RoomGrouping } from './grouping.js'
 ```
 
 - [ ] **Step 5: Run the tests to verify they pass**
@@ -610,6 +591,7 @@ EOF
 ## Task 3: Fixture-driven snapshot tests
 
 **Files:**
+
 - Create: `packages/analyzer/src/__tests__/grouping.fixtures.test.ts`
 
 End-to-end runs against `english-cluttered` and `czech-tidy`. Pipes through `fixtureToHaRegistries → normalize → detect → groupByDomain` and locks the high-level shape via `toMatchInlineSnapshot`. Plus structural anti-regression assertions (filter behavior, sort behavior, empty-drop behavior).
@@ -696,9 +678,10 @@ describe('groupByDomain — english-cluttered fixture', () => {
       const other = room.groups.find((g) => g.key === 'other')
       if (other === undefined) continue
       const hasGenuineFallback = other.entities.some((e) => !isP1aRouted(e))
-      expect(hasGenuineFallback, `room ${room.roomId} 'other' group has no fallback-routed entity`).toBe(
-        true,
-      )
+      expect(
+        hasGenuineFallback,
+        `room ${room.roomId} 'other' group has no fallback-routed entity`,
+      ).toBe(true)
     }
   })
 

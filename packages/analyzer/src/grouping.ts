@@ -64,7 +64,7 @@ export function domainGroup(entity: NormalizedEntity): DomainGroupKey {
  * have positions reserved so adding their data doesn't shift existing
  * orders in snapshots.
  */
-const GROUP_ORDER: readonly DomainGroupKey[] = [
+const GROUP_ORDER: readonly DomainGroupKey[] = Object.freeze([
   'lights',
   'climate',
   'covers',
@@ -76,7 +76,7 @@ const GROUP_ORDER: readonly DomainGroupKey[] = [
   'vacuum',
   'fans',
   'other',
-]
+])
 
 /**
  * Bulk grouping. Takes the detection chain's RoomAssignment[] paired
@@ -126,7 +126,7 @@ export function groupByDomain(input: GroupByDomainInput): RoomGrouping[] {
       const entities = roomBucket.get(key)
       if (entities === undefined || entities.length === 0) continue
       const sorted = [...entities].sort((a, b) =>
-        a.friendlyName.toLowerCase().localeCompare(b.friendlyName.toLowerCase()),
+        a.friendlyName.toLowerCase().localeCompare(b.friendlyName.toLowerCase(), 'en'),
       )
       groups.push({ key, entities: sorted })
     }

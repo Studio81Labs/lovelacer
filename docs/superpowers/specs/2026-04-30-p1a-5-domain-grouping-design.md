@@ -39,17 +39,17 @@ packages/analyzer/src/
 import type { CanonicalRoomId, NormalizedEntity, RoomAssignment } from '@lovelacer/shared'
 
 export type DomainGroupKey =
-  | 'lights'      // P1a — light + switch
+  | 'lights' // P1a — light + switch
   | 'environment' // P1a — sensor (temperature, humidity)
-  | 'activity'    // P1a — binary_sensor (motion, occupancy, door)
-  | 'climate'     // P1a — climate
-  | 'covers'      // P1b
-  | 'media'       // P1b
-  | 'security'    // P1b — lock
-  | 'cameras'     // P1b
-  | 'vacuum'      // P1b
-  | 'fans'        // P1b
-  | 'other'       // fallback for any unmapped (entity, deviceClass) combo
+  | 'activity' // P1a — binary_sensor (motion, occupancy, door)
+  | 'climate' // P1a — climate
+  | 'covers' // P1b
+  | 'media' // P1b
+  | 'security' // P1b — lock
+  | 'cameras' // P1b
+  | 'vacuum' // P1b
+  | 'fans' // P1b
+  | 'other' // fallback for any unmapped (entity, deviceClass) combo
 
 export interface DomainGroup {
   key: DomainGroupKey
@@ -77,14 +77,14 @@ export function domainGroup(entity: NormalizedEntity): DomainGroupKey
 
 Pure routing logic, no I/O, no state:
 
-| Match | Group |
-| --- | --- |
-| `domain === 'light'` | `lights` |
-| `domain === 'switch'` | `lights` |
-| `domain === 'climate'` | `climate` |
-| `domain === 'sensor'` AND `deviceClass ∈ {'temperature', 'humidity'}` | `environment` |
-| `domain === 'binary_sensor'` AND `deviceClass ∈ {'motion', 'occupancy', 'door'}` | `activity` |
-| Anything else | `other` |
+| Match                                                                            | Group         |
+| -------------------------------------------------------------------------------- | ------------- |
+| `domain === 'light'`                                                             | `lights`      |
+| `domain === 'switch'`                                                            | `lights`      |
+| `domain === 'climate'`                                                           | `climate`     |
+| `domain === 'sensor'` AND `deviceClass ∈ {'temperature', 'humidity'}`            | `environment` |
+| `domain === 'binary_sensor'` AND `deviceClass ∈ {'motion', 'occupancy', 'door'}` | `activity`    |
+| Anything else                                                                    | `other`       |
 
 `entityCategory` does not affect routing — diagnostic entities go to their natural group.
 
@@ -153,13 +153,13 @@ groupByDomain()
 
 ## Error handling
 
-| Condition | Behavior |
-| --- | --- |
-| Empty `assignments` | Returns `[]`. |
-| Empty `entities` (with non-empty assignments) | Returns `[]`. Every entity lookup misses; no entity gets grouped. |
-| Assignment references an entity not in `entities` | Silently skipped. |
-| Entity has unrecognized `domain` (e.g., `'lawn_mower'`) | Routes to `'other'` via the fallback rule. |
-| Hidden + disabled together | Same as either: dropped. |
+| Condition                                               | Behavior                                                          |
+| ------------------------------------------------------- | ----------------------------------------------------------------- |
+| Empty `assignments`                                     | Returns `[]`.                                                     |
+| Empty `entities` (with non-empty assignments)           | Returns `[]`. Every entity lookup misses; no entity gets grouped. |
+| Assignment references an entity not in `entities`       | Silently skipped.                                                 |
+| Entity has unrecognized `domain` (e.g., `'lawn_mower'`) | Routes to `'other'` via the fallback rule.                        |
+| Hidden + disabled together                              | Same as either: dropped.                                          |
 
 No throws.
 
@@ -225,11 +225,11 @@ This locks the high-level structure (room count, groups per room, entity count p
 
 ## File-by-file
 
-| File | Action | Notes |
-| --- | --- | --- |
-| `packages/analyzer/src/grouping.ts` | Create | `domainGroup`, `groupByDomain`, types, GROUP_ORDER |
-| `packages/analyzer/src/index.ts` | Modify | Re-export public surface |
-| `packages/analyzer/src/__tests__/grouping.test.ts` | Create | Unit tests |
+| File                                                        | Action | Notes                                                  |
+| ----------------------------------------------------------- | ------ | ------------------------------------------------------ |
+| `packages/analyzer/src/grouping.ts`                         | Create | `domainGroup`, `groupByDomain`, types, GROUP_ORDER     |
+| `packages/analyzer/src/index.ts`                            | Modify | Re-export public surface                               |
+| `packages/analyzer/src/__tests__/grouping.test.ts`          | Create | Unit tests                                             |
 | `packages/analyzer/src/__tests__/grouping.fixtures.test.ts` | Create | Snapshot + structural tests against canonical fixtures |
 
 ## Open questions resolved during brainstorming
