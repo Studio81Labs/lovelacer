@@ -186,18 +186,15 @@ function confidence(signals: Signal[]): number {
 
 ### Boost for corroboration
 
-When multiple sources point to the same room, we add a small boost (capped):
+When multiple sources point to the same room, the assignment's confidence rises above the base (max-weight) value:
 
-```typescript
-function corroboratedConfidence(signals: Signal[]): number {
-  const base = Math.max(...signals.map((s) => s.weight))
-  const corroborationCount = signals.filter((s) => s.weight > 0).length
-  const boost = Math.min(0.1, (corroborationCount - 1) * 0.05)
-  return Math.min(1.0, base + boost)
-}
-```
+- `corroborationCount` = number of fired signals targeting the winning room.
+- `boost = min(0.1, (corroborationCount - 1) * 0.05)` — +0.05 per additional corroborator, capped at +0.10.
+- `confidence = min(1.0, winnerWeight + boost)` — capped at 1.0.
 
-So an entity with `area_id = kitchen` AND name `Kitchen Light` gets `1.0 + 0.05 = 1.0` (capped). An entity with only name match gets `0.6`. An entity with name match AND device-name match gets `0.6 + 0.05 = 0.65`.
+So an entity with `area_id = kitchen` AND name `Kitchen Light` has 2 corroborating signals → boost 0.05 → confidence `1.0 + 0.05 = 1.0` (capped). An entity with only a name match has 1 signal → no boost → confidence 0.6. An entity with name `Kitchen Light` AND device name `Kitchen Hub` (also matching kitchen) → 2 corroborating signals → 0.6 + 0.05 = 0.65.
+
+Corroboration is target-specific. Signals firing toward different rooms don't boost each other — they compete for `roomId` instead. The implementation is in `packages/analyzer/src/detect.ts`'s `assemble()`, which has access to the internal `FiredSignal.target` field that the public `Signal` shape doesn't carry.
 
 ### Confidence buckets for UI
 
