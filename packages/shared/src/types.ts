@@ -41,6 +41,29 @@ export interface HaFloorRegistryEntry {
 }
 
 /**
+ * Languages with localized room keyword sets. Adding a new language is a
+ * pure data change in `room-keywords.ts` — this union already declares
+ * all 8 documented languages even though EN+CS are the only ones with
+ * keyword data shipped today.
+ */
+export type LanguageCode = 'en' | 'cs' | 'de' | 'es' | 'fr' | 'it' | 'pl' | 'nl'
+
+/**
+ * One row of the room keyword database.
+ *
+ * `patterns` and `excludes` are stored pre-normalized: lowercase, no
+ * diacritics, words separated by single space, only `[a-z0-9 ]`
+ * characters. The matcher normalizes input text the same way before
+ * substring-matching against these.
+ */
+export interface RoomKeyword {
+  canonical: Exclude<CanonicalRoomId, 'misc'>
+  language: LanguageCode
+  patterns: string[]
+  excludes?: string[]
+}
+
+/**
  * Lovelacer's internal normalized entity representation.
  * Output of packages/analyzer's normalize step.
  */

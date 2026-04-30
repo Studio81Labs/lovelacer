@@ -14,3 +14,5 @@
 export const ANALYZER_VERSION = '0.0.0'
 export { normalize } from './normalize.js'
 export type { NormalizeInput } from './normalize.js'
+export { findRoom } from './match-room.js'
+export type { FindRoomOptions, RoomMatch } from './match-room.js'
