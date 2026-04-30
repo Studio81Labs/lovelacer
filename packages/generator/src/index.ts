@@ -15,3 +15,14 @@
  * same analyzer output. See SMART_PANEL_BRIDGE.md.
  */
 export const GENERATOR_VERSION = '0.0.0'
+export { buildRoomView, buildRoomViews } from './room-view.js'
+export type {
+  EntitiesCard,
+  GridSection,
+  HeadingCard,
+  LovelaceCard,
+  RoomView,
+  ThermostatCard,
+  TileCard,
+  TileFeature,
+} from './lovelace-types.js'
