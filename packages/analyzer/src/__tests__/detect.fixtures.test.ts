@@ -87,6 +87,16 @@ describe('detect — czech-tidy fixture', () => {
         expectedById.set(`${e.domain}.${e.objectId}`, canonical)
       }
     }
+
+    // Regression guard: every entity in czech-tidy MUST be testable. If
+    // buildDetectionContext fails to resolve a Czech area name (e.g. because
+    // ROOM_KEYWORDS doesn't cover it), expectedById would be smaller than
+    // the entity count and the mismatch loop below would silently pass.
+    const expectedTestableCount = czechTidy.entities.filter((e) => e.area !== null).length
+    expect(expectedById.size, 'all czech-tidy entities should be testable').toBe(
+      expectedTestableCount,
+    )
+
     const mismatches: string[] = []
     for (const a of assignments) {
       const expected = expectedById.get(a.entityId)

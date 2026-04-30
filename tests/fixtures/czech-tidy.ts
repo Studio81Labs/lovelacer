@@ -58,11 +58,15 @@ const livingRoomEntities = [
     device: lrHue.id,
     entityCategory: 'diagnostic',
   }),
+  // Renamed from plan's 'Hue Bridge verze software' — that name carried no
+  // Czech marker and would have failed the czech-tidy entity-name self-test.
   registryEntry(FX, 'sensor', 'Hue Bridge síťový kanál', {
     area: livingRoom.id,
     device: lrHue.id,
     entityCategory: 'diagnostic',
   }),
+  // Renamed from plan's 'Tado baterie' — that name carried no Czech marker
+  // and would have failed the czech-tidy entity-name self-test.
   registryEntry(FX, 'sensor', 'Tado baterie obývák', {
     area: livingRoom.id,
     device: lrThermostat.id,
