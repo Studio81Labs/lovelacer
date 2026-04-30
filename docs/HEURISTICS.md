@@ -160,7 +160,7 @@ When ambiguity does occur (e.g., `garage` is similar across multiple languages),
 
 ## Confidence scoring
 
-Each detection source contributes a weighted signal. Final confidence is the **maximum** signal that fired (not a sum — we don't double-count).
+Each detection source contributes a weighted signal. Base confidence is the maximum weight among fired signals; if multiple signals point to the **same** room they corroborate each other and add a small boost. Conflicting signals (different rooms) do not boost — they compete for `roomId` instead. See "Boost for corroboration" below.
 
 ```typescript
 type Signal = {
@@ -178,7 +178,9 @@ const WEIGHTS = {
   device_name: 0.45,
 }
 
-function confidence(signals: Signal[]): number {
+// Base confidence only — see assemble() in detect.ts for the full formula
+// including the corroboration boost.
+function baseConfidence(signals: Signal[]): number {
   if (signals.length === 0) return 0
   return Math.max(...signals.map((s) => s.weight))
 }
