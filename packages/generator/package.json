@@ -19,6 +19,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@lovelacer/analyzer": "workspace:*",
     "@lovelacer/shared": "workspace:*",
     "yaml": "^2.6.0"
   }
