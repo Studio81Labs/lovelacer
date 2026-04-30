@@ -8,16 +8,17 @@ describe('bucketForConfidence', () => {
     expect(bucketForConfidence(0.85)).toBe('high')
   })
 
-  it('returns "medium" for confidence in [0.5, 0.84]', () => {
-    expect(bucketForConfidence(0.84)).toBe('medium')
+  it('returns "medium" for confidence in [0.5, 0.85)', () => {
+    expect(bucketForConfidence(0.849)).toBe('medium')
     expect(bucketForConfidence(0.7)).toBe('medium')
     expect(bucketForConfidence(0.5)).toBe('medium')
   })
 
-  it('returns "low" for confidence in (0, 0.49]', () => {
-    expect(bucketForConfidence(0.49)).toBe('low')
+  it('returns "low" for confidence in (0, 0.5)', () => {
+    expect(bucketForConfidence(0.499)).toBe('low')
     expect(bucketForConfidence(0.25)).toBe('low')
     expect(bucketForConfidence(0.01)).toBe('low')
+    expect(bucketForConfidence(Number.EPSILON)).toBe('low')
   })
 
   it('returns "none" for confidence of 0', () => {
