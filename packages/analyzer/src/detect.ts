@@ -77,6 +77,47 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
     }
   }
 
+  // Priority 3 — friendly_name
+  const fnMatch = findRoom(entity.friendlyName)
+  if (fnMatch !== null) {
+    fired.push({
+      source: 'friendly_name',
+      weight: 0.6,
+      matchedValue: fnMatch.pattern,
+      target: fnMatch.canonical,
+    })
+  }
+
+  // Priority 4 — entity_id (objectId)
+  const idMatch = findRoom(entity.objectId)
+  if (idMatch !== null) {
+    fired.push({
+      source: 'entity_id',
+      weight: 0.5,
+      matchedValue: idMatch.pattern,
+      target: idMatch.canonical,
+    })
+  }
+
+  // Priority 5 — device_name (prefer nameByUser, fall back to name)
+  if (entity.device !== null) {
+    const candidates = [entity.device.nameByUser, entity.device.name].filter(
+      (s): s is string => s !== null,
+    )
+    for (const name of candidates) {
+      const match = findRoom(name)
+      if (match !== null) {
+        fired.push({
+          source: 'device_name',
+          weight: 0.45,
+          matchedValue: match.pattern,
+          target: match.canonical,
+        })
+        break
+      }
+    }
+  }
+
   return assemble(entity.entityId, fired)
 }
 

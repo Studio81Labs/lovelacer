@@ -171,3 +171,160 @@ describe('detectEntity — priority 2 (device_area)', () => {
     expect(result.signals.find((s) => s.source === 'device_area')).toBeUndefined()
   })
 })
+
+describe('detectEntity — priority 3 (friendly_name)', () => {
+  const ctx = buildDetectionContext([])
+
+  it('fires with weight 0.6 when findRoom matches the friendly name', () => {
+    const result = detectEntity(
+      { ...baseEntity, friendlyName: 'Living Room Light' },
+      ctx,
+    )
+    expect(result.roomId).toBe('living_room')
+    expect(result.confidence).toBe(0.6)
+    expect(result.signals).toContainEqual(
+      expect.objectContaining({
+        source: 'friendly_name',
+        weight: 0.6,
+      }),
+    )
+  })
+
+  it('does NOT fire when friendly name has no canonical match', () => {
+    const result = detectEntity(
+      { ...baseEntity, friendlyName: 'random gibberish' },
+      ctx,
+    )
+    expect(result.signals.find((s) => s.source === 'friendly_name')).toBeUndefined()
+  })
+})
+
+describe('detectEntity — priority 4 (entity_id)', () => {
+  const ctx = buildDetectionContext([])
+
+  it('fires with weight 0.5 when findRoom matches the objectId', () => {
+    const result = detectEntity(
+      { ...baseEntity, friendlyName: 'Sensor 4', objectId: 'kitchen_temp_4' },
+      ctx,
+    )
+    const sig = result.signals.find((s) => s.source === 'entity_id')
+    expect(sig).toBeDefined()
+    expect(sig!.weight).toBe(0.5)
+    // friendly_name doesn't match "Sensor 4", so entity_id is the highest-weight signal
+    expect(result.roomId).toBe('kitchen')
+  })
+})
+
+describe('detectEntity — priority 5 (device_name)', () => {
+  const ctx = buildDetectionContext([])
+
+  it('fires with weight 0.45 from device.nameByUser when set', () => {
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        friendlyName: 'Sensor',
+        device: {
+          id: 'dev1',
+          name: 'Generic Device',
+          nameByUser: 'Bedroom Sensor Hub',
+          manufacturer: null,
+          model: null,
+          haAreaId: null,
+        },
+      },
+      ctx,
+    )
+    expect(result.signals).toContainEqual(
+      expect.objectContaining({
+        source: 'device_name',
+        weight: 0.45,
+      }),
+    )
+    expect(result.roomId).toBe('bedroom')
+  })
+
+  it('falls back to device.name when nameByUser is null', () => {
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        friendlyName: 'Sensor',
+        device: {
+          id: 'dev1',
+          name: 'Bathroom Aqara TH',
+          nameByUser: null,
+          manufacturer: null,
+          model: null,
+          haAreaId: null,
+        },
+      },
+      ctx,
+    )
+    const sig = result.signals.find((s) => s.source === 'device_name')
+    expect(sig).toBeDefined()
+    expect(result.roomId).toBe('bathroom')
+  })
+
+  it('does NOT fire when device is null', () => {
+    const result = detectEntity({ ...baseEntity, device: null }, ctx)
+    expect(result.signals.find((s) => s.source === 'device_name')).toBeUndefined()
+  })
+
+  it('prefers nameByUser over name when both have canonical matches', () => {
+    // nameByUser says bedroom; name says bathroom. nameByUser wins.
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        friendlyName: 'Sensor',
+        device: {
+          id: 'dev1',
+          name: 'Bathroom Aqara TH',
+          nameByUser: 'Bedroom Sensor Hub',
+          manufacturer: null,
+          model: null,
+          haAreaId: null,
+        },
+      },
+      ctx,
+    )
+    expect(result.roomId).toBe('bedroom')
+  })
+})
+
+describe('detectEntity — multi-signal aggregation', () => {
+  const ctx = buildDetectionContext([livingRoomArea])
+
+  it('records all fired signals when multiple priorities match the same room', () => {
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        haAreaId: 'living_room',
+        friendlyName: 'Living Room Light',
+        objectId: 'living_room_light',
+      },
+      ctx,
+    )
+    expect(result.roomId).toBe('living_room')
+    expect(result.confidence).toBe(1.0) // highest weight wins
+    const sources = result.signals.map((s) => s.source).sort()
+    expect(sources).toEqual(['entity_area', 'entity_id', 'friendly_name'])
+  })
+
+  it('picks the highest-weight target when priorities point to different rooms', () => {
+    // Priority 1 (1.0) says living_room; priority 3 (0.6) says kitchen.
+    // Priority 1 wins as roomId; both signals stay in `signals[]`.
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        haAreaId: 'living_room',
+        friendlyName: 'Kitchen Light',
+      },
+      ctx,
+    )
+    expect(result.roomId).toBe('living_room')
+    expect(result.confidence).toBe(1.0)
+    expect(result.signals.map((s) => s.source).sort()).toEqual([
+      'entity_area',
+      'friendly_name',
+    ])
+  })
+})
