@@ -22,7 +22,7 @@ function normalizeEntity(entity: HaEntityRegistryEntry): NormalizedEntity {
     entityId: entity.entity_id,
     domain,
     objectId,
-    friendlyName: entity.name ?? entity.original_name ?? objectId, // humanization in Task 3
+    friendlyName: entity.name ?? entity.original_name ?? humanize(objectId),
     deviceClass: entity.device_class,
     entityCategory: entity.entity_category,
     haAreaId: entity.area_id,
@@ -30,4 +30,21 @@ function normalizeEntity(entity: HaEntityRegistryEntry): NormalizedEntity {
     isHidden: entity.hidden_by !== null,
     isDisabled: entity.disabled_by !== null,
   }
+}
+
+/**
+ * Convert an objectId slug to a display string.
+ *
+ * Replaces underscores with spaces and title-cases each whitespace-
+ * separated word (first letter upper, rest lower). No acronym
+ * preservation, no number-aware casing — keep simple until a consumer
+ * needs more.
+ */
+function humanize(slug: string): string {
+  if (slug.length === 0) return ''
+  return slug
+    .split('_')
+    .filter((word) => word.length > 0)
+    .map((word) => word[0]!.toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
 }

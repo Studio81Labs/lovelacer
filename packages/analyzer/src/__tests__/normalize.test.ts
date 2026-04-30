@@ -59,3 +59,53 @@ describe('normalize — entity passthrough fields', () => {
     expect(normalize({ entities: [], devices: [] })).toEqual([])
   })
 })
+
+describe('normalize — friendlyName resolution', () => {
+  const e = (overrides: Partial<HaEntityRegistryEntry>): HaEntityRegistryEntry => ({
+    ...baseEntity,
+    entity_id: 'sensor.living_room_temperature',
+    name: null,
+    original_name: null,
+    ...overrides,
+  })
+
+  it('uses entity.name when set', () => {
+    const [r] = normalize({
+      entities: [e({ name: 'Couch Temp', original_name: 'Temperature' })],
+      devices: [],
+    })
+    expect(r!.friendlyName).toBe('Couch Temp')
+  })
+
+  it('falls back to entity.original_name when name is null', () => {
+    const [r] = normalize({
+      entities: [e({ name: null, original_name: 'Temperature' })],
+      devices: [],
+    })
+    expect(r!.friendlyName).toBe('Temperature')
+  })
+
+  it('falls back to humanized objectId when both are null', () => {
+    const [r] = normalize({
+      entities: [e({ name: null, original_name: null })],
+      devices: [],
+    })
+    expect(r!.friendlyName).toBe('Living Room Temperature')
+  })
+
+  it('humanizes single-word objectIds', () => {
+    const [r] = normalize({
+      entities: [e({ entity_id: 'sensor.kitchen', name: null, original_name: null })],
+      devices: [],
+    })
+    expect(r!.friendlyName).toBe('Kitchen')
+  })
+
+  it('handles digits and consecutive underscores in humanize', () => {
+    const [r] = normalize({
+      entities: [e({ entity_id: 'sensor.aqara_th_158d', name: null, original_name: null })],
+      devices: [],
+    })
+    expect(r!.friendlyName).toBe('Aqara Th 158d')
+  })
+})
