@@ -55,8 +55,8 @@ export type LovelaceCard =
   | TileCard
   | ThermostatCard
   | EntitiesCard
-  | MarkdownCard   // NEW
-  | GlanceCard     // NEW
+  | MarkdownCard // NEW
+  | GlanceCard // NEW
 ```
 
 The discriminated-union narrowing on `card.type === 'markdown'` etc. continues to work for downstream consumers (P1a-8 will need this when validating before push).
@@ -65,12 +65,7 @@ The discriminated-union narrowing on `card.type === 'markdown'` etc. continues t
 
 ```ts
 import type { NormalizedEntity } from '@lovelacer/shared'
-import type {
-  GlanceCard,
-  GridSection,
-  MarkdownCard,
-  RoomView,
-} from './lovelace-types.js'
+import type { GlanceCard, GridSection, MarkdownCard, RoomView } from './lovelace-types.js'
 
 /**
  * Home view shares RoomView's structural shape (sections layout).
@@ -116,11 +111,13 @@ If a `weather.*` entity exists in the input (first one wins on `entityId` order)
 Examples:
 
 - No weather entity:
+
   ```
   ## Good {{ now().strftime('%H')|int < 12 and 'morning' or now().strftime('%H')|int < 18 and 'afternoon' or 'evening' }}
   ```
 
 - With `weather.home`:
+
   ```
   ## Good {{ now().strftime('%H')|int < 12 and 'morning' or now().strftime('%H')|int < 18 and 'afternoon' or 'evening' }}
 
@@ -131,13 +128,13 @@ Examples:
 
 Pure function. Scans the input and applies these patterns in this exact order, taking the **first** match per pattern (single match per pattern, not all matches). Stops at 4 results:
 
-| Pattern | Rule |
-| --- | --- |
-| Weather | `domain === 'weather'` (any) |
+| Pattern             | Rule                                                                                                                                                                                                                                                           |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Weather             | `domain === 'weather'` (any)                                                                                                                                                                                                                                   |
 | Outdoor temperature | `domain === 'sensor'` AND `deviceClass === 'temperature'` AND `(entityId.toLowerCase().includes('outdoor') OR entityId.toLowerCase().includes('outside') OR friendlyName.toLowerCase().includes('outdoor') OR friendlyName.toLowerCase().includes('outside'))` |
-| Outdoor humidity | Same as above with `'humidity'` |
-| Presence | `domain === 'binary_sensor'` AND (`deviceClass === 'presence'` OR `entityId matches /anyone[_-]?home\|someone[_-]?home\|presence/i`) |
-| Power | `domain === 'sensor'` AND `deviceClass === 'power'` |
+| Outdoor humidity    | Same as above with `'humidity'`                                                                                                                                                                                                                                |
+| Presence            | `domain === 'binary_sensor'` AND (`deviceClass === 'presence'` OR `entityId matches /anyone[_-]?home\|someone[_-]?home\|presence/i`)                                                                                                                           |
+| Power               | `domain === 'sensor'` AND `deviceClass === 'power'`                                                                                                                                                                                                            |
 
 The function iterates patterns in declared order. For each pattern, it scans the entity list (in input order) for the first matching entity, then moves to the next pattern. Returns up to 4 entities total (in pattern order).
 
@@ -200,13 +197,13 @@ buildHomeView()
 
 ## Error handling
 
-| Condition | Behavior |
-| --- | --- |
-| Empty `input.entities` | `buildHomeView` still produces a view with Welcome section only (greeting card without weather line). Quick stats section dropped (0 matches < 2). |
-| Multiple `weather.*` entities | First one (by input order) wins for the markdown template. |
-| All 4 patterns match | All 4 picked, glance card has 4 entities. |
-| Pattern matches but only 1 across all patterns | Glance section dropped (< 2 threshold). |
-| Entity has no `friendlyName` | Treated as empty string for the substring check; `entityId` check still applies. |
+| Condition                                      | Behavior                                                                                                                                           |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Empty `input.entities`                         | `buildHomeView` still produces a view with Welcome section only (greeting card without weather line). Quick stats section dropped (0 matches < 2). |
+| Multiple `weather.*` entities                  | First one (by input order) wins for the markdown template.                                                                                         |
+| All 4 patterns match                           | All 4 picked, glance card has 4 entities.                                                                                                          |
+| Pattern matches but only 1 across all patterns | Glance section dropped (< 2 threshold).                                                                                                            |
+| Entity has no `friendlyName`                   | Treated as empty string for the substring check; `entityId` check still applies.                                                                   |
 
 No throws. Pure function, total over its declared input space.
 
@@ -266,13 +263,13 @@ No throws. Pure function, total over its declared input space.
 
 ## File-by-file
 
-| File | Action | Notes |
-| --- | --- | --- |
-| `packages/generator/src/home-view.ts` | Create | `buildHomeView`, `pickQuickStatsEntities`, `HomeView` type alias, internal helpers |
-| `packages/generator/src/lovelace-types.ts` | Modify | Add `MarkdownCard`, `GlanceCard` to union |
-| `packages/generator/src/index.ts` | Modify | Re-export public surface |
-| `packages/generator/src/__tests__/home-view.test.ts` | Create | Unit tests |
-| `packages/generator/src/__tests__/home-view.fixtures.test.ts` | Create | Fixture-driven snapshot |
+| File                                                          | Action | Notes                                                                              |
+| ------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| `packages/generator/src/home-view.ts`                         | Create | `buildHomeView`, `pickQuickStatsEntities`, `HomeView` type alias, internal helpers |
+| `packages/generator/src/lovelace-types.ts`                    | Modify | Add `MarkdownCard`, `GlanceCard` to union                                          |
+| `packages/generator/src/index.ts`                             | Modify | Re-export public surface                                                           |
+| `packages/generator/src/__tests__/home-view.test.ts`          | Create | Unit tests                                                                         |
+| `packages/generator/src/__tests__/home-view.fixtures.test.ts` | Create | Fixture-driven snapshot                                                            |
 
 ## Open questions resolved during brainstorming
 

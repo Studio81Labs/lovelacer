@@ -1,10 +1,5 @@
 import type { NormalizedEntity } from '@lovelacer/shared'
-import type {
-  GlanceCard,
-  GridSection,
-  MarkdownCard,
-  RoomView,
-} from './lovelace-types.js'
+import type { GlanceCard, GridSection, MarkdownCard, RoomView } from './lovelace-types.js'
 
 /**
  * Home view shares RoomView's structural shape (sections layout). The
@@ -34,15 +29,9 @@ export function pickQuickStatsEntities(entities: NormalizedEntity[]): Normalized
     // Weather: any weather.* domain
     (e) => e.domain === 'weather',
     // Outdoor temperature: sensor + temperature deviceClass + outdoor/outside marker
-    (e) =>
-      e.domain === 'sensor' &&
-      e.deviceClass === 'temperature' &&
-      hasOutdoorMarker(e),
+    (e) => e.domain === 'sensor' && e.deviceClass === 'temperature' && hasOutdoorMarker(e),
     // Outdoor humidity: sensor + humidity deviceClass + outdoor/outside marker
-    (e) =>
-      e.domain === 'sensor' &&
-      e.deviceClass === 'humidity' &&
-      hasOutdoorMarker(e),
+    (e) => e.domain === 'sensor' && e.deviceClass === 'humidity' && hasOutdoorMarker(e),
     // Presence: binary_sensor + (presence deviceClass OR anyone_home/someone_home/presence in entityId)
     (e) =>
       e.domain === 'binary_sensor' &&

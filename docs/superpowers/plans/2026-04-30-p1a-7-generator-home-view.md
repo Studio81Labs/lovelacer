@@ -25,6 +25,7 @@
 ## Task 1: Extend `LovelaceCard` union with `MarkdownCard` + `GlanceCard`
 
 **Files:**
+
 - Modify: `packages/generator/src/lovelace-types.ts`
 - Modify: `packages/generator/src/index.ts`
 
@@ -111,6 +112,7 @@ EOF
 ## Task 2: `home-view.ts` (picker + builders + view orchestration) + unit tests + re-exports
 
 **Files:**
+
 - Create: `packages/generator/src/home-view.ts`
 - Create: `packages/generator/src/__tests__/home-view.test.ts`
 - Modify: `packages/generator/src/index.ts`
@@ -198,9 +200,7 @@ describe('pickQuickStatsEntities — patterns', () => {
   })
 
   it('picks power by deviceClass', () => {
-    const result = pickQuickStatsEntities([
-      ent('sensor.house_power_now', { deviceClass: 'power' }),
-    ])
+    const result = pickQuickStatsEntities([ent('sensor.house_power_now', { deviceClass: 'power' })])
     expect(result).toHaveLength(1)
   })
 
@@ -243,10 +243,7 @@ describe('pickQuickStatsEntities — ordering and limits', () => {
   })
 
   it('multiple matches per pattern → only first picked', () => {
-    const result = pickQuickStatsEntities([
-      ent('weather.home'),
-      ent('weather.forecast'),
-    ])
+    const result = pickQuickStatsEntities([ent('weather.home'), ent('weather.forecast')])
     expect(result).toHaveLength(1)
     expect(result[0]!.entityId).toBe('weather.home')
   })
@@ -337,10 +334,7 @@ describe('buildHomeView — Quick stats section', () => {
     }
     expect(glance.type).toBe('glance')
     expect(glance.title).toBe('Quick stats')
-    expect(glance.entities).toEqual([
-      'sensor.outdoor_temperature',
-      'sensor.outdoor_humidity',
-    ])
+    expect(glance.entities).toEqual(['sensor.outdoor_temperature', 'sensor.outdoor_humidity'])
   })
 
   it('Quick stats section has exactly one glance card', () => {
@@ -398,12 +392,7 @@ Create `packages/generator/src/home-view.ts`:
 
 ```ts
 import type { NormalizedEntity } from '@lovelacer/shared'
-import type {
-  GlanceCard,
-  GridSection,
-  MarkdownCard,
-  RoomView,
-} from './lovelace-types.js'
+import type { GlanceCard, GridSection, MarkdownCard, RoomView } from './lovelace-types.js'
 
 /**
  * Home view shares RoomView's structural shape (sections layout). The
@@ -433,15 +422,9 @@ export function pickQuickStatsEntities(entities: NormalizedEntity[]): Normalized
     // Weather: any weather.* domain
     (e) => e.domain === 'weather',
     // Outdoor temperature: sensor + temperature deviceClass + outdoor/outside marker
-    (e) =>
-      e.domain === 'sensor' &&
-      e.deviceClass === 'temperature' &&
-      hasOutdoorMarker(e),
+    (e) => e.domain === 'sensor' && e.deviceClass === 'temperature' && hasOutdoorMarker(e),
     // Outdoor humidity: sensor + humidity deviceClass + outdoor/outside marker
-    (e) =>
-      e.domain === 'sensor' &&
-      e.deviceClass === 'humidity' &&
-      hasOutdoorMarker(e),
+    (e) => e.domain === 'sensor' && e.deviceClass === 'humidity' && hasOutdoorMarker(e),
     // Presence: binary_sensor + (presence deviceClass OR anyone_home/someone_home/presence in entityId)
     (e) =>
       e.domain === 'binary_sensor' &&
@@ -565,6 +548,7 @@ EOF
 ## Task 3: Fixture-driven snapshot tests
 
 **Files:**
+
 - Create: `packages/generator/src/__tests__/home-view.fixtures.test.ts`
 
 End-to-end runs against `english-cluttered` and `czech-tidy`. Pipes through `fixtureToHaRegistries → normalize` (no detect/groupByDomain needed since `buildHomeView` only reads the entity list). Locks structural snapshots plus anti-regression assertions.
@@ -597,7 +581,8 @@ function summarize(view: ReturnType<typeof pipe>['view']) {
     sections: view.sections.map((s) => ({
       cards: s.cards.map((c) => {
         if (c.type === 'glance') return { type: c.type, count: c.entities.length }
-        if (c.type === 'markdown') return { type: c.type, hasWeather: c.content.includes("states('") }
+        if (c.type === 'markdown')
+          return { type: c.type, hasWeather: c.content.includes("states('") }
         return { type: c.type }
       }),
     })),

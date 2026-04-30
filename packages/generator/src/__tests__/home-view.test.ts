@@ -74,9 +74,7 @@ describe('pickQuickStatsEntities — patterns', () => {
   })
 
   it('picks power by deviceClass', () => {
-    const result = pickQuickStatsEntities([
-      ent('sensor.house_power_now', { deviceClass: 'power' }),
-    ])
+    const result = pickQuickStatsEntities([ent('sensor.house_power_now', { deviceClass: 'power' })])
     expect(result).toHaveLength(1)
   })
 
@@ -119,10 +117,7 @@ describe('pickQuickStatsEntities — ordering and limits', () => {
   })
 
   it('multiple matches per pattern → only first picked', () => {
-    const result = pickQuickStatsEntities([
-      ent('weather.home'),
-      ent('weather.forecast'),
-    ])
+    const result = pickQuickStatsEntities([ent('weather.home'), ent('weather.forecast')])
     expect(result).toHaveLength(1)
     expect(result[0]!.entityId).toBe('weather.home')
   })
@@ -213,10 +208,7 @@ describe('buildHomeView — Quick stats section', () => {
     }
     expect(glance.type).toBe('glance')
     expect(glance.title).toBe('Quick stats')
-    expect(glance.entities).toEqual([
-      'sensor.outdoor_temperature',
-      'sensor.outdoor_humidity',
-    ])
+    expect(glance.entities).toEqual(['sensor.outdoor_temperature', 'sensor.outdoor_humidity'])
   })
 
   it('Quick stats section has exactly one glance card', () => {
