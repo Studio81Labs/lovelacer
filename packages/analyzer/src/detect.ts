@@ -1,5 +1,6 @@
 import type {
   CanonicalRoomId,
+  DetectionSignal,
   HaAreaRegistryEntry,
   NormalizedEntity,
   RoomAssignment,
@@ -42,7 +43,58 @@ export function buildDetectionContext(areas: HaAreaRegistryEntry[]): DetectionCo
   return { areaIndex }
 }
 
-// detectEntity and detect land in subsequent tasks.
-// Suppress the unused-imports warning by referencing them as types only here.
-export type _Internal_NormalizedEntity = NormalizedEntity
-export type _Internal_RoomAssignment = RoomAssignment
+interface FiredSignal extends DetectionSignal {
+  /** The canonical room this signal targets. */
+  target: Exclude<CanonicalRoomId, 'misc'>
+}
+
+export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): RoomAssignment {
+  const fired: FiredSignal[] = []
+
+  // Priority 1 — entity_area
+  if (entity.haAreaId !== null) {
+    const entry = ctx.areaIndex.get(entity.haAreaId)
+    if (entry !== undefined && entry.canonical !== null) {
+      fired.push({
+        source: 'entity_area',
+        weight: 1.0,
+        matchedValue: entry.name,
+        target: entry.canonical,
+      })
+    }
+  }
+
+  // Priority 2 — device_area
+  if (entity.device !== null && entity.device.haAreaId !== null) {
+    const entry = ctx.areaIndex.get(entity.device.haAreaId)
+    if (entry !== undefined && entry.canonical !== null) {
+      fired.push({
+        source: 'device_area',
+        weight: 0.85,
+        matchedValue: entry.name,
+        target: entry.canonical,
+      })
+    }
+  }
+
+  return assemble(entity.entityId, fired)
+}
+
+function assemble(entityId: string, fired: FiredSignal[]): RoomAssignment {
+  if (fired.length === 0) {
+    return { entityId, roomId: 'misc', confidence: 0, signals: [] }
+  }
+  // Highest-weight target wins; ties broken by priority (insertion) order.
+  let winner = fired[0]!
+  for (const s of fired) {
+    if (s.weight > winner.weight) winner = s
+  }
+  // Strip the internal `target` field before exposing signals publicly.
+  const signals: DetectionSignal[] = fired.map(({ target: _t, ...rest }) => rest)
+  return {
+    entityId,
+    roomId: winner.target,
+    confidence: winner.weight,
+    signals,
+  }
+}
