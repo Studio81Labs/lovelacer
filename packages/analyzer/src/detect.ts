@@ -135,12 +135,21 @@ function assemble(entityId: string, fired: FiredSignal[]): RoomAssignment {
   for (const s of fired) {
     if (s.weight > winner.weight) winner = s
   }
+
+  // Corroboration boost: count fired signals pointing to the winning room.
+  // Each additional corroborator adds 0.05; cap at 0.10. Final confidence
+  // capped at 1.0. Different-target signals don't corroborate — see
+  // docs/HEURISTICS.md "Boost for corroboration" and the P1a-4 spec.
+  const corroborationCount = fired.filter((s) => s.target === winner.target).length
+  const boost = Math.min(0.1, (corroborationCount - 1) * 0.05)
+  const confidence = Math.min(1.0, winner.weight + boost)
+
   // Strip the internal `target` field before exposing signals publicly.
   const signals: DetectionSignal[] = fired.map(({ target: _t, ...rest }) => rest)
   return {
     entityId,
     roomId: winner.target,
-    confidence: winner.weight,
+    confidence,
     signals,
   }
 }

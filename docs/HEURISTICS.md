@@ -160,7 +160,7 @@ When ambiguity does occur (e.g., `garage` is similar across multiple languages),
 
 ## Confidence scoring
 
-Each detection source contributes a weighted signal. Final confidence is the **maximum** signal that fired (not a sum — we don't double-count).
+Each detection source contributes a weighted signal. Base confidence is the maximum weight among fired signals; if multiple signals point to the **same** room they corroborate each other and add a small boost. Conflicting signals (different rooms) do not boost — they compete for `roomId` instead. See "Boost for corroboration" below.
 
 ```typescript
 type Signal = {
@@ -178,7 +178,9 @@ const WEIGHTS = {
   device_name: 0.45,
 }
 
-function confidence(signals: Signal[]): number {
+// Base confidence only — see assemble() in detect.ts for the full formula
+// including the corroboration boost.
+function baseConfidence(signals: Signal[]): number {
   if (signals.length === 0) return 0
   return Math.max(...signals.map((s) => s.weight))
 }
@@ -186,18 +188,15 @@ function confidence(signals: Signal[]): number {
 
 ### Boost for corroboration
 
-When multiple sources point to the same room, we add a small boost (capped):
+When multiple sources point to the same room, the assignment's confidence rises above the base (max-weight) value:
 
-```typescript
-function corroboratedConfidence(signals: Signal[]): number {
-  const base = Math.max(...signals.map((s) => s.weight))
-  const corroborationCount = signals.filter((s) => s.weight > 0).length
-  const boost = Math.min(0.1, (corroborationCount - 1) * 0.05)
-  return Math.min(1.0, base + boost)
-}
-```
+- `corroborationCount` = number of fired signals targeting the winning room.
+- `boost = min(0.1, (corroborationCount - 1) * 0.05)` — +0.05 per additional corroborator, capped at +0.10.
+- `confidence = min(1.0, winnerWeight + boost)` — capped at 1.0.
 
-So an entity with `area_id = kitchen` AND name `Kitchen Light` gets `1.0 + 0.05 = 1.0` (capped). An entity with only name match gets `0.6`. An entity with name match AND device-name match gets `0.6 + 0.05 = 0.65`.
+So an entity with `area_id = kitchen` AND name `Kitchen Light` has 2 corroborating signals → boost 0.05 → confidence `1.0 + 0.05 = 1.0` (capped). An entity with only a name match has 1 signal → no boost → confidence 0.6. An entity with name `Kitchen Light` AND device name `Kitchen Hub` (also matching kitchen) → 2 corroborating signals → 0.6 + 0.05 = 0.65.
+
+Corroboration is target-specific. Signals firing toward different rooms don't boost each other — they compete for `roomId` instead. The implementation is in `packages/analyzer/src/detect.ts`'s `assemble()`, which has access to the internal `FiredSignal.target` field that the public `Signal` shape doesn't carry.
 
 ### Confidence buckets for UI
 
