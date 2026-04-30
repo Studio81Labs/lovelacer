@@ -38,14 +38,15 @@ export type SupportedDomain = (typeof PHASE_1A_DOMAINS)[number]
  * Confidence buckets used in UI display.
  * See HEURISTICS.md "Confidence buckets for UI".
  *
- * Ranges are continuous: `min` inclusive, `max` exclusive — except `high.max`
- * (1.0 is inclusive, the maximum valid confidence) and `none`, which matches
- * exactly 0. `low` covers all positive values below `medium.min`.
+ * Range semantics: `min` inclusive, `max` exclusive — with `high.max` (1.0)
+ * inclusive (it's the maximum valid confidence). `none` is the exact-zero
+ * sentinel; `low.min` is `Number.MIN_VALUE` so the range literally expresses
+ * "any positive value below medium" without overlapping `none`.
  */
 export const CONFIDENCE_BUCKETS = {
   high: { min: 0.85, max: 1.0 },
   medium: { min: 0.5, max: 0.85 },
-  low: { min: 0, max: 0.5 },
+  low: { min: Number.MIN_VALUE, max: 0.5 },
   none: { min: 0, max: 0 },
 } as const
 
@@ -54,6 +55,6 @@ export type ConfidenceBucket = keyof typeof CONFIDENCE_BUCKETS
 export function bucketForConfidence(confidence: number): ConfidenceBucket {
   if (confidence >= CONFIDENCE_BUCKETS.high.min) return 'high'
   if (confidence >= CONFIDENCE_BUCKETS.medium.min) return 'medium'
-  if (confidence > CONFIDENCE_BUCKETS.none.max) return 'low'
+  if (confidence >= CONFIDENCE_BUCKETS.low.min) return 'low'
   return 'none'
 }

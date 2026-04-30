@@ -45,11 +45,9 @@ coverage/
 *.db
 *.db-journal
 
-# HA dev container persistent state
-dev/ha-config/.storage/auth*
-dev/ha-config/.storage/onboarding*
-dev/ha-config/home-assistant.log*
-dev/ha-config/home-assistant_v2.db*
+# HA dev container persistent state — mounted as HA's full /config, contains
+# secrets, tokens, devices, and SQLite history. Never commit anything from here.
+dev/ha-config/
 
 # Add-on build artifacts
 apps/addon/rootfs/var/
