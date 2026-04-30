@@ -71,10 +71,18 @@ describe('findRoom — tiebreakers', () => {
     expect(m!.matchedAt).toBe(0)
   })
 
-  it('longer pattern wins when multiple rules anchor at the same index', () => {
-    // 'master bedroom' at 0 vs 'bedroom' at 7 — earliest position (0) wins
+  it('earlier matchedAt wins over a longer pattern anchored later', () => {
+    // 'master bedroom' at 0 beats 'bedroom' at 7 — position wins
     const m = findRoom('master bedroom suite', { keywords: SMALL_KEYWORDS })
     expect(m!.pattern).toBe('master bedroom')
+    expect(m!.matchedAt).toBe(0)
+  })
+
+  it('longer pattern wins when both anchor at the same position within the same rule', () => {
+    // The full laundry rule has 'laundry' and 'laundry room' patterns;
+    // both match at index 0 in this text. Length tiebreaker fires.
+    const m = findRoom('laundry room sensor')
+    expect(m!.pattern).toBe('laundry room')
     expect(m!.matchedAt).toBe(0)
   })
 
@@ -149,9 +157,11 @@ describe('findRoom — english-cluttered fixture sanity check', () => {
 
     for (const entity of englishCluttered.entities) {
       if (entity.area === null) continue
-      // Skip entities whose own friendly name is intentionally ambiguous —
-      // those test detection's lower-priority branches, not the keyword DB.
-      // Permissive filter: entity must contain at least one alphabetic word ≥4 chars.
+      // Require at least one alphabetic word of 4+ chars in the friendly
+      // name. Entities with purely numeric / hexadecimal names (deliberately
+      // ambiguous fixture entries) are mostly already excluded by the area
+      // check above; this regex is a secondary guard for the few that have
+      // an area but no real room keyword in the name.
       const hasNamedRoom = /\b[a-z]{4,}/i.test(entity.originalName)
       if (!hasNamedRoom) continue
 

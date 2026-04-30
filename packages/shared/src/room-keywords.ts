@@ -45,7 +45,7 @@ export const ROOM_KEYWORDS: RoomKeyword[] = [
   },
 
   // ── bathroom ─────────────────────────────────────────────────────
-  { canonical: 'bathroom', language: 'en', patterns: ['bathroom', 'shower room'] },
+  { canonical: 'bathroom', language: 'en', patterns: ['bathroom', 'shower', 'bath'] },
   { canonical: 'bathroom', language: 'cs', patterns: ['koupelna', 'sprcha'] },
 
   // ── office ───────────────────────────────────────────────────────

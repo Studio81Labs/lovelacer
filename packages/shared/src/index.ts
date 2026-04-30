@@ -1,3 +1,3 @@
 export * from './constants.js'
 export * from './types.js'
-export * from './room-keywords.js'
+export { ROOM_KEYWORDS } from './room-keywords.js'
