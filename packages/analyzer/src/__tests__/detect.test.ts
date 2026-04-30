@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { HaAreaRegistryEntry, NormalizedEntity } from '@lovelacer/shared'
-import { buildDetectionContext, detectEntity } from '../detect.js'
+import { buildDetectionContext, detect, detectEntity } from '../detect.js'
 
 describe('buildDetectionContext', () => {
   it('returns an empty index for empty input', () => {
@@ -326,5 +326,31 @@ describe('detectEntity — multi-signal aggregation', () => {
       'entity_area',
       'friendly_name',
     ])
+  })
+})
+
+describe('detect — bulk API', () => {
+  it('returns empty array for empty input', () => {
+    const result = detect({ entities: [], areas: [] })
+    expect(result).toEqual([])
+  })
+
+  it('produces one assignment per input entity, preserving order', () => {
+    const livingRoomAreaForBulk: HaAreaRegistryEntry = {
+      area_id: 'living_room',
+      name: 'Living Room',
+      floor_id: null,
+      icon: null,
+    }
+    const entities: NormalizedEntity[] = [
+      { ...baseEntity, entityId: 'sensor.a', haAreaId: 'living_room' },
+      { ...baseEntity, entityId: 'sensor.b', friendlyName: 'Kitchen Light' },
+      { ...baseEntity, entityId: 'sensor.c' }, // no signals
+    ]
+    const result = detect({ entities, areas: [livingRoomAreaForBulk] })
+    expect(result.map((r) => r.entityId)).toEqual(['sensor.a', 'sensor.b', 'sensor.c'])
+    expect(result[0]!.roomId).toBe('living_room')
+    expect(result[1]!.roomId).toBe('kitchen')
+    expect(result[2]!.roomId).toBe('misc')
   })
 })

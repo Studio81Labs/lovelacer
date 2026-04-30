@@ -121,6 +121,11 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
   return assemble(entity.entityId, fired)
 }
 
+export function detect(input: DetectInput): RoomAssignment[] {
+  const ctx = buildDetectionContext(input.areas)
+  return input.entities.map((entity) => detectEntity(entity, ctx))
+}
+
 function assemble(entityId: string, fired: FiredSignal[]): RoomAssignment {
   if (fired.length === 0) {
     return { entityId, roomId: 'misc', confidence: 0, signals: [] }
