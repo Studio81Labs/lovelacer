@@ -20,7 +20,7 @@ function summarize(view: ReturnType<typeof pipe>['view']) {
     icon: view.icon,
     sections: view.sections.map((s) => ({
       cards: s.cards.map((c) => {
-        if (c.type === 'glance') return { type: c.type, count: c.entities.length }
+        if (c.type === 'glance') return { type: c.type, entities: c.entities }
         if (c.type === 'markdown')
           return { type: c.type, hasWeather: c.content.includes("states('") }
         return { type: c.type }
@@ -49,7 +49,11 @@ describe('buildHomeView — english-cluttered fixture', () => {
           {
             "cards": [
               {
-                "count": 3,
+                "entities": [
+                  "sensor.outdoor_temperature",
+                  "sensor.outdoor_humidity",
+                  "binary_sensor.couch_presence",
+                ],
                 "type": "glance",
               },
             ],
@@ -60,7 +64,7 @@ describe('buildHomeView — english-cluttered fixture', () => {
     `)
   })
 
-  it('produces Welcome + Quick stats (fixture has Outdoor Temperature + Outdoor Humidity)', () => {
+  it('produces Welcome + Quick stats — 2 outdoor sensors plus 1 presence by entityId pattern', () => {
     expect(view.sections).toHaveLength(2)
   })
 
