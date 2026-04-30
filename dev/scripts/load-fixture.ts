@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
@@ -6,6 +6,7 @@ import type { Fixture } from '../../tests/fixtures/_builder/types.js'
 import {
   serializeStorage,
   serializeTemplateYaml,
+  STORAGE_VERSIONS,
 } from '../../tests/fixtures/_builder/index.js'
 import { backupRegistries } from './_loader/backup.js'
 import { ensureFixtureInclude } from './_loader/config-yaml.js'
@@ -45,23 +46,29 @@ async function main(): Promise<void> {
       `${fx.devices.length} devices · ${fx.entities.length} entities`,
   )
 
+  checkStorageVersions(HA_CONFIG)
   stopHa()
+  try {
+    const backup = backupRegistries(HA_CONFIG)
+    if (backup) console.log(`backed up previous registries → ${backup}`)
 
-  const backup = backupRegistries(HA_CONFIG)
-  if (backup) console.log(`backed up previous registries → ${backup}`)
+    const storage = serializeStorage(fx)
+    const storageDir = join(HA_CONFIG, '.storage')
+    mkdirSync(storageDir, { recursive: true })
+    for (const [key, env] of Object.entries(storage)) {
+      writeFileSync(join(storageDir, key), JSON.stringify(env, null, 2))
+    }
+    console.log(`wrote 4 registry files to ${storageDir}`)
 
-  const storage = serializeStorage(fx)
-  const storageDir = join(HA_CONFIG, '.storage')
-  mkdirSync(storageDir, { recursive: true })
-  for (const [key, env] of Object.entries(storage)) {
-    writeFileSync(join(storageDir, key), JSON.stringify(env, null, 2))
+    const yaml = serializeTemplateYaml(fx)
+    writeFileSync(join(HA_CONFIG, 'lovelacer-fixtures.yaml'), yaml)
+    ensureFixtureInclude(HA_CONFIG)
+    console.log('wrote lovelacer-fixtures.yaml + ensured configuration.yaml include')
+  } catch (err) {
+    console.error('fixture write failed — restarting HA so the dev environment is not left down')
+    startHa()
+    throw err
   }
-  console.log(`wrote 4 registry files to ${storageDir}`)
-
-  const yaml = serializeTemplateYaml(fx)
-  writeFileSync(join(HA_CONFIG, 'lovelacer-fixtures.yaml'), yaml)
-  ensureFixtureInclude(HA_CONFIG)
-  console.log('wrote lovelacer-fixtures.yaml + ensured configuration.yaml include')
 
   startHa()
   await waitForHealthy()
@@ -77,6 +84,33 @@ function printUsage(): void {
   console.error('Usage: pnpm fixtures:load <name>\n')
   console.error('Available fixtures:')
   for (const f of available) console.error(`  - ${f}`)
+}
+
+function checkStorageVersions(haConfigDir: string): void {
+  const storageDir = join(haConfigDir, '.storage')
+  for (const [key, expected] of Object.entries(STORAGE_VERSIONS) as [
+    keyof typeof STORAGE_VERSIONS,
+    { version: number; minor_version: number },
+  ][]) {
+    const path = join(storageDir, key)
+    if (!existsSync(path)) continue
+    let envelope: { version?: unknown; minor_version?: unknown }
+    try {
+      envelope = JSON.parse(readFileSync(path, 'utf8')) as typeof envelope
+    } catch {
+      continue // unreadable; let the rest of the flow surface its own error
+    }
+    const v = envelope.version
+    const mv = envelope.minor_version
+    if (typeof v !== 'number' || typeof mv !== 'number') continue
+    if (v > expected.version || (v === expected.version && mv > expected.minor_version)) {
+      console.error(
+        `${key} on disk is at v${v}.${mv} but loader is pinned to v${expected.version}.${expected.minor_version}.\n` +
+          `Refusing to overwrite a newer schema. Update STORAGE_VERSIONS in tests/fixtures/_builder/serialize-storage.ts and rerun.`,
+      )
+      process.exit(5)
+    }
+  }
 }
 
 async function loadFixture(path: string): Promise<Fixture> {
@@ -105,6 +139,10 @@ function stopHa(): void {
   })
   if (result.error) {
     console.error('docker not available — is Docker installed?')
+    process.exit(3)
+  }
+  if (result.status !== 0) {
+    console.error('failed to stop HA container — aborting to avoid corrupting a running instance')
     process.exit(3)
   }
 }

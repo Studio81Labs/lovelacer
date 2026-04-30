@@ -119,6 +119,8 @@ export function serializeStorage(fx: Fixture): StorageFiles {
           translation_key: null,
           options: {},
           aliases: [],
+          // aliases_v2 is HA's newer alias storage format; [null] is the
+          // sentinel "no aliases" value HA stable writes to disk.
           aliases_v2: [null],
           labels: [],
           has_entity_name: false,

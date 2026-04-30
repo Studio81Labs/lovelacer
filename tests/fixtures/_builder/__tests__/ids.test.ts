@@ -21,6 +21,11 @@ describe('slug', () => {
   it('throws on input that slugs to empty string', () => {
     expect(() => slug('!!!')).toThrow(/cannot slug/i)
   })
+
+  it('strips Unicode apostrophes (U+2018, U+2019)', () => {
+    expect(slug('Bart’s Office')).toBe('barts_office')
+    expect(slug('‘Hello’')).toBe('hello')
+  })
 })
 
 describe('uniqueIdFor', () => {

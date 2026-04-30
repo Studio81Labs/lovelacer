@@ -10,6 +10,11 @@ import { defineConfig } from 'vitest/config'
  * tests silently disappear from `pnpm -r test`.
  *
  * `packages/shared/vitest.config.ts` is the canonical example.
+ *
+ * As of this writing, packages/ha-client, packages/analyzer,
+ * packages/generator, packages/server, and packages/web have no test files.
+ * Whichever package adds the first test must also ship a local
+ * vitest.config.ts.
  */
 export default defineConfig({
   test: {
