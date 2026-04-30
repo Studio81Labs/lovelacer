@@ -287,7 +287,12 @@ describe('groupByDomain — english-cluttered fixture', () => {
     for (const room of groupings) {
       for (const group of room.groups) {
         const names = group.entities.map((e) => e.friendlyName.toLowerCase())
-        const sorted = [...names].sort()
+        // Mirror the production comparator exactly (locale 'en'). Default
+        // Array.sort() does UTF-16 code-point comparison, which diverges
+        // from localeCompare on accented characters — using sort() as the
+        // reference would silently false-pass or false-fail on future
+        // fixtures that introduce diacritic-sorted entries.
+        const sorted = [...names].sort((a, b) => a.localeCompare(b, 'en'))
         expect(names).toEqual(sorted)
       }
     }
