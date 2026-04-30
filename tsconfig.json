@@ -6,6 +6,7 @@
     { "path": "./packages/analyzer" },
     { "path": "./packages/generator" },
     { "path": "./packages/server" },
-    { "path": "./packages/web" }
+    { "path": "./packages/web" },
+    { "path": "./tsconfig.tools.json" }
   ]
 }

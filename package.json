@@ -15,8 +15,9 @@
     "dev:ha": "docker compose -f dev/ha-stack.yml up -d",
     "dev:ha:down": "docker compose -f dev/ha-stack.yml down",
     "dev:ha:logs": "docker compose -f dev/ha-stack.yml logs -f homeassistant",
-    "test": "pnpm -r test",
-    "test:watch": "pnpm -r --parallel test:watch",
+    "fixtures:load": "tsx dev/scripts/load-fixture.ts",
+    "test": "pnpm -r test && vitest run --passWithNoTests",
+    "test:watch": "pnpm -r --parallel test:watch & vitest --passWithNoTests",
     "lint": "eslint . --ext .ts,.vue,.js",
     "lint:fix": "eslint . --ext .ts,.vue,.js --fix",
     "format": "prettier --write \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
@@ -35,9 +36,11 @@
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
+    "tsx": "^4.19.2",
     "typescript": "^5.6.2",
     "vitest": "^2.1.2",
-    "vue-eslint-parser": "^10.4.0"
+    "vue-eslint-parser": "^10.4.0",
+    "yaml": "^2.6.0"
   },
   "lint-staged": {
     "*.{ts,vue,js}": [
