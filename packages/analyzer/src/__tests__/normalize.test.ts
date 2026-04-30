@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import type { HaDeviceRegistryEntry, HaEntityRegistryEntry } from '@lovelacer/shared'
 import { normalize } from '../normalize.js'
+import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
+import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 
 const baseEntity: HaEntityRegistryEntry = {
   entity_id: 'sensor.living_room_temperature',
@@ -192,5 +194,49 @@ describe('normalize — error handling', () => {
         devices: [],
       }),
     ).toThrow(/entity_id/i)
+  })
+})
+
+describe('normalize — english-cluttered fixture (integration)', () => {
+  const ha = fixtureToHaRegistries(englishCluttered)
+  const result = normalize({ entities: ha.entities, devices: ha.devices })
+
+  it('produces one NormalizedEntity per fixture entity', () => {
+    expect(result).toHaveLength(englishCluttered.entities.length)
+  })
+
+  it('isDisabled count matches the fixture', () => {
+    const expected = englishCluttered.entities.filter((e) => e.disabled).length
+    const actual = result.filter((e) => e.isDisabled).length
+    expect(actual).toBe(expected)
+  })
+
+  it('isHidden count matches the fixture', () => {
+    const expected = englishCluttered.entities.filter((e) => e.hidden).length
+    const actual = result.filter((e) => e.isHidden).length
+    expect(actual).toBe(expected)
+  })
+
+  it('diagnostic-category count matches the fixture', () => {
+    const expected = englishCluttered.entities.filter(
+      (e) => e.entityCategory === 'diagnostic',
+    ).length
+    const actual = result.filter((e) => e.entityCategory === 'diagnostic').length
+    expect(actual).toBe(expected)
+  })
+
+  it('attaches a device on at least one entity and leaves at least one without', () => {
+    expect(result.some((e) => e.device !== null)).toBe(true)
+    expect(result.some((e) => e.device === null)).toBe(true)
+  })
+
+  it('preserves entity haAreaId without device-area inheritance', () => {
+    // Find an entity with no entity-level area but a device that does.
+    const interesting = result.find(
+      (e) => e.haAreaId === null && e.device !== null && e.device.haAreaId !== null,
+    )
+    expect(interesting).toBeDefined()
+    expect(interesting!.haAreaId).toBeNull()
+    expect(interesting!.device!.haAreaId).not.toBeNull()
   })
 })
