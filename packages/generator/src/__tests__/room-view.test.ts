@@ -17,10 +17,7 @@ const ent = (id: string, overrides: Partial<NormalizedEntity> = {}): NormalizedE
   ...overrides,
 })
 
-const grouping = (
-  roomId: CanonicalRoomId,
-  groups: DomainGroup[],
-): RoomGrouping => ({
+const grouping = (roomId: CanonicalRoomId, groups: DomainGroup[]): RoomGrouping => ({
   roomId,
   groups,
 })
@@ -267,13 +264,7 @@ describe('buildRoomView — section ordering', () => {
       ]),
     )
     const headings = view.sections.map((s) => (s.cards[0] as { heading: string }).heading)
-    expect(headings).toEqual([
-      'Lights & Outlets',
-      'Climate',
-      'Activity',
-      'Environment',
-      'Other',
-    ])
+    expect(headings).toEqual(['Lights & Outlets', 'Climate', 'Activity', 'Environment', 'Other'])
   })
 })
 

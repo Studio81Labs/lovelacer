@@ -25,6 +25,7 @@
 ## Task 1: Package wiring (vitest config + analyzer dependency)
 
 **Files:**
+
 - Create: `packages/generator/vitest.config.ts`
 - Modify: `packages/generator/package.json`
 - Modify: `packages/generator/tsconfig.json`
@@ -115,6 +116,7 @@ EOF
 ## Task 2: Lovelace types
 
 **Files:**
+
 - Create: `packages/generator/src/lovelace-types.ts`
 
 Pure type declarations for the structures we own. No runtime code, no tests in this task — exercised by every later task.
@@ -207,6 +209,7 @@ EOF
 ## Task 3: `buildRoomView` + `buildRoomViews` + unit tests + re-exports
 
 **Files:**
+
 - Create: `packages/generator/src/room-view.ts`
 - Create: `packages/generator/src/__tests__/room-view.test.ts`
 - Modify: `packages/generator/src/index.ts`
@@ -237,10 +240,7 @@ const ent = (id: string, overrides: Partial<NormalizedEntity> = {}): NormalizedE
   ...overrides,
 })
 
-const grouping = (
-  roomId: CanonicalRoomId,
-  groups: DomainGroup[],
-): RoomGrouping => ({
+const grouping = (roomId: CanonicalRoomId, groups: DomainGroup[]): RoomGrouping => ({
   roomId,
   groups,
 })
@@ -463,11 +463,7 @@ describe('buildRoomView — environment / activity / other groups', () => {
       grouping('kitchen', [
         {
           key: 'environment',
-          entities: [
-            ent('sensor.a'),
-            ent('sensor.b'),
-            ent('sensor.c'),
-          ],
+          entities: [ent('sensor.a'), ent('sensor.b'), ent('sensor.c')],
         },
       ]),
     )
@@ -491,13 +487,7 @@ describe('buildRoomView — section ordering', () => {
       ]),
     )
     const headings = view.sections.map((s) => (s.cards[0] as { heading: string }).heading)
-    expect(headings).toEqual([
-      'Lights & Outlets',
-      'Climate',
-      'Activity',
-      'Environment',
-      'Other',
-    ])
+    expect(headings).toEqual(['Lights & Outlets', 'Climate', 'Activity', 'Environment', 'Other'])
   })
 })
 
@@ -744,6 +734,7 @@ EOF
 ## Task 4: Fixture-driven snapshot tests
 
 **Files:**
+
 - Create: `packages/generator/src/__tests__/room-view.fixtures.test.ts`
 
 End-to-end tests that pipe each fixture through the entire chain (`fixtureToHaRegistries → normalize → detect → groupByDomain → buildRoomViews`) and lock the structural shape via inline snapshots, plus several anti-regression assertions.
@@ -897,7 +888,6 @@ describe('buildRoomViews — english-cluttered fixture', () => {
       }
     }
   })
-
 })
 
 describe('buildRoomViews — czech-tidy fixture', () => {

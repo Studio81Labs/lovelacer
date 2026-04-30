@@ -22,13 +22,13 @@ Convert the analyzer's `RoomGrouping[]` into a `RoomView[]` — one Lovelace `ty
 
 A single `buildSection(group)` function with a switch on `group.key` constructs each grid section. Per the heuristics doc:
 
-| Group key | Card layout |
-| --- | --- |
-| `lights` | heading + one `TileCard` per entity (lights get `features: [{ type: 'light-brightness' }]`, switches don't) |
-| `climate` | heading + one `ThermostatCard` per entity |
-| `environment` | heading + a single `EntitiesCard` listing all entityIds |
-| `activity` | heading + a single `EntitiesCard` listing all entityIds |
-| `other` | heading + a single `EntitiesCard` listing all entityIds |
+| Group key     | Card layout                                                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------- |
+| `lights`      | heading + one `TileCard` per entity (lights get `features: [{ type: 'light-brightness' }]`, switches don't) |
+| `climate`     | heading + one `ThermostatCard` per entity                                                                   |
+| `environment` | heading + a single `EntitiesCard` listing all entityIds                                                     |
+| `activity`    | heading + a single `EntitiesCard` listing all entityIds                                                     |
+| `other`       | heading + a single `EntitiesCard` listing all entityIds                                                     |
 
 P1a-5's `groupByDomain` already sorted entities within each group; the generator preserves that order.
 
@@ -213,13 +213,13 @@ buildRoomView()
 
 ## Error handling
 
-| Condition | Behavior |
-| --- | --- |
-| `grouping.roomId` not in `ROOM_DISPLAY` | TypeScript prevents this at compile time (the `Record<CanonicalRoomId, …>` type means missing keys are a type error). |
-| `group.key` not in `GROUP_HEADINGS` | Lookup returns `undefined`; `buildSection` throws on the unknown-key default. With current `domainGroup` outputs, unreachable. |
-| `group.entities` empty | Cannot occur: P1a-5 drops empty groups before producing the `RoomGrouping`. |
-| `groupings.length === 0` | `buildRoomViews` returns `[]`. |
-| Grouping with no groups (defensive) | `buildRoomViews` filters it out before mapping. |
+| Condition                               | Behavior                                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `grouping.roomId` not in `ROOM_DISPLAY` | TypeScript prevents this at compile time (the `Record<CanonicalRoomId, …>` type means missing keys are a type error).          |
+| `group.key` not in `GROUP_HEADINGS`     | Lookup returns `undefined`; `buildSection` throws on the unknown-key default. With current `domainGroup` outputs, unreachable. |
+| `group.entities` empty                  | Cannot occur: P1a-5 drops empty groups before producing the `RoomGrouping`.                                                    |
+| `groupings.length === 0`                | `buildRoomViews` returns `[]`.                                                                                                 |
+| Grouping with no groups (defensive)     | `buildRoomViews` filters it out before mapping.                                                                                |
 
 No I/O, no async. Pure functions throughout.
 
@@ -272,16 +272,16 @@ The snapshot serves as the regression baseline. The structural assertions catch 
 
 ## File-by-file
 
-| File | Action | Notes |
-| --- | --- | --- |
-| `packages/generator/src/lovelace-types.ts` | Create | Type declarations |
-| `packages/generator/src/room-view.ts` | Create | `buildRoomView`, `buildRoomViews`, internal tables |
-| `packages/generator/src/index.ts` | Modify | Re-export public surface |
-| `packages/generator/src/__tests__/room-view.test.ts` | Create | Unit tests |
-| `packages/generator/src/__tests__/room-view.fixtures.test.ts` | Create | Fixture snapshot + structural tests |
-| `packages/generator/vitest.config.ts` | Create | Mirror `packages/analyzer/vitest.config.ts` so tests are discoverable (same orphan-test pattern from P1a-1) |
-| `packages/generator/package.json` | Modify | Add `@lovelacer/analyzer` workspace dependency (shared is already there) |
-| `packages/generator/tsconfig.json` | Modify | Add `references` entry for `../analyzer` (shared reference is already there) |
+| File                                                          | Action | Notes                                                                                                       |
+| ------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| `packages/generator/src/lovelace-types.ts`                    | Create | Type declarations                                                                                           |
+| `packages/generator/src/room-view.ts`                         | Create | `buildRoomView`, `buildRoomViews`, internal tables                                                          |
+| `packages/generator/src/index.ts`                             | Modify | Re-export public surface                                                                                    |
+| `packages/generator/src/__tests__/room-view.test.ts`          | Create | Unit tests                                                                                                  |
+| `packages/generator/src/__tests__/room-view.fixtures.test.ts` | Create | Fixture snapshot + structural tests                                                                         |
+| `packages/generator/vitest.config.ts`                         | Create | Mirror `packages/analyzer/vitest.config.ts` so tests are discoverable (same orphan-test pattern from P1a-1) |
+| `packages/generator/package.json`                             | Modify | Add `@lovelacer/analyzer` workspace dependency (shared is already there)                                    |
+| `packages/generator/tsconfig.json`                            | Modify | Add `references` entry for `../analyzer` (shared reference is already there)                                |
 
 ## Open questions resolved during brainstorming
 
