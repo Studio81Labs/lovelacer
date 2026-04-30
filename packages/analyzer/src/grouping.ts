@@ -78,13 +78,59 @@ const GROUP_ORDER: readonly DomainGroupKey[] = [
   'other',
 ]
 
-// groupByDomain lands in Task 2.
-// The unused imports/declarations below are referenced via type re-exports
-// so noUnusedLocals doesn't flag them. Task 2 removes these placeholders.
-export type _Internal_RoomAssignment = RoomAssignment
-export type _Internal_GroupByDomainInput = GroupByDomainInput
-export type _Internal_RoomGrouping = RoomGrouping
-export type _Internal_DomainGroup = DomainGroup
-// GROUP_ORDER is referenced via this expression so noUnusedLocals doesn't
-// flag it. Task 2 uses it directly.
-export const _Internal_GroupOrderRef = GROUP_ORDER
+/**
+ * Bulk grouping. Takes the detection chain's RoomAssignment[] paired
+ * with the corresponding NormalizedEntity[], and produces a per-room
+ * RoomGrouping[]:
+ *
+ *   - Hidden + disabled entities dropped before grouping.
+ *   - Diagnostic entities preserved in their natural group.
+ *   - Within-group entities sorted by friendlyName (case-insensitive).
+ *   - Groups within a room ordered by GROUP_ORDER; empty groups dropped.
+ *   - Rooms ordered lexicographically by roomId for snapshot stability.
+ *
+ * Assignments referencing entities not in the entity list are skipped
+ * silently (defensive — shouldn't happen with the in-process pipeline).
+ */
+export function groupByDomain(input: GroupByDomainInput): RoomGrouping[] {
+  const entityById = new Map(input.entities.map((e) => [e.entityId, e]))
+
+  // roomId → groupKey → entities[]
+  const buckets = new Map<string, Map<DomainGroupKey, NormalizedEntity[]>>()
+
+  for (const assignment of input.assignments) {
+    const entity = entityById.get(assignment.entityId)
+    if (entity === undefined) continue
+    if (entity.isHidden || entity.isDisabled) continue
+
+    const key = domainGroup(entity)
+    let roomBucket = buckets.get(assignment.roomId)
+    if (roomBucket === undefined) {
+      roomBucket = new Map()
+      buckets.set(assignment.roomId, roomBucket)
+    }
+    let groupBucket = roomBucket.get(key)
+    if (groupBucket === undefined) {
+      groupBucket = []
+      roomBucket.set(key, groupBucket)
+    }
+    groupBucket.push(entity)
+  }
+
+  const sortedRoomIds = [...buckets.keys()].sort()
+  const result: RoomGrouping[] = []
+  for (const roomId of sortedRoomIds) {
+    const roomBucket = buckets.get(roomId)!
+    const groups: DomainGroup[] = []
+    for (const key of GROUP_ORDER) {
+      const entities = roomBucket.get(key)
+      if (entities === undefined || entities.length === 0) continue
+      const sorted = [...entities].sort((a, b) =>
+        a.friendlyName.toLowerCase().localeCompare(b.friendlyName.toLowerCase()),
+      )
+      groups.push({ key, entities: sorted })
+    }
+    result.push({ roomId: roomId as CanonicalRoomId, groups })
+  }
+  return result
+}
