@@ -1,0 +1,51 @@
+{
+  "name": "ha-dashboard-builder",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Home Assistant dashboard generator. Working codename: Lovelacer / Roomly.",
+  "engines": {
+    "node": ">=20.10",
+    "pnpm": ">=9.0"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel --filter='./packages/server' --filter='./packages/web' dev",
+    "dev:ha": "docker compose -f dev/ha-stack.yml up -d",
+    "dev:ha:down": "docker compose -f dev/ha-stack.yml down",
+    "dev:ha:logs": "docker compose -f dev/ha-stack.yml logs -f homeassistant",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm -r --parallel test:watch",
+    "lint": "eslint . --ext .ts,.vue,.js",
+    "lint:fix": "eslint . --ext .ts,.vue,.js --fix",
+    "format": "prettier --write \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r exec rm -rf dist node_modules .turbo && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "eslint": "^9.12.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.28.0",
+    "globals": "^17.5.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.2",
+    "vue-eslint-parser": "^10.4.0"
+  },
+  "lint-staged": {
+    "*.{ts,vue,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}
