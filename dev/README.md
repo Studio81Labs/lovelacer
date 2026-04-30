@@ -31,14 +31,17 @@ After first-time setup, load a fixture entity registry to get realistic test dat
 pnpm fixtures:load english-cluttered
 ```
 
-(This script is added in P0-2.)
+The loader stops the HA container, swaps the `.storage/` registry files for the named fixture, regenerates `lovelacer-fixtures.yaml` (template-domain entities), patches `configuration.yaml` to include it (idempotently), and starts HA back up. Previous registries land in `dev/ha-config/.storage/.lovelacer-backup-<timestamp>/`; the most recent five are kept.
 
-Available fixtures:
+Currently shipped:
 
-- `english-cluttered` — 200 entities, mixed quality, English (default for dev)
-- `czech-tidy` — 80 entities, well-set-up Czech home
-- `german-massive` — 600 entities, multi-floor German home
-- `unset-areas` — 100 entities, no areas at all (heuristic stress test)
+- `english-cluttered` — ~160 entities across 6 rooms with mixed area attribution, ambiguous names, diagnostics, hidden/disabled entries, and out-of-P1a-scope domains. Heuristic-stress fixture for analyzer development.
+
+Future fixtures land with the tickets that need them:
+
+- `czech-tidy` — well-set-up Czech home (P1a-3)
+- `german-massive` — multi-floor German home (P1b-1)
+- `unset-areas` — no areas at all, heuristic stress test
 - `multilingual-mixed` — English HA UI, Czech entity names
 
 ### Resetting the dev HA
