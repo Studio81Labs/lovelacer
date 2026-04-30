@@ -103,12 +103,20 @@ describe('normalize — friendlyName resolution', () => {
     expect(r!.friendlyName).toBe('Kitchen')
   })
 
-  it('handles digits and consecutive underscores in humanize', () => {
+  it('handles digits and mixed-length tokens in humanize', () => {
     const [r] = normalize({
       entities: [e({ entity_id: 'sensor.aqara_th_158d', name: null, original_name: null })],
       devices: [],
     })
     expect(r!.friendlyName).toBe('Aqara Th 158d')
+  })
+
+  it('collapses consecutive underscores in humanize', () => {
+    const [r] = normalize({
+      entities: [e({ entity_id: 'sensor.aqara__th', name: null, original_name: null })],
+      devices: [],
+    })
+    expect(r!.friendlyName).toBe('Aqara Th')
   })
 })
 
@@ -195,11 +203,33 @@ describe('normalize — error handling', () => {
       }),
     ).toThrow(/entity_id/i)
   })
+
+  it('throws on leading dot (.foo)', () => {
+    expect(() =>
+      normalize({
+        entities: [{ ...baseEntity, entity_id: '.sensor' }],
+        devices: [],
+      }),
+    ).toThrow(/\.sensor/)
+  })
+
+  it('throws on trailing dot (foo.)', () => {
+    expect(() =>
+      normalize({
+        entities: [{ ...baseEntity, entity_id: 'sensor.' }],
+        devices: [],
+      }),
+    ).toThrow(/sensor\./)
+  })
 })
 
 describe('normalize — english-cluttered fixture (integration)', () => {
   const ha = fixtureToHaRegistries(englishCluttered)
   const result = normalize({ entities: ha.entities, devices: ha.devices })
+
+  it('does not throw on the full fixture', () => {
+    expect(() => normalize({ entities: ha.entities, devices: ha.devices })).not.toThrow()
+  })
 
   it('produces one NormalizedEntity per fixture entity', () => {
     expect(result).toHaveLength(englishCluttered.entities.length)

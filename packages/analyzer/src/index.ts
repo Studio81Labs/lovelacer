@@ -5,7 +5,7 @@
  * to rooms with confidence scores.
  *
  * Implementation lands in:
- *   - P1a-1: normalize.ts        ← this ticket
+ *   - P1a-1: normalize.ts
  *   - P1a-2: keywords.ts (room keyword database, EN+CS for 1a)
  *   - P1a-3: detect.ts (priority chain)
  *   - P1a-4: confidence.ts (scoring + corroboration)
