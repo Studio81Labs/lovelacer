@@ -4,8 +4,12 @@
     "composite": true,
     "outDir": "./dist-tools",
     "rootDir": "./",
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@lovelacer/shared": ["./packages/shared/src/index.ts"]
+    }
   },
   "include": ["tests/**/*.ts", "dev/scripts/**/*.ts"],
-  "exclude": ["node_modules", "**/dist/**"]
+  "exclude": ["node_modules", "**/dist/**"],
+  "references": [{ "path": "./packages/shared" }]
 }
