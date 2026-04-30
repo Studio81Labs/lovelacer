@@ -25,7 +25,7 @@ confidence = min(1.0, winner.weight + boost)
 
 So 1 signal → boost 0; 2 corroborators → +0.05; 3+ → +0.10 (capped). Final confidence capped at 1.0.
 
-**Corroboration is target-specific.** Signals that fire pointing to *different* rooms than the winner do not boost. This matches the HEURISTICS.md prose ("When multiple sources point to the same room") and was already pinned in the P1a-3 spec.
+**Corroboration is target-specific.** Signals that fire pointing to _different_ rooms than the winner do not boost. This matches the HEURISTICS.md prose ("When multiple sources point to the same room") and was already pinned in the P1a-3 spec.
 
 ## Architecture
 
@@ -43,14 +43,14 @@ const confidence = Math.min(1.0, winner.weight + boost)
 
 ### Worked examples
 
-| Fired signals (source / target / weight) | Winner | Corroborators | Boost | Confidence |
-|---|---|---|---|---|
-| friendly_name → kitchen / 0.6 | friendly_name | 1 | 0 | 0.6 |
-| friendly_name → kitchen / 0.6, entity_id → kitchen / 0.5 | friendly_name | 2 | 0.05 | 0.65 |
-| entity_area → lr / 1.0, device_area → lr / 0.85 | entity_area | 2 | 0.05 | 1.0 (capped) |
-| entity_area → lr / 1.0, friendly_name → kitchen / 0.6 | entity_area | 1 | 0 | 1.0 |
-| entity_area → lr / 1.0, friendly_name → lr / 0.6, entity_id → lr / 0.5 | entity_area | 3 | 0.10 | 1.0 (capped) |
-| friendly_name → lr / 0.6, entity_id → lr / 0.5, device_name → kitchen / 0.45 | friendly_name | 2 | 0.05 | 0.65 |
+| Fired signals (source / target / weight)                                     | Winner        | Corroborators | Boost | Confidence   |
+| ---------------------------------------------------------------------------- | ------------- | ------------- | ----- | ------------ |
+| friendly_name → kitchen / 0.6                                                | friendly_name | 1             | 0     | 0.6          |
+| friendly_name → kitchen / 0.6, entity_id → kitchen / 0.5                     | friendly_name | 2             | 0.05  | 0.65         |
+| entity_area → lr / 1.0, device_area → lr / 0.85                              | entity_area   | 2             | 0.05  | 1.0 (capped) |
+| entity_area → lr / 1.0, friendly_name → kitchen / 0.6                        | entity_area   | 1             | 0     | 1.0          |
+| entity_area → lr / 1.0, friendly_name → lr / 0.6, entity_id → lr / 0.5       | entity_area   | 3             | 0.10  | 1.0 (capped) |
+| friendly_name → lr / 0.6, entity_id → lr / 0.5, device_name → kitchen / 0.45 | friendly_name | 2             | 0.05  | 0.65         |
 
 ### Cap semantics
 
@@ -59,11 +59,11 @@ const confidence = Math.min(1.0, winner.weight + boost)
 
 ## File-by-file
 
-| File | Action | Notes |
-|---|---|---|
-| `packages/analyzer/src/detect.ts` | Modify | ~3 new lines inside `assemble()` |
-| `packages/analyzer/src/__tests__/detect.test.ts` | Modify | New `describe('detectEntity — corroboration boost')` block |
-| `docs/HEURISTICS.md` | Modify | Fix the broken `corroboratedConfidence` sample function so it matches the prose's "same room" semantics |
+| File                                             | Action | Notes                                                                                                   |
+| ------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------- |
+| `packages/analyzer/src/detect.ts`                | Modify | ~3 new lines inside `assemble()`                                                                        |
+| `packages/analyzer/src/__tests__/detect.test.ts` | Modify | New `describe('detectEntity — corroboration boost')` block                                              |
+| `docs/HEURISTICS.md`                             | Modify | Fix the broken `corroboratedConfidence` sample function so it matches the prose's "same room" semantics |
 
 ## Testing
 

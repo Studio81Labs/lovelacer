@@ -24,6 +24,7 @@
 ## Task 1: Corroboration boost in `assemble()` + tests
 
 **Files:**
+
 - Modify: `packages/analyzer/src/detect.ts`
 - Modify: `packages/analyzer/src/__tests__/detect.test.ts`
 
@@ -160,6 +161,7 @@ pnpm --dir <worktree> vitest run packages/analyzer/src/__tests__/detect.test.ts
 ```
 
 Expected: most new tests FAIL — current `assemble()` returns `winner.weight` directly, so:
+
 - "2 corroborators → +0.05" expects 0.65, gets 0.6.
 - "different-target signals do NOT boost" still passes (already 1.0).
 - "mixed corroboration" expects 1.0 (already capped) — passes.
@@ -257,7 +259,7 @@ function corroboratedConfidence(signals: Signal[]): number {
 
 This is broken — it counts all signals regardless of target, contradicting the prose two paragraphs above ("When multiple sources point to the same room"). Replace the code block with a prose description that matches the implementation:
 
-````markdown
+```markdown
 ### Boost for corroboration
 
 When multiple sources point to the same room, the assignment's confidence rises above the base (max-weight) value:
@@ -269,7 +271,7 @@ When multiple sources point to the same room, the assignment's confidence rises 
 So an entity with `area_id = kitchen` AND name `Kitchen Light` has 2 corroborating signals → boost 0.05 → confidence `1.0 + 0.05 = 1.0` (capped). An entity with only a name match has 1 signal → no boost → confidence 0.6. An entity with name `Kitchen Light` AND device name `Kitchen Hub` (also matching kitchen) → 2 corroborating signals → 0.6 + 0.05 = 0.65.
 
 Corroboration is target-specific. Signals firing toward different rooms don't boost each other — they compete for `roomId` instead. The implementation is in `packages/analyzer/src/detect.ts`'s `assemble()`, which has access to the internal `FiredSignal.target` field that the public `Signal` shape doesn't carry.
-````
+```
 
 (Match the heading level and surrounding markdown style of the existing doc.)
 
