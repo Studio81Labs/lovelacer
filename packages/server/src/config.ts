@@ -16,15 +16,20 @@ const ConfigSchema = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   DATA_DIR: z.string().default('./data'),
 
-  // HA connection — Add-on context uses SUPERVISOR_TOKEN, standalone uses HA_TOKEN
-  HA_URL: z.string().url().default('http://supervisor/core'),
+  // HA connection — Add-on context uses SUPERVISOR_TOKEN against the in-network
+  // `homeassistant` hostname (which home-assistant-js-websocket can reach via
+  // its standard `/api/websocket` path). Standalone uses HA_TOKEN against
+  // whatever HA_URL the user sets.
+  HA_URL: z.string().url().default('http://homeassistant:8123'),
   HA_TOKEN: z.string().optional(),
   SUPERVISOR_TOKEN: z.string().optional(),
 })
 
 const parsed = ConfigSchema.parse(process.env)
 
-const haToken = parsed.SUPERVISOR_TOKEN ?? parsed.HA_TOKEN
+// Use `||` rather than `??` so an empty-string SUPERVISOR_TOKEN (which Zod's
+// `.optional()` admits) falls through to HA_TOKEN instead of shadowing it.
+const haToken = parsed.SUPERVISOR_TOKEN || parsed.HA_TOKEN
 if (!haToken) {
   throw new Error(
     'No HA token configured. Set HA_TOKEN (standalone) or SUPERVISOR_TOKEN (Add-on context).',

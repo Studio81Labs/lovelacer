@@ -6,7 +6,7 @@
   "main": "./dist/main.js",
   "scripts": {
     "build": "tsc -b",
-    "dev": "tsx watch src/main.ts",
+    "dev": "NODE_ENV=development tsx watch src/main.ts",
     "start": "node dist/main.js",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",

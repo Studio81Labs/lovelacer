@@ -38,7 +38,10 @@ export class HaClient {
     if (this.connection) return
 
     const auth = createLongLivedTokenAuth(this.options.url, this.options.token)
-    this.connection = await createConnection({ auth })
+    // setupRetry: -1 retries the initial connection forever with built-in
+    // backoff. Important for the HA add-on case, where the supervisor may
+    // start the add-on before HA Core is ready to accept WebSocket clients.
+    this.connection = await createConnection({ auth, setupRetry: -1 })
 
     this.connection.addEventListener('disconnected', () => {
       this.logger.warn('HA connection lost — reconnecting automatically')

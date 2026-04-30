@@ -5,7 +5,11 @@ import { HaClient } from '@lovelacer/ha-client'
 import { config } from './config.js'
 
 async function main() {
-  const isDev = process.env.NODE_ENV !== 'production'
+  // Require an explicit `NODE_ENV=development` to enable pino-pretty, since
+  // pino-pretty is a devDependency and would crash a production install
+  // (e.g., HA add-on container) where it isn't bundled. The dev script sets
+  // NODE_ENV=development; production deployments leave it unset or 'production'.
+  const isDev = process.env.NODE_ENV === 'development'
 
   const app = Fastify({
     logger: {
@@ -30,25 +34,14 @@ async function main() {
     app.log.error({ err }, 'failed to connect to Home Assistant on startup')
   })
 
-  app.get('/api/health', async () => {
-    const connected = ha.isConnected()
-    let entityCount: number | null = null
-
-    if (connected) {
-      try {
-        const entities = await ha.getEntityRegistry()
-        entityCount = entities.length
-      } catch (err) {
-        app.log.error({ err }, 'failed to fetch entity registry for health check')
-      }
-    }
-
-    return {
-      ok: true,
-      version: '0.0.0',
-      ha: { connected, entityCount },
-    }
-  })
+  // Health check — must be O(1). Polled by HA add-on supervisor, ingress
+  // healthchecks, etc. Entity counts and other diagnostics belong on a
+  // separate /api/status endpoint (P1a-9).
+  app.get('/api/health', async () => ({
+    ok: true,
+    version: '0.0.0',
+    ha: { connected: ha.isConnected() },
+  }))
 
   // Placeholder routes — implemented in P1a-9
   app.post('/api/analyze', async (_req, reply) => reply.notImplemented())
