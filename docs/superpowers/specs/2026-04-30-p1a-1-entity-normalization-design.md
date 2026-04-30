@@ -56,30 +56,30 @@ Re-exported from `packages/analyzer/src/index.ts` so consumers write `import { n
 
 For each entry in `input.entities`, produce exactly one `NormalizedEntity`:
 
-| `NormalizedEntity` field | Source                                                                                          |
-| ------------------------ | ----------------------------------------------------------------------------------------------- |
-| `entityId`               | `entity.entity_id`                                                                              |
-| `domain`, `objectId`     | Split `entity.entity_id` on the first `.`. Throw on malformed input (no dot).                   |
-| `friendlyName`           | First non-null of `entity.name`, then `entity.original_name`, then `humanize(objectId)`.        |
-| `deviceClass`            | Passthrough from `entity.device_class`.                                                         |
-| `entityCategory`         | Passthrough from `entity.entity_category`.                                                      |
-| `haAreaId`               | `entity.area_id` only. **Not** inherited from the device.                                       |
+| `NormalizedEntity` field | Source                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `entityId`               | `entity.entity_id`                                                                                     |
+| `domain`, `objectId`     | Split `entity.entity_id` on the first `.`. Throw on malformed input (no dot).                          |
+| `friendlyName`           | First non-null of `entity.name`, then `entity.original_name`, then `humanize(objectId)`.               |
+| `deviceClass`            | Passthrough from `entity.device_class`.                                                                |
+| `entityCategory`         | Passthrough from `entity.entity_category`.                                                             |
+| `haAreaId`               | `entity.area_id` only. **Not** inherited from the device.                                              |
 | `device`                 | Matched `NormalizedDevice` (see below) if `entity.device_id` resolves to an input device; else `null`. |
-| `isHidden`               | `entity.hidden_by !== null`.                                                                    |
-| `isDisabled`             | `entity.disabled_by !== null`.                                                                  |
+| `isHidden`               | `entity.hidden_by !== null`.                                                                           |
+| `isDisabled`             | `entity.disabled_by !== null`.                                                                         |
 
 ### Per-device transformation (only when referenced)
 
 A `NormalizedDevice` is built lazily from any `HaDeviceRegistryEntry` that some entity references:
 
-| `NormalizedDevice` field | Source                          |
-| ------------------------ | ------------------------------- |
-| `id`                     | `device.id`                     |
-| `name`                   | `device.name`                   |
-| `nameByUser`             | `device.name_by_user`           |
-| `manufacturer`           | `device.manufacturer`           |
-| `model`                  | `device.model`                  |
-| `haAreaId`               | `device.area_id`                |
+| `NormalizedDevice` field | Source                |
+| ------------------------ | --------------------- |
+| `id`                     | `device.id`           |
+| `name`                   | `device.name`         |
+| `nameByUser`             | `device.name_by_user` |
+| `manufacturer`           | `device.manufacturer` |
+| `model`                  | `device.model`        |
+| `haAreaId`               | `device.area_id`      |
 
 Implementation note: build a single `Map<deviceId, NormalizedDevice>` lazily as entities are processed. Devices not referenced by any entity are absent from the output graph (no leaking through, no separate device list).
 
@@ -100,12 +100,12 @@ No acronym preservation, no number-aware casing — YAGNI for v1. Add later if a
 
 ## Error handling
 
-| Condition                                                            | Behavior                          |
-| -------------------------------------------------------------------- | --------------------------------- |
-| `entity.entity_id` has no `.`                                        | Throw `Error` with the bad value. |
-| `entity.device_id` is set but no matching device in `input.devices`  | Set `entity.device = null`. Not an error — registries can drift. |
-| `entity.device_id` is `null`                                         | Set `entity.device = null`.       |
-| Empty `input.entities`                                               | Return `[]`.                      |
+| Condition                                                           | Behavior                                                         |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `entity.entity_id` has no `.`                                       | Throw `Error` with the bad value.                                |
+| `entity.device_id` is set but no matching device in `input.devices` | Set `entity.device = null`. Not an error — registries can drift. |
+| `entity.device_id` is `null`                                        | Set `entity.device = null`.                                      |
+| Empty `input.entities`                                              | Return `[]`.                                                     |
 
 ## Testing
 
@@ -119,7 +119,7 @@ Each test isolates one transformation rule. Use small inline `HaEntityRegistryEn
 - `humanize` produces the documented outputs (covered through `normalize`'s observable output, no separate export).
 - `isDisabled` / `isHidden` reflect their `_by` source fields.
 - `entityCategory: 'diagnostic'` passes through.
-- `haAreaId` is the entity's own area, *never* the device's. Anti-regression for detection's responsibility.
+- `haAreaId` is the entity's own area, _never_ the device's. Anti-regression for detection's responsibility.
 - Device attached when `device_id` resolves; `null` when it doesn't; `null` when `device_id` is `null`.
 - Device with no referencing entity does not surface in any output entity's `.device`.
 - Malformed `entity_id` (no dot) throws.
@@ -141,13 +141,13 @@ The `fixtureToHaRegistries` helper lives next to the test or in `tests/fixtures/
 
 ## File-by-file
 
-| File                                            | Action  | Notes                                          |
-| ----------------------------------------------- | ------- | ---------------------------------------------- |
-| `packages/analyzer/src/normalize.ts`            | Create  | `normalize` + private `humanize`               |
-| `packages/analyzer/src/index.ts`                | Modify  | Re-export `normalize` (and its types if any)   |
-| `packages/analyzer/src/__tests__/normalize.test.ts` | Create | Unit + integration tests                       |
-| `packages/analyzer/vitest.config.ts`            | Create  | Per the orphan-test note in root vitest config |
-| `tests/fixtures/_builder/index.ts`              | Maybe modify | If `fixtureToHaRegistries` lands in the builder; otherwise the helper lives in the test file |
+| File                                                | Action       | Notes                                                                                        |
+| --------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| `packages/analyzer/src/normalize.ts`                | Create       | `normalize` + private `humanize`                                                             |
+| `packages/analyzer/src/index.ts`                    | Modify       | Re-export `normalize` (and its types if any)                                                 |
+| `packages/analyzer/src/__tests__/normalize.test.ts` | Create       | Unit + integration tests                                                                     |
+| `packages/analyzer/vitest.config.ts`                | Create       | Per the orphan-test note in root vitest config                                               |
+| `tests/fixtures/_builder/index.ts`                  | Maybe modify | If `fixtureToHaRegistries` lands in the builder; otherwise the helper lives in the test file |
 
 ## Open questions resolved during brainstorming
 

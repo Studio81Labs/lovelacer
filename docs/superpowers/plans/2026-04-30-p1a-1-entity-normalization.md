@@ -26,6 +26,7 @@
 ## Task 1: Wire analyzer for vitest discovery
 
 **Files:**
+
 - Create: `packages/analyzer/vitest.config.ts`
 
 **Why:** The root `vitest.config.ts` has `include: ['tests/**/*.test.ts', 'dev/**/*.test.ts']`, which does not match `packages/analyzer/src/__tests__/normalize.test.ts`. Without a local config, `pnpm test` would silently report "no tests" for the analyzer package. The P0-2 review flagged this orphan-test risk and Task 1 of this plan closes it for the analyzer package, mirroring `packages/shared/vitest.config.ts`.
@@ -80,6 +81,7 @@ EOF
 ## Task 2: Skeleton `normalize` + entity passthrough fields
 
 **Files:**
+
 - Create: `packages/analyzer/src/normalize.ts`
 - Create: `packages/analyzer/src/__tests__/normalize.test.ts`
 - Modify: `packages/analyzer/src/index.ts`
@@ -269,6 +271,7 @@ EOF
 ## Task 3: Friendly name resolution + `humanize` helper
 
 **Files:**
+
 - Modify: `packages/analyzer/src/normalize.ts`
 - Modify: `packages/analyzer/src/__tests__/normalize.test.ts`
 
@@ -412,6 +415,7 @@ EOF
 ## Task 4: Device attachment
 
 **Files:**
+
 - Modify: `packages/analyzer/src/normalize.ts`
 - Modify: `packages/analyzer/src/__tests__/normalize.test.ts`
 
@@ -590,6 +594,7 @@ EOF
 ## Task 5: Malformed entity_id throws
 
 **Files:**
+
 - Modify: `packages/analyzer/src/normalize.ts`
 - Modify: `packages/analyzer/src/__tests__/normalize.test.ts`
 
@@ -649,11 +654,12 @@ function normalizeEntity(
 ```
 
 (The guard `dotIndex <= 0 || dotIndex === entity.entity_id.length - 1` rejects:
+
 - empty string (`indexOf` → -1)
 - no dot (`indexOf` → -1)
 - leading dot (`.foo`, dotIndex 0)
 - trailing dot (`foo.`, dotIndex == length-1)
-…all of which would yield empty domain or empty objectId.)
+  …all of which would yield empty domain or empty objectId.)
 
 - [ ] **Step 4: Run tests to verify all pass**
 
@@ -685,6 +691,7 @@ EOF
 ## Task 6: Fixture-to-HA-registries helper + integration test
 
 **Files:**
+
 - Create: `tests/fixtures/_builder/to-ha-registries.ts`
 - Modify: `tests/fixtures/_builder/index.ts`
 - Modify: `packages/analyzer/src/__tests__/normalize.test.ts`
