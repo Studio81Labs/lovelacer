@@ -4,7 +4,7 @@
 
 ## Goal
 
-Close the only outstanding gap in Phase 0: give the local Home Assistant dev container a realistic registry to read, so the AC for P0-2 — *"`pnpm dev:ha` brings up a HA instance with ≥150 entities across 6 rooms; token works for WS auth"* — is met, and the analyzer work that begins with P1a-1 has a real fixture to develop against.
+Close the only outstanding gap in Phase 0: give the local Home Assistant dev container a realistic registry to read, so the AC for P0-2 — _"`pnpm dev:ha` brings up a HA instance with ≥150 entities across 6 rooms; token works for WS auth"_ — is met, and the analyzer work that begins with P1a-1 has a real fixture to develop against.
 
 ## Non-goals
 
@@ -79,15 +79,15 @@ Steps, in order:
 
 ~165 entities, 6 rooms, deliberate cluttered signals. Distributed roughly:
 
-| Room | Floor | Entities | Notes |
-| --- | --- | --- | --- |
-| Living Room | Ground | ~35 | light, climate, media_player, sensors |
-| Kitchen | Ground | ~25 | light, sensors, appliance switches |
-| Bathroom | Ground | ~15 | humidity, motion, light, fan switch |
-| Bedroom | Upstairs | ~25 | lights, climate, motion |
-| Office | Upstairs | ~20 | lights, switches, diagnostic-class outliers |
-| Garage | Ground | ~20 | door binary_sensor, motion, switch |
-| (no room — misc) | — | ~25 | unassigned, hub diagnostics, network/system entities |
+| Room             | Floor    | Entities | Notes                                                |
+| ---------------- | -------- | -------- | ---------------------------------------------------- |
+| Living Room      | Ground   | ~35      | light, climate, media_player, sensors                |
+| Kitchen          | Ground   | ~25      | light, sensors, appliance switches                   |
+| Bathroom         | Ground   | ~15      | humidity, motion, light, fan switch                  |
+| Bedroom          | Upstairs | ~25      | lights, climate, motion                              |
+| Office           | Upstairs | ~20      | lights, switches, diagnostic-class outliers          |
+| Garage           | Ground   | ~20      | door binary_sensor, motion, switch                   |
+| (no room — misc) | —        | ~25      | unassigned, hub diagnostics, network/system entities |
 
 Cluttered-signal distribution across the 165, on two independent axes:
 
@@ -178,5 +178,5 @@ P0-2 is closed when:
 - [ ] After the loader runs, `pnpm dev` connects, `/api/health` reports `ha.connected: true`.
 - [ ] A WS `config/entity_registry/list` returns ≥150 entries; `config/area_registry/list` returns 6 rooms.
 - [ ] Re-running the loader with the same fixture is idempotent (no duplicate includes, no errors).
-- [ ] Re-running with a *different* fixture (test artifact, even a trivial one) cleanly replaces; previous registries land in a backup dir.
+- [ ] Re-running with a _different_ fixture (test artifact, even a trivial one) cleanly replaces; previous registries land in a backup dir.
 - [ ] `pnpm test` passes including the new builder + fixture self-tests.

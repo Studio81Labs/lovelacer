@@ -160,8 +160,10 @@ describe('serializeStorage', () => {
   it('derives entity `id` deterministically from entity_id', () => {
     const out1 = serializeStorage(FIXTURE)
     const out2 = serializeStorage(FIXTURE)
-    const id1 = (out1['core.entity_registry'].data as { entities: { id: string }[] }).entities[0]!.id
-    const id2 = (out2['core.entity_registry'].data as { entities: { id: string }[] }).entities[0]!.id
+    const id1 = (out1['core.entity_registry'].data as { entities: { id: string }[] }).entities[0]!
+      .id
+    const id2 = (out2['core.entity_registry'].data as { entities: { id: string }[] }).entities[0]!
+      .id
     expect(id1).toBe(id2)
   })
 

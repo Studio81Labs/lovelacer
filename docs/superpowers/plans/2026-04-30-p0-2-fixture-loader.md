@@ -25,6 +25,7 @@
 ## Task 1: Tooling foundation — `tsx`, `yaml`, root vitest, tools tsconfig
 
 **Files:**
+
 - Modify: `package.json`
 - Create: `tsconfig.tools.json`
 - Modify: `tsconfig.json`
@@ -149,6 +150,7 @@ git commit -m "chore(tooling): add tsx + yaml + tools tsconfig for fixture loade
 ## Task 2: Fixture types
 
 **Files:**
+
 - Create: `tests/fixtures/_builder/types.ts`
 
 These are pure type declarations — no runtime code, so no test in this task. They get exercised by every later task.
@@ -255,6 +257,7 @@ git commit -m "feat(fixtures): add builder type declarations"
 ## Task 3: ID helpers (slug + uniqueId)
 
 **Files:**
+
 - Create: `tests/fixtures/_builder/ids.ts`
 - Create: `tests/fixtures/_builder/__tests__/ids.test.ts`
 
@@ -352,6 +355,7 @@ git commit -m "feat(fixtures): add slug + uniqueId helpers"
 ## Task 4: Validating `fixture()` constructor
 
 **Files:**
+
 - Create: `tests/fixtures/_builder/fixture.ts`
 - Create: `tests/fixtures/_builder/__tests__/fixture.test.ts`
 
@@ -392,25 +396,49 @@ const entity: EntitySpec = {
 
 describe('fixture()', () => {
   it('returns the input unchanged when valid', () => {
-    const result = fixture({ meta, floors: [floor], areas: [area], devices: [device], entities: [entity] })
+    const result = fixture({
+      meta,
+      floors: [floor],
+      areas: [area],
+      devices: [device],
+      entities: [entity],
+    })
     expect(result.entities).toHaveLength(1)
   })
 
   it('rejects duplicate floor ids', () => {
     expect(() =>
-      fixture({ meta, floors: [floor, floor], areas: [area], devices: [device], entities: [entity] }),
+      fixture({
+        meta,
+        floors: [floor, floor],
+        areas: [area],
+        devices: [device],
+        entities: [entity],
+      }),
     ).toThrow(/duplicate floor id/i)
   })
 
   it('rejects duplicate area ids', () => {
     expect(() =>
-      fixture({ meta, floors: [floor], areas: [area, area], devices: [device], entities: [entity] }),
+      fixture({
+        meta,
+        floors: [floor],
+        areas: [area, area],
+        devices: [device],
+        entities: [entity],
+      }),
     ).toThrow(/duplicate area id/i)
   })
 
   it('rejects duplicate device ids', () => {
     expect(() =>
-      fixture({ meta, floors: [floor], areas: [area], devices: [device, device], entities: [entity] }),
+      fixture({
+        meta,
+        floors: [floor],
+        areas: [area],
+        devices: [device, device],
+        entities: [entity],
+      }),
     ).toThrow(/duplicate device id/i)
   })
 
@@ -561,6 +589,7 @@ git commit -m "feat(fixtures): add validating fixture() constructor"
 ## Task 5: Builder factory helpers
 
 **Files:**
+
 - Create: `tests/fixtures/_builder/helpers.ts`
 - Create: `tests/fixtures/_builder/__tests__/helpers.test.ts`
 
@@ -789,7 +818,11 @@ function buildEntity(args: BuildEntityArgs): EntitySpec {
   }
 }
 
-export function light(fixtureName: string, friendlyName: string, opts: EntityOpts = {}): EntitySpec {
+export function light(
+  fixtureName: string,
+  friendlyName: string,
+  opts: EntityOpts = {},
+): EntitySpec {
   return buildEntity({
     ...opts,
     domain: 'light',
@@ -875,11 +908,7 @@ export function occupancy(
   })
 }
 
-export function door(
-  fixtureName: string,
-  friendlyName: string,
-  opts: EntityOpts = {},
-): EntitySpec {
+export function door(fixtureName: string, friendlyName: string, opts: EntityOpts = {}): EntitySpec {
   return buildEntity({
     ...opts,
     domain: 'binary_sensor',
@@ -946,6 +975,7 @@ git commit -m "feat(fixtures): add domain-aware builder helpers"
 ## Task 6: `.storage/*` registry serializer
 
 **Files:**
+
 - Create: `tests/fixtures/_builder/serialize-storage.ts`
 - Create: `tests/fixtures/_builder/__tests__/serialize-storage.test.ts`
 
@@ -1236,6 +1266,7 @@ git commit -m "feat(fixtures): serialize Fixture into HA storage envelopes"
 ## Task 7: Template-YAML serializer
 
 **Files:**
+
 - Create: `tests/fixtures/_builder/serialize-template-yaml.ts`
 - Create: `tests/fixtures/_builder/__tests__/serialize-template-yaml.test.ts`
 
@@ -1322,7 +1353,9 @@ describe('serializeTemplateYaml', () => {
 
   it('groups entities under sensor / binary_sensor / switch keys', () => {
     const yaml = serializeTemplateYaml(FIXTURE)
-    const parsed = parse(yaml) as { template: { sensor?: unknown; binary_sensor?: unknown; switch?: unknown }[] }
+    const parsed = parse(yaml) as {
+      template: { sensor?: unknown; binary_sensor?: unknown; switch?: unknown }[]
+    }
     const groups = parsed.template
     const keysFound = new Set<string>()
     for (const g of groups) for (const k of Object.keys(g)) keysFound.add(k)
@@ -1341,7 +1374,9 @@ describe('serializeTemplateYaml', () => {
 
   it('emits unique_id, name, and state per entity', () => {
     const yaml = serializeTemplateYaml(FIXTURE)
-    const parsed = parse(yaml) as { template: { sensor?: { unique_id: string; name: string; state: string }[] }[] }
+    const parsed = parse(yaml) as {
+      template: { sensor?: { unique_id: string; name: string; state: string }[] }[]
+    }
     const sensorGroup = parsed.template.find((g) => g.sensor)
     expect(sensorGroup?.sensor).toContainEqual(
       expect.objectContaining({
@@ -1354,7 +1389,12 @@ describe('serializeTemplateYaml', () => {
 
   it('includes device_class for sensor and binary_sensor entries when set', () => {
     const yaml = serializeTemplateYaml(FIXTURE)
-    const parsed = parse(yaml) as { template: { sensor?: { device_class?: string }[]; binary_sensor?: { device_class?: string }[] }[] }
+    const parsed = parse(yaml) as {
+      template: {
+        sensor?: { device_class?: string }[]
+        binary_sensor?: { device_class?: string }[]
+      }[]
+    }
     const sensorGroup = parsed.template.find((g) => g.sensor)
     expect(sensorGroup?.sensor?.[0]?.device_class).toBe('temperature')
     const binaryGroup = parsed.template.find((g) => g.binary_sensor)
@@ -1439,6 +1479,7 @@ git commit -m "feat(fixtures): emit template: YAML for state-supported domains"
 ## Task 8: `english-cluttered` fixture + signal-distribution self-tests
 
 **Files:**
+
 - Create: `tests/fixtures/_builder/index.ts`
 - Create: `tests/fixtures/english-cluttered.ts`
 - Create: `tests/fixtures/__tests__/english-cluttered.test.ts`
@@ -1527,9 +1568,7 @@ describe('english-cluttered fixture', () => {
     for (const d of ['light', 'switch', 'sensor', 'binary_sensor', 'climate'] as const) {
       expect(domains).toContain(d)
     }
-    const p1bSeen = (['cover', 'media_player', 'lock', 'fan'] as const).some((d) =>
-      domains.has(d),
-    )
+    const p1bSeen = (['cover', 'media_player', 'lock', 'fan'] as const).some((d) => domains.has(d))
     expect(p1bSeen).toBe(true)
   })
 
@@ -1597,7 +1636,11 @@ const lrThermostat = device('Living Room Tado', {
   model: 'V3+',
   area: livingRoom.id,
 })
-const lrTV = device('Living Room TV', { manufacturer: 'LG', model: 'OLED55C2', area: livingRoom.id })
+const lrTV = device('Living Room TV', {
+  manufacturer: 'LG',
+  model: 'OLED55C2',
+  area: livingRoom.id,
+})
 
 const kitchenHue = device('Kitchen Hue', { manufacturer: 'Philips', area: kitchen.id })
 const kitchenAqara = device('Kitchen Aqara TH', {
@@ -1867,14 +1910,30 @@ export const englishCluttered = fixture({
   floors: [ground, upstairs],
   areas: [livingRoom, kitchen, bathroom, bedroom, office, garage],
   devices: [
-    lrHueBridge, lrAqara, lrThermostat, lrTV,
-    kitchenHue, kitchenAqara, dishwasher,
-    bathHue, bathAqara,
-    bedHue, bedThermostat,
-    officeHue, officePlug,
-    garageDoor, garageMotion,
-    kitchenZ2M, lrZ2M, bedZ2M, officeZ2M,
-    espHallway, espStairs, espOutdoor, networkSwitch, router,
+    lrHueBridge,
+    lrAqara,
+    lrThermostat,
+    lrTV,
+    kitchenHue,
+    kitchenAqara,
+    dishwasher,
+    bathHue,
+    bathAqara,
+    bedHue,
+    bedThermostat,
+    officeHue,
+    officePlug,
+    garageDoor,
+    garageMotion,
+    kitchenZ2M,
+    lrZ2M,
+    bedZ2M,
+    officeZ2M,
+    espHallway,
+    espStairs,
+    espOutdoor,
+    networkSwitch,
+    router,
   ],
   entities: [
     ...livingRoomEntities,
@@ -1908,6 +1967,7 @@ git commit -m "feat(fixtures): add english-cluttered with signal-distribution se
 ## Task 9: Loader pure helpers — backup pruning + `configuration.yaml` patcher
 
 **Files:**
+
 - Create: `dev/scripts/_loader/backup.ts`
 - Create: `dev/scripts/_loader/config-yaml.ts`
 - Create: `dev/scripts/_loader/__tests__/backup.test.ts`
@@ -2073,7 +2133,10 @@ describe('ensureFixtureInclude', () => {
 
   it('appends include + sentinel to existing configuration.yaml without one', () => {
     const root = tempRoot()
-    writeFileSync(join(root, 'configuration.yaml'), 'default_config:\nautomation: !include automations.yaml\n')
+    writeFileSync(
+      join(root, 'configuration.yaml'),
+      'default_config:\nautomation: !include automations.yaml\n',
+    )
     ensureFixtureInclude(root)
     const yaml = readFileSync(join(root, 'configuration.yaml'), 'utf8')
     expect(yaml).toContain('automation: !include automations.yaml')
@@ -2175,6 +2238,7 @@ git commit -m "feat(loader): add backup pruning + idempotent config.yaml include
 ## Task 10: Loader CLI orchestration
 
 **Files:**
+
 - Create: `dev/scripts/load-fixture.ts`
 
 This task does not have unit tests — Docker orchestration is exercised manually in Task 11. The pure pieces it composes are already covered.
@@ -2187,10 +2251,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import type { Fixture } from '../../tests/fixtures/_builder/types.js'
-import {
-  serializeStorage,
-  serializeTemplateYaml,
-} from '../../tests/fixtures/_builder/index.js'
+import { serializeStorage, serializeTemplateYaml } from '../../tests/fixtures/_builder/index.js'
 import { backupRegistries } from './_loader/backup.js'
 import { ensureFixtureInclude } from './_loader/config-yaml.js'
 
@@ -2316,7 +2377,9 @@ async function waitForHealthy(timeoutMs = 60_000): Promise<void> {
     if (lastStatus === 'healthy') return
     await sleep(2000)
   }
-  console.warn(`warning: HA healthcheck did not report 'healthy' within ${timeoutMs}ms (last: ${lastStatus})`)
+  console.warn(
+    `warning: HA healthcheck did not report 'healthy' within ${timeoutMs}ms (last: ${lastStatus})`,
+  )
 }
 
 function sleep(ms: number): Promise<void> {
@@ -2349,6 +2412,7 @@ git commit -m "feat(loader): orchestration CLI for pnpm fixtures:load"
 ## Task 11: Manual smoke test — verify against a live dev HA, lock storage versions
 
 **Files:**
+
 - Modify: `tests/fixtures/_builder/serialize-storage.ts` (likely — pin the schema versions if they differ)
 
 This task is the only one that exercises the full end-to-end loop. It also validates the schema-version constants set in Task 6.

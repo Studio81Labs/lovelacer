@@ -20,7 +20,10 @@ describe('ensureFixtureInclude', () => {
 
   it('appends include + sentinel to existing configuration.yaml without one', () => {
     const root = tempRoot()
-    writeFileSync(join(root, 'configuration.yaml'), 'default_config:\nautomation: !include automations.yaml\n')
+    writeFileSync(
+      join(root, 'configuration.yaml'),
+      'default_config:\nautomation: !include automations.yaml\n',
+    )
     ensureFixtureInclude(root)
     const yaml = readFileSync(join(root, 'configuration.yaml'), 'utf8')
     expect(yaml).toContain('automation: !include automations.yaml')

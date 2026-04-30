@@ -84,7 +84,11 @@ function buildEntity(args: BuildEntityArgs): EntitySpec {
   }
 }
 
-export function light(fixtureName: string, friendlyName: string, opts: EntityOpts = {}): EntitySpec {
+export function light(
+  fixtureName: string,
+  friendlyName: string,
+  opts: EntityOpts = {},
+): EntitySpec {
   return buildEntity({
     ...opts,
     domain: 'light',
@@ -170,11 +174,7 @@ export function occupancy(
   })
 }
 
-export function door(
-  fixtureName: string,
-  friendlyName: string,
-  opts: EntityOpts = {},
-): EntitySpec {
+export function door(fixtureName: string, friendlyName: string, opts: EntityOpts = {}): EntitySpec {
   return buildEntity({
     ...opts,
     domain: 'binary_sensor',

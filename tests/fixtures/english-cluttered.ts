@@ -43,7 +43,11 @@ const lrThermostat = device('Living Room Tado', {
   model: 'V3+',
   area: livingRoom.id,
 })
-const lrTV = device('Living Room TV', { manufacturer: 'LG', model: 'OLED55C2', area: livingRoom.id })
+const lrTV = device('Living Room TV', {
+  manufacturer: 'LG',
+  model: 'OLED55C2',
+  area: livingRoom.id,
+})
 
 const kitchenHue = device('Kitchen Hue', { manufacturer: 'Philips', area: kitchen.id })
 const kitchenAqara = device('Kitchen Aqara TH', {
@@ -365,14 +369,30 @@ export const englishCluttered = fixture({
   floors: [ground, upstairs],
   areas: [livingRoom, kitchen, bathroom, bedroom, office, garage],
   devices: [
-    lrHueBridge, lrAqara, lrThermostat, lrTV,
-    kitchenHue, kitchenAqara, dishwasher,
-    bathHue, bathAqara,
-    bedHue, bedThermostat,
-    officeHue, officePlug,
-    garageDoor, garageMotion,
-    kitchenZ2M, lrZ2M, bedZ2M, officeZ2M,
-    espHallway, espStairs, espOutdoor, networkSwitch, router,
+    lrHueBridge,
+    lrAqara,
+    lrThermostat,
+    lrTV,
+    kitchenHue,
+    kitchenAqara,
+    dishwasher,
+    bathHue,
+    bathAqara,
+    bedHue,
+    bedThermostat,
+    officeHue,
+    officePlug,
+    garageDoor,
+    garageMotion,
+    kitchenZ2M,
+    lrZ2M,
+    bedZ2M,
+    officeZ2M,
+    espHallway,
+    espStairs,
+    espOutdoor,
+    networkSwitch,
+    router,
   ],
   entities: [
     ...livingRoomEntities,

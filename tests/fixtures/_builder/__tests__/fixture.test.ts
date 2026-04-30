@@ -30,25 +30,49 @@ const entity: EntitySpec = {
 
 describe('fixture()', () => {
   it('returns the input unchanged when valid', () => {
-    const result = fixture({ meta, floors: [floor], areas: [area], devices: [device], entities: [entity] })
+    const result = fixture({
+      meta,
+      floors: [floor],
+      areas: [area],
+      devices: [device],
+      entities: [entity],
+    })
     expect(result.entities).toHaveLength(1)
   })
 
   it('rejects duplicate floor ids', () => {
     expect(() =>
-      fixture({ meta, floors: [floor, floor], areas: [area], devices: [device], entities: [entity] }),
+      fixture({
+        meta,
+        floors: [floor, floor],
+        areas: [area],
+        devices: [device],
+        entities: [entity],
+      }),
     ).toThrow(/duplicate floor id/i)
   })
 
   it('rejects duplicate area ids', () => {
     expect(() =>
-      fixture({ meta, floors: [floor], areas: [area, area], devices: [device], entities: [entity] }),
+      fixture({
+        meta,
+        floors: [floor],
+        areas: [area, area],
+        devices: [device],
+        entities: [entity],
+      }),
     ).toThrow(/duplicate area id/i)
   })
 
   it('rejects duplicate device ids', () => {
     expect(() =>
-      fixture({ meta, floors: [floor], areas: [area], devices: [device, device], entities: [entity] }),
+      fixture({
+        meta,
+        floors: [floor],
+        areas: [area],
+        devices: [device, device],
+        entities: [entity],
+      }),
     ).toThrow(/duplicate device id/i)
   })
 

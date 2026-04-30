@@ -94,7 +94,9 @@ describe('serializeTemplateYaml', () => {
 
   it('emits unique_id, name, and state per entity', () => {
     const yaml = serializeTemplateYaml(FIXTURE)
-    const parsed = parse(yaml) as { sensor?: { unique_id: string; name: string; state: string }[] }[]
+    const parsed = parse(yaml) as {
+      sensor?: { unique_id: string; name: string; state: string }[]
+    }[]
     const sensorGroup = parsed.find((g) => g.sensor)
     expect(sensorGroup?.sensor).toContainEqual(
       expect.objectContaining({
