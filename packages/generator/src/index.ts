@@ -28,3 +28,5 @@ export type {
   TileCard,
   TileFeature,
 } from './lovelace-types.js'
+export { buildHomeView, pickQuickStatsEntities } from './home-view.js'
+export type { BuildHomeViewInput, HomeView } from './home-view.js'
