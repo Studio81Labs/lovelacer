@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { HaEntityRegistryEntry } from '@lovelacer/shared'
+import type { HaDeviceRegistryEntry, HaEntityRegistryEntry } from '@lovelacer/shared'
 import { normalize } from '../normalize.js'
 
 const baseEntity: HaEntityRegistryEntry = {
@@ -107,5 +107,70 @@ describe('normalize — friendlyName resolution', () => {
       devices: [],
     })
     expect(r!.friendlyName).toBe('Aqara Th 158d')
+  })
+})
+
+describe('normalize — device attachment', () => {
+  const dev: HaDeviceRegistryEntry = {
+    id: 'aqara_th_1',
+    name: 'Aqara TH',
+    name_by_user: 'Couch Sensor',
+    manufacturer: 'Aqara',
+    model: 'WSDCGQ11LM',
+    area_id: 'kitchen',
+  }
+
+  it('attaches a NormalizedDevice when entity.device_id resolves', () => {
+    const [r] = normalize({
+      entities: [{ ...baseEntity, device_id: 'aqara_th_1' }],
+      devices: [dev],
+    })
+    expect(r!.device).toEqual({
+      id: 'aqara_th_1',
+      name: 'Aqara TH',
+      nameByUser: 'Couch Sensor',
+      manufacturer: 'Aqara',
+      model: 'WSDCGQ11LM',
+      haAreaId: 'kitchen',
+    })
+  })
+
+  it('sets device to null when entity.device_id is null', () => {
+    const [r] = normalize({
+      entities: [{ ...baseEntity, device_id: null }],
+      devices: [dev],
+    })
+    expect(r!.device).toBeNull()
+  })
+
+  it('sets device to null when entity.device_id has no matching device', () => {
+    const [r] = normalize({
+      entities: [{ ...baseEntity, device_id: 'nonexistent_device' }],
+      devices: [dev],
+    })
+    expect(r!.device).toBeNull()
+  })
+
+  it('does NOT propagate device area to entity.haAreaId', () => {
+    // Entity has no area_id; device has kitchen. haAreaId on the entity must
+    // remain null — area inheritance is the detection chain's job, not ours.
+    const [r] = normalize({
+      entities: [{ ...baseEntity, area_id: null, device_id: 'aqara_th_1' }],
+      devices: [dev],
+    })
+    expect(r!.haAreaId).toBeNull()
+    expect(r!.device?.haAreaId).toBe('kitchen')
+  })
+
+  it('drops devices that no entity references (anti-leak)', () => {
+    const orphan: HaDeviceRegistryEntry = { ...dev, id: 'orphan_device' }
+    const out = normalize({
+      entities: [{ ...baseEntity, device_id: 'aqara_th_1' }],
+      devices: [dev, orphan],
+    })
+    // The only way to surface a device is via entity.device. The orphan must
+    // never appear there.
+    const deviceIds = out.map((e) => e.device?.id).filter((id): id is string => id !== undefined)
+    expect(deviceIds).not.toContain('orphan_device')
   })
 })

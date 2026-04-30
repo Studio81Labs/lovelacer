@@ -1,6 +1,7 @@
 import type {
   HaDeviceRegistryEntry,
   HaEntityRegistryEntry,
+  NormalizedDevice,
   NormalizedEntity,
 } from '@lovelacer/shared'
 
@@ -10,13 +11,29 @@ export interface NormalizeInput {
 }
 
 export function normalize(input: NormalizeInput): NormalizedEntity[] {
-  return input.entities.map((entity) => normalizeEntity(entity))
+  const devicesById = new Map(input.devices.map((d) => [d.id, d]))
+  return input.entities.map((entity) => normalizeEntity(entity, devicesById))
 }
 
-function normalizeEntity(entity: HaEntityRegistryEntry): NormalizedEntity {
+function normalizeEntity(
+  entity: HaEntityRegistryEntry,
+  devicesById: Map<string, HaDeviceRegistryEntry>,
+): NormalizedEntity {
   const dotIndex = entity.entity_id.indexOf('.')
   const domain = entity.entity_id.slice(0, dotIndex)
   const objectId = entity.entity_id.slice(dotIndex + 1)
+
+  const haDevice = entity.device_id !== null ? devicesById.get(entity.device_id) : undefined
+  const device: NormalizedDevice | null = haDevice
+    ? {
+        id: haDevice.id,
+        name: haDevice.name,
+        nameByUser: haDevice.name_by_user,
+        manufacturer: haDevice.manufacturer,
+        model: haDevice.model,
+        haAreaId: haDevice.area_id,
+      }
+    : null
 
   return {
     entityId: entity.entity_id,
@@ -26,7 +43,7 @@ function normalizeEntity(entity: HaEntityRegistryEntry): NormalizedEntity {
     deviceClass: entity.device_class,
     entityCategory: entity.entity_category,
     haAreaId: entity.area_id,
-    device: null, // device attachment in Task 4
+    device,
     isHidden: entity.hidden_by !== null,
     isDisabled: entity.disabled_by !== null,
   }
