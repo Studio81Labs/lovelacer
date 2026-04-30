@@ -174,3 +174,23 @@ describe('normalize — device attachment', () => {
     expect(deviceIds).not.toContain('orphan_device')
   })
 })
+
+describe('normalize — error handling', () => {
+  it('throws when entity_id has no dot separator', () => {
+    expect(() =>
+      normalize({
+        entities: [{ ...baseEntity, entity_id: 'malformed_no_dot' }],
+        devices: [],
+      }),
+    ).toThrow(/malformed_no_dot/)
+  })
+
+  it('throws on empty entity_id', () => {
+    expect(() =>
+      normalize({
+        entities: [{ ...baseEntity, entity_id: '' }],
+        devices: [],
+      }),
+    ).toThrow(/entity_id/i)
+  })
+})

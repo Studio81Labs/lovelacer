@@ -20,6 +20,11 @@ function normalizeEntity(
   devicesById: Map<string, HaDeviceRegistryEntry>,
 ): NormalizedEntity {
   const dotIndex = entity.entity_id.indexOf('.')
+  if (dotIndex <= 0 || dotIndex === entity.entity_id.length - 1) {
+    throw new Error(
+      `malformed entity_id: ${JSON.stringify(entity.entity_id)} — expected '<domain>.<object_id>'`,
+    )
+  }
   const domain = entity.entity_id.slice(0, dotIndex)
   const objectId = entity.entity_id.slice(dotIndex + 1)
 
