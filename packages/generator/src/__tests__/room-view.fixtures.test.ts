@@ -2,11 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
+import type { Fixture } from '../../../../tests/fixtures/_builder/index.js'
 import { normalize, detect, groupByDomain } from '@lovelacer/analyzer'
 import { buildRoomViews } from '../room-view.js'
 import type { LovelaceCard } from '../lovelace-types.js'
 
-function pipe(fixture: typeof englishCluttered) {
+function pipe(fixture: Fixture) {
   const ha = fixtureToHaRegistries(fixture)
   const entities = normalize({ entities: ha.entities, devices: ha.devices })
   const assignments = detect({ entities, areas: ha.areas })
