@@ -28,8 +28,17 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
   }
 
   if (!res.ok) {
-    const parsed = await res.json().catch(() => null)
-    if (parsed !== null && typeof parsed === 'object' && 'error' in parsed) {
+    const parsed: unknown = await res.json().catch(() => null)
+    // Validate the server actually sent the ApiError envelope shape
+    // before forwarding. A malformed body (e.g. { error: 42 }) shouldn't
+    // be cast through and confuse downstream consumers — fall back to
+    // the generic network envelope instead.
+    if (
+      parsed !== null &&
+      typeof parsed === 'object' &&
+      typeof (parsed as { error?: unknown }).error === 'string' &&
+      typeof (parsed as { message?: unknown }).message === 'string'
+    ) {
       throw parsed as ApiError
     }
     throw {

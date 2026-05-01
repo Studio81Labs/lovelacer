@@ -12,12 +12,12 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@iconify-icons/mdi": "^1.2.48",
     "@iconify/vue": "^4.1.2",
     "pinia": "^2.2.4",
     "vue": "^3.5.10"
   },
   "devDependencies": {
-    "@iconify-icons/mdi": "^1.2.48",
     "@tailwindcss/vite": "^4.0.0-beta.4",
     "@vitejs/plugin-vue": "^5.1.4",
     "@vue/test-utils": "^2.4.6",

@@ -145,6 +145,9 @@ importers:
 
   packages/web:
     dependencies:
+      '@iconify-icons/mdi':
+        specifier: ^1.2.48
+        version: 1.2.48
       '@iconify/vue':
         specifier: ^4.1.2
         version: 4.3.0(vue@3.5.33(typescript@5.9.3))
@@ -155,9 +158,6 @@ importers:
         specifier: ^3.5.10
         version: 3.5.33(typescript@5.9.3)
     devDependencies:
-      '@iconify-icons/mdi':
-        specifier: ^1.2.48
-        version: 1.2.48
       '@tailwindcss/vite':
         specifier: ^4.0.0-beta.4
         version: 4.2.4(vite@5.4.21(@types/node@22.19.17)(lightningcss@1.32.0))
