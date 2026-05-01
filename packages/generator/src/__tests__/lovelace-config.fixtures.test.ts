@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
+import { kitchenSink } from '../../../../tests/fixtures/kitchen-sink.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import type { Fixture } from '../../../../tests/fixtures/_builder/index.js'
 import { detect, groupByDomain, normalize } from '@lovelacer/analyzer'
@@ -78,6 +79,52 @@ describe('buildLovelaceConfig — english-cluttered fixture', () => {
           {
             "path": "office",
             "title": "Office",
+          },
+        ],
+      }
+    `)
+  })
+
+  it('home view is at index 0', () => {
+    expect(config.views[0]!.path).toBe('home')
+  })
+
+  it('every view path is unique', () => {
+    const paths = config.views.map((v) => v.path)
+    expect(paths.length).toBe(new Set(paths).size)
+  })
+
+  it('rooms after home are sorted alphabetically by title', () => {
+    const roomTitles = config.views.slice(1).map((v) => v.title)
+    const sorted = [...roomTitles].sort((a, b) => a.localeCompare(b, 'en'))
+    expect(roomTitles).toEqual(sorted)
+  })
+})
+
+describe('buildLovelaceConfig — kitchen-sink fixture', () => {
+  const { config } = pipe(kitchenSink)
+
+  it('matches structural snapshot', () => {
+    expect(summarize(config)).toMatchInlineSnapshot(`
+      {
+        "title": "Lovelacer — Home",
+        "viewCount": 4,
+        "views": [
+          {
+            "path": "home",
+            "title": "Home",
+          },
+          {
+            "path": "bedroom",
+            "title": "Bedroom",
+          },
+          {
+            "path": "kitchen",
+            "title": "Kitchen",
+          },
+          {
+            "path": "living_room",
+            "title": "Living Room",
           },
         ],
       }

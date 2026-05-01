@@ -133,7 +133,7 @@ function buildTileCard(entity: NormalizedEntity): TileCard {
       features: [{ type: 'fan-speed' }],
     }
   }
-  // switch, lock, vacuum, scene, script — plain tile, no features
+  // switch, lock, vacuum — plain tile, no features
   return { type: 'tile', entity: entity.entityId }
 }
 
