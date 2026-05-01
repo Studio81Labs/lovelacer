@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { roomIdToIcon } from '../icons.js'
+import EntityRow from './EntityRow.vue'
 import type { AnalyzedRoom } from '../api/types.js'
 
 defineProps<{ rooms: AnalyzedRoom[] }>()
@@ -14,6 +15,22 @@ function confidencePillClass(confidence: number): string {
 function confidenceLabel(confidence: number): string {
   return `${Math.round(confidence * 100)}% avg confidence`
 }
+
+/**
+ * `RoomAssignment` doesn't carry `friendlyName`. Until the API surfaces
+ * it on assignments, derive a fallback from the entityId — readable
+ * enough for the alpha demo.
+ *   light.kitchen_ceiling → Kitchen Ceiling
+ */
+function entityIdToFriendly(entityId: string): string {
+  const parts = entityId.split('.')
+  if (parts.length < 2) return entityId
+  const objectId = parts.slice(1).join('.')
+  return objectId
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
 </script>
 
 <template>
@@ -26,27 +43,39 @@ function confidenceLabel(confidence: number): string {
   </div>
 
   <ul v-else class="divide-y divide-stone-100 rounded-lg border border-stone-200 bg-white">
-    <li
-      v-for="room in rooms"
-      :key="room.id"
-      data-testid="room-row"
-      class="flex items-center justify-between gap-4 px-5 py-3"
-    >
-      <div class="flex items-center gap-3">
-        <Icon :icon="roomIdToIcon(room.id)" class="h-5 w-5 text-stone-700" />
-        <span class="text-sm font-medium text-stone-900">{{ room.displayName }}</span>
-      </div>
-
-      <div class="flex items-center gap-3 text-xs text-stone-600">
-        <span>{{ room.entityCount }} entities</span>
-        <span
-          data-testid="confidence-pill"
-          class="rounded px-2 py-0.5 text-xs font-medium"
-          :class="confidencePillClass(room.averageConfidence)"
+    <li v-for="room in rooms" :key="room.id" data-testid="room-row">
+      <details class="group">
+        <summary
+          class="flex cursor-pointer items-center justify-between gap-4 px-5 py-3 hover:bg-stone-50"
         >
-          {{ confidenceLabel(room.averageConfidence) }}
-        </span>
-      </div>
+          <div class="flex items-center gap-3">
+            <Icon :icon="roomIdToIcon(room.id)" class="h-5 w-5 text-stone-700" />
+            <span class="text-sm font-medium text-stone-900">{{ room.displayName }}</span>
+          </div>
+
+          <div class="flex items-center gap-3 text-xs text-stone-600">
+            <span>{{ room.entityCount }} entities</span>
+            <span
+              data-testid="confidence-pill"
+              class="rounded px-2 py-0.5 text-xs font-medium"
+              :class="confidencePillClass(room.averageConfidence)"
+            >
+              {{ confidenceLabel(room.averageConfidence) }}
+            </span>
+          </div>
+        </summary>
+
+        <ul class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
+          <li v-for="a in room.assignments" :key="a.entityId">
+            <EntityRow
+              :entity-id="a.entityId"
+              :friendly-name="entityIdToFriendly(a.entityId)"
+              :room-id="a.roomId"
+              v-bind="a.manual !== undefined ? { manual: a.manual } : {}"
+            />
+          </li>
+        </ul>
+      </details>
     </li>
   </ul>
 </template>
