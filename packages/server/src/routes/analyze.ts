@@ -30,9 +30,7 @@ export const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (
       return reply.code(200).send(result)
     } catch (err) {
       req.log.error({ err }, 'analyze failed')
-      return reply
-        .code(500)
-        .send({ error: 'analyze_failed', message: String(err) })
+      return reply.code(500).send({ error: 'analyze_failed', message: String(err) })
     }
   })
 }

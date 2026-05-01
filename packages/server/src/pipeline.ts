@@ -1,20 +1,11 @@
-import {
-  detect,
-  groupByDomain,
-  normalize,
-  type RoomGrouping,
-} from '@lovelacer/analyzer'
+import { detect, groupByDomain, normalize, type RoomGrouping } from '@lovelacer/analyzer'
 import {
   buildHomeView,
   buildLovelaceConfig,
   buildRoomViews,
   type LovelaceConfig,
 } from '@lovelacer/generator'
-import type {
-  ApplyDashboardOptions,
-  ApplyDashboardResult,
-  HaClient,
-} from '@lovelacer/ha-client'
+import type { ApplyDashboardOptions, ApplyDashboardResult, HaClient } from '@lovelacer/ha-client'
 import type {
   AnalyzedRoom,
   CanonicalRoomId,
@@ -36,6 +27,18 @@ export interface PreviewOutput extends AnalyzeOutput {
 export interface ApplyInput {
   config?: LovelaceConfig
   options?: ApplyDashboardOptions
+}
+
+/**
+ * Thrown by `runApply` when the caller-supplied `body.config` fails the
+ * minimal shape check (`title: string`, `views: array`). The route catches
+ * this with `instanceof InvalidConfigError` and returns 400.
+ */
+export class InvalidConfigError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'InvalidConfigError'
+  }
 }
 
 /**
@@ -85,11 +88,18 @@ export async function runAnalyze(ha: HaClient): Promise<AnalyzeOutput> {
   const misc: AnalyzeOutput['misc'] = []
 
   for (const grouping of groupings) {
-    const roomAssignments = assignments.filter((a) => a.roomId === grouping.roomId)
+    // Skip hidden/disabled entities everywhere — `groupByDomain` already
+    // filters them from views, so the analyze counts must match what users
+    // actually see in the dashboard.
+    const roomAssignments = assignments.filter((a) => {
+      if (a.roomId !== grouping.roomId) return false
+      const e = entityById.get(a.entityId)
+      return e !== undefined && !e.isHidden && !e.isDisabled
+    })
     if (grouping.roomId === 'misc') {
       for (const a of roomAssignments) {
         const e = entityById.get(a.entityId)
-        if (e === undefined || e.isHidden || e.isDisabled) continue
+        if (e === undefined) continue
         misc.push({
           entityId: e.entityId,
           friendlyName: e.friendlyName,
@@ -104,11 +114,15 @@ export async function runAnalyze(ha: HaClient): Promise<AnalyzeOutput> {
 
   rooms.sort((a, b) => a.displayName.localeCompare(b.displayName, 'en'))
 
+  // Match `entityCount` to what the analyzer/generator actually surfaces:
+  // hidden + disabled entities don't appear in any view, so don't count them.
+  const visibleEntityCount = entities.filter((e) => !e.isHidden && !e.isDisabled).length
+
   return {
     rooms,
     misc,
     summary: {
-      entityCount: entities.length,
+      entityCount: visibleEntityCount,
       roomCount: rooms.length,
       miscCount: misc.length,
     },
@@ -146,8 +160,7 @@ function buildAnalyzedRoom(
 
   const displayName =
     haAreaId !== null
-      ? (areas.find((a) => a.area_id === haAreaId)?.name ??
-        CANONICAL_ROOM_NAMES[grouping.roomId])
+      ? (areas.find((a) => a.area_id === haAreaId)?.name ?? CANONICAL_ROOM_NAMES[grouping.roomId])
       : CANONICAL_ROOM_NAMES[grouping.roomId]
 
   const totalConfidence = roomAssignments.reduce((sum, a) => sum + a.confidence, 0)
@@ -181,20 +194,21 @@ export async function runPreview(ha: HaClient): Promise<PreviewOutput> {
   const assignments = detect({ entities, areas: areaRegistry })
   const groupings = groupByDomain({ assignments, entities })
 
+  // Drop the misc grouping before view generation: misc entities surface
+  // via the analyze response's `misc[]` field, not as a dashboard view.
+  const dashboardGroupings = groupings.filter((g) => g.roomId !== 'misc')
+
   const home = buildHomeView({ entities })
-  const rooms = buildRoomViews(groupings)
+  const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
 
   return { ...analyze, config }
 }
 
-export async function runApply(
-  ha: HaClient,
-  body: ApplyInput,
-): Promise<ApplyDashboardResult> {
+export async function runApply(ha: HaClient, body: ApplyInput): Promise<ApplyDashboardResult> {
   if (body.config !== undefined) {
     if (typeof body.config.title !== 'string' || !Array.isArray(body.config.views)) {
-      throw new Error('invalid_config: title must be string and views must be array')
+      throw new InvalidConfigError('invalid_config: title must be string and views must be array')
     }
     return ha.applyDashboard(body.config, body.options)
   }

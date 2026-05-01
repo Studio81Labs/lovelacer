@@ -13,8 +13,11 @@ function pipe(fixture: Fixture) {
   const entities = normalize({ entities: ha.entities, devices: ha.devices })
   const assignments = detect({ entities, areas: ha.areas })
   const groupings = groupByDomain({ assignments, entities })
+  // Mirror the production pipeline: misc entities surface only via the
+  // analyze response's `misc[]` field, never as a dashboard view.
+  const dashboardGroupings = groupings.filter((g) => g.roomId !== 'misc')
   const home = buildHomeView({ entities })
-  const rooms = buildRoomViews(groupings)
+  const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
   return { entities, config }
 }
@@ -34,7 +37,7 @@ describe('buildLovelaceConfig — english-cluttered fixture', () => {
     expect(summarize(config)).toMatchInlineSnapshot(`
       {
         "title": "Lovelacer — Home",
-        "viewCount": 11,
+        "viewCount": 10,
         "views": [
           {
             "path": "home",
@@ -75,10 +78,6 @@ describe('buildLovelaceConfig — english-cluttered fixture', () => {
           {
             "path": "office",
             "title": "Office",
-          },
-          {
-            "path": "other",
-            "title": "Other",
           },
         ],
       }

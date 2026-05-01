@@ -28,9 +28,7 @@ const DASHBOARD_TITLE = 'Lovelacer — Home'
  * Pure function. Doesn't mutate input.
  */
 export function buildLovelaceConfig(input: BuildLovelaceConfigInput): LovelaceConfig {
-  const sortedRooms = [...input.rooms].sort((a, b) =>
-    a.title.localeCompare(b.title, 'en'),
-  )
+  const sortedRooms = [...input.rooms].sort((a, b) => a.title.localeCompare(b.title, 'en'))
   return {
     title: DASHBOARD_TITLE,
     views: [input.home, ...sortedRooms],

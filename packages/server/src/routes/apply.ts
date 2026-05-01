@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import type { HaClient } from '@lovelacer/ha-client'
 import { HaApplyError } from '@lovelacer/ha-client'
-import { runApply, type ApplyInput } from '../pipeline.js'
+import { InvalidConfigError, runApply, type ApplyInput } from '../pipeline.js'
 
 export interface ApplyRouteOptions {
   ha: HaClient
@@ -45,16 +45,14 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
           message: err.message,
         })
       }
-      if (err instanceof Error && err.message.startsWith('invalid_config')) {
+      if (err instanceof InvalidConfigError) {
         return reply.code(400).send({
           error: 'invalid_config',
           message: err.message,
         })
       }
       req.log.error({ err }, 'apply failed')
-      return reply
-        .code(500)
-        .send({ error: 'apply_failed', message: String(err) })
+      return reply.code(500).send({ error: 'apply_failed', message: String(err) })
     }
   })
 }

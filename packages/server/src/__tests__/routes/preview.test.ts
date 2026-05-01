@@ -46,4 +46,24 @@ describe('POST /api/preview', () => {
       await app.close()
     }
   })
+
+  it('returns 500 preview_failed when registry fetch throws', async () => {
+    const ha = {
+      isConnected: () => true,
+      getEntityRegistry: vi.fn(async () => {
+        throw new Error('boom')
+      }),
+      getDeviceRegistry: vi.fn(async () => []),
+      getAreaRegistry: vi.fn(async () => []),
+      getFloorRegistry: vi.fn(async () => []),
+    } as unknown as HaClient
+    const app = await createApp({ ha, logLevel: 'silent' })
+    try {
+      const res = await app.inject({ method: 'POST', url: '/api/preview' })
+      expect(res.statusCode).toBe(500)
+      expect(res.json()).toMatchObject({ error: 'preview_failed' })
+    } finally {
+      await app.close()
+    }
+  })
 })

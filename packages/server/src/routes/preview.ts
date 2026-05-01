@@ -30,9 +30,7 @@ export const previewRoute: FastifyPluginAsync<PreviewRouteOptions> = async (
       return reply.code(200).send(result)
     } catch (err) {
       req.log.error({ err }, 'preview failed')
-      return reply
-        .code(500)
-        .send({ error: 'preview_failed', message: String(err) })
+      return reply.code(500).send({ error: 'preview_failed', message: String(err) })
     }
   })
 }

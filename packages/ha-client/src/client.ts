@@ -125,11 +125,7 @@ export class HaClient {
           mode: 'storage',
         })
       } catch (cause) {
-        throw new HaApplyError(
-          'create',
-          `failed to create dashboard ${opts.urlPath}`,
-          cause,
-        )
+        throw new HaApplyError('create', `failed to create dashboard ${opts.urlPath}`, cause)
       }
     }
 
@@ -140,11 +136,7 @@ export class HaClient {
         config,
       })
     } catch (cause) {
-      throw new HaApplyError(
-        'save',
-        `failed to save dashboard config for ${opts.urlPath}`,
-        cause,
-      )
+      throw new HaApplyError('save', `failed to save dashboard config for ${opts.urlPath}`, cause)
     }
 
     return { urlPath: opts.urlPath, created: existing === undefined }

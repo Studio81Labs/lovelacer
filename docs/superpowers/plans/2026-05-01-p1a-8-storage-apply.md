@@ -26,6 +26,7 @@
 ## Task 1: `buildLovelaceConfig` + types + unit tests
 
 **Files:**
+
 - Create: `packages/generator/src/lovelace-config.ts`
 - Create: `packages/generator/src/__tests__/lovelace-config.test.ts`
 - Modify: `packages/generator/src/index.ts`
@@ -38,10 +39,7 @@ Create `packages/generator/src/__tests__/lovelace-config.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest'
-import {
-  buildLovelaceConfig,
-  type BuildLovelaceConfigInput,
-} from '../lovelace-config.js'
+import { buildLovelaceConfig, type BuildLovelaceConfigInput } from '../lovelace-config.js'
 import type { HomeView } from '../home-view.js'
 import type { RoomView } from '../lovelace-types.js'
 
@@ -91,12 +89,7 @@ describe('buildLovelaceConfig — view ordering', () => {
       ],
     }
     const result = buildLovelaceConfig(input)
-    expect(result.views.map((v) => v.title)).toEqual([
-      'Home',
-      'Bedroom',
-      'Kitchen',
-      'Living Room',
-    ])
+    expect(result.views.map((v) => v.title)).toEqual(['Home', 'Bedroom', 'Kitchen', 'Living Room'])
   })
 
   it('alphabetical sort is case-insensitive (localeCompare default)', () => {
@@ -104,11 +97,7 @@ describe('buildLovelaceConfig — view ordering', () => {
       home,
       rooms: [room('zen', 'a'), room('Apple', 'b'), room('banana', 'c')],
     })
-    expect(result.views.map((v) => v.title).slice(1)).toEqual([
-      'Apple',
-      'banana',
-      'zen',
-    ])
+    expect(result.views.map((v) => v.title).slice(1)).toEqual(['Apple', 'banana', 'zen'])
   })
 
   it('uses English locale for sort (Ž sorts after Z)', () => {
@@ -116,10 +105,7 @@ describe('buildLovelaceConfig — view ordering', () => {
       home,
       rooms: [room('Žofie', 'a'), room('Anička', 'b')],
     })
-    expect(result.views.map((v) => v.title).slice(1)).toEqual([
-      'Anička',
-      'Žofie',
-    ])
+    expect(result.views.map((v) => v.title).slice(1)).toEqual(['Anička', 'Žofie'])
   })
 })
 
@@ -195,9 +181,7 @@ const DASHBOARD_TITLE = 'Lovelacer — Home'
  * Pure function. Doesn't mutate input.
  */
 export function buildLovelaceConfig(input: BuildLovelaceConfigInput): LovelaceConfig {
-  const sortedRooms = [...input.rooms].sort((a, b) =>
-    a.title.localeCompare(b.title, 'en'),
-  )
+  const sortedRooms = [...input.rooms].sort((a, b) => a.title.localeCompare(b.title, 'en'))
   return {
     title: DASHBOARD_TITLE,
     views: [input.home, ...sortedRooms],
@@ -257,6 +241,7 @@ EOF
 ## Task 2: Fixture snapshot test for `buildLovelaceConfig`
 
 **Files:**
+
 - Create: `packages/generator/src/__tests__/lovelace-config.fixtures.test.ts`
 
 End-to-end runs against `english-cluttered` and `czech-tidy`. Pipes through `fixtureToHaRegistries → normalize → detect → groupByDomain → buildHomeView + buildRoomViews → buildLovelaceConfig`. Locks structural snapshot (title, view paths, view count).
@@ -395,6 +380,7 @@ EOF
 ## Task 3: HA Client `applyDashboard` + `listDashboards` + `HaApplyError`
 
 **Files:**
+
 - Create: `packages/ha-client/src/dashboards.ts`
 - Create: `packages/ha-client/src/__tests__/dashboards.test.ts`
 - Modify: `packages/ha-client/src/client.ts`
@@ -410,11 +396,7 @@ Create `packages/ha-client/src/__tests__/dashboards.test.ts`:
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Connection, MessageBase } from 'home-assistant-js-websocket'
 import { HaClient } from '../client.js'
-import {
-  HaApplyError,
-  type ApplyDashboardOptions,
-  type HaDashboardEntry,
-} from '../dashboards.js'
+import { HaApplyError, type ApplyDashboardOptions, type HaDashboardEntry } from '../dashboards.js'
 import type { LovelaceConfig } from '@lovelacer/generator'
 
 // Minimal LovelaceConfig stub. The HA client doesn't validate shape —
@@ -885,6 +867,7 @@ EOF
 ## Task 4: Server pipeline (`runAnalyze` + `runPreview` + `runApply`) + tests
 
 **Files:**
+
 - Create: `packages/server/src/pipeline.ts`
 - Create: `packages/server/src/__tests__/pipeline.test.ts`
 
@@ -919,22 +902,11 @@ interface FakeHa {
 
 function makeFakeHa(): FakeHa {
   const ha = fixtureToHaRegistries(englishCluttered)
-  const applyDashboard = vi.fn<
-    [LovelaceConfig, unknown?],
-    Promise<ApplyDashboardResult>
-  >()
-  const getEntityRegistry = vi.fn<[], Promise<HaEntityRegistryEntry[]>>(
-    async () => ha.entities,
-  )
-  const getDeviceRegistry = vi.fn<[], Promise<HaDeviceRegistryEntry[]>>(
-    async () => ha.devices,
-  )
-  const getAreaRegistry = vi.fn<[], Promise<HaAreaRegistryEntry[]>>(
-    async () => ha.areas,
-  )
-  const getFloorRegistry = vi.fn<[], Promise<HaFloorRegistryEntry[]>>(
-    async () => [],
-  )
+  const applyDashboard = vi.fn<[LovelaceConfig, unknown?], Promise<ApplyDashboardResult>>()
+  const getEntityRegistry = vi.fn<[], Promise<HaEntityRegistryEntry[]>>(async () => ha.entities)
+  const getDeviceRegistry = vi.fn<[], Promise<HaDeviceRegistryEntry[]>>(async () => ha.devices)
+  const getAreaRegistry = vi.fn<[], Promise<HaAreaRegistryEntry[]>>(async () => ha.areas)
+  const getFloorRegistry = vi.fn<[], Promise<HaFloorRegistryEntry[]>>(async () => [])
 
   const client = {
     isConnected: () => true,
@@ -1090,18 +1062,14 @@ describe('runApply', () => {
   it('rejects malformed body.config (title not string)', async () => {
     const fake = makeFakeHa()
     const bad = { title: 123, views: [] } as unknown as LovelaceConfig
-    await expect(runApply(fake.client, { config: bad })).rejects.toThrow(
-      /invalid_config/,
-    )
+    await expect(runApply(fake.client, { config: bad })).rejects.toThrow(/invalid_config/)
     expect(fake.applyDashboard).not.toHaveBeenCalled()
   })
 
   it('rejects malformed body.config (views not array)', async () => {
     const fake = makeFakeHa()
     const bad = { title: 'x', views: {} } as unknown as LovelaceConfig
-    await expect(runApply(fake.client, { config: bad })).rejects.toThrow(
-      /invalid_config/,
-    )
+    await expect(runApply(fake.client, { config: bad })).rejects.toThrow(/invalid_config/)
   })
 })
 ```
@@ -1119,23 +1087,14 @@ Expected: FAIL — module not found for `../pipeline.js`.
 Create `packages/server/src/pipeline.ts`:
 
 ```ts
-import {
-  detect,
-  groupByDomain,
-  normalize,
-  type RoomGrouping,
-} from '@lovelacer/analyzer'
+import { detect, groupByDomain, normalize, type RoomGrouping } from '@lovelacer/analyzer'
 import {
   buildHomeView,
   buildLovelaceConfig,
   buildRoomViews,
   type LovelaceConfig,
 } from '@lovelacer/generator'
-import type {
-  ApplyDashboardOptions,
-  ApplyDashboardResult,
-  HaClient,
-} from '@lovelacer/ha-client'
+import type { ApplyDashboardOptions, ApplyDashboardResult, HaClient } from '@lovelacer/ha-client'
 import type {
   AnalyzedRoom,
   CanonicalRoomId,
@@ -1267,8 +1226,7 @@ function buildAnalyzedRoom(
 
   const displayName =
     haAreaId !== null
-      ? (areas.find((a) => a.area_id === haAreaId)?.name ??
-        CANONICAL_ROOM_NAMES[grouping.roomId])
+      ? (areas.find((a) => a.area_id === haAreaId)?.name ?? CANONICAL_ROOM_NAMES[grouping.roomId])
       : CANONICAL_ROOM_NAMES[grouping.roomId]
 
   const totalConfidence = roomAssignments.reduce((sum, a) => sum + a.confidence, 0)
@@ -1309,10 +1267,7 @@ export async function runPreview(ha: HaClient): Promise<PreviewOutput> {
   return { ...analyze, config }
 }
 
-export async function runApply(
-  ha: HaClient,
-  body: ApplyInput,
-): Promise<ApplyDashboardResult> {
+export async function runApply(ha: HaClient, body: ApplyInput): Promise<ApplyDashboardResult> {
   if (body.config !== undefined) {
     if (typeof body.config.title !== 'string' || !Array.isArray(body.config.views)) {
       throw new Error('invalid_config: title must be string and views must be array')
@@ -1373,6 +1328,7 @@ EOF
 ## Task 5: Server route plumbing + `/api/analyze` route + tests
 
 **Files:**
+
 - Create: `packages/server/src/app.ts` (extracted Fastify app builder)
 - Create: `packages/server/src/routes/analyze.ts`
 - Create: `packages/server/src/__tests__/routes/analyze.test.ts`
@@ -1581,9 +1537,7 @@ export const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (
       return reply.code(200).send(result)
     } catch (err) {
       req.log.error({ err }, 'analyze failed')
-      return reply
-        .code(500)
-        .send({ error: 'analyze_failed', message: String(err) })
+      return reply.code(500).send({ error: 'analyze_failed', message: String(err) })
     }
   })
 }
@@ -1636,6 +1590,7 @@ EOF
 ## Task 6: `/api/preview` route + tests
 
 **Files:**
+
 - Create: `packages/server/src/routes/preview.ts`
 - Create: `packages/server/src/__tests__/routes/preview.test.ts`
 - Modify: `packages/server/src/app.ts`
@@ -1743,9 +1698,7 @@ export const previewRoute: FastifyPluginAsync<PreviewRouteOptions> = async (
       return reply.code(200).send(result)
     } catch (err) {
       req.log.error({ err }, 'preview failed')
-      return reply
-        .code(500)
-        .send({ error: 'preview_failed', message: String(err) })
+      return reply.code(500).send({ error: 'preview_failed', message: String(err) })
     }
   })
 }
@@ -1807,6 +1760,7 @@ EOF
 ## Task 7: `/api/apply` route + tests + main.ts smoke check
 
 **Files:**
+
 - Create: `packages/server/src/routes/apply.ts`
 - Create: `packages/server/src/__tests__/routes/apply.test.ts`
 - Modify: `packages/server/src/app.ts`
@@ -2065,9 +2019,7 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
         })
       }
       req.log.error({ err }, 'apply failed')
-      return reply
-        .code(500)
-        .send({ error: 'apply_failed', message: String(err) })
+      return reply.code(500).send({ error: 'apply_failed', message: String(err) })
     }
   })
 }

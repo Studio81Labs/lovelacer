@@ -89,16 +89,16 @@ Pure function. Title constant is the literal `'Lovelacer — Home'` (em dash, U+
 ```ts
 // dashboards.ts (new file)
 export interface ApplyDashboardOptions {
-  urlPath?: string         // default 'lovelacer-home'
-  title?: string           // default 'Lovelacer — Home'
-  icon?: string            // default 'mdi:home-variant'
-  showInSidebar?: boolean  // default true
-  requireAdmin?: boolean   // default false
+  urlPath?: string // default 'lovelacer-home'
+  title?: string // default 'Lovelacer — Home'
+  icon?: string // default 'mdi:home-variant'
+  showInSidebar?: boolean // default true
+  requireAdmin?: boolean // default false
 }
 
 export interface ApplyDashboardResult {
   urlPath: string
-  created: boolean   // true: freshly created, false: updated existing
+  created: boolean // true: freshly created, false: updated existing
 }
 
 export interface HaDashboardEntry {
@@ -190,7 +190,7 @@ import type { LovelaceConfig } from '@lovelacer/generator'
 import type { AnalyzedRoom } from '@lovelacer/shared'
 
 export interface AnalyzeOutput {
-  rooms: AnalyzedRoom[]                                    // alphabetical by displayName
+  rooms: AnalyzedRoom[] // alphabetical by displayName
   misc: { entityId: string; friendlyName: string; domain: string }[]
   summary: { entityCount: number; roomCount: number; miscCount: number }
 }
@@ -212,6 +212,7 @@ export async function runApply(ha: HaClient, body: ApplyInput): Promise<ApplyDas
 Implementations:
 
 `runAnalyze`:
+
 1. Parallel fetch entity/device/area registries via `HaClient`.
 2. `normalize({ entities, devices })`.
 3. Build `DetectionContext` from areas + assignments-from-entity-areas; run `detect({ entities, context })`.
@@ -221,6 +222,7 @@ Implementations:
 7. Sort rooms by `displayName` using `localeCompare(_, 'en')`. Filter out the misc room from the rooms array (it surfaces only via the `misc[]` field).
 
 `runPreview`:
+
 1. Call `runAnalyze`.
 2. `buildHomeView({ entities: <flat list of all normalized entities> })`.
 3. `buildRoomViews(<RoomGrouping[]>)`.
@@ -228,6 +230,7 @@ Implementations:
 5. Return `{ ...analyzeOutput, config }`.
 
 `runApply`:
+
 1. `finalConfig = body.config ?? (await runPreview(ha)).config`.
 2. `return ha.applyDashboard(finalConfig, body.options)`.
 
@@ -308,20 +311,21 @@ POST /api/apply { config?, options? }
 
 ## Error handling
 
-| Layer | Failure | Behavior |
-| --- | --- | --- |
-| HaClient WS calls | Connection drop mid-call | `sendMessagePromise` rejects → caller catches and re-throws as `HaApplyError(step, cause)` |
-| HaClient WS calls | HA returns error response | Same — rejects with HA's error message |
-| `applyDashboard` | First failure of any of 3 calls | Throws `HaApplyError({ step, cause })`. No retry, no rollback. |
-| `runAnalyze` | Registry call fails | Bubbles up. Route returns 503 `{ error: 'ha_unavailable', message }`. |
-| `runApply` | `body.config` provided but malformed | Route returns 400 `{ error: 'invalid_config', message }`. Manual shape check; no zod. |
-| `runApply` | HaClient not connected | 503 `{ error: 'ha_unavailable' }`. |
-| Route | Pipeline throws `HaApplyError` | 502 `{ error: 'ha_apply_failed', step, message }`. |
-| Route | Anything else | Fastify default 500. |
+| Layer             | Failure                              | Behavior                                                                                   |
+| ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| HaClient WS calls | Connection drop mid-call             | `sendMessagePromise` rejects → caller catches and re-throws as `HaApplyError(step, cause)` |
+| HaClient WS calls | HA returns error response            | Same — rejects with HA's error message                                                     |
+| `applyDashboard`  | First failure of any of 3 calls      | Throws `HaApplyError({ step, cause })`. No retry, no rollback.                             |
+| `runAnalyze`      | Registry call fails                  | Bubbles up. Route returns 503 `{ error: 'ha_unavailable', message }`.                      |
+| `runApply`        | `body.config` provided but malformed | Route returns 400 `{ error: 'invalid_config', message }`. Manual shape check; no zod.      |
+| `runApply`        | HaClient not connected               | 503 `{ error: 'ha_unavailable' }`.                                                         |
+| Route             | Pipeline throws `HaApplyError`       | 502 `{ error: 'ha_apply_failed', step, message }`.                                         |
+| Route             | Anything else                        | Fastify default 500.                                                                       |
 
 No silent failures. Every error path produces a structured response with a discriminator the frontend can branch on.
 
 **Config validation on `/api/apply`:**
+
 - `typeof body.config.title === 'string'`
 - `Array.isArray(body.config.views)`
 - (Card-level shape: not validated here; HA rejects in `config/save` and bubbles up as `step: 'save'`.)
@@ -377,15 +381,18 @@ Strategy: fake HaClient with `vi.fn()` for each registry getter + `applyDashboar
 Strategy: build a Fastify app instance with a fake HaClient (same pattern as pipeline tests). Use `app.inject({ method, url, payload })`.
 
 **`analyze.test.ts`:**
+
 - `POST /api/analyze` happy path → 200 with `{ rooms, misc, summary }`.
 - HA disconnected → 503 `{ error: 'ha_unavailable' }`.
 - Pipeline throws → 500 `{ error: 'analyze_failed' }`.
 
 **`preview.test.ts`:**
+
 - `POST /api/preview` happy path → 200 with `{ rooms, misc, summary, config }`. `config.views[0].path === 'home'`.
 - HA disconnected → 503.
 
 **`apply.test.ts`:**
+
 - `POST /api/apply` with no body → 200 (re-runs preview, applies its config). `applyDashboard` called once.
 - `POST /api/apply` with `{ config: validConfig }` → 200, `applyDashboard` called with that config (registry getters NOT called).
 - `POST /api/apply` with `{ config: { title: 123 } }` → 400 `{ error: 'invalid_config' }`.
@@ -396,25 +403,25 @@ Strategy: build a Fastify app instance with a fake HaClient (same pattern as pip
 
 ## File-by-file
 
-| File | Action | Notes |
-| --- | --- | --- |
-| `packages/generator/src/lovelace-config.ts` | Create | `LovelaceConfig`, `BuildLovelaceConfigInput`, `buildLovelaceConfig` |
-| `packages/generator/src/__tests__/lovelace-config.test.ts` | Create | Unit tests |
-| `packages/generator/src/__tests__/lovelace-config.fixtures.test.ts` | Create | Fixture-driven snapshot |
-| `packages/generator/src/index.ts` | Modify | Re-export new types/functions |
-| `packages/ha-client/src/dashboards.ts` | Create | Apply types, `HaApplyError`, `DEFAULT_OPTIONS` constant |
-| `packages/ha-client/src/client.ts` | Modify | Add `listDashboards` and `applyDashboard` methods |
-| `packages/ha-client/src/__tests__/dashboards.test.ts` | Create | Unit tests with mocked Connection |
-| `packages/ha-client/src/index.ts` | Modify | Re-export public surface |
-| `packages/server/src/pipeline.ts` | Create | `runAnalyze`, `runPreview`, `runApply`, output types |
-| `packages/server/src/routes/analyze.ts` | Create | Fastify plugin |
-| `packages/server/src/routes/preview.ts` | Create | Fastify plugin |
-| `packages/server/src/routes/apply.ts` | Create | Fastify plugin (with config validation) |
-| `packages/server/src/main.ts` | Modify | Wire route plugins, drop `notImplemented` stubs |
-| `packages/server/src/__tests__/pipeline.test.ts` | Create | Pipeline unit tests with fake HaClient |
-| `packages/server/src/__tests__/routes/analyze.test.ts` | Create | Fastify inject |
-| `packages/server/src/__tests__/routes/preview.test.ts` | Create | Fastify inject |
-| `packages/server/src/__tests__/routes/apply.test.ts` | Create | Fastify inject |
+| File                                                                | Action | Notes                                                               |
+| ------------------------------------------------------------------- | ------ | ------------------------------------------------------------------- |
+| `packages/generator/src/lovelace-config.ts`                         | Create | `LovelaceConfig`, `BuildLovelaceConfigInput`, `buildLovelaceConfig` |
+| `packages/generator/src/__tests__/lovelace-config.test.ts`          | Create | Unit tests                                                          |
+| `packages/generator/src/__tests__/lovelace-config.fixtures.test.ts` | Create | Fixture-driven snapshot                                             |
+| `packages/generator/src/index.ts`                                   | Modify | Re-export new types/functions                                       |
+| `packages/ha-client/src/dashboards.ts`                              | Create | Apply types, `HaApplyError`, `DEFAULT_OPTIONS` constant             |
+| `packages/ha-client/src/client.ts`                                  | Modify | Add `listDashboards` and `applyDashboard` methods                   |
+| `packages/ha-client/src/__tests__/dashboards.test.ts`               | Create | Unit tests with mocked Connection                                   |
+| `packages/ha-client/src/index.ts`                                   | Modify | Re-export public surface                                            |
+| `packages/server/src/pipeline.ts`                                   | Create | `runAnalyze`, `runPreview`, `runApply`, output types                |
+| `packages/server/src/routes/analyze.ts`                             | Create | Fastify plugin                                                      |
+| `packages/server/src/routes/preview.ts`                             | Create | Fastify plugin                                                      |
+| `packages/server/src/routes/apply.ts`                               | Create | Fastify plugin (with config validation)                             |
+| `packages/server/src/main.ts`                                       | Modify | Wire route plugins, drop `notImplemented` stubs                     |
+| `packages/server/src/__tests__/pipeline.test.ts`                    | Create | Pipeline unit tests with fake HaClient                              |
+| `packages/server/src/__tests__/routes/analyze.test.ts`              | Create | Fastify inject                                                      |
+| `packages/server/src/__tests__/routes/preview.test.ts`              | Create | Fastify inject                                                      |
+| `packages/server/src/__tests__/routes/apply.test.ts`                | Create | Fastify inject                                                      |
 
 ## Dependencies
 

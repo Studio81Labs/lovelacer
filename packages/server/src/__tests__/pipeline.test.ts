@@ -22,22 +22,11 @@ interface FakeHa {
 
 function makeFakeHa(): FakeHa {
   const ha = fixtureToHaRegistries(englishCluttered)
-  const applyDashboard = vi.fn<
-    [LovelaceConfig, unknown?],
-    Promise<ApplyDashboardResult>
-  >()
-  const getEntityRegistry = vi.fn<[], Promise<HaEntityRegistryEntry[]>>(
-    async () => ha.entities,
-  )
-  const getDeviceRegistry = vi.fn<[], Promise<HaDeviceRegistryEntry[]>>(
-    async () => ha.devices,
-  )
-  const getAreaRegistry = vi.fn<[], Promise<HaAreaRegistryEntry[]>>(
-    async () => ha.areas,
-  )
-  const getFloorRegistry = vi.fn<[], Promise<HaFloorRegistryEntry[]>>(
-    async () => [],
-  )
+  const applyDashboard = vi.fn<[LovelaceConfig, unknown?], Promise<ApplyDashboardResult>>()
+  const getEntityRegistry = vi.fn<[], Promise<HaEntityRegistryEntry[]>>(async () => ha.entities)
+  const getDeviceRegistry = vi.fn<[], Promise<HaDeviceRegistryEntry[]>>(async () => ha.devices)
+  const getAreaRegistry = vi.fn<[], Promise<HaAreaRegistryEntry[]>>(async () => ha.areas)
+  const getFloorRegistry = vi.fn<[], Promise<HaFloorRegistryEntry[]>>(async () => [])
 
   const client = {
     isConnected: () => true,
@@ -193,17 +182,13 @@ describe('runApply', () => {
   it('rejects malformed body.config (title not string)', async () => {
     const fake = makeFakeHa()
     const bad = { title: 123, views: [] } as unknown as LovelaceConfig
-    await expect(runApply(fake.client, { config: bad })).rejects.toThrow(
-      /invalid_config/,
-    )
+    await expect(runApply(fake.client, { config: bad })).rejects.toThrow(/invalid_config/)
     expect(fake.applyDashboard).not.toHaveBeenCalled()
   })
 
   it('rejects malformed body.config (views not array)', async () => {
     const fake = makeFakeHa()
     const bad = { title: 'x', views: {} } as unknown as LovelaceConfig
-    await expect(runApply(fake.client, { config: bad })).rejects.toThrow(
-      /invalid_config/,
-    )
+    await expect(runApply(fake.client, { config: bad })).rejects.toThrow(/invalid_config/)
   })
 })

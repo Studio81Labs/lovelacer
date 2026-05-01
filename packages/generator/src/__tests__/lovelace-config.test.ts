@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  buildLovelaceConfig,
-  type BuildLovelaceConfigInput,
-} from '../lovelace-config.js'
+import { buildLovelaceConfig, type BuildLovelaceConfigInput } from '../lovelace-config.js'
 import type { HomeView } from '../home-view.js'
 import type { RoomView } from '../lovelace-types.js'
 
@@ -52,12 +49,7 @@ describe('buildLovelaceConfig — view ordering', () => {
       ],
     }
     const result = buildLovelaceConfig(input)
-    expect(result.views.map((v) => v.title)).toEqual([
-      'Home',
-      'Bedroom',
-      'Kitchen',
-      'Living Room',
-    ])
+    expect(result.views.map((v) => v.title)).toEqual(['Home', 'Bedroom', 'Kitchen', 'Living Room'])
   })
 
   it('alphabetical sort is case-insensitive (localeCompare default)', () => {
@@ -65,11 +57,7 @@ describe('buildLovelaceConfig — view ordering', () => {
       home,
       rooms: [room('zen', 'a'), room('Apple', 'b'), room('banana', 'c')],
     })
-    expect(result.views.map((v) => v.title).slice(1)).toEqual([
-      'Apple',
-      'banana',
-      'zen',
-    ])
+    expect(result.views.map((v) => v.title).slice(1)).toEqual(['Apple', 'banana', 'zen'])
   })
 
   it('uses English locale for sort (Ž sorts after Z)', () => {
@@ -77,10 +65,7 @@ describe('buildLovelaceConfig — view ordering', () => {
       home,
       rooms: [room('Žofie', 'a'), room('Anička', 'b')],
     })
-    expect(result.views.map((v) => v.title).slice(1)).toEqual([
-      'Anička',
-      'Žofie',
-    ])
+    expect(result.views.map((v) => v.title).slice(1)).toEqual(['Anička', 'Žofie'])
   })
 })
 
