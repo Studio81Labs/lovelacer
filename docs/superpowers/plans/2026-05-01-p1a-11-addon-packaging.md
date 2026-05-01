@@ -27,6 +27,7 @@
 ## Task 1: Backend `DASHBOARD_URL_PATH` plumbing + 2 new tests
 
 **Files:**
+
 - Modify: `packages/server/src/config.ts`
 - Modify: `packages/server/src/pipeline.ts`
 - Modify: `packages/server/src/routes/apply.ts`
@@ -41,51 +42,47 @@ Threads a new env var (`DASHBOARD_URL_PATH`, default `'lovelacer-home'`) through
 Read `packages/server/src/__tests__/pipeline.test.ts` first (around the existing `runApply` test block). Append two new tests inside the existing `describe('runApply', () => {...})` block:
 
 ```ts
-  it('forwards defaultOptions to applyDashboard when body has no options', async () => {
-    const fake = makeFakeHa()
-    const config: LovelaceConfig = {
-      title: 'x',
-      views: [
-        {
-          type: 'sections',
-          title: 'Home',
-          path: 'home',
-          icon: 'mdi:home-variant',
-          sections: [],
-        },
-      ],
-    }
-    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
+it('forwards defaultOptions to applyDashboard when body has no options', async () => {
+  const fake = makeFakeHa()
+  const config: LovelaceConfig = {
+    title: 'x',
+    views: [
+      {
+        type: 'sections',
+        title: 'Home',
+        path: 'home',
+        icon: 'mdi:home-variant',
+        sections: [],
+      },
+    ],
+  }
+  fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
 
-    await runApply(fake.client, { config }, { urlPath: 'foo' })
+  await runApply(fake.client, { config }, { urlPath: 'foo' })
 
-    expect(fake.applyDashboard).toHaveBeenCalledWith(config, { urlPath: 'foo' })
-  })
+  expect(fake.applyDashboard).toHaveBeenCalledWith(config, { urlPath: 'foo' })
+})
 
-  it('body.options overrides defaultOptions', async () => {
-    const fake = makeFakeHa()
-    const config: LovelaceConfig = {
-      title: 'x',
-      views: [
-        {
-          type: 'sections',
-          title: 'Home',
-          path: 'home',
-          icon: 'mdi:home-variant',
-          sections: [],
-        },
-      ],
-    }
-    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'bar', created: true })
+it('body.options overrides defaultOptions', async () => {
+  const fake = makeFakeHa()
+  const config: LovelaceConfig = {
+    title: 'x',
+    views: [
+      {
+        type: 'sections',
+        title: 'Home',
+        path: 'home',
+        icon: 'mdi:home-variant',
+        sections: [],
+      },
+    ],
+  }
+  fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'bar', created: true })
 
-    await runApply(
-      fake.client,
-      { config, options: { urlPath: 'bar' } },
-      { urlPath: 'foo' },
-    )
+  await runApply(fake.client, { config, options: { urlPath: 'bar' } }, { urlPath: 'foo' })
 
-    expect(fake.applyDashboard).toHaveBeenCalledWith(config, { urlPath: 'bar' })
-  })
+  expect(fake.applyDashboard).toHaveBeenCalledWith(config, { urlPath: 'bar' })
+})
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -109,9 +106,7 @@ export async function runApply(
   const options = { ...defaultOptions, ...body.options } // body wins
   if (body.config !== undefined) {
     if (typeof body.config.title !== 'string' || !Array.isArray(body.config.views)) {
-      throw new InvalidConfigError(
-        'invalid_config: title must be string and views must be array',
-      )
+      throw new InvalidConfigError('invalid_config: title must be string and views must be array')
     }
     return ha.applyDashboard(body.config, options)
   }
@@ -336,6 +331,7 @@ EOF
 ## Task 2: Dockerfile + run.sh + apparmor.txt + .dockerignore
 
 **Files:**
+
 - Create: `apps/addon/Dockerfile`
 - Create: `apps/addon/run.sh`
 - Create: `apps/addon/apparmor.txt`
@@ -568,6 +564,7 @@ EOF
 ## Task 3: `config.yaml` + `build.yaml` + `CHANGELOG.md`
 
 **Files:**
+
 - Create: `apps/addon/config.yaml`
 - Create: `apps/addon/build.yaml`
 - Create: `apps/addon/CHANGELOG.md`
@@ -676,6 +673,7 @@ EOF
 ## Task 4: PNG generation script + committed `icon.png` + `logo.png`
 
 **Files:**
+
 - Create: `dev/scripts/generate-addon-assets.ts`
 - Create: `apps/addon/icon.png`
 - Create: `apps/addon/logo.png`
@@ -834,6 +832,7 @@ pnpm --dir <worktree> generate:addon-assets
 ```
 
 Expected output:
+
 ```
 wrote .../apps/addon/icon.png (128x128)
 wrote .../apps/addon/logo.png (250x100)
@@ -848,6 +847,7 @@ file apps/addon/icon.png apps/addon/logo.png
 ```
 
 Expected:
+
 ```
 apps/addon/icon.png: PNG image data, 128 x 128, 8-bit/color RGBA, non-interlaced
 apps/addon/logo.png: PNG image data, 250 x 100, 8-bit/color RGBA, non-interlaced
@@ -896,6 +896,7 @@ EOF
 ## Task 5: `apps/addon/README.md` + `docs/ADDON_INSTALL.md`
 
 **Files:**
+
 - Modify: `apps/addon/README.md` (replace placeholder)
 - Create: `docs/ADDON_INSTALL.md`
 
@@ -922,9 +923,9 @@ The dashboard is a regular HA dashboard you can edit, copy, or delete from HA's 
 
 Two options:
 
-| Key | Default | Notes |
-| --- | --- | --- |
-| `log_level` | `info` | One of `trace, debug, info, warn, error, fatal`. Set `debug` to see why entities did or didn't get classified into a room. |
+| Key                  | Default          | Notes                                                                                                                                                   |
+| -------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `log_level`          | `info`           | One of `trace, debug, info, warn, error, fatal`. Set `debug` to see why entities did or didn't get classified into a room.                              |
 | `dashboard_url_path` | `lovelacer-home` | The `url_path` segment HA uses for the generated dashboard. Lower-case alphanumeric + hyphens. Change if you want a different URL or a second instance. |
 
 ## Logs
@@ -1045,6 +1046,7 @@ EOF
 ## Task 6: CI workflows — `build-addon.yml` + `release.yml`
 
 **Files:**
+
 - Create: `.github/workflows/build-addon.yml`
 - Create: `.github/workflows/release.yml`
 

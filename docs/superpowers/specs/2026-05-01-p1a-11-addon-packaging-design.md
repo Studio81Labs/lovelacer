@@ -444,15 +444,15 @@ HA Supervisor ingress
 
 ## Error handling
 
-| Layer | Failure | Behavior |
-| --- | --- | --- |
-| Container start | Missing `nodejs`/`jq` | apk install fails at build time — caught in CI |
-| `run.sh` | `/data/options.json` missing | Falls back to env-var defaults via `jq -r '… // "default"'` |
-| `run.sh` | `jq` parse error | Default values still applied; LOG_LEVEL=info, DASHBOARD_URL_PATH=lovelacer-home |
-| Server start | `SUPERVISOR_TOKEN` and `HA_TOKEN` both absent | Existing `config.ts` throws "No HA token configured" — Supervisor sees crash, restarts add-on |
-| Server start | HA WS unreachable (Supervisor still bringing up Core) | Existing `setupRetry: -1` retries forever with backoff |
-| Apparmor denial | Unexpected syscall | Container can't `exec` whatever it tried; logs surface in HA's add-on log viewer; we add the syscall to `apparmor.txt` and re-release |
-| Image pull | Manifest missing for host arch | Supervisor errors before starting; user sees "no compatible architecture" — solved by ensuring all 3 arches publish |
+| Layer           | Failure                                               | Behavior                                                                                                                              |
+| --------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Container start | Missing `nodejs`/`jq`                                 | apk install fails at build time — caught in CI                                                                                        |
+| `run.sh`        | `/data/options.json` missing                          | Falls back to env-var defaults via `jq -r '… // "default"'`                                                                           |
+| `run.sh`        | `jq` parse error                                      | Default values still applied; LOG_LEVEL=info, DASHBOARD_URL_PATH=lovelacer-home                                                       |
+| Server start    | `SUPERVISOR_TOKEN` and `HA_TOKEN` both absent         | Existing `config.ts` throws "No HA token configured" — Supervisor sees crash, restarts add-on                                         |
+| Server start    | HA WS unreachable (Supervisor still bringing up Core) | Existing `setupRetry: -1` retries forever with backoff                                                                                |
+| Apparmor denial | Unexpected syscall                                    | Container can't `exec` whatever it tried; logs surface in HA's add-on log viewer; we add the syscall to `apparmor.txt` and re-release |
+| Image pull      | Manifest missing for host arch                        | Supervisor errors before starting; user sees "no compatible architecture" — solved by ensuring all 3 arches publish                   |
 
 The existing `/api/health` endpoint stays the canary Supervisor uses for the add-on's health gauge.
 
@@ -506,28 +506,28 @@ The existing `/api/health` endpoint stays the canary Supervisor uses for the add
 
 ## File-by-file
 
-| File | Action | Notes |
-| --- | --- | --- |
-| `apps/addon/Dockerfile` | Create | Single-stage multi-arch, BUILD_FROM ARG |
-| `apps/addon/build.yaml` | Create | Arch → base image map |
-| `apps/addon/config.yaml` | Create | Add-on metadata + options + ingress |
-| `apps/addon/run.sh` | Create | Plain bash entrypoint, `jq` parses options |
-| `apps/addon/apparmor.txt` | Create | Strict profile + Node syscalls |
-| `apps/addon/icon.png` | Create | 128×128, generated |
-| `apps/addon/logo.png` | Create | 250×100, generated |
-| `apps/addon/README.md` | Modify | Replaces placeholder; install + use docs |
-| `apps/addon/CHANGELOG.md` | Create | Required by HA add-on store; alpha entry |
-| `dev/scripts/generate-addon-assets.ts` | Create | Reproducibly regenerates the PNGs |
-| `.github/workflows/build-addon.yml` | Create | Build + publish (PR / main / workflow_call) |
-| `.github/workflows/release.yml` | Create | Tag-driven release orchestrator |
-| `.dockerignore` | Create | Build context exclusions |
-| `packages/server/src/config.ts` | Modify | Add DASHBOARD_URL_PATH zod field |
-| `packages/server/src/pipeline.ts` | Modify | runApply accepts defaultOptions |
-| `packages/server/src/routes/apply.ts` | Modify | Reads dashboardUrlPath from route opts |
-| `packages/server/src/app.ts` | Modify | Threads dashboardUrlPath into apply route |
-| `packages/server/src/main.ts` | Modify | Passes config.dashboardUrlPath to createApp |
-| `packages/server/src/__tests__/pipeline.test.ts` | Modify | 2 new tests for defaultOptions |
-| `docs/ADDON_INSTALL.md` | Create | Short user-facing install guide |
+| File                                             | Action | Notes                                       |
+| ------------------------------------------------ | ------ | ------------------------------------------- |
+| `apps/addon/Dockerfile`                          | Create | Single-stage multi-arch, BUILD_FROM ARG     |
+| `apps/addon/build.yaml`                          | Create | Arch → base image map                       |
+| `apps/addon/config.yaml`                         | Create | Add-on metadata + options + ingress         |
+| `apps/addon/run.sh`                              | Create | Plain bash entrypoint, `jq` parses options  |
+| `apps/addon/apparmor.txt`                        | Create | Strict profile + Node syscalls              |
+| `apps/addon/icon.png`                            | Create | 128×128, generated                          |
+| `apps/addon/logo.png`                            | Create | 250×100, generated                          |
+| `apps/addon/README.md`                           | Modify | Replaces placeholder; install + use docs    |
+| `apps/addon/CHANGELOG.md`                        | Create | Required by HA add-on store; alpha entry    |
+| `dev/scripts/generate-addon-assets.ts`           | Create | Reproducibly regenerates the PNGs           |
+| `.github/workflows/build-addon.yml`              | Create | Build + publish (PR / main / workflow_call) |
+| `.github/workflows/release.yml`                  | Create | Tag-driven release orchestrator             |
+| `.dockerignore`                                  | Create | Build context exclusions                    |
+| `packages/server/src/config.ts`                  | Modify | Add DASHBOARD_URL_PATH zod field            |
+| `packages/server/src/pipeline.ts`                | Modify | runApply accepts defaultOptions             |
+| `packages/server/src/routes/apply.ts`            | Modify | Reads dashboardUrlPath from route opts      |
+| `packages/server/src/app.ts`                     | Modify | Threads dashboardUrlPath into apply route   |
+| `packages/server/src/main.ts`                    | Modify | Passes config.dashboardUrlPath to createApp |
+| `packages/server/src/__tests__/pipeline.test.ts` | Modify | 2 new tests for defaultOptions              |
+| `docs/ADDON_INSTALL.md`                          | Create | Short user-facing install guide             |
 
 ## Dependencies
 
