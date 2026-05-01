@@ -11,6 +11,7 @@ import type {
   CanonicalRoomId,
   HaAreaRegistryEntry,
   NormalizedEntity,
+  Override,
   RoomAssignment,
 } from '@lovelacer/shared'
 
@@ -79,6 +80,48 @@ interface PipelineState {
   rooms: AnalyzedRoom[]
   misc: AnalyzeOutput['misc']
   summary: AnalyzeOutput['summary']
+}
+
+/**
+ * Patches detector output with user overrides. Mutates `assignments` and
+ * `entities` in place. Called by `runFullPipeline` between `detect` and
+ * `groupByDomain` (wired in the next layer).
+ *
+ * - Each override with `roomId` set: replace the matching assignment's
+ *   `roomId`, set `confidence = 1.0` and `manual = true`.
+ * - Each override with `hidden: true`: OR-merge into the matching
+ *   entity's `isHidden` so existing hidden filters drop it from views.
+ *
+ * Orphaned overrides (entityId not in assignments) silently no-op so
+ * stale overrides from a since-removed integration don't blow up the
+ * pipeline.
+ *
+ * Caller MUST ensure `overrides` contains no duplicate entityIds —
+ * duplicates are last-write-wins (the route layer's zod refine enforces
+ * this on PUT /api/overrides).
+ */
+export function applyOverrides(
+  state: { assignments: RoomAssignment[]; entities: NormalizedEntity[] },
+  overrides: Override[],
+): void {
+  if (overrides.length === 0) return // hot path
+
+  const byEntityId = new Map(overrides.map((o) => [o.entityId, o]))
+
+  for (const a of state.assignments) {
+    const o = byEntityId.get(a.entityId)
+    if (o?.roomId !== undefined) {
+      a.roomId = o.roomId
+      a.confidence = 1.0
+      a.manual = true
+    }
+  }
+  for (const e of state.entities) {
+    const o = byEntityId.get(e.entityId)
+    if (o?.hidden === true) {
+      e.isHidden = true
+    }
+  }
 }
 
 async function runFullPipeline(ha: HaClient): Promise<PipelineState> {
