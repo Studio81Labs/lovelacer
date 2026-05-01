@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
 import type { HaClient } from '@lovelacer/ha-client'
 import { analyzeRoute } from './routes/analyze.js'
+import { applyRoute } from './routes/apply.js'
 import { previewRoute } from './routes/preview.js'
 
 export interface CreateAppOptions {
@@ -34,6 +35,7 @@ export async function createApp(opts: CreateAppOptions): Promise<FastifyInstance
 
   await app.register(analyzeRoute, { ha: opts.ha })
   await app.register(previewRoute, { ha: opts.ha })
+  await app.register(applyRoute, { ha: opts.ha })
 
   return app
 }
