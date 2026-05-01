@@ -100,6 +100,20 @@ describe('PUT /api/overrides', () => {
     }
   })
 
+  it('accepts hyphenated entity_id (e.g., binary_sensor.someone-home)', async () => {
+    const app = await makeApp()
+    try {
+      const body = {
+        overrides: [{ entityId: 'binary_sensor.someone-home', hidden: true }],
+      }
+      const res = await app.inject({ method: 'PUT', url: '/api/overrides', payload: body })
+      expect(res.statusCode).toBe(200)
+      expect(res.json()).toEqual(body)
+    } finally {
+      await app.close()
+    }
+  })
+
   it('returns 400 when roomId is not a CanonicalRoomId', async () => {
     const app = await makeApp()
     try {

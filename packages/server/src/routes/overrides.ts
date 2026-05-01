@@ -8,7 +8,7 @@ export interface OverridesRouteOptions {
   overrides: OverrideStore
 }
 
-const ENTITY_ID_RE = /^[a-z_][a-z0-9_]*\.[a-z0-9_]+$/
+const ENTITY_ID_RE = /^[a-z_][a-z0-9_]*\.[a-z0-9_-]+$/
 
 const ASSIGNABLE_ROOMS = CANONICAL_ROOMS.filter((r) => r !== 'misc') as Exclude<
   (typeof CANONICAL_ROOMS)[number],
