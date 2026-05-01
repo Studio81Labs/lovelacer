@@ -1,0 +1,89 @@
+name: Build add-on
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/addon/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.base.json'
+      - '.dockerignore'
+      - '.github/workflows/build-addon.yml'
+  pull_request:
+    paths:
+      - 'apps/addon/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.base.json'
+      - '.dockerignore'
+      - '.github/workflows/build-addon.yml'
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+      tags:
+        type: string
+        required: true
+        description: 'Comma-separated additional image tags'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [aarch64, amd64, armv7]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve build metadata
+        id: meta
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_TAGS: ${{ inputs.tags }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_call" ]]; then
+            echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+            echo "tags=$INPUT_TAGS" >> "$GITHUB_OUTPUT"
+          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
+            SHA="${GITHUB_SHA::7}"
+            echo "version=0.0.0-pr.${PR_NUMBER}.${SHA}" >> "$GITHUB_OUTPUT"
+            echo "tags=" >> "$GITHUB_OUTPUT"
+          else
+            SHA="${GITHUB_SHA::7}"
+            echo "version=0.0.0-main.${SHA}" >> "$GITHUB_OUTPUT"
+            echo "tags=main,sha-${SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build add-on (${{ matrix.arch }})
+        uses: home-assistant/builder@2024.08.2
+        with:
+          args: |
+            --${{ matrix.arch }}
+            --target apps/addon
+            --image ghcr.io/studio81labs/lovelacer-{arch}
+            --version ${{ steps.meta.outputs.version }}
+            ${{ steps.meta.outputs.tags != '' && format('--addtional-tag {0}', steps.meta.outputs.tags) || '' }}
+            ${{ github.event_name == 'pull_request' && '--test' || '' }}
+            --root .
