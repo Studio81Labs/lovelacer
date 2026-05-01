@@ -1,14 +1,14 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { addCollection } from '@iconify/vue'
-import mdiIcons from '@iconify-json/mdi/icons.json'
 import App from './App.vue'
+import { registerMdiIcons } from './icons.js'
 import './styles.css'
 
-// Register the MDI icon set up front so <Icon icon="mdi:..."> resolves
-// from the bundled JSON at runtime instead of fetching from
-// api.iconify.design (which would fail in offline HA installs).
-addCollection(mdiIcons)
+// Register the specific MDI icons we render so <Icon icon="mdi:...">
+// resolves from the bundle at runtime instead of fetching from
+// api.iconify.design. Per-icon imports keep the bundle tiny (~3 KB
+// for our 17 icons vs. ~750 KB for the full set).
+registerMdiIcons()
 
 const app = createApp(App)
 app.use(createPinia())
