@@ -230,6 +230,46 @@ describe('useOverridesStore', () => {
     expect(store.effective('a.b')).toEqual({ entityId: 'a.b', roomId: 'kitchen' }) // server value
   })
 
+  it('discardChanges resets phase + error when in error state', async () => {
+    // Arrange: trigger an error state via a failed save.
+    const apiError: ApiError = { error: 'storage_error', message: 'disk full' }
+    vi.mocked(putOverrides).mockRejectedValueOnce(apiError)
+
+    const store = useOverridesStore()
+    store.setRoomId('a.b', 'bedroom')
+    await store.saveAndReanalyze()
+
+    expect(store.phase).toBe('error')
+    expect(store.error).toEqual(apiError)
+    expect(store.hasDirty).toBe(true)
+
+    // Act: user discards.
+    store.discardChanges()
+
+    // Assert: dirtyState cleared AND error state reset.
+    expect(store.hasDirty).toBe(false)
+    expect(store.phase).toBe('idle')
+    expect(store.error).toBeNull()
+
+    // A fresh edit should now produce the normal (non-error) bar state.
+    store.setRoomId('c.d', 'kitchen')
+    expect(store.phase).toBe('idle') // still idle, not stale error
+  })
+
+  it('discardChanges does not interrupt an in-flight saving phase', () => {
+    const store = useOverridesStore()
+    store.setRoomId('a.b', 'bedroom')
+    // Simulate an in-flight save by patching phase directly.
+    store.$patch({ phase: 'saving' })
+
+    store.discardChanges()
+
+    // dirtyState cleared, but saving phase preserved (the in-flight
+    // save is still in progress; the discard only affects future edits).
+    expect(store.hasDirty).toBe(false)
+    expect(store.phase).toBe('saving')
+  })
+
   it('loadFromServer on 500 sets phase=error and preserves dirtyState + previously-loaded serverState', async () => {
     // First load: success — populates serverState.
     vi.mocked(getOverrides).mockResolvedValueOnce({

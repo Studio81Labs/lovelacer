@@ -80,6 +80,12 @@ export const useOverridesStore = defineStore('overrides', () => {
 
   function discardChanges(): void {
     dirtyState.value.clear()
+    // Reset error state so a subsequent fresh edit shows the normal
+    // (amber) bar with Save, not the stale red error bar with Retry.
+    if (phase.value === 'error') {
+      phase.value = 'idle'
+      error.value = null
+    }
   }
 
   async function loadFromServer(): Promise<void> {
