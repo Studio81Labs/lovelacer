@@ -43,8 +43,14 @@ export default [
   },
 
   // Vue single-file components — vue-eslint-parser handles SFC structure,
-  // delegates <script lang="ts"> to typescript-eslint parser
-  ...vue.configs['flat/recommended'],
+  // delegates <script lang="ts"> to typescript-eslint parser. The
+  // recommended config is mapped over `files: ['**/*.vue']` so its rules
+  // (e.g. vue/one-component-per-file) don't fire on plain .ts files that
+  // happen to call functions named `createApp`, `defineComponent`, etc.
+  ...vue.configs['flat/recommended'].map((cfg) => ({
+    ...cfg,
+    files: ['**/*.vue'],
+  })),
   {
     files: ['**/*.vue'],
     languageOptions: {
