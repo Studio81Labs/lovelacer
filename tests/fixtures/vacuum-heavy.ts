@@ -85,10 +85,5 @@ export const vacuumHeavy = fixture({
   floors: [ground],
   areas: [livingRoom, kitchen, hallway],
   devices: [lrIRobot, lrEcovacs, lrHue, kitchenRoborock, kitchenHue, hallwayDreame, hallwayHue],
-  entities: [
-    ...livingRoomEntities,
-    ...kitchenEntities,
-    ...hallwayEntities,
-    ...floatingEntities,
-  ],
+  entities: [...livingRoomEntities, ...kitchenEntities, ...hallwayEntities, ...floatingEntities],
 })

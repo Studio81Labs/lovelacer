@@ -220,36 +220,36 @@ function buildTileCard(entity: NormalizedEntity): TileCard {
 
 **`security-rich.ts`** — exterior + interior security install. ~38 entities, 4 areas (Front Entry, Back Yard, Garage, Hallway), 1 floor.
 
-| Area | Entity mix |
-| --- | --- |
+| Area        | Entity mix                                                                        |
+| ----------- | --------------------------------------------------------------------------------- |
 | Front Entry | lock × 1, camera × 1, motion × 1, door × 1, light × 1, doorbell binary_sensor × 1 |
-| Back Yard | camera × 2, motion × 2, light × 2, gate door binary_sensor × 1 |
-| Garage | lock × 1, camera × 1, motion × 1, garage-door cover × 1, light × 1 |
-| Hallway | motion × 2, smoke binary_sensor × 1, light × 1 |
-| (no area) | 4 perimeter cameras, 2 hidden disabled motion sensors |
+| Back Yard   | camera × 2, motion × 2, light × 2, gate door binary_sensor × 1                    |
+| Garage      | lock × 1, camera × 1, motion × 1, garage-door cover × 1, light × 1                |
+| Hallway     | motion × 2, smoke binary_sensor × 1, light × 1                                    |
+| (no area)   | 4 perimeter cameras, 2 hidden disabled motion sensors                             |
 
 Exercises `lock → security`, `camera → cameras`, multiple cameras within one area (`Cameras` section has 2+ picture-entity cards), `cover → covers` (garage door).
 
 **`vacuum-heavy.ts`** — whole-house cleaning bots. ~26 entities, 3 areas (Living Room, Kitchen, Hallway), 1 floor.
 
-| Area | Entity mix |
-| --- | --- |
-| Living Room | vacuum × 1 (Roomba), mop bot × 1, motion × 1, light × 2, temp × 1 |
-| Kitchen | vacuum × 1 (Robot K7), light × 2, motion × 1, temp × 1, humidity × 1 |
-| Hallway | vacuum × 1 (Mini), motion × 2, light × 1 |
-| (no area) | 6 vacuum diagnostic sensors, 2 hidden battery sensors |
+| Area        | Entity mix                                                           |
+| ----------- | -------------------------------------------------------------------- |
+| Living Room | vacuum × 1 (Roomba), mop bot × 1, motion × 1, light × 2, temp × 1    |
+| Kitchen     | vacuum × 1 (Robot K7), light × 2, motion × 1, temp × 1, humidity × 1 |
+| Hallway     | vacuum × 1 (Mini), motion × 2, light × 1                             |
+| (no area)   | 6 vacuum diagnostic sensors, 2 hidden battery sensors                |
 
 Exercises `vacuum → vacuum` group with three different vacuums in three different rooms. The "mop bot" is also a `vacuum` domain entity (HA's vacuum domain covers all robot cleaners regardless of action type).
 
 **`kitchen-sink.ts`** — smoke fixture for the full domain matrix. ~40 entities, 4 areas (Living Room, Master Bedroom, Kitchen, Front Door), 1 floor.
 
-| Area | Entity mix |
-| --- | --- |
-| Living Room | media_player × 1, cover × 1 (blinds), camera × 1, light × 2, motion × 1, temp × 1 |
-| Master Bedroom | media_player × 1 (speaker), cover × 1 (blackout), fan × 1, light × 2, motion × 1 |
-| Kitchen | vacuum × 1, fan × 1 (range hood), media_player × 1, light × 2, temp × 1, humidity × 1 |
-| Front Door | lock × 1, camera × 1, doorbell × 1, light × 1 |
-| (no area) | 4 floating diagnostics, 2 hidden, 2 disabled |
+| Area           | Entity mix                                                                            |
+| -------------- | ------------------------------------------------------------------------------------- |
+| Living Room    | media_player × 1, cover × 1 (blinds), camera × 1, light × 2, motion × 1, temp × 1     |
+| Master Bedroom | media_player × 1 (speaker), cover × 1 (blackout), fan × 1, light × 2, motion × 1      |
+| Kitchen        | vacuum × 1, fan × 1 (range hood), media_player × 1, light × 2, temp × 1, humidity × 1 |
+| Front Door     | lock × 1, camera × 1, doorbell × 1, light × 1                                         |
+| (no area)      | 4 floating diagnostics, 2 hidden, 2 disabled                                          |
 
 Validates the full 6-domain matrix in a single snapshot. If any of the 6 mappings regresses, this fixture's snapshot diff surfaces it instantly.
 
@@ -265,13 +265,13 @@ After P1b-2, more entities flow through the non-`other` groups in `groupByDomain
 
 ## Error handling
 
-| Layer | Failure | Behavior |
-| --- | --- | --- |
-| `domainGroup()` | Unknown domain | Returns `'other'` (existing fallback). |
-| `buildSection()` | New `DomainGroupKey` added without case | TypeScript compilation fails (exhaustive switch). |
-| `GROUP_HEADINGS` | New `DomainGroupKey` added without heading | TypeScript compilation fails (`Record<DomainGroupKey, string>`). |
-| `buildTileCard()` | Domain doesn't have explicit feature mapping | Returns plain tile (no features). Acceptable for switch / lock / vacuum / scene / script. |
-| Fixture | Camera entity has no actual stream URL | `picture-entity` card renders HA's "no preview" placeholder; not our concern at generator level. |
+| Layer             | Failure                                      | Behavior                                                                                         |
+| ----------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `domainGroup()`   | Unknown domain                               | Returns `'other'` (existing fallback).                                                           |
+| `buildSection()`  | New `DomainGroupKey` added without case      | TypeScript compilation fails (exhaustive switch).                                                |
+| `GROUP_HEADINGS`  | New `DomainGroupKey` added without heading   | TypeScript compilation fails (`Record<DomainGroupKey, string>`).                                 |
+| `buildTileCard()` | Domain doesn't have explicit feature mapping | Returns plain tile (no features). Acceptable for switch / lock / vacuum / scene / script.        |
+| Fixture           | Camera entity has no actual stream URL       | `picture-entity` card renders HA's "no preview" placeholder; not our concern at generator level. |
 
 The removal of the runtime `throw new Error('unsupported group key')` is intentional — TypeScript catches that case at compile time now.
 
@@ -332,24 +332,24 @@ Re-baseline all of them with `-u`, visually inspect the diffs, commit.
 
 ## File-by-file
 
-| File | Action | Notes |
-| --- | --- | --- |
-| `packages/analyzer/src/grouping.ts` | Modify | 6 new explicit domain mappings in `domainGroup()` |
-| `packages/analyzer/src/__tests__/grouping.test.ts` | Modify | 6 new routing tests |
-| `packages/analyzer/src/__tests__/grouping.fixtures.test.ts` | Modify | snapshots regenerate; 3 new fixture blocks |
-| `packages/analyzer/src/__tests__/detect.fixtures.test.ts` | Modify | 3 new fixture pipe blocks |
-| `packages/generator/src/lovelace-types.ts` | Modify | 2 new card types, 2 new TileFeature variants |
-| `packages/generator/src/room-view.ts` | Modify | GROUP_HEADINGS exhaustive; switch handles 6 new keys; buildTileCard adds cover/fan features |
-| `packages/generator/src/index.ts` | Modify | re-export `MediaControlCard`, `PictureEntityCard` |
-| `packages/generator/src/__tests__/room-view.test.ts` | Modify | ~10 new card-mapping tests |
-| `packages/generator/src/__tests__/room-view.fixtures.test.ts` | Modify | snapshots regenerate |
-| `packages/generator/src/__tests__/lovelace-config.fixtures.test.ts` | Modify | snapshots regenerate |
-| `tests/fixtures/security-rich.ts` | Create | ~38 entities, 4 areas |
-| `tests/fixtures/vacuum-heavy.ts` | Create | ~26 entities, 3 areas |
-| `tests/fixtures/kitchen-sink.ts` | Create | ~40 entities, 4 areas |
-| `tests/fixtures/__tests__/security-rich.test.ts` | Create | structural |
-| `tests/fixtures/__tests__/vacuum-heavy.test.ts` | Create | structural |
-| `tests/fixtures/__tests__/kitchen-sink.test.ts` | Create | structural |
+| File                                                                | Action | Notes                                                                                       |
+| ------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------- |
+| `packages/analyzer/src/grouping.ts`                                 | Modify | 6 new explicit domain mappings in `domainGroup()`                                           |
+| `packages/analyzer/src/__tests__/grouping.test.ts`                  | Modify | 6 new routing tests                                                                         |
+| `packages/analyzer/src/__tests__/grouping.fixtures.test.ts`         | Modify | snapshots regenerate; 3 new fixture blocks                                                  |
+| `packages/analyzer/src/__tests__/detect.fixtures.test.ts`           | Modify | 3 new fixture pipe blocks                                                                   |
+| `packages/generator/src/lovelace-types.ts`                          | Modify | 2 new card types, 2 new TileFeature variants                                                |
+| `packages/generator/src/room-view.ts`                               | Modify | GROUP_HEADINGS exhaustive; switch handles 6 new keys; buildTileCard adds cover/fan features |
+| `packages/generator/src/index.ts`                                   | Modify | re-export `MediaControlCard`, `PictureEntityCard`                                           |
+| `packages/generator/src/__tests__/room-view.test.ts`                | Modify | ~10 new card-mapping tests                                                                  |
+| `packages/generator/src/__tests__/room-view.fixtures.test.ts`       | Modify | snapshots regenerate                                                                        |
+| `packages/generator/src/__tests__/lovelace-config.fixtures.test.ts` | Modify | snapshots regenerate                                                                        |
+| `tests/fixtures/security-rich.ts`                                   | Create | ~38 entities, 4 areas                                                                       |
+| `tests/fixtures/vacuum-heavy.ts`                                    | Create | ~26 entities, 3 areas                                                                       |
+| `tests/fixtures/kitchen-sink.ts`                                    | Create | ~40 entities, 4 areas                                                                       |
+| `tests/fixtures/__tests__/security-rich.test.ts`                    | Create | structural                                                                                  |
+| `tests/fixtures/__tests__/vacuum-heavy.test.ts`                     | Create | structural                                                                                  |
+| `tests/fixtures/__tests__/kitchen-sink.test.ts`                     | Create | structural                                                                                  |
 
 ## Open questions resolved during brainstorming
 

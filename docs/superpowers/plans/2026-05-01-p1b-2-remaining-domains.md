@@ -27,6 +27,7 @@
 ## Task 1: Add `MediaControlCard`, `PictureEntityCard`, and 2 new `TileFeature` variants
 
 **Files:**
+
 - Modify: `packages/generator/src/lovelace-types.ts`
 - Modify: `packages/generator/src/index.ts`
 
@@ -156,6 +157,7 @@ EOF
 ## Task 2: Extend `domainGroup()` routing + 6 new tests + regenerate analyzer fixture snapshots
 
 **Files:**
+
 - Modify: `packages/analyzer/src/grouping.ts`
 - Modify: `packages/analyzer/src/__tests__/grouping.test.ts`
 - Modify: `packages/analyzer/src/__tests__/grouping.fixtures.test.ts` (snapshot regeneration)
@@ -325,6 +327,7 @@ EOF
 ## Task 3: Make `room-view.ts` exhaustive over `DomainGroupKey` + ~10 card-mapping tests + regenerate generator snapshots
 
 **Files:**
+
 - Modify: `packages/generator/src/room-view.ts`
 - Modify: `packages/generator/src/__tests__/room-view.test.ts`
 - Modify: `packages/generator/src/__tests__/room-view.fixtures.test.ts` (snapshot regeneration)
@@ -700,6 +703,7 @@ EOF
 ## Task 4: `security-rich` fixture + structural test
 
 **Files:**
+
 - Create: `tests/fixtures/security-rich.ts`
 - Create: `tests/fixtures/__tests__/security-rich.test.ts`
 
@@ -971,6 +975,7 @@ EOF
 ## Task 5: `vacuum-heavy` fixture + structural test
 
 **Files:**
+
 - Create: `tests/fixtures/vacuum-heavy.ts`
 - Create: `tests/fixtures/__tests__/vacuum-heavy.test.ts`
 
@@ -1067,12 +1072,7 @@ export const vacuumHeavy = fixture({
   floors: [ground],
   areas: [livingRoom, kitchen, hallway],
   devices: [lrIRobot, lrEcovacs, lrHue, kitchenRoborock, kitchenHue, hallwayDreame, hallwayHue],
-  entities: [
-    ...livingRoomEntities,
-    ...kitchenEntities,
-    ...hallwayEntities,
-    ...floatingEntities,
-  ],
+  entities: [...livingRoomEntities, ...kitchenEntities, ...hallwayEntities, ...floatingEntities],
 })
 ```
 
@@ -1194,6 +1194,7 @@ EOF
 ## Task 6: `kitchen-sink` fixture + structural test
 
 **Files:**
+
 - Create: `tests/fixtures/kitchen-sink.ts`
 - Create: `tests/fixtures/__tests__/kitchen-sink.test.ts`
 
@@ -1226,7 +1227,10 @@ const kitchen = area('Kitchen', { floor: ground.id, icon: 'mdi:silverware-fork-k
 const frontDoor = area('Front Door', { floor: ground.id, icon: 'mdi:door' })
 
 const lrSamsung = device('Living Room Samsung TV', { manufacturer: 'Samsung', area: livingRoom.id })
-const lrShelly = device('Living Room Shelly Blinds', { manufacturer: 'Shelly', area: livingRoom.id })
+const lrShelly = device('Living Room Shelly Blinds', {
+  manufacturer: 'Shelly',
+  area: livingRoom.id,
+})
 const lrReolink = device('Living Room Reolink', { manufacturer: 'Reolink', area: livingRoom.id })
 const lrHue = device('Living Room Hue', { manufacturer: 'Philips', area: livingRoom.id })
 
@@ -1465,6 +1469,7 @@ EOF
 ## Task 7: Wire 3 new fixtures into `detect.fixtures.test.ts` + `grouping.fixtures.test.ts`
 
 **Files:**
+
 - Modify: `packages/analyzer/src/__tests__/detect.fixtures.test.ts`
 - Modify: `packages/analyzer/src/__tests__/grouping.fixtures.test.ts`
 

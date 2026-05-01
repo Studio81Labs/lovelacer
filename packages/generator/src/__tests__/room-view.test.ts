@@ -275,10 +275,7 @@ describe('buildRoomView — covers group', () => {
       groups: [
         {
           key: 'covers',
-          entities: [
-            ent('cover.kitchen_blinds'),
-            ent('cover.bedroom_curtains'),
-          ],
+          entities: [ent('cover.kitchen_blinds'), ent('cover.bedroom_curtains')],
         },
       ],
     }
@@ -369,10 +366,7 @@ describe('buildRoomView — media group', () => {
       groups: [
         {
           key: 'media',
-          entities: [
-            ent('media_player.tv'),
-            ent('media_player.speaker'),
-          ],
+          entities: [ent('media_player.tv'), ent('media_player.speaker')],
         },
       ],
     }
@@ -397,10 +391,7 @@ describe('buildRoomView — cameras group', () => {
       groups: [
         {
           key: 'cameras',
-          entities: [
-            ent('camera.front_door'),
-            ent('camera.back_yard'),
-          ],
+          entities: [ent('camera.front_door'), ent('camera.back_yard')],
         },
       ],
     }

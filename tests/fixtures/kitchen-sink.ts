@@ -21,7 +21,10 @@ const kitchen = area('Kitchen', { floor: ground.id, icon: 'mdi:silverware-fork-k
 const frontDoor = area('Front Door', { floor: ground.id, icon: 'mdi:door' })
 
 const lrSamsung = device('Living Room Samsung TV', { manufacturer: 'Samsung', area: livingRoom.id })
-const lrShelly = device('Living Room Shelly Blinds', { manufacturer: 'Shelly', area: livingRoom.id })
+const lrShelly = device('Living Room Shelly Blinds', {
+  manufacturer: 'Shelly',
+  area: livingRoom.id,
+})
 const lrReolink = device('Living Room Reolink', { manufacturer: 'Reolink', area: livingRoom.id })
 const lrHue = device('Living Room Hue', { manufacturer: 'Philips', area: livingRoom.id })
 
