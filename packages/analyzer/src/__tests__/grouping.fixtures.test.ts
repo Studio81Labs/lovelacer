@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
+import { germanMassive } from '../../../../tests/fixtures/german-massive.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { normalize } from '../normalize.js'
 import { detect } from '../detect.js'
@@ -434,6 +435,287 @@ describe('groupByDomain — czech-tidy fixture', () => {
     for (const room of groupings) {
       for (const group of room.groups) {
         expect(group.entities.length).toBeGreaterThan(0)
+      }
+    }
+  })
+})
+
+describe('groupByDomain — german-massive fixture', () => {
+  const ha = fixtureToHaRegistries(germanMassive)
+  const entities = normalize({ entities: ha.entities, devices: ha.devices })
+  const assignments = detect({ entities, areas: ha.areas })
+  const groupings = groupByDomain({ assignments, entities })
+
+  it('matches structural snapshot', () => {
+    const summary = groupings
+      .filter((g) => g.roomId !== 'misc')
+      .map((g) => ({
+        roomId: g.roomId,
+        groups: g.groups.map((sub) => ({ key: sub.key, count: sub.entities.length })),
+      }))
+    expect(summary).toMatchInlineSnapshot(`
+      [
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "other",
+            },
+          ],
+          "roomId": "basement",
+        },
+        {
+          "groups": [
+            {
+              "count": 5,
+              "key": "lights",
+            },
+            {
+              "count": 2,
+              "key": "activity",
+            },
+            {
+              "count": 4,
+              "key": "environment",
+            },
+          ],
+          "roomId": "bathroom",
+        },
+        {
+          "groups": [
+            {
+              "count": 3,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "climate",
+            },
+            {
+              "count": 2,
+              "key": "activity",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "other",
+            },
+          ],
+          "roomId": "bedroom",
+        },
+        {
+          "groups": [
+            {
+              "count": 3,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "environment",
+            },
+          ],
+          "roomId": "dining_room",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "other",
+            },
+          ],
+          "roomId": "garage",
+        },
+        {
+          "groups": [
+            {
+              "count": 3,
+              "key": "lights",
+            },
+            {
+              "count": 2,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "other",
+            },
+          ],
+          "roomId": "garden",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "environment",
+            },
+          ],
+          "roomId": "guest_room",
+        },
+        {
+          "groups": [
+            {
+              "count": 3,
+              "key": "lights",
+            },
+            {
+              "count": 3,
+              "key": "activity",
+            },
+          ],
+          "roomId": "hallway",
+        },
+        {
+          "groups": [
+            {
+              "count": 3,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+          ],
+          "roomId": "kids_room",
+        },
+        {
+          "groups": [
+            {
+              "count": 6,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "other",
+            },
+          ],
+          "roomId": "kitchen",
+        },
+        {
+          "groups": [
+            {
+              "count": 3,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "other",
+            },
+          ],
+          "roomId": "laundry",
+        },
+        {
+          "groups": [
+            {
+              "count": 4,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "climate",
+            },
+            {
+              "count": 2,
+              "key": "activity",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "other",
+            },
+          ],
+          "roomId": "living_room",
+        },
+      ]
+    `)
+  })
+
+  it('every canonical room has at least one group', () => {
+    for (const g of groupings) {
+      if (g.roomId === 'misc') continue
+      expect(g.groups.length, `room ${g.roomId} should have ≥1 group`).toBeGreaterThan(0)
+    }
+  })
+
+  it('hidden and disabled entities are excluded from grouping output', () => {
+    const visibleEntityIds = new Set(
+      ha.entities
+        .filter((e) => e.hidden_by === null && e.disabled_by === null)
+        .map((e) => e.entity_id),
+    )
+    for (const g of groupings) {
+      for (const sub of g.groups) {
+        for (const e of sub.entities) {
+          expect(
+            visibleEntityIds.has(e.entityId),
+            `${e.entityId} (hidden or disabled) leaked into grouping`,
+          ).toBe(true)
+        }
       }
     }
   })
