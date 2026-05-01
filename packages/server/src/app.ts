@@ -61,15 +61,17 @@ export async function createApp(opts: CreateAppOptions) {
   await app.register(applyRoute, { ha: opts.ha, dashboardUrlPath: opts.dashboardUrlPath })
 
   // SPA static serving — only enabled in add-on / production. In dev Vite
-  // owns serving the SPA. The `wildcard: false` + `setNotFoundHandler`
-  // combo gives us the standard SPA fallback: API 404s pass through, but
-  // any non-API path falls back to index.html so the client-side router
-  // can resolve deep links.
+  // owns serving the SPA. With `wildcard: true` (default), @fastify/static
+  // registers a wildcard route that resolves any file under `webDistDir`
+  // (so `/assets/index-xxxx.js` returns the actual JS, `/` serves
+  // `index.html` via the `index` option, etc.). True 404s — paths that
+  // don't match a file AND aren't covered by an /api/* route — fall
+  // through to `setNotFoundHandler`, which serves `index.html` so the
+  // Vue Router can resolve client-side deep links.
   if (opts.webDistDir !== undefined) {
     await app.register(fastifyStatic, {
       root: opts.webDistDir,
       prefix: '/',
-      wildcard: false,
     })
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith('/api/')) {
