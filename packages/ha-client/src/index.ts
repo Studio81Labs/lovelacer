@@ -5,4 +5,5 @@ export {
   type ApplyDashboardOptions,
   type ApplyDashboardResult,
   type HaDashboardEntry,
+  type LovelaceDashboardConfig,
 } from './dashboards.js'

@@ -11,13 +11,13 @@ import type {
   HaEntityRegistryEntry,
   HaFloorRegistryEntry,
 } from '@lovelacer/shared'
-import type { LovelaceConfig } from '@lovelacer/generator'
 import {
   DEFAULT_APPLY_OPTIONS,
   HaApplyError,
   type ApplyDashboardOptions,
   type ApplyDashboardResult,
   type HaDashboardEntry,
+  type LovelaceDashboardConfig,
 } from './dashboards.js'
 
 // home-assistant-js-websocket expects WebSocket on globalThis.
@@ -92,7 +92,7 @@ export class HaClient {
   }
 
   async applyDashboard(
-    config: LovelaceConfig,
+    config: LovelaceDashboardConfig,
     options?: ApplyDashboardOptions,
   ): Promise<ApplyDashboardResult> {
     const opts = { ...DEFAULT_APPLY_OPTIONS, ...options }

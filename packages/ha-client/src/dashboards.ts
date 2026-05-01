@@ -4,6 +4,24 @@
  * client.ts stays focused on connection lifecycle.
  */
 
+/**
+ * Minimal Lovelace dashboard envelope shape `applyDashboard` forwards to
+ * HA's `lovelace/config/save`. The full typed `LovelaceConfig` (with the
+ * discriminated `HomeView | RoomView` union) lives in `@lovelacer/generator`
+ * and structurally satisfies this shape, so `pipeline.runApply` can pass
+ * its `LovelaceConfig` through without a cast.
+ *
+ * Keeping this opaque here is deliberate: `ha-client` is the WS transport
+ * layer and shouldn't transitively depend on the view-builder package
+ * (and through it, the analyzer). The client never inspects views — HA
+ * itself rejects malformed cards in `config/save`, and that bubbles up
+ * as `HaApplyError({ step: 'save' })`.
+ */
+export interface LovelaceDashboardConfig {
+  title: string
+  views: unknown[]
+}
+
 export interface ApplyDashboardOptions {
   /** Default 'lovelacer-home'. The HA `url_path` segment. */
   urlPath?: string

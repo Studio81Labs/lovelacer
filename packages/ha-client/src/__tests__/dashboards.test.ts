@@ -1,10 +1,14 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { Connection, MessageBase } from 'home-assistant-js-websocket'
 import { HaClient } from '../client.js'
-import { HaApplyError, type ApplyDashboardOptions, type HaDashboardEntry } from '../dashboards.js'
-import type { LovelaceConfig } from '@lovelacer/generator'
+import {
+  HaApplyError,
+  type ApplyDashboardOptions,
+  type HaDashboardEntry,
+  type LovelaceDashboardConfig,
+} from '../dashboards.js'
 
-const config: LovelaceConfig = {
+const config: LovelaceDashboardConfig = {
   title: 'Lovelacer — Home',
   views: [
     {
