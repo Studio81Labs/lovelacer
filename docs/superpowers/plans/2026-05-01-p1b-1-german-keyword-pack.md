@@ -27,6 +27,7 @@
 ## Task 1: Add 14 German keyword rows to `room-keywords.ts`
 
 **Files:**
+
 - Modify: `packages/shared/src/room-keywords.ts`
 
 The schema test in `packages/shared/src/__tests__/room-keywords.test.ts` already enforces the storage convention (lowercase, no diacritics, only `[a-z0-9 ]`, valid `canonical` + `language`). This task adds rows; the schema test catches typos at CI time without any new test code.
@@ -151,6 +152,7 @@ EOF
 ## Task 2: Create `tests/fixtures/german-massive.ts`
 
 **Files:**
+
 - Create: `tests/fixtures/german-massive.ts`
 
 Multi-floor German home. ~130 entities across 13 areas declared in the fixture, plus a couple more "no-area" outdoor entities. Mirrors the structure of `czech-tidy.ts` but bigger and with more domain variety.
@@ -530,6 +532,7 @@ EOF
 ## Task 3: Structural test for `german-massive`
 
 **Files:**
+
 - Create: `tests/fixtures/__tests__/german-massive.test.ts`
 
 Mirrors `czech-tidy.test.ts` and `english-cluttered.test.ts`. Asserts the fixture's structural integrity (entity count, area count, area names, area_id uniqueness, hidden/disabled entries present, all referenced devices exist, floor mapping). Does NOT yet verify detection — that's Tasks 4-5.
@@ -690,9 +693,11 @@ EOF
 ## Task 4: Extend `detect.fixtures.test.ts` with `german-massive`
 
 **Files:**
+
 - Modify: `packages/analyzer/src/__tests__/detect.fixtures.test.ts`
 
 Append a new `describe('detect — german-massive fixture', () => {...})` block matching the existing english-cluttered + czech-tidy patterns. The block runs `german-massive` through `fixtureToHaRegistries → normalize → detect` and asserts:
+
 - Per-entity assignment is preserved by entity order.
 - Misc bucket size is reasonable (≤15% of visible entities — the fixture has only 1 non-canonical area, `Hobbyraum`, so misc should be small).
 - ≥85% of entities with non-null fixture area land in the canonical of that area.
@@ -734,10 +739,7 @@ describe('detect — german-massive fixture', () => {
   it('misc bucket size is at most 15% of entities', () => {
     const miscCount = assignments.filter((a) => a.roomId === 'misc').length
     const ratio = miscCount / assignments.length
-    expect(
-      ratio,
-      `${miscCount}/${assignments.length} entities in misc`,
-    ).toBeLessThanOrEqual(0.15)
+    expect(ratio, `${miscCount}/${assignments.length} entities in misc`).toBeLessThanOrEqual(0.15)
   })
 
   it('≥85% of entities with non-null fixture area land in their fixture-area canonical', () => {
@@ -828,6 +830,7 @@ pnpm --dir <worktree> vitest run packages/analyzer/src/__tests__/detect.fixtures
 ```
 
 Expected: PASS — 6 tests. If the ≥85% threshold fails, look at the test output for which entities ended up in misc / wrong canonical and either:
+
 1. Tweak the keyword patterns in `room-keywords.ts` (back to Task 1's commit; Task 1 should be re-amended only if the failure is genuinely a missing pattern, not a fixture issue).
 2. Adjust the fixture entity name (if the entity has a confusing name that nobody would actually use in a real install).
 
@@ -873,6 +876,7 @@ EOF
 ## Task 5: Extend `grouping.fixtures.test.ts` with `german-massive`
 
 **Files:**
+
 - Modify: `packages/analyzer/src/__tests__/grouping.fixtures.test.ts`
 
 Final task. Adds a `describe('groupByDomain — german-massive fixture', () => {...})` block running `german-massive` through `groupByDomain` and locking the per-room domain split via inline snapshots.
@@ -948,12 +952,14 @@ pnpm --dir <worktree> vitest run packages/analyzer/src/__tests__/grouping.fixtur
 Expected: PASS. The `toMatchInlineSnapshot()` placeholder gets populated with the actual per-room domain split.
 
 Open the file and inspect the snapshot. Sanity-check:
+
 - `kitchen` should have `lights` (3) + a `climate` or `other` for the appliances, `activity`, `environment`.
 - `bathroom` should appear once but represent both Bad EG + Bad OG entities (they share canonical = bathroom).
 - `attic` should not appear (no fixture area with `Dachboden`/`Speicher` in the name).
 - `misc` is filtered out by the snapshot helper.
 
 If the snapshot looks wrong (e.g., `kitchen` is empty), debug:
+
 1. The keyword patterns in `room-keywords.ts` may have a typo.
 2. The fixture's area name might not match the pattern (e.g., `'Küchenecke'` would match `'kuche'` but `'Anrichte'` wouldn't).
 

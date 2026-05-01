@@ -141,10 +141,7 @@ describe('detect — german-massive fixture', () => {
   it('misc bucket size is at most 20% of entities', () => {
     const miscCount = assignments.filter((a) => a.roomId === 'misc').length
     const ratio = miscCount / assignments.length
-    expect(
-      ratio,
-      `${miscCount}/${assignments.length} entities in misc`,
-    ).toBeLessThanOrEqual(0.2)
+    expect(ratio, `${miscCount}/${assignments.length} entities in misc`).toBeLessThanOrEqual(0.2)
   })
 
   it('≥85% of entities with non-null fixture area land in their fixture-area canonical', () => {

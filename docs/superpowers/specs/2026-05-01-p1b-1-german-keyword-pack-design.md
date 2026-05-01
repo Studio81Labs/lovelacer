@@ -116,34 +116,34 @@ Multi-floor single-family German home. ~130 entities, 13 areas across 3 floor gr
 
 **Floor / area layout:**
 
-| Floor | Areas | Notes |
-| --- | --- | --- |
-| Erdgeschoss (EG) | Küche, Wohnzimmer, Esszimmer, Bad EG, Flur, Garage | Living areas |
-| Obergeschoss (OG) | Schlafzimmer, Kinderzimmer, Bad OG, Gästezimmer | Bedrooms |
-| Keller | Keller, Waschküche, Hobbyraum | Cellar utilities |
-| (no floor) | (Garten, Terrasse exist as friendlyName-only entities, no `area_id`) | Outdoor — tests friendly_name-only signal |
+| Floor             | Areas                                                                | Notes                                     |
+| ----------------- | -------------------------------------------------------------------- | ----------------------------------------- |
+| Erdgeschoss (EG)  | Küche, Wohnzimmer, Esszimmer, Bad EG, Flur, Garage                   | Living areas                              |
+| Obergeschoss (OG) | Schlafzimmer, Kinderzimmer, Bad OG, Gästezimmer                      | Bedrooms                                  |
+| Keller            | Keller, Waschküche, Hobbyraum                                        | Cellar utilities                          |
+| (no floor)        | (Garten, Terrasse exist as friendlyName-only entities, no `area_id`) | Outdoor — tests friendly_name-only signal |
 
 `Hobbyraum` is non-canonical — entities there fall through to misc. `Terrasse` is non-canonical but matches `garden.patterns` via the `'terrasse'` substring, so those entities route to garden.
 
 **Per-room entity mix (rough counts):**
 
-| Area | Entity count | Examples |
-| --- | --- | --- |
-| Küche | 10 | 3× lights, oven, dishwasher, fridge, motion sensor, temp, humidity |
-| Wohnzimmer | 10 | ceiling-light, floor-lamp, TV (media_player → P1b-2), thermostat, motion, temp, humidity, presence |
-| Esszimmer | 5 | 2× dining-lights, motion, temp |
-| Bad EG | 6 | bath-light, exhaust-fan (switch), motion, humidity, towel-warmer |
-| Bad OG | 5 | mirror-light, ventilation, motion, humidity |
-| Schlafzimmer | 9 | 2× bed-lights, ceiling-light, presence, thermostat, temp, humidity, blinds (cover → P1b-2) |
-| Kinderzimmer | 6 | kid-light, night-light, motion, temp, humidity |
-| Gästezimmer | 4 | guest-light, motion, temp |
-| Flur | 6 | 2× corridor-lights, 2× motion, presence |
-| Garage | 5 | garage-door (cover), garage-light, motion, temp |
-| Keller | 6 | 2× cellar-lights, motion, humidity, leak-sensor |
-| Waschküche | 7 | washer (switch), dryer (switch), light, motion, humidity, leak-sensor |
-| Hobbyraum | 3 | hobby-light, motion (intentionally sparse — misc test) |
-| Garten + Terrasse (no area) | 7 | 3× outdoor-lights, weather, presence, gate-sensor |
-| Floating | 10 | diagnostic + hidden + disabled mix, no area |
+| Area                        | Entity count | Examples                                                                                           |
+| --------------------------- | ------------ | -------------------------------------------------------------------------------------------------- |
+| Küche                       | 10           | 3× lights, oven, dishwasher, fridge, motion sensor, temp, humidity                                 |
+| Wohnzimmer                  | 10           | ceiling-light, floor-lamp, TV (media_player → P1b-2), thermostat, motion, temp, humidity, presence |
+| Esszimmer                   | 5            | 2× dining-lights, motion, temp                                                                     |
+| Bad EG                      | 6            | bath-light, exhaust-fan (switch), motion, humidity, towel-warmer                                   |
+| Bad OG                      | 5            | mirror-light, ventilation, motion, humidity                                                        |
+| Schlafzimmer                | 9            | 2× bed-lights, ceiling-light, presence, thermostat, temp, humidity, blinds (cover → P1b-2)         |
+| Kinderzimmer                | 6            | kid-light, night-light, motion, temp, humidity                                                     |
+| Gästezimmer                 | 4            | guest-light, motion, temp                                                                          |
+| Flur                        | 6            | 2× corridor-lights, 2× motion, presence                                                            |
+| Garage                      | 5            | garage-door (cover), garage-light, motion, temp                                                    |
+| Keller                      | 6            | 2× cellar-lights, motion, humidity, leak-sensor                                                    |
+| Waschküche                  | 7            | washer (switch), dryer (switch), light, motion, humidity, leak-sensor                              |
+| Hobbyraum                   | 3            | hobby-light, motion (intentionally sparse — misc test)                                             |
+| Garten + Terrasse (no area) | 7            | 3× outdoor-lights, weather, presence, gate-sensor                                                  |
+| Floating                    | 10           | diagnostic + hidden + disabled mix, no area                                                        |
 
 Total: ~130 entities.
 
@@ -169,12 +169,12 @@ HA registries → normalize → findRoom (now includes DE patterns) → detect �
 
 ## Error handling
 
-| Layer | Failure | Behavior |
-| --- | --- | --- |
-| `room-keywords.ts` schema | A new pattern violates the storage convention (uppercase, diacritic, etc.) | Existing schema test in `__tests__/room-keywords.test.ts` fails at CI time before merge. |
-| `findRoom` | Pattern matches nothing in entity text | Returns `null` for that entity (existing behavior) — falls through to next priority. |
-| Fixture | `german-massive.ts` references an area_id that's missing | The fixture's structural test `german-massive.test.ts` catches the inconsistency at CI time. |
-| Fixture | An entity's `device_id` doesn't resolve | Same — caught by structural test. |
+| Layer                     | Failure                                                                    | Behavior                                                                                     |
+| ------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `room-keywords.ts` schema | A new pattern violates the storage convention (uppercase, diacritic, etc.) | Existing schema test in `__tests__/room-keywords.test.ts` fails at CI time before merge.     |
+| `findRoom`                | Pattern matches nothing in entity text                                     | Returns `null` for that entity (existing behavior) — falls through to next priority.         |
+| Fixture                   | `german-massive.ts` references an area_id that's missing                   | The fixture's structural test `german-massive.test.ts` catches the inconsistency at CI time. |
+| Fixture                   | An entity's `device_id` doesn't resolve                                    | Same — caught by structural test.                                                            |
 
 No runtime error paths change.
 
@@ -208,6 +208,7 @@ Mirrors `english-cluttered.test.ts` and `czech-tidy.test.ts`:
 ### `packages/shared/src/__tests__/room-keywords.test.ts` — no changes
 
 The existing schema test enforces:
+
 - All patterns lowercase, no diacritics, only `[a-z0-9 ]`.
 - All `excludes` patterns same.
 - Every `canonical` field is a valid `CanonicalRoomId`.
@@ -219,13 +220,13 @@ A typo in the new DE rows surfaces immediately.
 
 ## File-by-file
 
-| File | Action | Notes |
-| --- | --- | --- |
-| `packages/shared/src/room-keywords.ts` | Modify | Append 14 DE rows |
-| `tests/fixtures/german-massive.ts` | Create | ~130 entities, 13 areas, 2 floors + Keller |
-| `tests/fixtures/__tests__/german-massive.test.ts` | Create | Structural assertions |
-| `packages/analyzer/src/__tests__/detect.fixtures.test.ts` | Modify | Add german-massive pipe + snapshot |
-| `packages/analyzer/src/__tests__/grouping.fixtures.test.ts` | Modify | Add german-massive grouping snapshot |
+| File                                                        | Action | Notes                                      |
+| ----------------------------------------------------------- | ------ | ------------------------------------------ |
+| `packages/shared/src/room-keywords.ts`                      | Modify | Append 14 DE rows                          |
+| `tests/fixtures/german-massive.ts`                          | Create | ~130 entities, 13 areas, 2 floors + Keller |
+| `tests/fixtures/__tests__/german-massive.test.ts`           | Create | Structural assertions                      |
+| `packages/analyzer/src/__tests__/detect.fixtures.test.ts`   | Modify | Add german-massive pipe + snapshot         |
+| `packages/analyzer/src/__tests__/grouping.fixtures.test.ts` | Modify | Add german-massive grouping snapshot       |
 
 ## Open questions resolved during brainstorming
 
