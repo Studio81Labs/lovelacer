@@ -107,7 +107,7 @@ describe('runApply', () => {
 
     const result = await runApply(fake.client, { config })
 
-    expect(fake.applyDashboard).toHaveBeenCalledWith(config, undefined)
+    expect(fake.applyDashboard).toHaveBeenCalledWith(config, {})
     expect(fake.getEntityRegistry).not.toHaveBeenCalled()
     expect(result).toEqual({ urlPath: 'lovelacer-home', created: true })
   })
@@ -190,5 +190,47 @@ describe('runApply', () => {
     const fake = makeFakeHa()
     const bad = { title: 'x', views: {} } as unknown as LovelaceConfig
     await expect(runApply(fake.client, { config: bad })).rejects.toThrow(/invalid_config/)
+  })
+
+  it('forwards defaultOptions to applyDashboard when body has no options', async () => {
+    const fake = makeFakeHa()
+    const config: LovelaceConfig = {
+      title: 'x',
+      views: [
+        {
+          type: 'sections',
+          title: 'Home',
+          path: 'home',
+          icon: 'mdi:home-variant',
+          sections: [],
+        },
+      ],
+    }
+    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
+
+    await runApply(fake.client, { config }, { urlPath: 'foo' })
+
+    expect(fake.applyDashboard).toHaveBeenCalledWith(config, { urlPath: 'foo' })
+  })
+
+  it('body.options overrides defaultOptions', async () => {
+    const fake = makeFakeHa()
+    const config: LovelaceConfig = {
+      title: 'x',
+      views: [
+        {
+          type: 'sections',
+          title: 'Home',
+          path: 'home',
+          icon: 'mdi:home-variant',
+          sections: [],
+        },
+      ],
+    }
+    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'bar', created: true })
+
+    await runApply(fake.client, { config, options: { urlPath: 'bar' } }, { urlPath: 'foo' })
+
+    expect(fake.applyDashboard).toHaveBeenCalledWith(config, { urlPath: 'bar' })
   })
 })

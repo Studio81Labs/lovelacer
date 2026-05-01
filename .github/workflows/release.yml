@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      bare_version: ${{ steps.strip.outputs.bare_version }}
+    steps:
+      - name: Strip v-prefix for image tag
+        id: strip
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          # The release tag is `v0.0.1` but config.yaml declares
+          # `version: '0.0.1'` (without v). HA Supervisor pulls
+          # `{image}:{version_from_yaml}`, so the published image tag
+          # must match the bare version. Keep the v-prefixed `v0.0.1`
+          # as an additional friendly tag.
+          BARE="${REF_NAME#v}"
+          echo "bare_version=$BARE" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: resolve-version
+    uses: ./.github/workflows/build-addon.yml
+    secrets: inherit
+    with:
+      version: ${{ needs.resolve-version.outputs.bare_version }}
+      additional_tags: |
+        latest
+        ${{ github.ref_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}

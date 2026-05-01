@@ -1,0 +1,42 @@
+#include <tunables/global>
+
+profile lovelacer flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/openssl>
+
+  capability net_bind_service,
+  capability dac_override,
+  capability setgid,
+  capability setuid,
+
+  network inet stream,
+  network inet6 stream,
+  network unix stream,
+
+  /usr/bin/node ix,
+  /usr/bin/jq ix,
+  /usr/bin/bash ix,
+  /usr/bin/sh ix,
+  /usr/bin/env ix,
+
+  /run.sh r,
+  /app/** r,
+  /data/** rw,
+  /tmp/** rwk,
+  /proc/sys/kernel/random/uuid r,
+  /proc/*/status r,
+  /proc/*/stat r,
+  /proc/*/maps r,
+  /proc/*/cmdline r,
+  /proc/self/exe r,
+  /proc/self/maps r,
+  /proc/self/fd/ r,
+  /proc/self/fd/* r,
+  /etc/passwd r,
+  /etc/group r,
+  /etc/nsswitch.conf r,
+  /etc/resolv.conf r,
+  /etc/ssl/** r,
+  /etc/hosts r,
+}

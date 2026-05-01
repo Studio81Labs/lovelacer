@@ -52,6 +52,8 @@ dev/ha-config/
 
 # Add-on build artifacts
 apps/addon/rootfs/var/
+apps/addon/staged/
+apps/addon/web-dist/
 
 # Git worktrees (project-local)
 .worktrees/

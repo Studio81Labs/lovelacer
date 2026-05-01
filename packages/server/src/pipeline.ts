@@ -216,14 +216,19 @@ export async function runPreview(ha: HaClient): Promise<PreviewOutput> {
   }
 }
 
-export async function runApply(ha: HaClient, body: ApplyInput): Promise<ApplyDashboardResult> {
+export async function runApply(
+  ha: HaClient,
+  body: ApplyInput,
+  defaultOptions: ApplyDashboardOptions = {},
+): Promise<ApplyDashboardResult> {
+  const options = { ...defaultOptions, ...body.options } // body wins
   if (body.config !== undefined) {
     if (typeof body.config.title !== 'string' || !Array.isArray(body.config.views)) {
       throw new InvalidConfigError('invalid_config: title must be string and views must be array')
     }
-    return ha.applyDashboard(body.config, body.options)
+    return ha.applyDashboard(body.config, options)
   }
 
   const preview = await runPreview(ha)
-  return ha.applyDashboard(preview.config, body.options)
+  return ha.applyDashboard(preview.config, options)
 }

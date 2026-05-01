@@ -1,0 +1,128 @@
+name: Build add-on
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/addon/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.base.json'
+      - '.github/workflows/build-addon.yml'
+  pull_request:
+    paths:
+      - 'apps/addon/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.base.json'
+      - '.github/workflows/build-addon.yml'
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+      additional_tags:
+        type: string
+        required: false
+        default: ''
+        description: 'Newline-separated additional image tags'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [aarch64, amd64, armv7]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install workspace deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build server + web
+        run: pnpm -r build
+
+      - name: Stage server bundle for Dockerfile
+        # `pnpm deploy` produces a self-contained directory: dist/, package.json,
+        # and node_modules with workspace deps fully resolved (not symlinked).
+        # The HA builder action will use apps/addon/ as the build context,
+        # so we stage everything inside it.
+        run: |
+          pnpm deploy --filter @lovelacer/server --prod apps/addon/staged
+          cp -r packages/web/dist apps/addon/web-dist
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve build metadata
+        id: meta
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_ADDITIONAL_TAGS: ${{ inputs.additional_tags }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          # tag_args is forwarded into the HA builder action's `args` block
+          # which uses a folded YAML scalar — newlines inside outputs get
+          # preserved through the substitution (folding only applies to the
+          # YAML source itself, not interpolated values), so we must emit
+          # a single space-separated string here.
+          if [[ "$EVENT_NAME" == "workflow_call" ]]; then
+            echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+            tag_args=""
+            while IFS= read -r tag; do
+              [[ -n "$tag" ]] && tag_args+="--additional-tag $tag "
+            done <<< "$INPUT_ADDITIONAL_TAGS"
+            echo "tag_args=${tag_args% }" >> "$GITHUB_OUTPUT"
+          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
+            SHA="${GITHUB_SHA::7}"
+            echo "version=0.0.0-pr.${PR_NUMBER}.${SHA}" >> "$GITHUB_OUTPUT"
+            echo "tag_args=" >> "$GITHUB_OUTPUT"
+          else
+            SHA="${GITHUB_SHA::7}"
+            echo "version=0.0.0-main.${SHA}" >> "$GITHUB_OUTPUT"
+            echo "tag_args=--additional-tag main --additional-tag sha-${SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build add-on (${{ matrix.arch }})
+        uses: home-assistant/builder@2024.08.2
+        with:
+          # Folded scalar (`>`): newlines fold into single spaces. The HA
+          # builder action interpolates `args` into a `docker run \\ args`
+          # script — if newlines are preserved (`|`), only the first line
+          # reaches docker as its args; subsequent lines run as separate
+          # failed shell commands. Folding produces one space-joined arg
+          # string that the shell happily forwards.
+          args: >-
+            --${{ matrix.arch }}
+            --target /data/apps/addon
+            --image ghcr.io/studio81labs/lovelacer-{arch}
+            --version ${{ steps.meta.outputs.version }}
+            ${{ steps.meta.outputs.tag_args }}
+            ${{ github.event_name == 'pull_request' && '--test' || '' }}
