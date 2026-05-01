@@ -39,7 +39,9 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
     }
     try {
       const body = (req.body ?? {}) as ApplyInput
-      const result = await runApply(opts.ha, opts.overrides, body, { urlPath: opts.dashboardUrlPath })
+      const result = await runApply(opts.ha, opts.overrides, body, {
+        urlPath: opts.dashboardUrlPath,
+      })
       return reply.code(200).send({ ok: true, ...result })
     } catch (err) {
       if (err instanceof HaApplyError) {

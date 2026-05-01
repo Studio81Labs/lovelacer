@@ -57,9 +57,7 @@ export const overridesRoute: FastifyPluginAsync<OverridesRouteOptions> = async (
     if (!parsed.success) {
       return reply.code(400).send({
         error: 'invalid_body',
-        message: parsed.error.issues
-          .map((i) => `${i.path.join('.')}: ${i.message}`)
-          .join('; '),
+        message: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
       })
     }
     try {
@@ -73,9 +71,7 @@ export const overridesRoute: FastifyPluginAsync<OverridesRouteOptions> = async (
       return reply.code(200).send({ overrides: opts.overrides.getAll() })
     } catch (err) {
       req.log.error({ err }, 'override storage failed')
-      return reply
-        .code(500)
-        .send({ error: 'storage_error', message: String(err) })
+      return reply.code(500).send({ error: 'storage_error', message: String(err) })
     }
   })
 }

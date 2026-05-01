@@ -77,9 +77,7 @@ describe('applyOverrides', () => {
   it('combined override (roomId + hidden) applies both', () => {
     const assignments = [makeAssignment('media_player.tv', 'kitchen')]
     const entities = [makeEntity('media_player.tv')]
-    const overrides: Override[] = [
-      { entityId: 'media_player.tv', roomId: 'bedroom', hidden: true },
-    ]
+    const overrides: Override[] = [{ entityId: 'media_player.tv', roomId: 'bedroom', hidden: true }]
     applyOverrides({ assignments, entities }, overrides)
     expect(assignments[0]!.roomId).toBe('bedroom')
     expect(assignments[0]!.manual).toBe(true)

@@ -26,6 +26,7 @@
 ## File structure
 
 **New files:**
+
 - `packages/shared/src/overrides.ts` — `Override` type
 - `packages/server/src/storage/override-store.ts` — `OverrideStore` class
 - `packages/server/src/storage/__tests__/override-store.test.ts` — store unit tests
@@ -34,6 +35,7 @@
 - `packages/server/src/__tests__/routes/overrides.test.ts` — route tests
 
 **Modified files:**
+
 - `packages/shared/src/types.ts` — add `manual?: boolean` to `RoomAssignment`
 - `packages/shared/src/index.ts` — re-export `Override`
 - `packages/server/src/pipeline.ts` — add `applyOverrides` helper, change `runFullPipeline` signature, thread store through `runAnalyze`/`runPreview`/`runApply`
@@ -52,6 +54,7 @@
 ## Task 1: Add `Override` shared type + `RoomAssignment.manual`
 
 **Files:**
+
 - Create: `packages/shared/src/overrides.ts`
 - Modify: `packages/shared/src/index.ts`
 - Modify: `packages/shared/src/types.ts`
@@ -161,6 +164,7 @@ EOF
 ## Task 2: `OverrideStore` class + `:memory:` tests
 
 **Files:**
+
 - Create: `packages/server/src/storage/override-store.ts`
 - Create: `packages/server/src/storage/__tests__/override-store.test.ts`
 
@@ -201,9 +205,7 @@ describe('OverrideStore', () => {
 
   it('round-trip: roomId-only override', () => {
     const s = makeStore()
-    const overrides: Override[] = [
-      { entityId: 'light.kitchen_ceiling', roomId: 'living_room' },
-    ]
+    const overrides: Override[] = [{ entityId: 'light.kitchen_ceiling', roomId: 'living_room' }]
     s.replaceAll(overrides)
     expect(s.getAll()).toEqual(overrides)
   })
@@ -217,9 +219,7 @@ describe('OverrideStore', () => {
 
   it('round-trip: combined roomId + hidden override', () => {
     const s = makeStore()
-    const overrides: Override[] = [
-      { entityId: 'media_player.tv', roomId: 'bedroom', hidden: true },
-    ]
+    const overrides: Override[] = [{ entityId: 'media_player.tv', roomId: 'bedroom', hidden: true }]
     s.replaceAll(overrides)
     expect(s.getAll()).toEqual(overrides)
   })
@@ -325,7 +325,10 @@ export class OverrideStore {
    */
   getAll(): Override[] {
     const rows = this.db
-      .prepare<[], OverrideRow>('SELECT entity_id, room_id, hidden FROM overrides ORDER BY entity_id')
+      .prepare<
+        [],
+        OverrideRow
+      >('SELECT entity_id, room_id, hidden FROM overrides ORDER BY entity_id')
       .all()
     return rows.map((row) => rowToOverride(row))
   }
@@ -423,6 +426,7 @@ EOF
 ## Task 3: `applyOverrides` helper + tests
 
 **Files:**
+
 - Modify: `packages/server/src/pipeline.ts` (add the helper; do NOT call it yet)
 - Create: `packages/server/src/__tests__/apply-overrides.test.ts`
 
@@ -505,9 +509,7 @@ describe('applyOverrides', () => {
   it('combined override (roomId + hidden) applies both', () => {
     const assignments = [makeAssignment('media_player.tv', 'kitchen')]
     const entities = [makeEntity('media_player.tv')]
-    const overrides: Override[] = [
-      { entityId: 'media_player.tv', roomId: 'bedroom', hidden: true },
-    ]
+    const overrides: Override[] = [{ entityId: 'media_player.tv', roomId: 'bedroom', hidden: true }]
     applyOverrides({ assignments, entities }, overrides)
     expect(assignments[0]!.roomId).toBe('bedroom')
     expect(assignments[0]!.manual).toBe(true)
@@ -667,6 +669,7 @@ EOF
 ## Task 4: `/api/overrides` GET + PUT routes
 
 **Files:**
+
 - Create: `packages/server/src/routes/overrides.ts`
 - Create: `packages/server/src/__tests__/routes/overrides.test.ts`
 
@@ -922,9 +925,7 @@ export const overridesRoute: FastifyPluginAsync<OverridesRouteOptions> = async (
     if (!parsed.success) {
       return reply.code(400).send({
         error: 'invalid_body',
-        message: parsed.error.issues
-          .map((i) => `${i.path.join('.')}: ${i.message}`)
-          .join('; '),
+        message: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
       })
     }
     try {
@@ -932,9 +933,7 @@ export const overridesRoute: FastifyPluginAsync<OverridesRouteOptions> = async (
       return reply.code(200).send({ overrides: opts.overrides.getAll() })
     } catch (err) {
       req.log.error({ err }, 'override storage failed')
-      return reply
-        .code(500)
-        .send({ error: 'storage_error', message: String(err) })
+      return reply.code(500).send({ error: 'storage_error', message: String(err) })
     }
   })
 }
@@ -1001,6 +1000,7 @@ EOF
 ## Task 5: Wire `OverrideStore` through pipeline + app
 
 **Files:**
+
 - Modify: `packages/server/src/pipeline.ts`
 - Modify: `packages/server/src/app.ts`
 - Modify: `packages/server/src/main.ts`
@@ -1148,14 +1148,14 @@ export interface CreateAppOptions {
 Update the `createApp` body to register the new route and pass `overrides` to existing route registrations. Find the existing route-registration block and replace it:
 
 ```ts
-  await app.register(analyzeRoute, { ha: opts.ha, overrides: opts.overrides })
-  await app.register(previewRoute, { ha: opts.ha, overrides: opts.overrides })
-  await app.register(applyRoute, {
-    ha: opts.ha,
-    overrides: opts.overrides,
-    dashboardUrlPath: opts.dashboardUrlPath,
-  })
-  await app.register(overridesRoute, { overrides: opts.overrides })
+await app.register(analyzeRoute, { ha: opts.ha, overrides: opts.overrides })
+await app.register(previewRoute, { ha: opts.ha, overrides: opts.overrides })
+await app.register(applyRoute, {
+  ha: opts.ha,
+  overrides: opts.overrides,
+  dashboardUrlPath: opts.dashboardUrlPath,
+})
+await app.register(overridesRoute, { overrides: opts.overrides })
 ```
 
 (The exact existing options for `applyRoute` may differ; preserve any extras and add `overrides`.)
@@ -1172,32 +1172,32 @@ import { OverrideStore } from './storage/override-store.js'
 Inside `main()`, after the `HaClient` is constructed and before `createApp` is called, instantiate the store:
 
 ```ts
-  const overridesPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const overrides = new OverrideStore(overridesPath)
-  logger.info({ path: overridesPath }, 'override store opened')
+const overridesPath = resolve(config.dataDir, 'lovelacer.sqlite')
+const overrides = new OverrideStore(overridesPath)
+logger.info({ path: overridesPath }, 'override store opened')
 ```
 
 Pass it into `createApp`:
 
 ```ts
-  const app = await createApp({
-    ha,
-    overrides,
-    isDev,
-    // ... rest unchanged
-  })
+const app = await createApp({
+  ha,
+  overrides,
+  isDev,
+  // ... rest unchanged
+})
 ```
 
 Add a `overrides.close()` line to the `shutdown` handler so it tears down cleanly on SIGINT/SIGTERM:
 
 ```ts
-  const shutdown = async (signal: string) => {
-    app.log.info({ signal }, 'shutting down')
-    await ha.disconnect()
-    await app.close()
-    overrides.close()
-    process.exit(0)
-  }
+const shutdown = async (signal: string) => {
+  app.log.info({ signal }, 'shutting down')
+  await ha.disconnect()
+  await app.close()
+  overrides.close()
+  process.exit(0)
+}
 ```
 
 - [ ] **Step 5: Update `pipeline.test.ts` to pass a `:memory:` store**
@@ -1321,6 +1321,7 @@ EOF
 ## Task 6: Pipeline integration tests
 
 **Files:**
+
 - Modify: `packages/server/src/__tests__/pipeline.test.ts`
 
 End-to-end tests that drive a real override through `runAnalyze` / `runPreview` and verify the room reassignment + hide behavior.
@@ -1401,9 +1402,7 @@ describe('runAnalyze with overrides', () => {
     const targetEntityId = pickEntityIn(baseline, 'kitchen')
     expect(targetEntityId).not.toBeNull()
 
-    store.replaceAll([
-      { entityId: targetEntityId!, roomId: 'living_room', hidden: true },
-    ])
+    store.replaceAll([{ entityId: targetEntityId!, roomId: 'living_room', hidden: true }])
 
     const result = await runAnalyze(fake.client, store)
     // Hidden takes precedence over room move at the visibility level.

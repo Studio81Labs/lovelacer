@@ -23,7 +23,12 @@ function makeHa(connected = true): HaClient {
 describe('POST /api/preview', () => {
   it('returns 200 with rooms + config when HA connected', async () => {
     const ha = makeHa(true)
-    const app = await createApp({ ha, overrides: makeStore(), logLevel: 'silent', dashboardUrlPath: 'lovelacer-home' })
+    const app = await createApp({
+      ha,
+      overrides: makeStore(),
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/preview' })
       expect(res.statusCode).toBe(200)
@@ -42,7 +47,12 @@ describe('POST /api/preview', () => {
 
   it('returns 503 ha_unavailable when HA disconnected', async () => {
     const ha = makeHa(false)
-    const app = await createApp({ ha, overrides: makeStore(), logLevel: 'silent', dashboardUrlPath: 'lovelacer-home' })
+    const app = await createApp({
+      ha,
+      overrides: makeStore(),
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/preview' })
       expect(res.statusCode).toBe(503)
@@ -62,7 +72,12 @@ describe('POST /api/preview', () => {
       getAreaRegistry: vi.fn(async () => []),
       getFloorRegistry: vi.fn(async () => []),
     } as unknown as HaClient
-    const app = await createApp({ ha, overrides: makeStore(), logLevel: 'silent', dashboardUrlPath: 'lovelacer-home' })
+    const app = await createApp({
+      ha,
+      overrides: makeStore(),
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/preview' })
       expect(res.statusCode).toBe(500)

@@ -17,6 +17,7 @@ A new `OverrideStore` class wraps `better-sqlite3` (already in `packages/server/
 - (no individual upsert/delete — full-list semantics simplifies routes and avoids race conditions for the single-user single-install case)
 
 **Lifecycle:**
+
 - Constructed once at app startup with a path resolved from `${config.dataDir}/lovelacer.sqlite`.
 - The store ensures the data dir exists (`mkdir -p` semantics) on construction so first run on a fresh checkout works without setup.
 - In the HA add-on context, `DATA_DIR=/data` is already set in `apps/addon/run.sh` so the file persists across add-on restarts (HA Supervisor provisions `/data` as the addon's persistent volume). No Dockerfile changes needed.
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS overrides (
 ```
 
 **Field choices:**
+
 - `entity_id` as PK — each entity has at most one override row
 - `room_id` nullable — the user might only set `hidden: true` without moving the entity
 - `hidden` as `INTEGER` — SQLite convention (0/1); store maps `1 → true` on read
@@ -67,8 +69,8 @@ import type { CanonicalRoomId } from './constants.js'
 
 export interface Override {
   entityId: string
-  roomId?: CanonicalRoomId  // optional: undefined means "don't move"
-  hidden?: boolean          // optional: undefined or false means "don't hide"
+  roomId?: CanonicalRoomId // optional: undefined means "don't move"
+  hidden?: boolean // optional: undefined or false means "don't hide"
 }
 ```
 
@@ -117,14 +119,14 @@ const OverrideSchema = z
 const PutBodySchema = z.object({
   overrides: z
     .array(OverrideSchema)
-    .refine(
-      (arr) => new Set(arr.map((o) => o.entityId)).size === arr.length,
-      { message: 'duplicate entityId' },
-    ),
+    .refine((arr) => new Set(arr.map((o) => o.entityId)).size === arr.length, {
+      message: 'duplicate entityId',
+    }),
 })
 ```
 
 **Errors:**
+
 - `400 invalid_body` — body fails schema validation; response includes the zod error path
 - `500 storage_error` — `better-sqlite3` threw (disk full, corrupt file, etc.)
 
@@ -147,7 +149,7 @@ function applyOverrides(
   state: { assignments: RoomAssignment[]; entities: NormalizedEntity[] },
   overrides: Override[],
 ): void {
-  if (overrides.length === 0) return  // hot path — no DB rows, no mutation
+  if (overrides.length === 0) return // hot path — no DB rows, no mutation
 
   const byEntityId = new Map(overrides.map((o) => [o.entityId, o]))
 
@@ -197,7 +199,7 @@ Disabled entities are HA-level (user disabled them in HA's entity registry). Hid
 ```ts
 async function runFullPipeline(
   ha: HaClient,
-  overrides: OverrideStore,  // new param
+  overrides: OverrideStore, // new param
 ): Promise<PipelineState> {
   const [entityRegistry, deviceRegistry, areaRegistry] = await Promise.all([
     ha.getEntityRegistry(),
@@ -206,7 +208,7 @@ async function runFullPipeline(
   ])
   const entities = normalize({ entities: entityRegistry, devices: deviceRegistry })
   const assignments = detect({ entities, areas: areaRegistry })
-  applyOverrides({ assignments, entities }, overrides.getAll())  // <-- new
+  applyOverrides({ assignments, entities }, overrides.getAll()) // <-- new
   const groupings = groupByDomain({ assignments, entities })
   // ... rest unchanged
 }

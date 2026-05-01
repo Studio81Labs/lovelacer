@@ -31,9 +31,7 @@ describe('OverrideStore', () => {
 
   it('round-trip: roomId-only override', () => {
     const s = makeStore()
-    const overrides: Override[] = [
-      { entityId: 'light.kitchen_ceiling', roomId: 'living_room' },
-    ]
+    const overrides: Override[] = [{ entityId: 'light.kitchen_ceiling', roomId: 'living_room' }]
     s.replaceAll(overrides)
     expect(s.getAll()).toEqual(overrides)
   })
@@ -47,9 +45,7 @@ describe('OverrideStore', () => {
 
   it('round-trip: combined roomId + hidden override', () => {
     const s = makeStore()
-    const overrides: Override[] = [
-      { entityId: 'media_player.tv', roomId: 'bedroom', hidden: true },
-    ]
+    const overrides: Override[] = [{ entityId: 'media_player.tv', roomId: 'bedroom', hidden: true }]
     s.replaceAll(overrides)
     expect(s.getAll()).toEqual(overrides)
   })
