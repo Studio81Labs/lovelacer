@@ -73,6 +73,14 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "climate",
             },
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
               "count": 6,
               "key": "activity",
             },
@@ -81,7 +89,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 4,
+              "count": 2,
               "key": "other",
             },
           ],
@@ -94,6 +102,10 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "lights",
             },
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
               "count": 2,
               "key": "activity",
             },
@@ -102,7 +114,11 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 4,
+              "count": 1,
+              "key": "security",
+            },
+            {
+              "count": 2,
               "key": "other",
             },
           ],
@@ -124,16 +140,16 @@ describe('groupByDomain — english-cluttered fixture', () => {
         {
           "groups": [
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
               "count": 3,
               "key": "activity",
             },
             {
               "count": 2,
               "key": "environment",
-            },
-            {
-              "count": 1,
-              "key": "other",
             },
           ],
           "roomId": "hallway",
@@ -145,6 +161,14 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "lights",
             },
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
               "count": 5,
               "key": "activity",
             },
@@ -153,7 +177,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 3,
+              "count": 1,
               "key": "other",
             },
           ],
@@ -170,6 +194,10 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "climate",
             },
             {
+              "count": 2,
+              "key": "media",
+            },
+            {
               "count": 6,
               "key": "activity",
             },
@@ -178,7 +206,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 4,
+              "count": 2,
               "key": "other",
             },
           ],
@@ -199,7 +227,11 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 15,
+              "count": 1,
+              "key": "security",
+            },
+            {
+              "count": 14,
               "key": "other",
             },
           ],
@@ -220,7 +252,11 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 4,
+              "count": 1,
+              "key": "fans",
+            },
+            {
+              "count": 3,
               "key": "other",
             },
           ],
@@ -260,11 +296,17 @@ describe('groupByDomain — english-cluttered fixture', () => {
 
   it('every `other` group contains at least one entity that is genuinely a fallback', () => {
     // A "genuine fallback" is an entity whose (domain, deviceClass) does not
-    // match any P1a routing rule. This proves `other` is actually catching
+    // match any known routing rule. This proves `other` is actually catching
     // the fallback path, not just collecting bugs.
-    const isP1aRouted = (e: { domain: string; deviceClass: string | null }): boolean => {
+    const isKnownRouted = (e: { domain: string; deviceClass: string | null }): boolean => {
       if (e.domain === 'light' || e.domain === 'switch') return true
       if (e.domain === 'climate') return true
+      if (e.domain === 'cover') return true
+      if (e.domain === 'media_player') return true
+      if (e.domain === 'lock') return true
+      if (e.domain === 'camera') return true
+      if (e.domain === 'vacuum') return true
+      if (e.domain === 'fan') return true
       if (e.domain === 'sensor' && e.deviceClass !== null) {
         return ['temperature', 'humidity'].includes(e.deviceClass)
       }
@@ -276,7 +318,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
     for (const room of groupings) {
       const other = room.groups.find((g) => g.key === 'other')
       if (other === undefined) continue
-      const hasGenuineFallback = other.entities.some((e) => !isP1aRouted(e))
+      const hasGenuineFallback = other.entities.some((e) => !isKnownRouted(e))
       expect(
         hasGenuineFallback,
         `room ${room.roomId} 'other' group has no fallback-routed entity`,
@@ -501,16 +543,16 @@ describe('groupByDomain — german-massive fixture', () => {
               "key": "climate",
             },
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
               "count": 2,
               "key": "activity",
             },
             {
               "count": 2,
               "key": "environment",
-            },
-            {
-              "count": 1,
-              "key": "other",
             },
           ],
           "roomId": "bedroom",
@@ -540,15 +582,15 @@ describe('groupByDomain — german-massive fixture', () => {
             },
             {
               "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
               "key": "activity",
             },
             {
               "count": 1,
               "key": "environment",
-            },
-            {
-              "count": 1,
-              "key": "other",
             },
           ],
           "roomId": "garage",
@@ -674,16 +716,16 @@ describe('groupByDomain — german-massive fixture', () => {
               "key": "climate",
             },
             {
+              "count": 1,
+              "key": "media",
+            },
+            {
               "count": 2,
               "key": "activity",
             },
             {
               "count": 2,
               "key": "environment",
-            },
-            {
-              "count": 1,
-              "key": "other",
             },
           ],
           "roomId": "living_room",

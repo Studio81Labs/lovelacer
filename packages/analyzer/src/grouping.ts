@@ -49,6 +49,12 @@ const BINARY_SENSOR_ACTIVITY_CLASSES = new Set(['motion', 'occupancy', 'door'])
 export function domainGroup(entity: NormalizedEntity): DomainGroupKey {
   if (entity.domain === 'light' || entity.domain === 'switch') return 'lights'
   if (entity.domain === 'climate') return 'climate'
+  if (entity.domain === 'cover') return 'covers'
+  if (entity.domain === 'media_player') return 'media'
+  if (entity.domain === 'lock') return 'security'
+  if (entity.domain === 'camera') return 'cameras'
+  if (entity.domain === 'vacuum') return 'vacuum'
+  if (entity.domain === 'fan') return 'fans'
   if (entity.domain === 'sensor' && entity.deviceClass !== null) {
     if (SENSOR_ENVIRONMENT_CLASSES.has(entity.deviceClass)) return 'environment'
   }
