@@ -30,3 +30,5 @@ export type {
 } from './lovelace-types.js'
 export { buildHomeView, pickQuickStatsEntities } from './home-view.js'
 export type { BuildHomeViewInput, HomeView } from './home-view.js'
+export { buildLovelaceConfig } from './lovelace-config.js'
+export type { BuildLovelaceConfigInput, LovelaceConfig } from './lovelace-config.js'
