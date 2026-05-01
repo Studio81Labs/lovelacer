@@ -118,7 +118,7 @@ jobs:
         with:
           args: |
             --${{ matrix.arch }}
-            --target apps/addon
+            --target /data/apps/addon
             --image ghcr.io/studio81labs/lovelacer-{arch}
             --version ${{ steps.meta.outputs.version }}
             ${{ steps.meta.outputs.tag_args }}
