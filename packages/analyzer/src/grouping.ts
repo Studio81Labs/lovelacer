@@ -1,9 +1,11 @@
 import type { CanonicalRoomId, NormalizedEntity, RoomAssignment } from '@lovelacer/shared'
 
 /**
- * Display categories for the generator. P1a populates 5 of these
- * (lights, environment, activity, climate, other). The other 6 keys
- * are pre-declared for P1b-2 — `domainGroup` doesn't return them yet.
+ * Display categories for the generator. All 11 keys are active —
+ * `domainGroup()` returns each from a real domain mapping. The 6
+ * P1b-2 keys (covers, media, security, cameras, vacuum, fans) round
+ * out the original P1a set (lights, climate, activity, environment,
+ * other).
  */
 export type DomainGroupKey =
   | 'lights' // P1a — light + switch
@@ -49,6 +51,12 @@ const BINARY_SENSOR_ACTIVITY_CLASSES = new Set(['motion', 'occupancy', 'door'])
 export function domainGroup(entity: NormalizedEntity): DomainGroupKey {
   if (entity.domain === 'light' || entity.domain === 'switch') return 'lights'
   if (entity.domain === 'climate') return 'climate'
+  if (entity.domain === 'cover') return 'covers'
+  if (entity.domain === 'media_player') return 'media'
+  if (entity.domain === 'lock') return 'security'
+  if (entity.domain === 'camera') return 'cameras'
+  if (entity.domain === 'vacuum') return 'vacuum'
+  if (entity.domain === 'fan') return 'fans'
   if (entity.domain === 'sensor' && entity.deviceClass !== null) {
     if (SENSOR_ENVIRONMENT_CLASSES.has(entity.deviceClass)) return 'environment'
   }

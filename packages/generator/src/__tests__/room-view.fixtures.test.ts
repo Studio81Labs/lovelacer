@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
+import { kitchenSink } from '../../../../tests/fixtures/kitchen-sink.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import type { Fixture } from '../../../../tests/fixtures/_builder/index.js'
 import { normalize, detect, groupByDomain } from '@lovelacer/analyzer'
@@ -35,6 +36,7 @@ function summarize(views: ReturnType<typeof pipe>['views']) {
 
 function entityIdsInCard(card: LovelaceCard): string[] {
   if (card.type === 'tile' || card.type === 'thermostat') return [card.entity]
+  if (card.type === 'media-control' || card.type === 'picture-entity') return [card.entity]
   if (card.type === 'entities') return card.entities
   return [] // heading
 }
@@ -113,6 +115,18 @@ describe('buildRoomViews — english-cluttered fixture', () => {
             },
             {
               "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
+                "media-control": 1,
+              },
+              "heading": "Media",
+            },
+            {
+              "cards": {
                 "entities": 1,
               },
               "heading": "Activity",
@@ -144,6 +158,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
             },
             {
               "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
                 "entities": 1,
               },
               "heading": "Activity",
@@ -153,6 +173,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "entities": 1,
               },
               "heading": "Environment",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Security",
             },
             {
               "cards": {
@@ -188,6 +214,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
           "sections": [
             {
               "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
                 "entities": 1,
               },
               "heading": "Activity",
@@ -197,12 +229,6 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "entities": 1,
               },
               "heading": "Environment",
-            },
-            {
-              "cards": {
-                "entities": 1,
-              },
-              "heading": "Other",
             },
           ],
           "title": "Hallway",
@@ -216,6 +242,18 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "tile": 7,
               },
               "heading": "Lights & Outlets",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
+                "media-control": 1,
+              },
+              "heading": "Media",
             },
             {
               "cards": {
@@ -253,6 +291,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "thermostat": 1,
               },
               "heading": "Climate",
+            },
+            {
+              "cards": {
+                "media-control": 2,
+              },
+              "heading": "Media",
             },
             {
               "cards": {
@@ -299,6 +343,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
             },
             {
               "cards": {
+                "tile": 1,
+              },
+              "heading": "Security",
+            },
+            {
+              "cards": {
                 "entities": 1,
               },
               "heading": "Other",
@@ -330,12 +380,281 @@ describe('buildRoomViews — english-cluttered fixture', () => {
             },
             {
               "cards": {
+                "tile": 1,
+              },
+              "heading": "Fans",
+            },
+            {
+              "cards": {
                 "entities": 1,
               },
               "heading": "Other",
             },
           ],
           "title": "Office",
+        },
+      ]
+    `)
+  })
+
+  it('produces one view per non-empty grouping', () => {
+    expect(views.length).toBe(groupings.filter((g) => g.groups.length > 0).length)
+  })
+
+  it('all view paths are unique', () => {
+    const paths = views.map((v) => v.path)
+    expect(new Set(paths).size).toBe(paths.length)
+  })
+
+  it('every entity that survived grouping appears exactly once across all cards', () => {
+    const entityIdsInOutput: string[] = []
+    for (const view of views) {
+      for (const section of view.sections) {
+        for (const card of section.cards) {
+          entityIdsInOutput.push(...entityIdsInCard(card))
+        }
+      }
+    }
+    const expectedCount = groupings.reduce(
+      (sum, g) => sum + g.groups.reduce((s, grp) => s + grp.entities.length, 0),
+      0,
+    )
+    expect(entityIdsInOutput).toHaveLength(expectedCount)
+    expect(new Set(entityIdsInOutput).size).toBe(entityIdsInOutput.length)
+  })
+
+  it('every TileCard has a non-empty entity', () => {
+    for (const view of views) {
+      for (const section of view.sections) {
+        for (const card of section.cards) {
+          if (card.type === 'tile') expect(card.entity).not.toBe('')
+        }
+      }
+    }
+  })
+
+  it('every ThermostatCard has a non-empty entity', () => {
+    for (const view of views) {
+      for (const section of view.sections) {
+        for (const card of section.cards) {
+          if (card.type === 'thermostat') expect(card.entity).not.toBe('')
+        }
+      }
+    }
+  })
+
+  it('every EntitiesCard has at least one entity', () => {
+    for (const view of views) {
+      for (const section of view.sections) {
+        for (const card of section.cards) {
+          if (card.type === 'entities') expect(card.entities.length).toBeGreaterThan(0)
+        }
+      }
+    }
+  })
+
+  it('first card in every section is a heading', () => {
+    for (const view of views) {
+      for (const section of view.sections) {
+        expect(section.cards[0]?.type).toBe('heading')
+      }
+    }
+  })
+
+  it('lights sections contain only tile cards (after the heading)', () => {
+    for (const view of views) {
+      for (const section of view.sections) {
+        if ((section.cards[0] as { heading: string }).heading !== 'Lights & Outlets') continue
+        for (let i = 1; i < section.cards.length; i++) {
+          expect(section.cards[i]!.type).toBe('tile')
+        }
+      }
+    }
+  })
+
+  it('climate sections contain only thermostat cards (after the heading)', () => {
+    for (const view of views) {
+      for (const section of view.sections) {
+        if ((section.cards[0] as { heading: string }).heading !== 'Climate') continue
+        for (let i = 1; i < section.cards.length; i++) {
+          expect(section.cards[i]!.type).toBe('thermostat')
+        }
+      }
+    }
+  })
+
+  it('environment / activity / other sections contain exactly one entities card after the heading', () => {
+    const groupedHeadings = new Set(['Environment', 'Activity', 'Other'])
+    for (const view of views) {
+      for (const section of view.sections) {
+        const heading = (section.cards[0] as { heading: string }).heading
+        if (!groupedHeadings.has(heading)) continue
+        expect(section.cards.length).toBe(2)
+        expect(section.cards[1]?.type).toBe('entities')
+      }
+    }
+  })
+})
+
+describe('buildRoomViews — kitchen-sink fixture', () => {
+  const { groupings, views } = pipe(kitchenSink)
+
+  it('matches structural snapshot', () => {
+    expect(summarize(views)).toMatchInlineSnapshot(`
+      [
+        {
+          "icon": "mdi:bed",
+          "path": "bedroom",
+          "sections": [
+            {
+              "cards": {
+                "tile": 2,
+              },
+              "heading": "Lights & Outlets",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
+                "media-control": 1,
+              },
+              "heading": "Media",
+            },
+            {
+              "cards": {
+                "entities": 1,
+              },
+              "heading": "Activity",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Fans",
+            },
+          ],
+          "title": "Bedroom",
+        },
+        {
+          "icon": "mdi:silverware-fork-knife",
+          "path": "kitchen",
+          "sections": [
+            {
+              "cards": {
+                "tile": 2,
+              },
+              "heading": "Lights & Outlets",
+            },
+            {
+              "cards": {
+                "media-control": 1,
+              },
+              "heading": "Media",
+            },
+            {
+              "cards": {
+                "entities": 1,
+              },
+              "heading": "Environment",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Vacuum",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Fans",
+            },
+          ],
+          "title": "Kitchen",
+        },
+        {
+          "icon": "mdi:sofa",
+          "path": "living_room",
+          "sections": [
+            {
+              "cards": {
+                "tile": 2,
+              },
+              "heading": "Lights & Outlets",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
+                "media-control": 1,
+              },
+              "heading": "Media",
+            },
+            {
+              "cards": {
+                "picture-entity": 1,
+              },
+              "heading": "Cameras",
+            },
+            {
+              "cards": {
+                "entities": 1,
+              },
+              "heading": "Activity",
+            },
+            {
+              "cards": {
+                "entities": 1,
+              },
+              "heading": "Environment",
+            },
+          ],
+          "title": "Living Room",
+        },
+        {
+          "icon": "mdi:dots-horizontal",
+          "path": "other",
+          "sections": [
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Lights & Outlets",
+            },
+            {
+              "cards": {
+                "picture-entity": 1,
+              },
+              "heading": "Cameras",
+            },
+            {
+              "cards": {
+                "entities": 1,
+              },
+              "heading": "Activity",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Security",
+            },
+            {
+              "cards": {
+                "entities": 1,
+              },
+              "heading": "Other",
+            },
+          ],
+          "title": "Other",
         },
       ]
     `)

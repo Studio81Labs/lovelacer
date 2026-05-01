@@ -78,10 +78,28 @@ describe('domainGroup — routing', () => {
     expect(domainGroup({ ...baseEntity, domain: 'binary_sensor', deviceClass: null })).toBe('other')
   })
 
-  it('routes P1b-only domains → other (cover, media_player, lock, camera, vacuum, fan)', () => {
-    for (const d of ['cover', 'media_player', 'lock', 'camera', 'vacuum', 'fan']) {
-      expect(domainGroup({ ...baseEntity, domain: d })).toBe('other')
-    }
+  it('routes cover → covers', () => {
+    expect(domainGroup({ ...baseEntity, domain: 'cover' })).toBe('covers')
+  })
+
+  it('routes media_player → media', () => {
+    expect(domainGroup({ ...baseEntity, domain: 'media_player' })).toBe('media')
+  })
+
+  it('routes lock → security', () => {
+    expect(domainGroup({ ...baseEntity, domain: 'lock' })).toBe('security')
+  })
+
+  it('routes camera → cameras', () => {
+    expect(domainGroup({ ...baseEntity, domain: 'camera' })).toBe('cameras')
+  })
+
+  it('routes vacuum → vacuum', () => {
+    expect(domainGroup({ ...baseEntity, domain: 'vacuum' })).toBe('vacuum')
+  })
+
+  it('routes fan → fans', () => {
+    expect(domainGroup({ ...baseEntity, domain: 'fan' })).toBe('fans')
   })
 
   it('routes unknown domain → other (e.g., lawn_mower)', () => {
@@ -186,7 +204,7 @@ describe('groupByDomain — orchestration', () => {
     expect(result.map((r) => r.roomId)).toEqual(['bedroom', 'kitchen', 'living_room'])
   })
 
-  it('orders groups within a room via GROUP_ORDER (lights, climate, activity, environment, other)', () => {
+  it('orders groups within a room via GROUP_ORDER (lights, climate, covers, activity, environment)', () => {
     const result = groupByDomain({
       assignments: [
         assignment('binary_sensor.m', 'kitchen'),
@@ -206,16 +224,16 @@ describe('groupByDomain — orchestration', () => {
     expect(result[0]!.groups.map((g) => g.key)).toEqual([
       'lights',
       'climate',
+      'covers',
       'activity',
       'environment',
-      'other',
     ])
   })
 
   it('places `other` last when populated', () => {
     const result = groupByDomain({
-      assignments: [assignment('cover.x', 'kitchen'), assignment('light.l', 'kitchen')],
-      entities: [ent('cover.x', { friendlyName: 'X' }), ent('light.l', { friendlyName: 'L' })],
+      assignments: [assignment('lawn_mower.x', 'kitchen'), assignment('light.l', 'kitchen')],
+      entities: [ent('lawn_mower.x', { friendlyName: 'X' }), ent('light.l', { friendlyName: 'L' })],
     })
     expect(result[0]!.groups.map((g) => g.key)).toEqual(['lights', 'other'])
   })

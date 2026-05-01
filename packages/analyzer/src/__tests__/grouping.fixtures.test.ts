@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
+import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { germanMassive } from '../../../../tests/fixtures/german-massive.js'
+import { kitchenSink } from '../../../../tests/fixtures/kitchen-sink.js'
+import { securityRich } from '../../../../tests/fixtures/security-rich.js'
+import { vacuumHeavy } from '../../../../tests/fixtures/vacuum-heavy.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { normalize } from '../normalize.js'
 import { detect } from '../detect.js'
@@ -73,6 +76,14 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "climate",
             },
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
               "count": 6,
               "key": "activity",
             },
@@ -81,7 +92,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 4,
+              "count": 2,
               "key": "other",
             },
           ],
@@ -94,6 +105,10 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "lights",
             },
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
               "count": 2,
               "key": "activity",
             },
@@ -102,7 +117,11 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 4,
+              "count": 1,
+              "key": "security",
+            },
+            {
+              "count": 2,
               "key": "other",
             },
           ],
@@ -124,16 +143,16 @@ describe('groupByDomain — english-cluttered fixture', () => {
         {
           "groups": [
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
               "count": 3,
               "key": "activity",
             },
             {
               "count": 2,
               "key": "environment",
-            },
-            {
-              "count": 1,
-              "key": "other",
             },
           ],
           "roomId": "hallway",
@@ -145,6 +164,14 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "lights",
             },
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
               "count": 5,
               "key": "activity",
             },
@@ -153,7 +180,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 3,
+              "count": 1,
               "key": "other",
             },
           ],
@@ -170,6 +197,10 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "climate",
             },
             {
+              "count": 2,
+              "key": "media",
+            },
+            {
               "count": 6,
               "key": "activity",
             },
@@ -178,7 +209,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 4,
+              "count": 2,
               "key": "other",
             },
           ],
@@ -199,7 +230,11 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 15,
+              "count": 1,
+              "key": "security",
+            },
+            {
+              "count": 14,
               "key": "other",
             },
           ],
@@ -220,7 +255,11 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "environment",
             },
             {
-              "count": 4,
+              "count": 1,
+              "key": "fans",
+            },
+            {
+              "count": 3,
               "key": "other",
             },
           ],
@@ -260,11 +299,17 @@ describe('groupByDomain — english-cluttered fixture', () => {
 
   it('every `other` group contains at least one entity that is genuinely a fallback', () => {
     // A "genuine fallback" is an entity whose (domain, deviceClass) does not
-    // match any P1a routing rule. This proves `other` is actually catching
+    // match any known routing rule. This proves `other` is actually catching
     // the fallback path, not just collecting bugs.
-    const isP1aRouted = (e: { domain: string; deviceClass: string | null }): boolean => {
+    const isKnownRouted = (e: { domain: string; deviceClass: string | null }): boolean => {
       if (e.domain === 'light' || e.domain === 'switch') return true
       if (e.domain === 'climate') return true
+      if (e.domain === 'cover') return true
+      if (e.domain === 'media_player') return true
+      if (e.domain === 'lock') return true
+      if (e.domain === 'camera') return true
+      if (e.domain === 'vacuum') return true
+      if (e.domain === 'fan') return true
       if (e.domain === 'sensor' && e.deviceClass !== null) {
         return ['temperature', 'humidity'].includes(e.deviceClass)
       }
@@ -276,7 +321,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
     for (const room of groupings) {
       const other = room.groups.find((g) => g.key === 'other')
       if (other === undefined) continue
-      const hasGenuineFallback = other.entities.some((e) => !isP1aRouted(e))
+      const hasGenuineFallback = other.entities.some((e) => !isKnownRouted(e))
       expect(
         hasGenuineFallback,
         `room ${room.roomId} 'other' group has no fallback-routed entity`,
@@ -501,16 +546,16 @@ describe('groupByDomain — german-massive fixture', () => {
               "key": "climate",
             },
             {
+              "count": 1,
+              "key": "covers",
+            },
+            {
               "count": 2,
               "key": "activity",
             },
             {
               "count": 2,
               "key": "environment",
-            },
-            {
-              "count": 1,
-              "key": "other",
             },
           ],
           "roomId": "bedroom",
@@ -540,15 +585,15 @@ describe('groupByDomain — german-massive fixture', () => {
             },
             {
               "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
               "key": "activity",
             },
             {
               "count": 1,
               "key": "environment",
-            },
-            {
-              "count": 1,
-              "key": "other",
             },
           ],
           "roomId": "garage",
@@ -674,16 +719,16 @@ describe('groupByDomain — german-massive fixture', () => {
               "key": "climate",
             },
             {
+              "count": 1,
+              "key": "media",
+            },
+            {
               "count": 2,
               "key": "activity",
             },
             {
               "count": 2,
               "key": "environment",
-            },
-            {
-              "count": 1,
-              "key": "other",
             },
           ],
           "roomId": "living_room",
@@ -714,6 +759,289 @@ describe('groupByDomain — german-massive fixture', () => {
           ).toBe(true)
         }
       }
+    }
+  })
+})
+
+describe('groupByDomain — security-rich fixture', () => {
+  const { groupings } = pipe(securityRich)
+
+  it('matches structural snapshot', () => {
+    const summary = groupings
+      .filter((g) => g.roomId !== 'misc')
+      .map((g) => ({
+        roomId: g.roomId,
+        groups: g.groups.map((sub) => ({ key: sub.key, count: sub.entities.length })),
+      }))
+    expect(summary).toMatchInlineSnapshot(`
+      [
+        {
+          "groups": [
+            {
+              "count": 1,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "cameras",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "security",
+            },
+          ],
+          "roomId": "garage",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 2,
+              "key": "cameras",
+            },
+            {
+              "count": 3,
+              "key": "activity",
+            },
+          ],
+          "roomId": "garden",
+        },
+        {
+          "groups": [
+            {
+              "count": 3,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "cameras",
+            },
+            {
+              "count": 6,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "security",
+            },
+            {
+              "count": 1,
+              "key": "other",
+            },
+          ],
+          "roomId": "hallway",
+        },
+      ]
+    `)
+  })
+
+  it('every canonical room has at least one group', () => {
+    for (const g of groupings) {
+      if (g.roomId === 'misc') continue
+      expect(g.groups.length, `room ${g.roomId} should have ≥1 group`).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('groupByDomain — vacuum-heavy fixture', () => {
+  const { groupings } = pipe(vacuumHeavy)
+
+  it('matches structural snapshot', () => {
+    const summary = groupings
+      .filter((g) => g.roomId !== 'misc')
+      .map((g) => ({
+        roomId: g.roomId,
+        groups: g.groups.map((sub) => ({ key: sub.key, count: sub.entities.length })),
+      }))
+    expect(summary).toMatchInlineSnapshot(`
+      [
+        {
+          "groups": [
+            {
+              "count": 1,
+              "key": "lights",
+            },
+            {
+              "count": 2,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "vacuum",
+            },
+          ],
+          "roomId": "hallway",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "vacuum",
+            },
+          ],
+          "roomId": "kitchen",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "environment",
+            },
+            {
+              "count": 2,
+              "key": "vacuum",
+            },
+          ],
+          "roomId": "living_room",
+        },
+      ]
+    `)
+  })
+
+  it('living_room, kitchen, hallway each have a vacuum group', () => {
+    const targets = ['living_room', 'kitchen', 'hallway'] as const
+    for (const roomId of targets) {
+      const room = groupings.find((g) => g.roomId === roomId)
+      expect(room, `room ${roomId} should be present`).toBeDefined()
+      const vacuumGroup = room!.groups.find((g) => g.key === 'vacuum')
+      expect(vacuumGroup, `${roomId} should have a vacuum group`).toBeDefined()
+    }
+  })
+})
+
+describe('groupByDomain — kitchen-sink fixture', () => {
+  const { groupings } = pipe(kitchenSink)
+
+  it('matches structural snapshot', () => {
+    const summary = groupings
+      .filter((g) => g.roomId !== 'misc')
+      .map((g) => ({
+        roomId: g.roomId,
+        groups: g.groups.map((sub) => ({ key: sub.key, count: sub.entities.length })),
+      }))
+    expect(summary).toMatchInlineSnapshot(`
+      [
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "fans",
+            },
+          ],
+          "roomId": "bedroom",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "vacuum",
+            },
+            {
+              "count": 1,
+              "key": "fans",
+            },
+          ],
+          "roomId": "kitchen",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
+              "count": 1,
+              "key": "cameras",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "environment",
+            },
+          ],
+          "roomId": "living_room",
+        },
+      ]
+    `)
+  })
+
+  it('contains every new P1b-2 group key (covers, media, security, cameras, vacuum, fans)', () => {
+    const allGroupKeys = new Set<string>()
+    for (const g of groupings) {
+      for (const sub of g.groups) allGroupKeys.add(sub.key)
+    }
+    for (const k of ['covers', 'media', 'security', 'cameras', 'vacuum', 'fans'] as const) {
+      expect(allGroupKeys, `expected group key "${k}" to appear somewhere`).toContain(k)
     }
   })
 })
