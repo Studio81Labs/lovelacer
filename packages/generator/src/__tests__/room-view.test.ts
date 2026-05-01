@@ -268,6 +268,158 @@ describe('buildRoomView — section ordering', () => {
   })
 })
 
+describe('buildRoomView — covers group', () => {
+  it('produces heading + tile per cover with cover-open-close feature', () => {
+    const grouping: RoomGrouping = {
+      roomId: 'living_room',
+      groups: [
+        {
+          key: 'covers',
+          entities: [
+            ent('cover.kitchen_blinds'),
+            ent('cover.bedroom_curtains'),
+          ],
+        },
+      ],
+    }
+    const view = buildRoomView(grouping)
+    const section = view.sections[0]!
+    expect(section.cards[0]).toEqual({ type: 'heading', heading: 'Covers' })
+    expect(section.cards[1]).toEqual({
+      type: 'tile',
+      entity: 'cover.kitchen_blinds',
+      features: [{ type: 'cover-open-close' }],
+    })
+    expect(section.cards[2]).toEqual({
+      type: 'tile',
+      entity: 'cover.bedroom_curtains',
+      features: [{ type: 'cover-open-close' }],
+    })
+  })
+})
+
+describe('buildRoomView — fans group', () => {
+  it('produces heading + tile per fan with fan-speed feature', () => {
+    const grouping: RoomGrouping = {
+      roomId: 'bedroom',
+      groups: [
+        {
+          key: 'fans',
+          entities: [ent('fan.ceiling_fan')],
+        },
+      ],
+    }
+    const view = buildRoomView(grouping)
+    const section = view.sections[0]!
+    expect(section.cards[0]).toEqual({ type: 'heading', heading: 'Fans' })
+    expect(section.cards[1]).toEqual({
+      type: 'tile',
+      entity: 'fan.ceiling_fan',
+      features: [{ type: 'fan-speed' }],
+    })
+  })
+})
+
+describe('buildRoomView — security group (lock)', () => {
+  it('produces heading + plain tile per lock (no features)', () => {
+    const grouping: RoomGrouping = {
+      roomId: 'hallway',
+      groups: [
+        {
+          key: 'security',
+          entities: [ent('lock.front_door')],
+        },
+      ],
+    }
+    const view = buildRoomView(grouping)
+    const section = view.sections[0]!
+    expect(section.cards[0]).toEqual({ type: 'heading', heading: 'Security' })
+    expect(section.cards[1]).toEqual({
+      type: 'tile',
+      entity: 'lock.front_door',
+    })
+  })
+})
+
+describe('buildRoomView — vacuum group', () => {
+  it('produces heading + plain tile per vacuum (no features)', () => {
+    const grouping: RoomGrouping = {
+      roomId: 'living_room',
+      groups: [
+        {
+          key: 'vacuum',
+          entities: [ent('vacuum.roomba')],
+        },
+      ],
+    }
+    const view = buildRoomView(grouping)
+    const section = view.sections[0]!
+    expect(section.cards[0]).toEqual({ type: 'heading', heading: 'Vacuum' })
+    expect(section.cards[1]).toEqual({
+      type: 'tile',
+      entity: 'vacuum.roomba',
+    })
+  })
+})
+
+describe('buildRoomView — media group', () => {
+  it('produces heading + media-control card per media_player', () => {
+    const grouping: RoomGrouping = {
+      roomId: 'living_room',
+      groups: [
+        {
+          key: 'media',
+          entities: [
+            ent('media_player.tv'),
+            ent('media_player.speaker'),
+          ],
+        },
+      ],
+    }
+    const view = buildRoomView(grouping)
+    const section = view.sections[0]!
+    expect(section.cards[0]).toEqual({ type: 'heading', heading: 'Media' })
+    expect(section.cards[1]).toEqual({
+      type: 'media-control',
+      entity: 'media_player.tv',
+    })
+    expect(section.cards[2]).toEqual({
+      type: 'media-control',
+      entity: 'media_player.speaker',
+    })
+  })
+})
+
+describe('buildRoomView — cameras group', () => {
+  it('produces heading + picture-entity card per camera with camera_view: live', () => {
+    const grouping: RoomGrouping = {
+      roomId: 'misc',
+      groups: [
+        {
+          key: 'cameras',
+          entities: [
+            ent('camera.front_door'),
+            ent('camera.back_yard'),
+          ],
+        },
+      ],
+    }
+    const view = buildRoomView(grouping)
+    const section = view.sections[0]!
+    expect(section.cards[0]).toEqual({ type: 'heading', heading: 'Cameras' })
+    expect(section.cards[1]).toEqual({
+      type: 'picture-entity',
+      entity: 'camera.front_door',
+      camera_view: 'live',
+    })
+    expect(section.cards[2]).toEqual({
+      type: 'picture-entity',
+      entity: 'camera.back_yard',
+      camera_view: 'live',
+    })
+  })
+})
+
 describe('buildRoomViews — bulk', () => {
   it('returns empty array for empty input', () => {
     expect(buildRoomViews([])).toEqual([])

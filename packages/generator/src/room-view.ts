@@ -5,6 +5,8 @@ import type {
   GridSection,
   HeadingCard,
   LovelaceCard,
+  MediaControlCard,
+  PictureEntityCard,
   RoomView,
   ThermostatCard,
   TileCard,
@@ -34,11 +36,17 @@ const ROOM_DISPLAY: Record<CanonicalRoomId, RoomDisplay> = {
   misc: { title: 'Other', path: 'other', icon: 'mdi:dots-horizontal' },
 }
 
-const GROUP_HEADINGS: Partial<Record<DomainGroupKey, string>> = {
+const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
   lights: 'Lights & Outlets',
   climate: 'Climate',
+  covers: 'Covers',
+  media: 'Media',
+  cameras: 'Cameras',
   activity: 'Activity',
   environment: 'Environment',
+  security: 'Security',
+  vacuum: 'Vacuum',
+  fans: 'Fans',
   other: 'Other',
 }
 
@@ -73,27 +81,31 @@ export function buildRoomViews(groupings: RoomGrouping[]): RoomView[] {
 
 function buildSection(group: DomainGroup): GridSection {
   const heading = GROUP_HEADINGS[group.key]
-  if (heading === undefined) {
-    throw new Error(`unsupported group key: ${group.key}`)
-  }
   const headingCard: HeadingCard = { type: 'heading', heading }
 
   let bodyCards: LovelaceCard[]
   switch (group.key) {
     case 'lights':
+    case 'covers':
+    case 'security':
+    case 'vacuum':
+    case 'fans':
       bodyCards = group.entities.map((e) => buildTileCard(e))
       break
     case 'climate':
       bodyCards = group.entities.map((e) => buildThermostatCard(e))
+      break
+    case 'media':
+      bodyCards = group.entities.map((e) => buildMediaControlCard(e))
+      break
+    case 'cameras':
+      bodyCards = group.entities.map((e) => buildPictureEntityCard(e))
       break
     case 'environment':
     case 'activity':
     case 'other':
       bodyCards = [buildEntitiesCard(group.entities)]
       break
-    default:
-      // Should be unreachable given the GROUP_HEADINGS lookup above.
-      throw new Error(`unsupported group key: ${group.key as string}`)
   }
 
   return { type: 'grid', cards: [headingCard, ...bodyCards] }
@@ -107,6 +119,21 @@ function buildTileCard(entity: NormalizedEntity): TileCard {
       features: [{ type: 'light-brightness' }],
     }
   }
+  if (entity.domain === 'cover') {
+    return {
+      type: 'tile',
+      entity: entity.entityId,
+      features: [{ type: 'cover-open-close' }],
+    }
+  }
+  if (entity.domain === 'fan') {
+    return {
+      type: 'tile',
+      entity: entity.entityId,
+      features: [{ type: 'fan-speed' }],
+    }
+  }
+  // switch, lock, vacuum, scene, script — plain tile, no features
   return { type: 'tile', entity: entity.entityId }
 }
 
@@ -116,4 +143,19 @@ function buildThermostatCard(entity: NormalizedEntity): ThermostatCard {
 
 function buildEntitiesCard(entities: NormalizedEntity[]): EntitiesCard {
   return { type: 'entities', entities: entities.map((e) => e.entityId) }
+}
+
+function buildMediaControlCard(entity: NormalizedEntity): MediaControlCard {
+  return {
+    type: 'media-control',
+    entity: entity.entityId,
+  }
+}
+
+function buildPictureEntityCard(entity: NormalizedEntity): PictureEntityCard {
+  return {
+    type: 'picture-entity',
+    entity: entity.entityId,
+    camera_view: 'live',
+  }
 }

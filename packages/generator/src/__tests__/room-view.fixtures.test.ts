@@ -35,6 +35,7 @@ function summarize(views: ReturnType<typeof pipe>['views']) {
 
 function entityIdsInCard(card: LovelaceCard): string[] {
   if (card.type === 'tile' || card.type === 'thermostat') return [card.entity]
+  if (card.type === 'media-control' || card.type === 'picture-entity') return [card.entity]
   if (card.type === 'entities') return card.entities
   return [] // heading
 }
@@ -113,6 +114,18 @@ describe('buildRoomViews — english-cluttered fixture', () => {
             },
             {
               "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
+                "media-control": 1,
+              },
+              "heading": "Media",
+            },
+            {
+              "cards": {
                 "entities": 1,
               },
               "heading": "Activity",
@@ -144,6 +157,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
             },
             {
               "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
                 "entities": 1,
               },
               "heading": "Activity",
@@ -153,6 +172,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "entities": 1,
               },
               "heading": "Environment",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Security",
             },
             {
               "cards": {
@@ -188,6 +213,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
           "sections": [
             {
               "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
                 "entities": 1,
               },
               "heading": "Activity",
@@ -197,12 +228,6 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "entities": 1,
               },
               "heading": "Environment",
-            },
-            {
-              "cards": {
-                "entities": 1,
-              },
-              "heading": "Other",
             },
           ],
           "title": "Hallway",
@@ -216,6 +241,18 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "tile": 7,
               },
               "heading": "Lights & Outlets",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Covers",
+            },
+            {
+              "cards": {
+                "media-control": 1,
+              },
+              "heading": "Media",
             },
             {
               "cards": {
@@ -253,6 +290,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "thermostat": 1,
               },
               "heading": "Climate",
+            },
+            {
+              "cards": {
+                "media-control": 2,
+              },
+              "heading": "Media",
             },
             {
               "cards": {
@@ -299,6 +342,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
             },
             {
               "cards": {
+                "tile": 1,
+              },
+              "heading": "Security",
+            },
+            {
+              "cards": {
                 "entities": 1,
               },
               "heading": "Other",
@@ -327,6 +376,12 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "entities": 1,
               },
               "heading": "Environment",
+            },
+            {
+              "cards": {
+                "tile": 1,
+              },
+              "heading": "Fans",
             },
             {
               "cards": {
