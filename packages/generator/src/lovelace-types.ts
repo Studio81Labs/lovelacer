@@ -31,6 +31,8 @@ export type LovelaceCard =
   | EntitiesCard
   | MarkdownCard
   | GlanceCard
+  | MediaControlCard
+  | PictureEntityCard
 
 export interface HeadingCard {
   type: 'heading'
@@ -43,7 +45,19 @@ export interface TileCard {
   features?: TileFeature[]
 }
 
-export type TileFeature = { type: 'light-brightness' }
+export interface LightBrightnessFeature {
+  type: 'light-brightness'
+}
+
+export interface CoverOpenCloseFeature {
+  type: 'cover-open-close'
+}
+
+export interface FanSpeedFeature {
+  type: 'fan-speed'
+}
+
+export type TileFeature = LightBrightnessFeature | CoverOpenCloseFeature | FanSpeedFeature
 
 export interface ThermostatCard {
   type: 'thermostat'
@@ -65,4 +79,16 @@ export interface GlanceCard {
   type: 'glance'
   title?: string
   entities: string[]
+}
+
+export interface MediaControlCard {
+  type: 'media-control'
+  entity: string
+}
+
+export interface PictureEntityCard {
+  type: 'picture-entity'
+  entity: string
+  /** `live` streams the camera; `auto` shows a refreshing snapshot. Snake_case matches HA's YAML schema. */
+  camera_view?: 'live' | 'auto'
 }
