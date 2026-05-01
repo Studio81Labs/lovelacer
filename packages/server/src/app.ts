@@ -1,6 +1,7 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
+import fastifyStatic from '@fastify/static'
 import { pino, type Logger } from 'pino'
 import type { HaClient } from '@lovelacer/ha-client'
 import { analyzeRoute } from './routes/analyze.js'
@@ -19,6 +20,14 @@ export interface CreateAppOptions {
   logger?: Logger
   /** Default url_path for the generated dashboard. Forwarded to the apply route. */
   dashboardUrlPath: string
+  /**
+   * Absolute path to the built SPA's static asset directory (the
+   * `packages/web/dist/` produced by `pnpm --filter @lovelacer/web build`).
+   * When set, Fastify serves the SPA at `/` with SPA-style fallback so
+   * deep links into the client-side router resolve to `index.html`. Leave
+   * undefined in dev (Vite serves the SPA on :5173 with a proxy to :3000).
+   */
+  webDistDir?: string
 }
 
 export async function createApp(opts: CreateAppOptions) {
@@ -50,6 +59,25 @@ export async function createApp(opts: CreateAppOptions) {
   await app.register(analyzeRoute, { ha: opts.ha })
   await app.register(previewRoute, { ha: opts.ha })
   await app.register(applyRoute, { ha: opts.ha, dashboardUrlPath: opts.dashboardUrlPath })
+
+  // SPA static serving — only enabled in add-on / production. In dev Vite
+  // owns serving the SPA. The `wildcard: false` + `setNotFoundHandler`
+  // combo gives us the standard SPA fallback: API 404s pass through, but
+  // any non-API path falls back to index.html so the client-side router
+  // can resolve deep links.
+  if (opts.webDistDir !== undefined) {
+    await app.register(fastifyStatic, {
+      root: opts.webDistDir,
+      prefix: '/',
+      wildcard: false,
+    })
+    app.setNotFoundHandler((req, reply) => {
+      if (req.url.startsWith('/api/')) {
+        return reply.code(404).send({ error: 'not_found', message: 'route not found' })
+      }
+      return reply.sendFile('index.html')
+    })
+  }
 
   return app
 }

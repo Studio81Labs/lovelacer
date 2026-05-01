@@ -15,8 +15,14 @@ fi
 # home-assistant-js-websocket connects to /api/websocket on that host.
 export HA_URL="http://homeassistant:8123"
 export DATA_DIR="/data"
+# Static SPA assets are baked into /app/web-dist/ by the Dockerfile so
+# Fastify's @fastify/static serves them at /. Server reads this from
+# WEB_DIST_DIR via packages/server/src/config.ts.
+export WEB_DIST_DIR="/app/web-dist"
 
 cd /app
 # `exec` replaces the shell so signals (SIGTERM from Supervisor on
 # stop) reach Node directly without the bash wrapper swallowing them.
-exec node packages/server/dist/main.js
+# The pre-staged bundle has dist/ at the root (pnpm deploy flattens
+# the workspace package), not packages/server/dist/.
+exec node dist/main.js

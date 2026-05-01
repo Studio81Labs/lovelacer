@@ -14,7 +14,9 @@ jobs:
     secrets: inherit
     with:
       version: ${{ github.ref_name }}
-      tags: ${{ format('latest,{0}', github.ref_name) }}
+      additional_tags: |
+        latest
+        ${{ github.ref_name }}
 
   release:
     needs: build

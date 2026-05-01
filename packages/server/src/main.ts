@@ -30,6 +30,7 @@ async function main() {
     logLevel: config.logLevel,
     logger,
     dashboardUrlPath: config.dashboardUrlPath,
+    ...(config.webDistDir !== undefined && { webDistDir: config.webDistDir }),
   })
 
   // Connect to HA in background — health endpoint returns status either way.

@@ -7,6 +7,16 @@ Phase 1a alpha — install via custom add-on repository on your own HA instance.
 - HA OS or HA Supervised (the add-on store isn't available in HA Core or HA Container).
 - Internet access from the HA host to `ghcr.io` (Lovelacer images live there).
 
+## Note for release operators
+
+The first time CI publishes an arch image to GHCR, the package is created as **private**. HA Supervisor pulls anonymously, so installs will fail with a 401 until each per-arch package is flipped to public:
+
+1. Go to <https://github.com/orgs/Studio81Labs/packages>.
+2. Open `lovelacer-aarch64`, `lovelacer-amd64`, `lovelacer-armv7` in turn.
+3. **Package settings** (right sidebar) → scroll to **Danger Zone** → **Change visibility** → **Public**.
+
+Only needed once per package. Subsequent pushes inherit the public visibility.
+
 ## Install
 
 1. In HA, open **Settings → Add-ons → Add-on Store**.
