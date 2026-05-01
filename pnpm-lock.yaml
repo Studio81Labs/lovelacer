@@ -74,6 +74,9 @@ importers:
 
   packages/ha-client:
     dependencies:
+      '@lovelacer/generator':
+        specifier: workspace:*
+        version: link:../generator
       '@lovelacer/shared':
         specifier: workspace:*
         version: link:../shared

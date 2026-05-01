@@ -19,6 +19,7 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@lovelacer/generator": "workspace:*",
     "@lovelacer/shared": "workspace:*",
     "home-assistant-js-websocket": "^9.4.0",
     "pino": "^9.5.0",

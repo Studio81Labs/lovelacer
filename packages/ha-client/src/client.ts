@@ -11,6 +11,14 @@ import type {
   HaEntityRegistryEntry,
   HaFloorRegistryEntry,
 } from '@lovelacer/shared'
+import type { LovelaceConfig } from '@lovelacer/generator'
+import {
+  DEFAULT_APPLY_OPTIONS,
+  HaApplyError,
+  type ApplyDashboardOptions,
+  type ApplyDashboardResult,
+  type HaDashboardEntry,
+} from './dashboards.js'
 
 // home-assistant-js-websocket expects WebSocket on globalThis.
 // In Node we polyfill with `ws`. The lib's runtime check is structural
@@ -77,6 +85,69 @@ export class HaClient {
 
   async getFloorRegistry(): Promise<HaFloorRegistryEntry[]> {
     return this.send<HaFloorRegistryEntry[]>({ type: 'config/floor_registry/list' })
+  }
+
+  async listDashboards(): Promise<HaDashboardEntry[]> {
+    return this.send<HaDashboardEntry[]>({ type: 'lovelace/dashboards/list' })
+  }
+
+  async applyDashboard(
+    config: LovelaceConfig,
+    options?: ApplyDashboardOptions,
+  ): Promise<ApplyDashboardResult> {
+    const opts = { ...DEFAULT_APPLY_OPTIONS, ...options }
+
+    // Surface the "not connected" guard up front, unwrapped — callers
+    // (and tests) expect that specific error message verbatim. Once we're
+    // past this check, real transport failures get wrapped in HaApplyError
+    // so route handlers can branch on which step broke.
+    if (!this.connection) {
+      throw new Error('HaClient not connected — call connect() first')
+    }
+
+    let dashboards: HaDashboardEntry[]
+    try {
+      dashboards = await this.listDashboards()
+    } catch (cause) {
+      throw new HaApplyError('list', 'failed to list HA dashboards', cause)
+    }
+
+    const existing = dashboards.find((d) => d.url_path === opts.urlPath)
+    if (existing === undefined) {
+      try {
+        await this.send({
+          type: 'lovelace/dashboards/create',
+          url_path: opts.urlPath,
+          title: opts.title,
+          icon: opts.icon,
+          show_in_sidebar: opts.showInSidebar,
+          require_admin: opts.requireAdmin,
+          mode: 'storage',
+        })
+      } catch (cause) {
+        throw new HaApplyError(
+          'create',
+          `failed to create dashboard ${opts.urlPath}`,
+          cause,
+        )
+      }
+    }
+
+    try {
+      await this.send({
+        type: 'lovelace/config/save',
+        url_path: opts.urlPath,
+        config,
+      })
+    } catch (cause) {
+      throw new HaApplyError(
+        'save',
+        `failed to save dashboard config for ${opts.urlPath}`,
+        cause,
+      )
+    }
+
+    return { urlPath: opts.urlPath, created: existing === undefined }
   }
 
   /**
