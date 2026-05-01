@@ -1,7 +1,9 @@
+import { resolve } from 'node:path'
 import { HaClient } from '@lovelacer/ha-client'
 import { pino } from 'pino'
 import { config } from './config.js'
 import { createApp } from './app.js'
+import { OverrideStore } from './storage/override-store.js'
 
 async function main() {
   // Require an explicit `NODE_ENV=development` to enable pino-pretty, since
@@ -24,8 +26,13 @@ async function main() {
     logger,
   })
 
+  const overridesPath = resolve(config.dataDir, 'lovelacer.sqlite')
+  const overrides = new OverrideStore(overridesPath)
+  logger.info({ path: overridesPath }, 'override store opened')
+
   const app = await createApp({
     ha,
+    overrides,
     isDev,
     logLevel: config.logLevel,
     logger,
@@ -40,8 +47,12 @@ async function main() {
 
   const shutdown = async (signal: string) => {
     app.log.info({ signal }, 'shutting down')
-    await ha.disconnect()
-    await app.close()
+    try {
+      await ha.disconnect()
+      await app.close()
+    } finally {
+      overrides.close()
+    }
     process.exit(0)
   }
   process.on('SIGINT', () => void shutdown('SIGINT'))

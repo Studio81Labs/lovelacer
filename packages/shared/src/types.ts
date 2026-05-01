@@ -103,6 +103,12 @@ export interface RoomAssignment {
   roomId: CanonicalRoomId
   confidence: number
   signals: DetectionSignal[]
+  /**
+   * True iff this assignment was overridden by user override (P1b-3).
+   * Detector-produced assignments leave this undefined; the override
+   * patch step in `runFullPipeline` sets it.
+   */
+  manual?: boolean
 }
 
 /**

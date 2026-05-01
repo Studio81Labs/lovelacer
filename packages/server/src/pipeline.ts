@@ -11,8 +11,10 @@ import type {
   CanonicalRoomId,
   HaAreaRegistryEntry,
   NormalizedEntity,
+  Override,
   RoomAssignment,
 } from '@lovelacer/shared'
+import type { OverrideStore } from './storage/override-store.js'
 
 export interface AnalyzeOutput {
   rooms: AnalyzedRoom[]
@@ -81,7 +83,49 @@ interface PipelineState {
   summary: AnalyzeOutput['summary']
 }
 
-async function runFullPipeline(ha: HaClient): Promise<PipelineState> {
+/**
+ * Patches detector output with user overrides. Mutates `assignments` and
+ * `entities` in place. Called by `runFullPipeline` between `detect` and
+ * `groupByDomain` (wired in the next layer).
+ *
+ * - Each override with `roomId` set: replace the matching assignment's
+ *   `roomId`, set `confidence = 1.0` and `manual = true`.
+ * - Each override with `hidden: true`: OR-merge into the matching
+ *   entity's `isHidden` so existing hidden filters drop it from views.
+ *
+ * Orphaned overrides (entityId not in assignments) silently no-op so
+ * stale overrides from a since-removed integration don't blow up the
+ * pipeline.
+ *
+ * Caller MUST ensure `overrides` contains no duplicate entityIds —
+ * duplicates are last-write-wins (the route layer's zod refine enforces
+ * this on PUT /api/overrides).
+ */
+export function applyOverrides(
+  state: { assignments: RoomAssignment[]; entities: NormalizedEntity[] },
+  overrides: Override[],
+): void {
+  if (overrides.length === 0) return // hot path
+
+  const byEntityId = new Map(overrides.map((o) => [o.entityId, o]))
+
+  for (const a of state.assignments) {
+    const o = byEntityId.get(a.entityId)
+    if (o?.roomId !== undefined) {
+      a.roomId = o.roomId
+      a.confidence = 1.0
+      a.manual = true
+    }
+  }
+  for (const e of state.entities) {
+    const o = byEntityId.get(e.entityId)
+    if (o?.hidden === true) {
+      e.isHidden = true
+    }
+  }
+}
+
+async function runFullPipeline(ha: HaClient, overrides: OverrideStore): Promise<PipelineState> {
   const [entityRegistry, deviceRegistry, areaRegistry] = await Promise.all([
     ha.getEntityRegistry(),
     ha.getDeviceRegistry(),
@@ -93,6 +137,7 @@ async function runFullPipeline(ha: HaClient): Promise<PipelineState> {
     devices: deviceRegistry,
   })
   const assignments = detect({ entities, areas: areaRegistry })
+  applyOverrides({ assignments, entities }, overrides.getAll())
   const groupings = groupByDomain({ assignments, entities })
 
   const entityById = new Map(entities.map((e) => [e.entityId, e]))
@@ -144,8 +189,8 @@ async function runFullPipeline(ha: HaClient): Promise<PipelineState> {
   }
 }
 
-export async function runAnalyze(ha: HaClient): Promise<AnalyzeOutput> {
-  const state = await runFullPipeline(ha)
+export async function runAnalyze(ha: HaClient, overrides: OverrideStore): Promise<AnalyzeOutput> {
+  const state = await runFullPipeline(ha, overrides)
   return { rooms: state.rooms, misc: state.misc, summary: state.summary }
 }
 
@@ -197,8 +242,8 @@ function buildAnalyzedRoom(
   }
 }
 
-export async function runPreview(ha: HaClient): Promise<PreviewOutput> {
-  const state = await runFullPipeline(ha)
+export async function runPreview(ha: HaClient, overrides: OverrideStore): Promise<PreviewOutput> {
+  const state = await runFullPipeline(ha, overrides)
 
   // Drop the misc grouping before view generation: misc entities surface
   // via the analyze response's `misc[]` field, not as a dashboard view.
@@ -218,6 +263,7 @@ export async function runPreview(ha: HaClient): Promise<PreviewOutput> {
 
 export async function runApply(
   ha: HaClient,
+  overrides: OverrideStore,
   body: ApplyInput,
   defaultOptions: ApplyDashboardOptions = {},
 ): Promise<ApplyDashboardResult> {
@@ -229,6 +275,6 @@ export async function runApply(
     return ha.applyDashboard(body.config, options)
   }
 
-  const preview = await runPreview(ha)
+  const preview = await runPreview(ha, overrides)
   return ha.applyDashboard(preview.config, options)
 }
