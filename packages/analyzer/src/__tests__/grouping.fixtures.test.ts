@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
+import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { germanMassive } from '../../../../tests/fixtures/german-massive.js'
+import { kitchenSink } from '../../../../tests/fixtures/kitchen-sink.js'
+import { securityRich } from '../../../../tests/fixtures/security-rich.js'
+import { vacuumHeavy } from '../../../../tests/fixtures/vacuum-heavy.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { normalize } from '../normalize.js'
 import { detect } from '../detect.js'
@@ -756,6 +759,289 @@ describe('groupByDomain — german-massive fixture', () => {
           ).toBe(true)
         }
       }
+    }
+  })
+})
+
+describe('groupByDomain — security-rich fixture', () => {
+  const { groupings } = pipe(securityRich)
+
+  it('matches structural snapshot', () => {
+    const summary = groupings
+      .filter((g) => g.roomId !== 'misc')
+      .map((g) => ({
+        roomId: g.roomId,
+        groups: g.groups.map((sub) => ({ key: sub.key, count: sub.entities.length })),
+      }))
+    expect(summary).toMatchInlineSnapshot(`
+      [
+        {
+          "groups": [
+            {
+              "count": 1,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "cameras",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "security",
+            },
+          ],
+          "roomId": "garage",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 2,
+              "key": "cameras",
+            },
+            {
+              "count": 3,
+              "key": "activity",
+            },
+          ],
+          "roomId": "garden",
+        },
+        {
+          "groups": [
+            {
+              "count": 3,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "cameras",
+            },
+            {
+              "count": 6,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "security",
+            },
+            {
+              "count": 1,
+              "key": "other",
+            },
+          ],
+          "roomId": "hallway",
+        },
+      ]
+    `)
+  })
+
+  it('every canonical room has at least one group', () => {
+    for (const g of groupings) {
+      if (g.roomId === 'misc') continue
+      expect(g.groups.length, `room ${g.roomId} should have ≥1 group`).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('groupByDomain — vacuum-heavy fixture', () => {
+  const { groupings } = pipe(vacuumHeavy)
+
+  it('matches structural snapshot', () => {
+    const summary = groupings
+      .filter((g) => g.roomId !== 'misc')
+      .map((g) => ({
+        roomId: g.roomId,
+        groups: g.groups.map((sub) => ({ key: sub.key, count: sub.entities.length })),
+      }))
+    expect(summary).toMatchInlineSnapshot(`
+      [
+        {
+          "groups": [
+            {
+              "count": 1,
+              "key": "lights",
+            },
+            {
+              "count": 2,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "vacuum",
+            },
+          ],
+          "roomId": "hallway",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "vacuum",
+            },
+          ],
+          "roomId": "kitchen",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "environment",
+            },
+            {
+              "count": 2,
+              "key": "vacuum",
+            },
+          ],
+          "roomId": "living_room",
+        },
+      ]
+    `)
+  })
+
+  it('living_room, kitchen, hallway each have a vacuum group', () => {
+    const targets = ['living_room', 'kitchen', 'hallway'] as const
+    for (const roomId of targets) {
+      const room = groupings.find((g) => g.roomId === roomId)
+      expect(room, `room ${roomId} should be present`).toBeDefined()
+      const vacuumGroup = room!.groups.find((g) => g.key === 'vacuum')
+      expect(vacuumGroup, `${roomId} should have a vacuum group`).toBeDefined()
+    }
+  })
+})
+
+describe('groupByDomain — kitchen-sink fixture', () => {
+  const { groupings } = pipe(kitchenSink)
+
+  it('matches structural snapshot', () => {
+    const summary = groupings
+      .filter((g) => g.roomId !== 'misc')
+      .map((g) => ({
+        roomId: g.roomId,
+        groups: g.groups.map((sub) => ({ key: sub.key, count: sub.entities.length })),
+      }))
+    expect(summary).toMatchInlineSnapshot(`
+      [
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "fans",
+            },
+          ],
+          "roomId": "bedroom",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
+              "count": 2,
+              "key": "environment",
+            },
+            {
+              "count": 1,
+              "key": "vacuum",
+            },
+            {
+              "count": 1,
+              "key": "fans",
+            },
+          ],
+          "roomId": "kitchen",
+        },
+        {
+          "groups": [
+            {
+              "count": 2,
+              "key": "lights",
+            },
+            {
+              "count": 1,
+              "key": "covers",
+            },
+            {
+              "count": 1,
+              "key": "media",
+            },
+            {
+              "count": 1,
+              "key": "cameras",
+            },
+            {
+              "count": 1,
+              "key": "activity",
+            },
+            {
+              "count": 1,
+              "key": "environment",
+            },
+          ],
+          "roomId": "living_room",
+        },
+      ]
+    `)
+  })
+
+  it('contains every new P1b-2 group key (covers, media, security, cameras, vacuum, fans)', () => {
+    const allGroupKeys = new Set<string>()
+    for (const g of groupings) {
+      for (const sub of g.groups) allGroupKeys.add(sub.key)
+    }
+    for (const k of ['covers', 'media', 'security', 'cameras', 'vacuum', 'fans'] as const) {
+      expect(allGroupKeys, `expected group key "${k}" to appear somewhere`).toContain(k)
     }
   })
 })

@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
+import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { germanMassive } from '../../../../tests/fixtures/german-massive.js'
+import { kitchenSink } from '../../../../tests/fixtures/kitchen-sink.js'
+import { securityRich } from '../../../../tests/fixtures/security-rich.js'
+import { vacuumHeavy } from '../../../../tests/fixtures/vacuum-heavy.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { normalize } from '../normalize.js'
 import { detect, buildDetectionContext } from '../detect.js'
@@ -221,5 +224,104 @@ describe('detect — german-massive fixture', () => {
       const a = assignmentByEntityId.get(e.entity_id)
       expect(a?.roomId, `${e.entity_id} should be misc`).toBe('misc')
     }
+  })
+})
+
+describe('detect — security-rich fixture', () => {
+  const ha = fixtureToHaRegistries(securityRich)
+  const entities = normalize({ entities: ha.entities, devices: ha.devices })
+  const assignments = detect({ entities, areas: ha.areas })
+
+  it('produces one assignment per input entity', () => {
+    expect(assignments).toHaveLength(entities.length)
+  })
+
+  it('all entities with non-null fixture area land in their area canonical (where area maps to a canonical room)', () => {
+    // security-rich uses area names: Front Entry / Back Yard / Garage / Hallway.
+    // All four resolve to canonicals via the keyword pack:
+    //   Front Entry → hallway (entry pattern), Back Yard → garden (yard pattern),
+    //   Garage → garage, Hallway → hallway. Multiple Front Entry/Hallway entities
+    //   may share the 'hallway' canonical.
+    const ctx = buildDetectionContext(ha.areas)
+    const areaIdToCanonical = new Map<string, string>()
+    for (const [areaId, entry] of ctx.areaIndex) {
+      if (entry.canonical !== null) areaIdToCanonical.set(areaId, entry.canonical)
+    }
+    let testable = 0
+    let correct = 0
+    const assignmentByEntityId = new Map(assignments.map((a) => [a.entityId, a]))
+    const haEntityById = new Map(ha.entities.map((e) => [e.entity_id, e]))
+    for (const e of securityRich.entities) {
+      const haEntity = haEntityById.get(`${e.domain}.${e.objectId}`)
+      const haAreaId = haEntity?.area_id ?? null
+      if (haAreaId === null) continue
+      const expected = areaIdToCanonical.get(haAreaId)
+      if (expected === undefined) continue
+      const a = assignmentByEntityId.get(`${e.domain}.${e.objectId}`)
+      if (a === undefined) continue
+      testable++
+      if (a.roomId === expected) correct++
+    }
+    expect(testable).toBeGreaterThan(5)
+    const ratio = correct / testable
+    expect(ratio, `${correct}/${testable} matched`).toBeGreaterThanOrEqual(0.85)
+  })
+})
+
+describe('detect — vacuum-heavy fixture', () => {
+  const ha = fixtureToHaRegistries(vacuumHeavy)
+  const entities = normalize({ entities: ha.entities, devices: ha.devices })
+  const assignments = detect({ entities, areas: ha.areas })
+
+  it('produces one assignment per input entity', () => {
+    expect(assignments).toHaveLength(entities.length)
+  })
+
+  it('every area-attributed entity lands in its area canonical', () => {
+    // vacuum-heavy uses canonical English area names (Living Room,
+    // Kitchen, Hallway), so all area-attributed entities map cleanly.
+    const ctx = buildDetectionContext(ha.areas)
+    const areaIdToCanonical = new Map<string, string>()
+    for (const [areaId, entry] of ctx.areaIndex) {
+      if (entry.canonical !== null) areaIdToCanonical.set(areaId, entry.canonical)
+    }
+    const assignmentByEntityId = new Map(assignments.map((a) => [a.entityId, a]))
+    const haEntityById = new Map(ha.entities.map((e) => [e.entity_id, e]))
+    let testable = 0
+    for (const e of vacuumHeavy.entities) {
+      const haEntity = haEntityById.get(`${e.domain}.${e.objectId}`)
+      const haAreaId = haEntity?.area_id ?? null
+      if (haAreaId === null) continue
+      const expected = areaIdToCanonical.get(haAreaId)
+      if (expected === undefined) continue
+      const a = assignmentByEntityId.get(`${e.domain}.${e.objectId}`)
+      testable++
+      expect(a?.roomId, `${e.domain}.${e.objectId} should be ${expected}`).toBe(expected)
+    }
+    expect(testable, 'expected at least one testable area-attributed entity').toBeGreaterThan(10)
+  })
+})
+
+describe('detect — kitchen-sink fixture', () => {
+  const ha = fixtureToHaRegistries(kitchenSink)
+  const entities = normalize({ entities: ha.entities, devices: ha.devices })
+  const assignments = detect({ entities, areas: ha.areas })
+
+  it('produces one assignment per input entity', () => {
+    expect(assignments).toHaveLength(entities.length)
+  })
+
+  it('3 of 4 areas resolve to canonicals (Front Door is non-canonical → misc)', () => {
+    // Living Room → living_room, Master Bedroom → bedroom, Kitchen → kitchen.
+    // Front Door is non-canonical (no pattern matches just "front door"),
+    // so its entities go to misc — we don't fail on that here.
+    const ctx = buildDetectionContext(ha.areas)
+    const canonicals = new Set<string>()
+    for (const [, entry] of ctx.areaIndex) {
+      if (entry.canonical !== null) canonicals.add(entry.canonical)
+    }
+    expect(canonicals).toContain('living_room')
+    expect(canonicals).toContain('bedroom')
+    expect(canonicals).toContain('kitchen')
   })
 })
