@@ -17,7 +17,10 @@ function confidenceLabel(confidence: number): string {
 </script>
 
 <template>
-  <div v-if="rooms.length === 0" class="rounded border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600">
+  <div
+    v-if="rooms.length === 0"
+    class="rounded border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600"
+  >
     No rooms detected — check that your HA install has at least one area assigned to entities or
     device names matching room patterns.
   </div>

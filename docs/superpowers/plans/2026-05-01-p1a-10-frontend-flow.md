@@ -28,6 +28,7 @@
 ## Task 1: Workspace setup — devDeps + vitest config + Iconify bundle
 
 **Files:**
+
 - Modify: `packages/web/package.json`
 - Modify: `packages/web/src/main.ts`
 - Create: `packages/web/vitest.config.ts`
@@ -157,6 +158,7 @@ EOF
 ## Task 2: API types + client + tests
 
 **Files:**
+
 - Create: `packages/web/src/api/types.ts`
 - Create: `packages/web/src/api/client.ts`
 - Create: `packages/web/src/__tests__/api/client.test.ts`
@@ -251,8 +253,7 @@ describe('postApply', () => {
   it('sends config in body and returns parsed result on 200', async () => {
     globalThis.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: () =>
-        Promise.resolve({ ok: true, urlPath: 'lovelacer-home', created: true }),
+      json: () => Promise.resolve({ ok: true, urlPath: 'lovelacer-home', created: true }),
     } as unknown as Response)
 
     const result = await postApply({ config: mockConfig })
@@ -499,6 +500,7 @@ EOF
 ## Task 3: Pinia stores (analyze + apply) + tests
 
 **Files:**
+
 - Create: `packages/web/src/stores/analyze.ts`
 - Create: `packages/web/src/stores/apply.ts`
 - Create: `packages/web/src/__tests__/stores/analyze.test.ts`
@@ -856,6 +858,7 @@ EOF
 ## Task 4: `RoomList.vue` + `roomIdToIcon` helper + tests
 
 **Files:**
+
 - Create: `packages/web/src/components/icons.ts`
 - Create: `packages/web/src/components/RoomList.vue`
 - Create: `packages/web/src/__tests__/components/RoomList.test.ts`
@@ -1007,7 +1010,10 @@ function confidenceLabel(confidence: number): string {
 </script>
 
 <template>
-  <div v-if="rooms.length === 0" class="rounded border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600">
+  <div
+    v-if="rooms.length === 0"
+    class="rounded border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600"
+  >
     No rooms detected — check that your HA install has at least one area assigned to entities or
     device names matching room patterns.
   </div>
@@ -1085,6 +1091,7 @@ EOF
 ## Task 5: `DashboardPreview.vue` + tests
 
 **Files:**
+
 - Create: `packages/web/src/components/DashboardPreview.vue`
 - Create: `packages/web/src/__tests__/components/DashboardPreview.test.ts`
 
@@ -1160,7 +1167,8 @@ defineProps<{ config: LovelaceConfig }>()
 <template>
   <section v-if="config.views.length > 0">
     <h3 class="mb-3 text-sm font-medium text-stone-700">
-      Will create {{ config.views.length }} dashboard {{ config.views.length === 1 ? 'view' : 'views' }}
+      Will create {{ config.views.length }} dashboard
+      {{ config.views.length === 1 ? 'view' : 'views' }}
     </h3>
     <ul class="flex flex-wrap gap-2">
       <li
@@ -1219,6 +1227,7 @@ EOF
 ## Task 6: Glue components — HealthBar, AnalyzeButton, MiscBucket, ApplyBar
 
 **Files:**
+
 - Create: `packages/web/src/components/HealthBar.vue`
 - Create: `packages/web/src/components/AnalyzeButton.vue`
 - Create: `packages/web/src/components/MiscBucket.vue`
@@ -1267,9 +1276,7 @@ onMounted(() => {
 
 <template>
   <section class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-    <div v-if="error" class="text-sm text-brand-800">
-      Backend unreachable: {{ error }}
-    </div>
+    <div v-if="error" class="text-sm text-brand-800">Backend unreachable: {{ error }}</div>
 
     <div v-else-if="!health" class="text-sm text-stone-500">Loading…</div>
 
@@ -1279,9 +1286,7 @@ onMounted(() => {
       </span>
       <span
         class="inline-block rounded px-2 py-0.5 text-xs font-medium"
-        :class="
-          health.ha.connected ? 'bg-green-100 text-green-800' : 'bg-stone-200 text-stone-700'
-        "
+        :class="health.ha.connected ? 'bg-green-100 text-green-800' : 'bg-stone-200 text-stone-700'"
       >
         HA {{ health.ha.connected ? 'connected' : 'disconnected' }}
       </span>
@@ -1305,9 +1310,7 @@ const apply = useApplyStore()
 
 // Disabled while either store is mid-flight to prevent racing the
 // in-progress request. Re-enabled in idle/ready/error/success.
-const disabled = computed(
-  () => analyze.phase === 'loading' || apply.phase === 'applying',
-)
+const disabled = computed(() => analyze.phase === 'loading' || apply.phase === 'applying')
 
 const label = computed(() => (analyze.phase === 'loading' ? 'Analyzing…' : 'Analyze'))
 </script>
@@ -1517,6 +1520,7 @@ EOF
 ## Task 7: `App.vue` composition + manual smoke verification
 
 **Files:**
+
 - Modify: `packages/web/src/App.vue`
 
 Replace the existing health-check-only `App.vue` with the full composition. Read the current file first to preserve the page chrome (`<main class="mx-auto max-w-2xl p-8">`, header).
@@ -1575,10 +1579,7 @@ const analyze = useAnalyzeStore()
       </div>
     </section>
 
-    <section
-      v-if="analyze.phase === 'ready' && analyze.preview !== null"
-      class="space-y-4"
-    >
+    <section v-if="analyze.phase === 'ready' && analyze.preview !== null" class="space-y-4">
       <RoomList :rooms="analyze.preview.rooms" />
       <MiscBucket :misc="analyze.preview.misc" />
       <DashboardPreview :config="analyze.preview.config" />
@@ -1611,6 +1612,7 @@ pnpm --dir <worktree> --filter @lovelacer/web dev
 ```
 
 Open `http://localhost:5173`:
+
 - HealthBar should show version + HA status (likely disconnected without real HA — that's fine).
 - "Analyze" button should appear and be clickable.
 - If HA is disconnected, clicking Analyze surfaces the error banner with a Retry button.

@@ -8,9 +8,7 @@ const apply = useApplyStore()
 
 // Disabled while either store is mid-flight to prevent racing the
 // in-progress request. Re-enabled in idle/ready/error/success.
-const disabled = computed(
-  () => analyze.phase === 'loading' || apply.phase === 'applying',
-)
+const disabled = computed(() => analyze.phase === 'loading' || apply.phase === 'applying')
 
 const label = computed(() => (analyze.phase === 'loading' ? 'Analyzing…' : 'Analyze'))
 </script>

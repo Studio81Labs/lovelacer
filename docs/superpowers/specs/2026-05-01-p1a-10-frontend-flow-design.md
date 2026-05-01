@@ -60,6 +60,7 @@ Extracts the existing health-check UI from `App.vue` verbatim. Polls `/api/healt
 ### 2. `AnalyzeButton.vue`
 
 Single button bound to `analyzeStore.phase`:
+
 - `idle` / `error` → "Analyze" label, enabled
 - `loading` → "Analyzing…" label, disabled
 
@@ -78,6 +79,7 @@ Receives `rooms: AnalyzedRoom[]` as a prop. One row per room:
 Icon comes from a small `roomIdToIcon(roomId)` helper that mirrors the canonical-room → icon mapping in `packages/generator/src/room-view.ts` (`ROOM_DISPLAY` table). Frontend duplicates ~14 lines rather than fetching from the server. P1b can DRY this up via a shared `@lovelacer/api-types` package.
 
 Confidence pill colored by bucket:
+
 - ≥0.8 → green (`bg-green-100 text-green-800`)
 - 0.5–0.8 → amber (`bg-amber-100 text-amber-800`)
 - <0.5 → red (`bg-red-100 text-red-800`)
@@ -106,12 +108,12 @@ If `config.views` is empty (degenerate — never happens in production since hom
 
 Bound to `applyStore.phase` + `applyStore.error` + `applyStore.result`. Four states:
 
-| Phase | Render |
-| --- | --- |
-| `idle` | Big "Apply to Home Assistant" button. Click dispatches `applyStore.apply(analyzeStore.preview.config)`. |
-| `applying` | Same button, disabled, "Applying…" label. |
-| `success` | Green banner: "Dashboard `lovelacer-home` created" (or "updated" if `result.created === false`). "Done — start over" button → calls `analyzeStore.reset()` + `applyStore.reset()`. Auto-dismisses after 5s with the same reset effect. |
-| `error` | Red banner with structured error message (see Error handling). "Retry" button re-dispatches `apply(config)` with the same cached config. |
+| Phase      | Render                                                                                                                                                                                                                                 |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `idle`     | Big "Apply to Home Assistant" button. Click dispatches `applyStore.apply(analyzeStore.preview.config)`.                                                                                                                                |
+| `applying` | Same button, disabled, "Applying…" label.                                                                                                                                                                                              |
+| `success`  | Green banner: "Dashboard `lovelacer-home` created" (or "updated" if `result.created === false`). "Done — start over" button → calls `analyzeStore.reset()` + `applyStore.reset()`. Auto-dismisses after 5s with the same reset effect. |
+| `error`    | Red banner with structured error message (see Error handling). "Retry" button re-dispatches `apply(config)` with the same cached config.                                                                                               |
 
 When the success auto-dismiss fires, the page returns to the initial "click Analyze" state since both stores reset. The user can re-analyze immediately.
 
@@ -197,8 +199,8 @@ export interface ApplyResult {
 }
 
 export interface ApiError {
-  error: string         // 'ha_unavailable' | 'analyze_failed' | 'preview_failed' | 'invalid_config' | 'ha_apply_failed' | 'apply_failed' | 'network'
-  step?: string         // 'list' | 'create' | 'save' for ha_apply_failed
+  error: string // 'ha_unavailable' | 'analyze_failed' | 'preview_failed' | 'invalid_config' | 'ha_apply_failed' | 'apply_failed' | 'network'
+  step?: string // 'list' | 'create' | 'save' for ha_apply_failed
   message: string
 }
 ```
@@ -380,19 +382,19 @@ User clicks "Apply to Home Assistant"
 
 ## Error handling
 
-| Layer | Failure | Behavior |
-| --- | --- | --- |
-| `api/client` | Network error (fetch rejects) | Throws `ApiError({ error: 'network', message })`. |
-| `api/client` | Non-2xx response with structured body | Parses server's `{ error, step?, message }` JSON; throws as-is. |
-| `api/client` | Non-JSON response | Throws `ApiError({ error: 'network', message: 'HTTP <code>' })`. |
-| `analyzeStore` | Any failure | `phase = 'error'`, `error = ApiError`, `preview = null`. |
-| `applyStore` | Any failure | `phase = 'error'`, `error = ApiError`, `result = null`. |
-| `App.vue` | `analyzeStore.phase === 'error'` | Inline red banner with `error.message`. "Retry" re-dispatches `analyze()`. |
-| `ApplyBar` | `error.error === 'ha_unavailable'` (503) | Banner: "Home Assistant is not connected. Check the HA connection bar at the top." No retry button — user fixes connectivity, then clicks Apply themselves. |
-| `ApplyBar` | `error.error === 'invalid_config'` (400) | Banner: "Cached config is invalid. Click 'Start over' to re-analyze." Click triggers both stores' `reset()`. |
-| `ApplyBar` | `error.error === 'ha_apply_failed'` (502) | Banner: "Apply failed at step `<step>`: `<message>`". "Retry" re-dispatches `apply(config)` with the same cached config. |
-| `ApplyBar` | Any other error | Generic banner with `error.message`. "Retry" re-dispatches. |
-| `HealthBar` | `/api/health` fails | "Backend unreachable: <message>" (existing behavior preserved). |
+| Layer          | Failure                                   | Behavior                                                                                                                                                    |
+| -------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api/client`   | Network error (fetch rejects)             | Throws `ApiError({ error: 'network', message })`.                                                                                                           |
+| `api/client`   | Non-2xx response with structured body     | Parses server's `{ error, step?, message }` JSON; throws as-is.                                                                                             |
+| `api/client`   | Non-JSON response                         | Throws `ApiError({ error: 'network', message: 'HTTP <code>' })`.                                                                                            |
+| `analyzeStore` | Any failure                               | `phase = 'error'`, `error = ApiError`, `preview = null`.                                                                                                    |
+| `applyStore`   | Any failure                               | `phase = 'error'`, `error = ApiError`, `result = null`.                                                                                                     |
+| `App.vue`      | `analyzeStore.phase === 'error'`          | Inline red banner with `error.message`. "Retry" re-dispatches `analyze()`.                                                                                  |
+| `ApplyBar`     | `error.error === 'ha_unavailable'` (503)  | Banner: "Home Assistant is not connected. Check the HA connection bar at the top." No retry button — user fixes connectivity, then clicks Apply themselves. |
+| `ApplyBar`     | `error.error === 'invalid_config'` (400)  | Banner: "Cached config is invalid. Click 'Start over' to re-analyze." Click triggers both stores' `reset()`.                                                |
+| `ApplyBar`     | `error.error === 'ha_apply_failed'` (502) | Banner: "Apply failed at step `<step>`: `<message>`". "Retry" re-dispatches `apply(config)` with the same cached config.                                    |
+| `ApplyBar`     | Any other error                           | Generic banner with `error.message`. "Retry" re-dispatches.                                                                                                 |
+| `HealthBar`    | `/api/health` fails                       | "Backend unreachable: <message>" (existing behavior preserved).                                                                                             |
 
 No silent failures. Every error path produces a visible message with a clear next action.
 
@@ -453,32 +455,33 @@ Same Pinia pattern.
 
 ## File-by-file
 
-| File | Action | Notes |
-| --- | --- | --- |
-| `packages/web/src/api/types.ts` | Create | API types (mirror server pipeline output) |
-| `packages/web/src/api/client.ts` | Create | `postAnalyze`, `postPreview`, `postApply` |
-| `packages/web/src/stores/analyze.ts` | Create | Pinia setup-style store |
-| `packages/web/src/stores/apply.ts` | Create | Pinia setup-style store |
-| `packages/web/src/components/HealthBar.vue` | Create | Existing health UI, extracted |
-| `packages/web/src/components/AnalyzeButton.vue` | Create | |
-| `packages/web/src/components/RoomList.vue` | Create | |
-| `packages/web/src/components/MiscBucket.vue` | Create | |
-| `packages/web/src/components/DashboardPreview.vue` | Create | Iconify pill grid |
-| `packages/web/src/components/ApplyBar.vue` | Create | Idle/applying/success/error states |
-| `packages/web/src/App.vue` | Modify | Compose components, add v-if sections |
-| `packages/web/src/__tests__/api/client.test.ts` | Create | |
-| `packages/web/src/__tests__/stores/analyze.test.ts` | Create | |
-| `packages/web/src/__tests__/stores/apply.test.ts` | Create | |
-| `packages/web/src/__tests__/components/RoomList.test.ts` | Create | |
-| `packages/web/src/__tests__/components/DashboardPreview.test.ts` | Create | |
-| `packages/web/vitest.config.ts` | Create | Per the root config's "must ship local" rule |
-| `packages/web/package.json` | Modify | Add `@iconify/vue`, `@vue/test-utils`, `happy-dom` |
+| File                                                             | Action | Notes                                              |
+| ---------------------------------------------------------------- | ------ | -------------------------------------------------- |
+| `packages/web/src/api/types.ts`                                  | Create | API types (mirror server pipeline output)          |
+| `packages/web/src/api/client.ts`                                 | Create | `postAnalyze`, `postPreview`, `postApply`          |
+| `packages/web/src/stores/analyze.ts`                             | Create | Pinia setup-style store                            |
+| `packages/web/src/stores/apply.ts`                               | Create | Pinia setup-style store                            |
+| `packages/web/src/components/HealthBar.vue`                      | Create | Existing health UI, extracted                      |
+| `packages/web/src/components/AnalyzeButton.vue`                  | Create |                                                    |
+| `packages/web/src/components/RoomList.vue`                       | Create |                                                    |
+| `packages/web/src/components/MiscBucket.vue`                     | Create |                                                    |
+| `packages/web/src/components/DashboardPreview.vue`               | Create | Iconify pill grid                                  |
+| `packages/web/src/components/ApplyBar.vue`                       | Create | Idle/applying/success/error states                 |
+| `packages/web/src/App.vue`                                       | Modify | Compose components, add v-if sections              |
+| `packages/web/src/__tests__/api/client.test.ts`                  | Create |                                                    |
+| `packages/web/src/__tests__/stores/analyze.test.ts`              | Create |                                                    |
+| `packages/web/src/__tests__/stores/apply.test.ts`                | Create |                                                    |
+| `packages/web/src/__tests__/components/RoomList.test.ts`         | Create |                                                    |
+| `packages/web/src/__tests__/components/DashboardPreview.test.ts` | Create |                                                    |
+| `packages/web/vitest.config.ts`                                  | Create | Per the root config's "must ship local" rule       |
+| `packages/web/package.json`                                      | Modify | Add `@iconify/vue`, `@vue/test-utils`, `happy-dom` |
 
 ## Dependencies
 
 New runtime dep: `@iconify/vue` (~30 KB gzip with on-demand icon loading from a CDN, or ~10 KB if we ship the MDI icon set as a static asset).
 
 New devDeps:
+
 - `@vue/test-utils` — Vue component testing
 - `happy-dom` — fast DOM-in-Node implementation, faster than jsdom
 

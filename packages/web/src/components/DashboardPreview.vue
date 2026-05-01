@@ -8,7 +8,8 @@ defineProps<{ config: LovelaceConfig }>()
 <template>
   <section v-if="config.views.length > 0">
     <h3 class="mb-3 text-sm font-medium text-stone-700">
-      Will create {{ config.views.length }} dashboard {{ config.views.length === 1 ? 'view' : 'views' }}
+      Will create {{ config.views.length }} dashboard
+      {{ config.views.length === 1 ? 'view' : 'views' }}
     </h3>
     <ul class="flex flex-wrap gap-2">
       <li

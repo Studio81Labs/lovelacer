@@ -81,8 +81,7 @@ describe('postApply', () => {
   it('sends config in body and returns parsed result on 200', async () => {
     globalThis.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: () =>
-        Promise.resolve({ ok: true, urlPath: 'lovelacer-home', created: true }),
+      json: () => Promise.resolve({ ok: true, urlPath: 'lovelacer-home', created: true }),
     } as unknown as Response)
 
     const result = await postApply({ config: mockConfig })
