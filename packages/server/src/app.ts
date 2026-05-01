@@ -4,12 +4,15 @@ import sensible from '@fastify/sensible'
 import fastifyStatic from '@fastify/static'
 import { pino, type Logger } from 'pino'
 import type { HaClient } from '@lovelacer/ha-client'
+import type { OverrideStore } from './storage/override-store.js'
 import { analyzeRoute } from './routes/analyze.js'
 import { applyRoute } from './routes/apply.js'
 import { previewRoute } from './routes/preview.js'
+import { overridesRoute } from './routes/overrides.js'
 
 export interface CreateAppOptions {
   ha: HaClient
+  overrides: OverrideStore
   isDev?: boolean
   logLevel?: string
   /**
@@ -56,9 +59,14 @@ export async function createApp(opts: CreateAppOptions) {
     ha: { connected: opts.ha.isConnected() },
   }))
 
-  await app.register(analyzeRoute, { ha: opts.ha })
-  await app.register(previewRoute, { ha: opts.ha })
-  await app.register(applyRoute, { ha: opts.ha, dashboardUrlPath: opts.dashboardUrlPath })
+  await app.register(analyzeRoute, { ha: opts.ha, overrides: opts.overrides })
+  await app.register(previewRoute, { ha: opts.ha, overrides: opts.overrides })
+  await app.register(applyRoute, {
+    ha: opts.ha,
+    overrides: opts.overrides,
+    dashboardUrlPath: opts.dashboardUrlPath,
+  })
+  await app.register(overridesRoute, { overrides: opts.overrides })
 
   // SPA static serving — only enabled in add-on / production. In dev Vite
   // owns serving the SPA. With `wildcard: true` (default), @fastify/static

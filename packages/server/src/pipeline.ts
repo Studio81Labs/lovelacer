@@ -14,6 +14,7 @@ import type {
   Override,
   RoomAssignment,
 } from '@lovelacer/shared'
+import type { OverrideStore } from './storage/override-store.js'
 
 export interface AnalyzeOutput {
   rooms: AnalyzedRoom[]
@@ -124,7 +125,7 @@ export function applyOverrides(
   }
 }
 
-async function runFullPipeline(ha: HaClient): Promise<PipelineState> {
+async function runFullPipeline(ha: HaClient, overrides: OverrideStore): Promise<PipelineState> {
   const [entityRegistry, deviceRegistry, areaRegistry] = await Promise.all([
     ha.getEntityRegistry(),
     ha.getDeviceRegistry(),
@@ -136,6 +137,7 @@ async function runFullPipeline(ha: HaClient): Promise<PipelineState> {
     devices: deviceRegistry,
   })
   const assignments = detect({ entities, areas: areaRegistry })
+  applyOverrides({ assignments, entities }, overrides.getAll())
   const groupings = groupByDomain({ assignments, entities })
 
   const entityById = new Map(entities.map((e) => [e.entityId, e]))
@@ -187,8 +189,8 @@ async function runFullPipeline(ha: HaClient): Promise<PipelineState> {
   }
 }
 
-export async function runAnalyze(ha: HaClient): Promise<AnalyzeOutput> {
-  const state = await runFullPipeline(ha)
+export async function runAnalyze(ha: HaClient, overrides: OverrideStore): Promise<AnalyzeOutput> {
+  const state = await runFullPipeline(ha, overrides)
   return { rooms: state.rooms, misc: state.misc, summary: state.summary }
 }
 
@@ -240,8 +242,8 @@ function buildAnalyzedRoom(
   }
 }
 
-export async function runPreview(ha: HaClient): Promise<PreviewOutput> {
-  const state = await runFullPipeline(ha)
+export async function runPreview(ha: HaClient, overrides: OverrideStore): Promise<PreviewOutput> {
+  const state = await runFullPipeline(ha, overrides)
 
   // Drop the misc grouping before view generation: misc entities surface
   // via the analyze response's `misc[]` field, not as a dashboard view.
@@ -261,6 +263,7 @@ export async function runPreview(ha: HaClient): Promise<PreviewOutput> {
 
 export async function runApply(
   ha: HaClient,
+  overrides: OverrideStore,
   body: ApplyInput,
   defaultOptions: ApplyDashboardOptions = {},
 ): Promise<ApplyDashboardResult> {
@@ -272,6 +275,6 @@ export async function runApply(
     return ha.applyDashboard(body.config, options)
   }
 
-  const preview = await runPreview(ha)
+  const preview = await runPreview(ha, overrides)
   return ha.applyDashboard(preview.config, options)
 }

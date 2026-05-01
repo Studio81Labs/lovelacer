@@ -1,15 +1,17 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import type { HaClient } from '@lovelacer/ha-client'
+import type { OverrideStore } from '../storage/override-store.js'
 import { runAnalyze } from '../pipeline.js'
 
 export interface AnalyzeRouteOptions {
   ha: HaClient
+  overrides: OverrideStore
 }
 
 /**
  * POST /api/analyze — pulls registries from HA, runs the full analyzer
- * pipeline (normalize → detect → groupByDomain), and returns a summary
- * with rooms, misc bucket, and counts.
+ * pipeline (normalize → detect → applyOverrides → groupByDomain), and
+ * returns a summary with rooms, misc bucket, and counts.
  *
  * Errors:
  * - 503 ha_unavailable: HaClient not connected
@@ -26,7 +28,7 @@ export const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (
         .send({ error: 'ha_unavailable', message: 'Home Assistant connection not ready' })
     }
     try {
-      const result = await runAnalyze(opts.ha)
+      const result = await runAnalyze(opts.ha, opts.overrides)
       return reply.code(200).send(result)
     } catch (err) {
       req.log.error({ err }, 'analyze failed')

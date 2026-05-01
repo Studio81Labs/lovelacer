@@ -5,6 +5,11 @@ import type { LovelaceConfig } from '@lovelacer/generator'
 import { englishCluttered } from '../../../../../tests/fixtures/english-cluttered.js'
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
 import { createApp } from '../../app.js'
+import { OverrideStore } from '../../storage/override-store.js'
+
+function makeStore(): OverrideStore {
+  return new OverrideStore(':memory:')
+}
 
 interface FakeHa {
   client: HaClient
@@ -51,6 +56,7 @@ describe('POST /api/apply — happy paths', () => {
     })
     const app = await createApp({
       ha: fake.client,
+      overrides: makeStore(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -77,6 +83,7 @@ describe('POST /api/apply — happy paths', () => {
     })
     const app = await createApp({
       ha: fake.client,
+      overrides: makeStore(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -105,6 +112,7 @@ describe('POST /api/apply — happy paths', () => {
     })
     const app = await createApp({
       ha: fake.client,
+      overrides: makeStore(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -127,6 +135,7 @@ describe('POST /api/apply — error paths', () => {
     const fake = makeHa(false)
     const app = await createApp({
       ha: fake.client,
+      overrides: makeStore(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -143,6 +152,7 @@ describe('POST /api/apply — error paths', () => {
     const fake = makeHa(true)
     const app = await createApp({
       ha: fake.client,
+      overrides: makeStore(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -164,6 +174,7 @@ describe('POST /api/apply — error paths', () => {
     const fake = makeHa(true)
     const app = await createApp({
       ha: fake.client,
+      overrides: makeStore(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -187,6 +198,7 @@ describe('POST /api/apply — error paths', () => {
     )
     const app = await createApp({
       ha: fake.client,
+      overrides: makeStore(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
