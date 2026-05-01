@@ -1,4 +1,5 @@
 import { HaClient } from '@lovelacer/ha-client'
+import { pino } from 'pino'
 import { config } from './config.js'
 import { createApp } from './app.js'
 
@@ -8,12 +9,22 @@ async function main() {
   // (e.g., HA add-on container) where it isn't bundled.
   const isDev = process.env.NODE_ENV === 'development'
 
+  // Build the logger once and share it between HaClient and Fastify so
+  // both honor `config.logLevel` and the dev-mode pino-pretty transport.
+  const logger = pino({
+    level: config.logLevel,
+    ...(isDev && {
+      transport: { target: 'pino-pretty', options: { colorize: true } },
+    }),
+  })
+
   const ha = new HaClient({
     url: config.ha.url,
     token: config.ha.token,
+    logger,
   })
 
-  const app = await createApp({ ha, isDev, logLevel: config.logLevel })
+  const app = await createApp({ ha, isDev, logLevel: config.logLevel, logger })
 
   // Connect to HA in background — health endpoint returns status either way.
   ha.connect().catch((err) => {

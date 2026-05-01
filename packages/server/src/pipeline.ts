@@ -68,7 +68,20 @@ const CANONICAL_ROOM_NAMES: Record<CanonicalRoomId, string> = {
   misc: 'Other',
 }
 
-export async function runAnalyze(ha: HaClient): Promise<AnalyzeOutput> {
+/**
+ * Internal pipeline state shared by `runAnalyze` and `runPreview`. Holds
+ * everything they need from a single registry fetch so the two routes
+ * never race against a HA registry mutation between calls.
+ */
+interface PipelineState {
+  entities: NormalizedEntity[]
+  groupings: RoomGrouping[]
+  rooms: AnalyzedRoom[]
+  misc: AnalyzeOutput['misc']
+  summary: AnalyzeOutput['summary']
+}
+
+async function runFullPipeline(ha: HaClient): Promise<PipelineState> {
   const [entityRegistry, deviceRegistry, areaRegistry] = await Promise.all([
     ha.getEntityRegistry(),
     ha.getDeviceRegistry(),
@@ -119,6 +132,8 @@ export async function runAnalyze(ha: HaClient): Promise<AnalyzeOutput> {
   const visibleEntityCount = entities.filter((e) => !e.isHidden && !e.isDisabled).length
 
   return {
+    entities,
+    groupings,
     rooms,
     misc,
     summary: {
@@ -127,6 +142,11 @@ export async function runAnalyze(ha: HaClient): Promise<AnalyzeOutput> {
       miscCount: misc.length,
     },
   }
+}
+
+export async function runAnalyze(ha: HaClient): Promise<AnalyzeOutput> {
+  const state = await runFullPipeline(ha)
+  return { rooms: state.rooms, misc: state.misc, summary: state.summary }
 }
 
 function buildAnalyzedRoom(
@@ -178,31 +198,22 @@ function buildAnalyzedRoom(
 }
 
 export async function runPreview(ha: HaClient): Promise<PreviewOutput> {
-  const analyze = await runAnalyze(ha)
-
-  // We need the entities + groupings again. Re-fetch is cheap; alternative
-  // is to thread them out of runAnalyze, but that bloats AnalyzeOutput.
-  const [entityRegistry, deviceRegistry, areaRegistry] = await Promise.all([
-    ha.getEntityRegistry(),
-    ha.getDeviceRegistry(),
-    ha.getAreaRegistry(),
-  ])
-  const entities = normalize({
-    entities: entityRegistry,
-    devices: deviceRegistry,
-  })
-  const assignments = detect({ entities, areas: areaRegistry })
-  const groupings = groupByDomain({ assignments, entities })
+  const state = await runFullPipeline(ha)
 
   // Drop the misc grouping before view generation: misc entities surface
   // via the analyze response's `misc[]` field, not as a dashboard view.
-  const dashboardGroupings = groupings.filter((g) => g.roomId !== 'misc')
+  const dashboardGroupings = state.groupings.filter((g) => g.roomId !== 'misc')
 
-  const home = buildHomeView({ entities })
+  const home = buildHomeView({ entities: state.entities })
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
 
-  return { ...analyze, config }
+  return {
+    rooms: state.rooms,
+    misc: state.misc,
+    summary: state.summary,
+    config,
+  }
 }
 
 export async function runApply(ha: HaClient, body: ApplyInput): Promise<ApplyDashboardResult> {
