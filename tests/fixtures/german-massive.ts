@@ -219,6 +219,7 @@ const outdoorEntities = [
   light(FX, 'Outdoor Light Garten', { device: gartenHue.id }),
   light(FX, 'Garten Wegbeleuchtung', { device: gartenHue.id }),
   light(FX, 'Terrasse Lampe', { device: gartenHue.id }),
+  // 'weather' isn't a FixtureDomain; sensor approximates the registry shape.
   registryEntry(FX, 'sensor', 'Garten Wetter', {}),
   occupancy(FX, 'Garten Anwesenheit', {}),
   door(FX, 'Garten Tor Sensor', {}),
@@ -245,9 +246,9 @@ export const germanMassive = fixture({
   meta: {
     name: 'german-massive',
     description:
-      '~130 entities across 13 German-named areas spanning Erdgeschoss + ' +
+      '~99 entities across 13 German-named areas spanning Erdgeschoss + ' +
       'Obergeschoss + Keller. Mostly area-attributed; ~7 outdoor entities tagged ' +
-      'via friendlyName only (no area_id) and ~10 floating diagnostic / hidden / ' +
+      'via friendlyName only (no area_id) and 10 floating diagnostic / hidden / ' +
       'disabled entries to exercise normalization filters. Validates the new DE ' +
       'keyword pack including diacritic normalization (Küche → kuche), bedroom ' +
       'excludes(["bad"]), bathroom + laundry waschraum overlap, and substring ' +

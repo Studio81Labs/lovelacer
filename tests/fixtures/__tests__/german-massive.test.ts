@@ -54,7 +54,7 @@ describe('german-massive fixture', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('has at least 5 hidden entities', () => {
+  it('has at least 3 hidden entities', () => {
     const hidden = fx.entities.filter((e) => e.hidden).length
     expect(hidden).toBeGreaterThanOrEqual(3)
   })

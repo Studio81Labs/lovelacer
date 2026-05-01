@@ -176,7 +176,10 @@ describe('detect — german-massive fixture', () => {
       testable++
       if (a.roomId === expected) correct++
     }
-    expect(testable).toBeGreaterThan(60)
+    // Fixture has ~79 testable entities (99 total - 10 floating - 7 outdoor -
+    // 3 Hobbyraum). > 70 catches a regression where ~10% of testable entities
+    // suddenly stop resolving — tighter than the > 60 the original plan had.
+    expect(testable).toBeGreaterThan(70)
     const ratio = correct / testable
     expect(ratio, `${correct}/${testable} matched`).toBeGreaterThanOrEqual(0.85)
   })

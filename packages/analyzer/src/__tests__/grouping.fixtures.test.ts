@@ -12,7 +12,7 @@ function pipe(fixture: typeof englishCluttered) {
   const entities = normalize({ entities: ha.entities, devices: ha.devices })
   const assignments = detect({ entities, areas: ha.areas })
   const groupings = groupByDomain({ assignments, entities })
-  return { entities, assignments, groupings }
+  return { ha, entities, assignments, groupings }
 }
 
 function summarize(groupings: ReturnType<typeof pipe>['groupings']) {
@@ -441,10 +441,7 @@ describe('groupByDomain — czech-tidy fixture', () => {
 })
 
 describe('groupByDomain — german-massive fixture', () => {
-  const ha = fixtureToHaRegistries(germanMassive)
-  const entities = normalize({ entities: ha.entities, devices: ha.devices })
-  const assignments = detect({ entities, areas: ha.areas })
-  const groupings = groupByDomain({ assignments, entities })
+  const { ha, groupings } = pipe(germanMassive)
 
   it('matches structural snapshot', () => {
     const summary = groupings
