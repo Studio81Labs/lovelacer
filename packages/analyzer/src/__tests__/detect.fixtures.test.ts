@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
+import { germanMassive } from '../../../../tests/fixtures/german-massive.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { normalize } from '../normalize.js'
 import { detect, buildDetectionContext } from '../detect.js'
@@ -119,5 +120,106 @@ describe('detect — czech-tidy fixture', () => {
     }
     const ratio = czechFired / totalFired
     expect(ratio).toBeGreaterThanOrEqual(0.5)
+  })
+})
+
+describe('detect — german-massive fixture', () => {
+  const ha = fixtureToHaRegistries(germanMassive)
+  const entities = normalize({ entities: ha.entities, devices: ha.devices })
+  const assignments = detect({ entities, areas: ha.areas })
+
+  it('produces one assignment per input entity', () => {
+    expect(assignments).toHaveLength(entities.length)
+  })
+
+  it('preserves entity order', () => {
+    for (let i = 0; i < entities.length; i++) {
+      expect(assignments[i]!.entityId).toBe(entities[i]!.entityId)
+    }
+  })
+
+  it('misc bucket size is at most 20% of entities', () => {
+    const miscCount = assignments.filter((a) => a.roomId === 'misc').length
+    const ratio = miscCount / assignments.length
+    expect(
+      ratio,
+      `${miscCount}/${assignments.length} entities in misc`,
+    ).toBeLessThanOrEqual(0.2)
+  })
+
+  it('≥85% of entities with non-null fixture area land in their fixture-area canonical', () => {
+    // German area slugs differ from canonical ids (e.g. 'kueche' → 'kitchen'),
+    // so we look up canonical via buildDetectionContext (same approach as
+    // the czech-tidy block above).
+    const ctx = buildDetectionContext(ha.areas)
+    const areaIdToCanonical = new Map<string, string>()
+    for (const [areaId, entry] of ctx.areaIndex) {
+      if (entry.canonical !== null) {
+        areaIdToCanonical.set(areaId, entry.canonical)
+      }
+    }
+
+    const expectedById = new Map<string, string>()
+    const haEntityById = new Map(ha.entities.map((e) => [e.entity_id, e]))
+    for (const e of germanMassive.entities) {
+      const haEntity = haEntityById.get(`${e.domain}.${e.objectId}`)
+      const haAreaId = haEntity?.area_id ?? null
+      if (haAreaId === null) continue
+      const canonical = areaIdToCanonical.get(haAreaId)
+      if (canonical === undefined) continue
+      expectedById.set(`${e.domain}.${e.objectId}`, canonical)
+    }
+
+    let testable = 0
+    let correct = 0
+    const assignmentByEntityId = new Map(assignments.map((a) => [a.entityId, a]))
+    for (const [id, expected] of expectedById) {
+      const a = assignmentByEntityId.get(id)
+      if (a === undefined) continue
+      testable++
+      if (a.roomId === expected) correct++
+    }
+    expect(testable).toBeGreaterThan(60)
+    const ratio = correct / testable
+    expect(ratio, `${correct}/${testable} matched`).toBeGreaterThanOrEqual(0.85)
+  })
+
+  it('all Bad EG and Bad OG entities resolve to bathroom', () => {
+    const ctx = buildDetectionContext(ha.areas)
+    const bathroomAreaIds: string[] = []
+    for (const [areaId, entry] of ctx.areaIndex) {
+      if (entry.canonical === 'bathroom') bathroomAreaIds.push(areaId)
+    }
+    expect(
+      bathroomAreaIds.length,
+      'fixture should declare two bathroom-canonical areas (Bad EG, Bad OG)',
+    ).toBeGreaterThanOrEqual(2)
+
+    const assignmentByEntityId = new Map(assignments.map((a) => [a.entityId, a]))
+    for (const e of ha.entities) {
+      if (e.area_id === null) continue
+      if (!bathroomAreaIds.includes(e.area_id)) continue
+      const a = assignmentByEntityId.get(e.entity_id)
+      expect(a?.roomId, `${e.entity_id} should be bathroom`).toBe('bathroom')
+    }
+  })
+
+  it('Hobbyraum entities fall through to misc (non-canonical room)', () => {
+    const ctx = buildDetectionContext(ha.areas)
+    let hobbyAreaId: string | null = null
+    for (const [areaId, entry] of ctx.areaIndex) {
+      if (entry.name === 'Hobbyraum') {
+        hobbyAreaId = areaId
+        break
+      }
+    }
+    expect(hobbyAreaId, 'Hobbyraum area should exist').not.toBeNull()
+
+    const assignmentByEntityId = new Map(assignments.map((a) => [a.entityId, a]))
+    for (const e of ha.entities) {
+      if (e.area_id !== hobbyAreaId) continue
+      const a = assignmentByEntityId.get(e.entity_id)
+      expect(a?.roomId, `${e.entity_id} should be misc`).toBe('misc')
+    }
   })
 })
