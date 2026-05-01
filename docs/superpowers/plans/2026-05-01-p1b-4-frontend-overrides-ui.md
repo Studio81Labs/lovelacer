@@ -239,9 +239,7 @@ export function getOverrides(): Promise<{ overrides: Override[] }> {
   return fetchJson('api/overrides')
 }
 
-export function putOverrides(body: {
-  overrides: Override[]
-}): Promise<{ overrides: Override[] }> {
+export function putOverrides(body: { overrides: Override[] }): Promise<{ overrides: Override[] }> {
   return fetchJson('api/overrides', {
     method: 'PUT',
     headers: JSON_HEADERS,

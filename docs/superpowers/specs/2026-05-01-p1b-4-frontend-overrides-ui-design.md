@@ -5,6 +5,7 @@
 **Goal:** Surface the `/api/overrides` endpoints (shipped in P1b-3) in the Vue 3 SPA so users can reassign entities to a different room and hide entities from the generated dashboard. Overrides are edited inline in the Review screen, batched, and persisted via a single explicit save action that also re-runs the analyze pipeline.
 
 **Out of scope:**
+
 - Server-side overrides storage and `/api/overrides` endpoints — already shipped in P1b-3.
 - Bulk operations (move all entities of a domain at once) — YAGNI for P1b-4.
 - Drag-and-drop reassignment — keyboard-and-click only at MVP scope.
@@ -25,6 +26,7 @@ Analyze → Preview → [edit overrides → Save & re-analyze]* → Apply
 A new Pinia store owns override state. Two existing components (`RoomList`, `MiscBucket`) gain expansion to show per-entity rows. A new `EntityRow` component contains the per-entity controls. A new `OverridesBar` component shows pending-change count and the Save/Discard actions. The existing `App.vue` orchestrates the load-on-ready and the save-then-reanalyze sequence.
 
 **Module boundaries:**
+
 - `stores/overrides.ts` — owns server-state + dirty-state maps, exposes mutating actions, computes `effective(entityId)` and `dirtyCount`.
 - `api/client.ts` — gains `getOverrides()` and `putOverrides()` functions.
 - `api/types.ts` — gains the `Override` interface and the `RoomAssignment.manual` field.
@@ -66,20 +68,39 @@ export const useOverridesStore = defineStore('overrides', () => {
     return serverState.value.get(entityId) ?? null
   }
 
-  function setRoomId(entityId: string, roomId: string | null): void { /* ... */ }
-  function setHidden(entityId: string, hidden: boolean): void { /* ... */ }
-  function discardChanges(): void { dirtyState.value.clear() }
-  async function loadFromServer(): Promise<void> { /* ... */ }
-  async function saveAndReanalyze(): Promise<void> { /* ... */ }
+  function setRoomId(entityId: string, roomId: string | null): void {
+    /* ... */
+  }
+  function setHidden(entityId: string, hidden: boolean): void {
+    /* ... */
+  }
+  function discardChanges(): void {
+    dirtyState.value.clear()
+  }
+  async function loadFromServer(): Promise<void> {
+    /* ... */
+  }
+  async function saveAndReanalyze(): Promise<void> {
+    /* ... */
+  }
 
   return {
-    phase, error, hasDirty, dirtyCount, effective,
-    setRoomId, setHidden, discardChanges, loadFromServer, saveAndReanalyze,
+    phase,
+    error,
+    hasDirty,
+    dirtyCount,
+    effective,
+    setRoomId,
+    setHidden,
+    discardChanges,
+    loadFromServer,
+    saveAndReanalyze,
   }
 })
 ```
 
 **Two-map model:**
+
 - `serverState: Map<entityId, Override>` — last-known server-saved overrides. Populated by `loadFromServer()`. Replaced wholesale by `saveAndReanalyze()` from the PUT response.
 - `dirtyState: Map<entityId, Override | null>` — pending edits. Map value of `null` distinguishes "user opted out" (pending delete) from "user hasn't touched it" (key absent).
 
@@ -92,6 +113,7 @@ export const useOverridesStore = defineStore('overrides', () => {
 **No-op collapse:** when both `roomId` and `hidden` are unset (i.e., the user reverted the override entirely), the dirty entry is set to `null` (pending delete) — UNLESS no server entry exists, in which case the dirty key is removed entirely.
 
 **Action signatures:**
+
 - `loadFromServer()`: GET `/api/overrides`, replace `serverState`, clear `dirtyState`. Sets `phase` to `'loading'` then `'idle'`/`'error'`.
 - `saveAndReanalyze()`: compose merged list (server entries not in dirty + non-null dirty entries), PUT `/api/overrides`, replace `serverState` from response, clear `dirtyState`. Then call `useAnalyzeStore().analyze()`. Sets `phase` to `'saving'` → `'idle'`/`'error'`.
 
@@ -104,7 +126,7 @@ export const useOverridesStore = defineStore('overrides', () => {
 ```ts
 export interface Override {
   entityId: string
-  roomId?: string  // CanonicalRoomId at runtime; widened for client to avoid duplicating the union
+  roomId?: string // CanonicalRoomId at runtime; widened for client to avoid duplicating the union
   hidden?: boolean
 }
 
@@ -167,6 +189,7 @@ The existing `postJson` is method-locked to POST and doesn't fit GET/PUT. Refact
 ### `EntityRow.vue` (new)
 
 Props:
+
 - `assignment: { entityId: string; friendlyName: string; roomId: string; manual?: boolean }`
 
 Reads from `useOverridesStore()` via `effective(entityId)`. Renders:
@@ -184,6 +207,7 @@ When `effective(entityId) !== null` OR `assignment.manual === true`:
 ┃ light.kitchen_ceiling          [ Living Room ▼ ]      [ ☑ Hide ]             ┃
 ┃ Kitchen Ceiling Light                                                         ┃
 ```
+
 (amber left border, faint amber background)
 
 Tailwind classes for the override treatment: `border-l-2 border-amber-400 bg-amber-50/40`.
@@ -309,6 +333,7 @@ overrides.discardChanges()
 **Race condition prevention:** `saveAndReanalyze` is the only flow where the user could race their own edits. EntityRow controls are disabled while `phase === 'saving'`, blocking the race at the UI layer.
 
 **Error envelope handling for save:**
+
 - `400 invalid_body`: shouldn't happen at MVP scope (the dropdown only emits valid values + hidden is a strict bool). If it does, treat as a programmer error: log to console + show "Could not save: invalid override data" in OverridesBar with a Retry button.
 - `500 storage_error`: SQLite-level failure. "Could not save your changes: <message>" + Retry.
 - `network`: "Could not reach the server" + Retry.

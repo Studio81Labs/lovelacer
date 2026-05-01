@@ -13,6 +13,7 @@ import type {
  * the add-on path under HA Supervisor ingress (`/api/hassio_ingress/<token>/`).
  * Vite's dev proxy resolves the same path to the backend at :3000.
  */
+// eslint-disable-next-line no-undef
 async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   let res: Response
   try {
@@ -65,9 +66,7 @@ export function getOverrides(): Promise<{ overrides: Override[] }> {
   return fetchJson('api/overrides')
 }
 
-export function putOverrides(body: {
-  overrides: Override[]
-}): Promise<{ overrides: Override[] }> {
+export function putOverrides(body: { overrides: Override[] }): Promise<{ overrides: Override[] }> {
   return fetchJson('api/overrides', {
     method: 'PUT',
     headers: JSON_HEADERS,
