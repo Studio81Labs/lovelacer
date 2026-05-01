@@ -57,3 +57,35 @@ export function registerMdiIcons(): void {
     addIcon(name, data)
   }
 }
+
+/**
+ * Maps the analyzer's canonical room IDs to MDI icon strings used in
+ * the dashboard preview. Mirrors the `ROOM_DISPLAY` table in
+ * `packages/generator/src/room-view.ts`.
+ *
+ * Duplicated here (~14 lines) rather than fetched from the server so
+ * the frontend is self-contained for offline rendering. P1b extracts
+ * this into a shared `@lovelacer/api-types` package along with the
+ * AnalyzedRoom etc. types.
+ */
+const ROOM_ICONS: Record<string, string> = {
+  kitchen: 'mdi:silverware-fork-knife',
+  living_room: 'mdi:sofa',
+  bedroom: 'mdi:bed',
+  bathroom: 'mdi:shower-head',
+  office: 'mdi:desk',
+  garage: 'mdi:garage-variant',
+  garden: 'mdi:flower-tulip',
+  dining_room: 'mdi:silverware',
+  laundry: 'mdi:washing-machine',
+  basement: 'mdi:stairs-down',
+  attic: 'mdi:home-roof',
+  kids_room: 'mdi:teddy-bear',
+  guest_room: 'mdi:bed-empty',
+  hallway: 'mdi:door',
+  misc: 'mdi:dots-horizontal',
+}
+
+export function roomIdToIcon(roomId: string): string {
+  return ROOM_ICONS[roomId] ?? 'mdi:home-outline'
+}
