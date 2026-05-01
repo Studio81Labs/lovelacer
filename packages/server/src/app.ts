@@ -17,6 +17,8 @@ export interface CreateAppOptions {
    * collaborators. Otherwise `createApp` builds one from `logLevel`/`isDev`.
    */
   logger?: Logger
+  /** Default url_path for the generated dashboard. Forwarded to the apply route. */
+  dashboardUrlPath: string
 }
 
 export async function createApp(opts: CreateAppOptions) {
@@ -47,7 +49,7 @@ export async function createApp(opts: CreateAppOptions) {
 
   await app.register(analyzeRoute, { ha: opts.ha })
   await app.register(previewRoute, { ha: opts.ha })
-  await app.register(applyRoute, { ha: opts.ha })
+  await app.register(applyRoute, { ha: opts.ha, dashboardUrlPath: opts.dashboardUrlPath })
 
   return app
 }

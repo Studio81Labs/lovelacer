@@ -5,6 +5,8 @@ import { InvalidConfigError, runApply, type ApplyInput } from '../pipeline.js'
 
 export interface ApplyRouteOptions {
   ha: HaClient
+  /** Default url_path for the generated dashboard. Body.options.urlPath wins when present. */
+  dashboardUrlPath: string
 }
 
 /**
@@ -12,7 +14,8 @@ export interface ApplyRouteOptions {
  *
  * Hybrid mode: accepts an optional `config` body. If present, that config
  * is pushed directly. If absent, the server re-runs preview internally
- * and pushes its config.
+ * and pushes its config. The route's `dashboardUrlPath` option provides
+ * a server-config default that the request body can override.
  *
  * Errors:
  * - 400 invalid_config: body.config provided but malformed (non-string
@@ -34,7 +37,7 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
     }
     try {
       const body = (req.body ?? {}) as ApplyInput
-      const result = await runApply(opts.ha, body)
+      const result = await runApply(opts.ha, body, { urlPath: opts.dashboardUrlPath })
       return reply.code(200).send({ ok: true, ...result })
     } catch (err) {
       if (err instanceof HaApplyError) {

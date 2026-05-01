@@ -49,7 +49,11 @@ describe('POST /api/apply — happy paths', () => {
       urlPath: 'lovelacer-home',
       created: false,
     })
-    const app = await createApp({ ha: fake.client, logLevel: 'silent' })
+    const app = await createApp({
+      ha: fake.client,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/apply' })
       expect(res.statusCode).toBe(200)
@@ -71,7 +75,11 @@ describe('POST /api/apply — happy paths', () => {
       urlPath: 'lovelacer-home',
       created: true,
     })
-    const app = await createApp({ ha: fake.client, logLevel: 'silent' })
+    const app = await createApp({
+      ha: fake.client,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({
         method: 'POST',
@@ -81,7 +89,9 @@ describe('POST /api/apply — happy paths', () => {
       expect(res.statusCode).toBe(200)
       expect(res.json()).toMatchObject({ ok: true, created: true })
       expect(fake.getEntityRegistry).not.toHaveBeenCalled()
-      expect(fake.applyDashboard).toHaveBeenCalledWith(validConfig, undefined)
+      expect(fake.applyDashboard).toHaveBeenCalledWith(validConfig, {
+        urlPath: 'lovelacer-home',
+      })
     } finally {
       await app.close()
     }
@@ -93,7 +103,11 @@ describe('POST /api/apply — happy paths', () => {
       urlPath: 'foo',
       created: true,
     })
-    const app = await createApp({ ha: fake.client, logLevel: 'silent' })
+    const app = await createApp({
+      ha: fake.client,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({
         method: 'POST',
@@ -111,7 +125,11 @@ describe('POST /api/apply — happy paths', () => {
 describe('POST /api/apply — error paths', () => {
   it('returns 503 ha_unavailable when HA disconnected', async () => {
     const fake = makeHa(false)
-    const app = await createApp({ ha: fake.client, logLevel: 'silent' })
+    const app = await createApp({
+      ha: fake.client,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/apply' })
       expect(res.statusCode).toBe(503)
@@ -123,7 +141,11 @@ describe('POST /api/apply — error paths', () => {
 
   it('returns 400 invalid_config when body.config.title is not a string', async () => {
     const fake = makeHa(true)
-    const app = await createApp({ ha: fake.client, logLevel: 'silent' })
+    const app = await createApp({
+      ha: fake.client,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({
         method: 'POST',
@@ -140,7 +162,11 @@ describe('POST /api/apply — error paths', () => {
 
   it('returns 400 invalid_config when body.config.views is not an array', async () => {
     const fake = makeHa(true)
-    const app = await createApp({ ha: fake.client, logLevel: 'silent' })
+    const app = await createApp({
+      ha: fake.client,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({
         method: 'POST',
@@ -159,7 +185,11 @@ describe('POST /api/apply — error paths', () => {
     fake.applyDashboard.mockRejectedValueOnce(
       new HaApplyError('save', 'config invalid', new Error('cause')),
     )
-    const app = await createApp({ ha: fake.client, logLevel: 'silent' })
+    const app = await createApp({
+      ha: fake.client,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
     try {
       const res = await app.inject({
         method: 'POST',
