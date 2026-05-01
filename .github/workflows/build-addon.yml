@@ -88,16 +88,18 @@ jobs:
           INPUT_ADDITIONAL_TAGS: ${{ inputs.additional_tags }}
           PR_NUMBER: ${{ github.event.number }}
         run: |
+          # tag_args is forwarded into the HA builder action's `args` block
+          # which uses a folded YAML scalar — newlines inside outputs get
+          # preserved through the substitution (folding only applies to the
+          # YAML source itself, not interpolated values), so we must emit
+          # a single space-separated string here.
           if [[ "$EVENT_NAME" == "workflow_call" ]]; then
             echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
-            # Multi-line: push each newline-separated tag as its own --additional-tag arg.
-            {
-              echo 'tag_args<<EOF'
-              while IFS= read -r tag; do
-                [[ -n "$tag" ]] && echo "--additional-tag $tag"
-              done <<< "$INPUT_ADDITIONAL_TAGS"
-              echo 'EOF'
-            } >> "$GITHUB_OUTPUT"
+            tag_args=""
+            while IFS= read -r tag; do
+              [[ -n "$tag" ]] && tag_args+="--additional-tag $tag "
+            done <<< "$INPUT_ADDITIONAL_TAGS"
+            echo "tag_args=${tag_args% }" >> "$GITHUB_OUTPUT"
           elif [[ "$EVENT_NAME" == "pull_request" ]]; then
             SHA="${GITHUB_SHA::7}"
             echo "version=0.0.0-pr.${PR_NUMBER}.${SHA}" >> "$GITHUB_OUTPUT"
@@ -105,18 +107,19 @@ jobs:
           else
             SHA="${GITHUB_SHA::7}"
             echo "version=0.0.0-main.${SHA}" >> "$GITHUB_OUTPUT"
-            {
-              echo 'tag_args<<EOF'
-              echo '--additional-tag main'
-              echo "--additional-tag sha-${SHA}"
-              echo 'EOF'
-            } >> "$GITHUB_OUTPUT"
+            echo "tag_args=--additional-tag main --additional-tag sha-${SHA}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build add-on (${{ matrix.arch }})
         uses: home-assistant/builder@2024.08.2
         with:
-          args: |
+          # Folded scalar (`>`): newlines fold into single spaces. The HA
+          # builder action interpolates `args` into a `docker run \\ args`
+          # script — if newlines are preserved (`|`), only the first line
+          # reaches docker as its args; subsequent lines run as separate
+          # failed shell commands. Folding produces one space-joined arg
+          # string that the shell happily forwards.
+          args: >-
             --${{ matrix.arch }}
             --target /data/apps/addon
             --image ghcr.io/studio81labs/lovelacer-{arch}
