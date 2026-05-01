@@ -190,4 +190,40 @@ describe('PUT /api/overrides', () => {
       await app.close()
     }
   })
+
+  it('returns 500 storage_error and preserves prior state when storage throws', async () => {
+    // Build an app with a store that fails replaceAll. We use a real
+    // OverrideStore to seed initial state, then swap in a stub for the
+    // route plugin to exercise the 500 path.
+    const realStore = new OverrideStore(':memory:')
+    realStore.replaceAll([{ entityId: 'a.b', roomId: 'kitchen' }])
+
+    const failingStore = {
+      getAll: () => realStore.getAll(),
+      replaceAll: () => {
+        throw new Error('disk full')
+      },
+      close: () => realStore.close(),
+    } as unknown as OverrideStore
+
+    const app = Fastify({ logger: false })
+    await app.register(sensible)
+    await app.register(overridesRoute, { overrides: failingStore })
+
+    try {
+      const res = await app.inject({
+        method: 'PUT',
+        url: '/api/overrides',
+        payload: { overrides: [{ entityId: 'c.d', roomId: 'bedroom' }] },
+      })
+      expect(res.statusCode).toBe(500)
+      expect(res.json()).toMatchObject({ error: 'storage_error' })
+
+      // Prior state intact in the underlying real store.
+      expect(realStore.getAll()).toEqual([{ entityId: 'a.b', roomId: 'kitchen' }])
+    } finally {
+      await app.close()
+      realStore.close()
+    }
+  })
 })
