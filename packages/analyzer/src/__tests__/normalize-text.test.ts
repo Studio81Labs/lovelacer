@@ -14,6 +14,13 @@ describe('normalizeForMatching', () => {
     expect(normalizeForMatching('Příšerně')).toBe('priserne')
   })
 
+  it('expands German ß to ss (no NFKD decomposition)', () => {
+    expect(normalizeForMatching('Außen')).toBe('aussen')
+    expect(normalizeForMatching('Außenbereich')).toBe('aussenbereich')
+    expect(normalizeForMatching('Großküche')).toBe('grosskuche')
+    expect(normalizeForMatching('Fußbodenheizung')).toBe('fussbodenheizung')
+  })
+
   it('collapses runs of separators (whitespace, underscore, dash, slash) to single space', () => {
     expect(normalizeForMatching('Living_Room')).toBe('living room')
     expect(normalizeForMatching('master--bedroom')).toBe('master bedroom')
