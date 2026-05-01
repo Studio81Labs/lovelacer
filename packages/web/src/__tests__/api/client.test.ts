@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { postApply, postPreview } from '../../api/client.js'
-import type { ApiError, LovelaceConfig, PreviewOutput } from '../../api/types.js'
+import { postApply, postPreview, getOverrides, putOverrides } from '../../api/client.js'
+import type { ApiError, LovelaceConfig, Override, PreviewOutput } from '../../api/types.js'
 
 const mockPreviewResponse: PreviewOutput = {
   rooms: [],
@@ -110,5 +110,83 @@ describe('postApply', () => {
       step: 'save',
       message: 'config invalid',
     })
+  })
+})
+
+describe('getOverrides', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('returns parsed body on 200', async () => {
+    const mockResponse = {
+      overrides: [{ entityId: 'light.kitchen_ceiling', roomId: 'living_room' }],
+    }
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockResponse),
+    } as unknown as Response)
+
+    const result = await getOverrides()
+    expect(result).toEqual(mockResponse)
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/overrides', {})
+  })
+
+  it('throws ApiError on storage_error 500', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: () =>
+        Promise.resolve({
+          error: 'storage_error',
+          message: 'disk full',
+        }),
+    } as unknown as Response)
+
+    await expect(getOverrides()).rejects.toMatchObject({
+      error: 'storage_error',
+      message: 'disk full',
+    } satisfies ApiError)
+  })
+})
+
+describe('putOverrides', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('sends PUT with the body and returns the echoed list on 200', async () => {
+    const body = {
+      overrides: [{ entityId: 'light.a', roomId: 'kitchen' }] as Override[],
+    }
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(body),
+    } as unknown as Response)
+
+    const result = await putOverrides(body)
+    expect(result).toEqual(body)
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/overrides', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  })
+
+  it('throws ApiError on invalid_body 400', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: () =>
+        Promise.resolve({
+          error: 'invalid_body',
+          message: 'duplicate entityId',
+        }),
+    } as unknown as Response)
+
+    await expect(putOverrides({ overrides: [] })).rejects.toMatchObject({
+      error: 'invalid_body',
+      message: 'duplicate entityId',
+    } satisfies ApiError)
   })
 })

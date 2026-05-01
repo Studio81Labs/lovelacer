@@ -3,6 +3,7 @@ import type {
   ApiError,
   ApplyResult,
   LovelaceConfig,
+  Override,
   PreviewOutput,
 } from './types.js'
 
@@ -12,14 +13,10 @@ import type {
  * the add-on path under HA Supervisor ingress (`/api/hassio_ingress/<token>/`).
  * Vite's dev proxy resolves the same path to the backend at :3000.
  */
-async function postJson<T>(path: string, body?: unknown): Promise<T> {
+async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   let res: Response
   try {
-    res = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      ...(body !== undefined && { body: JSON.stringify(body) }),
-    })
+    res = await fetch(path, init)
   } catch (cause) {
     throw {
       error: 'network',
@@ -29,10 +26,6 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
 
   if (!res.ok) {
     const parsed: unknown = await res.json().catch(() => null)
-    // Validate the server actually sent the ApiError envelope shape
-    // before forwarding. A malformed body (e.g. { error: 42 }) shouldn't
-    // be cast through and confuse downstream consumers — fall back to
-    // the generic network envelope instead.
     if (
       parsed !== null &&
       typeof parsed === 'object' &&
@@ -50,14 +43,34 @@ async function postJson<T>(path: string, body?: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+const JSON_HEADERS = { 'Content-Type': 'application/json' } as const
+
 export function postAnalyze(): Promise<AnalyzeOutput> {
-  return postJson<AnalyzeOutput>('api/analyze')
+  return fetchJson<AnalyzeOutput>('api/analyze', { method: 'POST', headers: JSON_HEADERS })
 }
 
 export function postPreview(): Promise<PreviewOutput> {
-  return postJson<PreviewOutput>('api/preview')
+  return fetchJson<PreviewOutput>('api/preview', { method: 'POST', headers: JSON_HEADERS })
 }
 
 export function postApply(body: { config: LovelaceConfig }): Promise<ApplyResult> {
-  return postJson<ApplyResult>('api/apply', body)
+  return fetchJson<ApplyResult>('api/apply', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(body),
+  })
+}
+
+export function getOverrides(): Promise<{ overrides: Override[] }> {
+  return fetchJson('api/overrides')
+}
+
+export function putOverrides(body: {
+  overrides: Override[]
+}): Promise<{ overrides: Override[] }> {
+  return fetchJson('api/overrides', {
+    method: 'PUT',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(body),
+  })
 }
