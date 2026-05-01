@@ -25,6 +25,7 @@ function onSave() {
   <section
     v-if="overrides.hasDirty"
     data-testid="overrides-bar"
+    aria-label="Pending overrides"
     class="flex flex-col gap-3 rounded-lg border px-5 py-3 text-sm"
     :class="
       isError

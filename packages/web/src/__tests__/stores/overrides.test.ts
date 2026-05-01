@@ -230,16 +230,32 @@ describe('useOverridesStore', () => {
     expect(store.effective('a.b')).toEqual({ entityId: 'a.b', roomId: 'kitchen' }) // server value
   })
 
-  it('loadFromServer on 500 sets phase=error and preserves dirtyState', async () => {
+  it('loadFromServer on 500 sets phase=error and preserves dirtyState + previously-loaded serverState', async () => {
+    // First load: success — populates serverState.
+    vi.mocked(getOverrides).mockResolvedValueOnce({
+      overrides: [{ entityId: 'a.b', roomId: 'kitchen' }],
+    })
+    const store = useOverridesStore()
+    await store.loadFromServer()
+    expect(store.effective('a.b')).toEqual({ entityId: 'a.b', roomId: 'kitchen' })
+
+    // User makes a dirty edit on a different entity.
+    store.setRoomId('c.d', 'bedroom')
+    expect(store.hasDirty).toBe(true)
+
+    // Second load: fails.
     const apiError: ApiError = { error: 'storage_error', message: 'disk full' }
     vi.mocked(getOverrides).mockRejectedValueOnce(apiError)
-
-    const store = useOverridesStore()
-    store.setRoomId('a.b', 'bedroom') // pre-existing dirty
     await store.loadFromServer()
 
+    // Phase + error reflect the failure.
     expect(store.phase).toBe('error')
     expect(store.error).toEqual(apiError)
-    expect(store.hasDirty).toBe(true) // not cleared on error
+
+    // Dirty state preserved across the failed load.
+    expect(store.hasDirty).toBe(true)
+
+    // Previously-loaded serverState is still intact (failed load didn't wipe it).
+    expect(store.effective('a.b')).toEqual({ entityId: 'a.b', roomId: 'kitchen' })
   })
 })
