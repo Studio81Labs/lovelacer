@@ -69,7 +69,7 @@ jobs:
         # The HA builder action will use apps/addon/ as the build context,
         # so we stage everything inside it.
         run: |
-          pnpm deploy --filter @lovelacer/server --prod --legacy apps/addon/staged
+          pnpm deploy --filter @lovelacer/server --prod apps/addon/staged
           cp -r packages/web/dist apps/addon/web-dist
 
       - name: Login to GHCR
