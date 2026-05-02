@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import type { NormalizedEntity } from '@lovelacer/shared'
 import {
+  buildActiveRoomsSection,
   buildCamerasSection,
   buildHomeView,
   buildPeopleSection,
   buildScenesSection,
   pickQuickStatsEntities,
 } from '../home-view.js'
+import type { RoomGrouping } from '@lovelacer/analyzer'
 
 const ent = (id: string, overrides: Partial<NormalizedEntity> = {}): NormalizedEntity => ({
   entityId: id,
@@ -359,6 +361,123 @@ describe('buildCamerasSection', () => {
     ])
     expect(section!.cards).toHaveLength(1)
     expect((section!.cards[0] as { entity: string }).entity).toBe('camera.zone_b')
+  })
+})
+
+const grp = (roomId: string, lights: string[] = [], activity: string[] = []): RoomGrouping => ({
+  roomId: roomId as RoomGrouping['roomId'],
+  groups: [
+    ...(lights.length > 0
+      ? [
+          {
+            key: 'lights' as const,
+            entities: lights.map((id) => ent(id)),
+          },
+        ]
+      : []),
+    ...(activity.length > 0
+      ? [
+          {
+            key: 'activity' as const,
+            entities: activity.map((id) => ent(id, { deviceClass: 'motion' })),
+          },
+        ]
+      : []),
+  ],
+})
+
+describe('buildActiveRoomsSection', () => {
+  it('returns null when groupings is empty', () => {
+    expect(buildActiveRoomsSection([])).toBeNull()
+  })
+
+  it('returns null when no rooms have lights or activity sensors', () => {
+    const groupings: RoomGrouping[] = [
+      {
+        roomId: 'kitchen' as RoomGrouping['roomId'],
+        groups: [
+          {
+            key: 'environment' as const,
+            entities: [ent('sensor.kitchen_temp', { deviceClass: 'temperature' })],
+          },
+        ],
+      },
+    ]
+    expect(buildActiveRoomsSection(groupings)).toBeNull()
+  })
+
+  it('skips rooms with roomId === misc', () => {
+    const groupings = [grp('misc', ['light.misc_light'])]
+    expect(buildActiveRoomsSection(groupings)).toBeNull()
+  })
+
+  it('room with one light only — emits flat StateCondition (no OR wrapper)', () => {
+    const groupings = [grp('kitchen', ['light.kitchen_main'])]
+    const section = buildActiveRoomsSection(groupings)
+    expect(section!.cards).toHaveLength(1)
+    const cond = section!.cards[0] as {
+      type: 'conditional'
+      conditions: unknown[]
+      card: unknown
+    }
+    expect(cond.type).toBe('conditional')
+    expect(cond.conditions).toEqual([
+      { condition: 'state', entity: 'light.kitchen_main', state: 'on' },
+    ])
+  })
+
+  it('room with multiple lights + motion — emits OR composite', () => {
+    const groupings = [
+      grp('kitchen', ['light.kitchen_main', 'light.kitchen_island'], ['binary_sensor.kitchen_motion']),
+    ]
+    const section = buildActiveRoomsSection(groupings)
+    const cond = section!.cards[0] as {
+      conditions: { condition: string; conditions: unknown[] }[]
+    }
+    expect(cond.conditions).toHaveLength(1)
+    expect(cond.conditions[0]!.condition).toBe('or')
+    expect(cond.conditions[0]!.conditions).toEqual([
+      { condition: 'state', entity: 'light.kitchen_main', state: 'on' },
+      { condition: 'state', entity: 'light.kitchen_island', state: 'on' },
+      { condition: 'state', entity: 'binary_sensor.kitchen_motion', state: 'on' },
+    ])
+  })
+
+  it('tile points at first light when present (lights take priority)', () => {
+    const groupings = [
+      grp('kitchen', ['light.kitchen_main'], ['binary_sensor.kitchen_motion']),
+    ]
+    const section = buildActiveRoomsSection(groupings)
+    const cond = section!.cards[0] as { card: { entity: string; name: string } }
+    expect(cond.card.entity).toBe('light.kitchen_main')
+    expect(cond.card.name).toBe('Kitchen')
+  })
+
+  it('tile falls back to first activity sensor when no lights', () => {
+    const groupings = [grp('kitchen', [], ['binary_sensor.kitchen_motion'])]
+    const section = buildActiveRoomsSection(groupings)
+    const cond = section!.cards[0] as { card: { entity: string } }
+    expect(cond.card.entity).toBe('binary_sensor.kitchen_motion')
+  })
+
+  it('tile has tap_action.navigation_path === room.roomId', () => {
+    const groupings = [grp('living_room', ['light.lr_main'])]
+    const section = buildActiveRoomsSection(groupings)
+    const cond = section!.cards[0] as { card: { tap_action: { navigation_path: string } } }
+    expect(cond.card.tap_action.navigation_path).toBe('living_room')
+  })
+
+  it('sorts cards alphabetically by tile name', () => {
+    const groupings = [
+      grp('living_room', ['light.lr']),
+      grp('bedroom', ['light.bedroom']),
+      grp('attic', ['light.attic']),
+    ]
+    const section = buildActiveRoomsSection(groupings)
+    const names = section!.cards.map(
+      (c) => (c as { card: { name: string } }).card.name,
+    )
+    expect(names).toEqual(['Attic', 'Bedroom', 'Living Room'])
   })
 })
 

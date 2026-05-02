@@ -1,12 +1,17 @@
 import type { NormalizedEntity } from '@lovelacer/shared'
+import type { RoomGrouping } from '@lovelacer/analyzer'
 import type {
+  ConditionalCard,
+  ConditionEntry,
   GlanceCard,
   GridSection,
   MarkdownCard,
   PictureEntityCard,
   RoomView,
+  StateCondition,
   TileCard,
 } from './lovelace-types.js'
+import { roomIdToDisplay } from './rooms.js'
 
 /**
  * Home view shares RoomView's structural shape (sections layout). The
@@ -159,5 +164,67 @@ export function buildCamerasSection(entities: NormalizedEntity[]): GridSection |
     entity: e.entityId,
     camera_view: 'live',
   }))
+  return { type: 'grid', cards }
+}
+
+/**
+ * Build the Active Rooms section: per room, a conditional card that
+ * renders ONLY when at least one of the room's lights or activity
+ * sensors is on. The wrapped tile points at the room's primary entity
+ * (first light if any, else first activity sensor) and tap-navigates
+ * to the room's view.
+ *
+ * Skips rooms with no lights AND no activity sensors. Skips the misc
+ * bucket (no view to navigate to). Returns null if no rooms qualify.
+ */
+export function buildActiveRoomsSection(groupings: RoomGrouping[]): GridSection | null {
+  const cards: ConditionalCard[] = []
+
+  for (const grouping of groupings) {
+    if (grouping.roomId === 'misc') continue
+
+    const lights =
+      grouping.groups.find((g) => g.key === 'lights')?.entities ?? []
+    const activity =
+      grouping.groups.find((g) => g.key === 'activity')?.entities ?? []
+    const candidates = [...lights, ...activity].filter(
+      (e) => !e.isHidden && !e.isDisabled,
+    )
+    if (candidates.length === 0) continue
+
+    const primary = candidates[0]!
+    const stateConditions: StateCondition[] = candidates.map((e) => ({
+      condition: 'state',
+      entity: e.entityId,
+      state: 'on',
+    }))
+    const innerCondition: ConditionEntry =
+      stateConditions.length === 1
+        ? stateConditions[0]!
+        : { condition: 'or', conditions: stateConditions }
+
+    const display = roomIdToDisplay(grouping.roomId)
+    const tile: TileCard = {
+      type: 'tile',
+      entity: primary.entityId,
+      name: display.title,
+      tap_action: { action: 'navigate', navigation_path: grouping.roomId },
+    }
+
+    cards.push({
+      type: 'conditional',
+      conditions: [innerCondition],
+      card: tile,
+    })
+  }
+
+  if (cards.length === 0) return null
+
+  cards.sort((a, b) => {
+    const an = (a.card as TileCard).name ?? ''
+    const bn = (b.card as TileCard).name ?? ''
+    return an.localeCompare(bn, 'en')
+  })
+
   return { type: 'grid', cards }
 }
