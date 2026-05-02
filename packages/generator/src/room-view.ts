@@ -1,4 +1,4 @@
-import type { CanonicalRoomId, NormalizedEntity } from '@lovelacer/shared'
+import type { NormalizedEntity } from '@lovelacer/shared'
 import type { DomainGroup, DomainGroupKey, RoomGrouping } from '@lovelacer/analyzer'
 import type {
   EntitiesCard,
@@ -11,30 +11,7 @@ import type {
   ThermostatCard,
   TileCard,
 } from './lovelace-types.js'
-
-interface RoomDisplay {
-  title: string
-  path: string
-  icon: string
-}
-
-const ROOM_DISPLAY: Record<CanonicalRoomId, RoomDisplay> = {
-  kitchen: { title: 'Kitchen', path: 'kitchen', icon: 'mdi:silverware-fork-knife' },
-  living_room: { title: 'Living Room', path: 'living_room', icon: 'mdi:sofa' },
-  bedroom: { title: 'Bedroom', path: 'bedroom', icon: 'mdi:bed' },
-  bathroom: { title: 'Bathroom', path: 'bathroom', icon: 'mdi:shower-head' },
-  office: { title: 'Office', path: 'office', icon: 'mdi:desk' },
-  garage: { title: 'Garage', path: 'garage', icon: 'mdi:garage-variant' },
-  garden: { title: 'Garden', path: 'garden', icon: 'mdi:flower-tulip' },
-  dining_room: { title: 'Dining Room', path: 'dining_room', icon: 'mdi:silverware' },
-  laundry: { title: 'Laundry', path: 'laundry', icon: 'mdi:washing-machine' },
-  basement: { title: 'Basement', path: 'basement', icon: 'mdi:stairs-down' },
-  attic: { title: 'Attic', path: 'attic', icon: 'mdi:home-roof' },
-  kids_room: { title: "Kids' Room", path: 'kids_room', icon: 'mdi:teddy-bear' },
-  guest_room: { title: 'Guest Room', path: 'guest_room', icon: 'mdi:bed-empty' },
-  hallway: { title: 'Hallway', path: 'hallway', icon: 'mdi:door' },
-  misc: { title: 'Other', path: 'other', icon: 'mdi:dots-horizontal' },
-}
+import { roomIdToDisplay } from './rooms.js'
 
 const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
   lights: 'Lights & Outlets',
@@ -60,7 +37,7 @@ const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
  * the input's group order within the room (P1a-5 already sorted both).
  */
 export function buildRoomView(grouping: RoomGrouping): RoomView {
-  const display = ROOM_DISPLAY[grouping.roomId]
+  const display = roomIdToDisplay(grouping.roomId)
   return {
     type: 'sections',
     title: display.title,

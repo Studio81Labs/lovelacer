@@ -3,13 +3,15 @@ import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.j
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import type { Fixture } from '../../../../tests/fixtures/_builder/index.js'
-import { normalize } from '@lovelacer/analyzer'
+import { detect, groupByDomain, normalize } from '@lovelacer/analyzer'
 import { buildHomeView } from '../home-view.js'
 
 function pipe(fixture: Fixture) {
   const ha = fixtureToHaRegistries(fixture)
   const entities = normalize({ entities: ha.entities, devices: ha.devices })
-  const view = buildHomeView({ entities })
+  const assignments = detect({ entities, areas: ha.areas })
+  const groupings = groupByDomain({ assignments, entities }).filter((g) => g.roomId !== 'misc')
+  const view = buildHomeView({ entities, groupings })
   return { entities, view }
 }
 
@@ -58,14 +60,60 @@ describe('buildHomeView — english-cluttered fixture', () => {
               },
             ],
           },
+          {
+            "cards": [
+              {
+                "entities": [
+                  "person.alice",
+                ],
+                "type": "glance",
+              },
+            ],
+          },
+          {
+            "cards": [
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+            ],
+          },
+          {
+            "cards": [
+              {
+                "type": "tile",
+              },
+            ],
+          },
         ],
         "title": "Home",
       }
     `)
   })
 
-  it('produces Welcome + Quick stats — 2 outdoor sensors plus 1 presence by entityId pattern', () => {
-    expect(view.sections).toHaveLength(2)
+  it('produces Welcome + Quick stats + People + Active Rooms + Scenes — 2 outdoor sensors plus 1 presence by entityId pattern', () => {
+    // Bumped +2 in P1b-5 (People + Scenes sections added by fixture)
+    expect(view.sections).toHaveLength(5)
   })
 
   it('every glance entityId exists in the input entity list', () => {
@@ -103,14 +151,33 @@ describe('buildHomeView — czech-tidy fixture', () => {
               },
             ],
           },
+          {
+            "cards": [
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+              {
+                "type": "conditional",
+              },
+            ],
+          },
         ],
         "title": "Home",
       }
     `)
   })
 
-  it('produces Welcome only (czech-tidy has no outdoor/weather/presence/power entities)', () => {
-    expect(view.sections).toHaveLength(1)
+  it('produces Welcome + Active Rooms (czech-tidy has no outdoor/weather/presence/power entities)', () => {
+    expect(view.sections).toHaveLength(2)
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown')
   })
 })

@@ -356,6 +356,10 @@ const miscEntities = [
   // device-only via area-having floating devices
   motion(FX, 'Bedroom Closet Motion', { device: bedZ2M.id }),
   humiditySensor(FX, 'Bedroom Closet Humidity', { device: bedZ2M.id }),
+  // P1b-5: People + Scenes sections
+  registryEntry(FX, 'person', 'Alice'),
+  registryEntry(FX, 'scene', 'Movie Night'),
+  registryEntry(FX, 'scene', 'Test Scene'), // Filtered out by SCENE_NAME_FILTER
 ]
 
 export const englishCluttered = fixture({

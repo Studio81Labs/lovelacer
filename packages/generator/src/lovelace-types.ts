@@ -33,6 +33,7 @@ export type LovelaceCard =
   | GlanceCard
   | MediaControlCard
   | PictureEntityCard
+  | ConditionalCard
 
 export interface HeadingCard {
   type: 'heading'
@@ -43,6 +44,18 @@ export interface TileCard {
   type: 'tile'
   entity: string
   features?: TileFeature[]
+  /** Display name override; default is HA's friendly_name. */
+  name?: string
+  /**
+   * Click behavior; default is HA's per-domain default (toggle for
+   * lights, activate for scenes). P1b-5 uses navigate to make Active
+   * Rooms tiles deep-link into the room view.
+   *
+   * Only `navigate` is modelled here; HA also supports `more-info`,
+   * `toggle`, `call-service`, `url`, `none`. Future tickets widen the
+   * type if/when they need those variants.
+   */
+  tap_action?: NavigateAction
 }
 
 export interface LightBrightnessFeature {
@@ -58,6 +71,37 @@ export interface FanSpeedFeature {
 }
 
 export type TileFeature = LightBrightnessFeature | CoverOpenCloseFeature | FanSpeedFeature
+
+/**
+ * Condition types discriminate on `condition` (not `type`) to match HA's
+ * YAML schema. This is intentionally different from LovelaceCard's `type`
+ * discriminator.
+ *
+ * Single-entity state check: matches when `entity`'s state equals `state`.
+ *
+ * `state: string` is kept as `string` (not `'on' | 'off'`) because HA
+ * state values vary by domain — `'open'`, `'home'`, numeric sensor
+ * strings, etc.
+ */
+export interface StateCondition {
+  condition: 'state'
+  entity: string
+  state: string
+}
+
+/** Composite: matches when ANY child condition matches. */
+export interface OrCondition {
+  condition: 'or'
+  conditions: ConditionEntry[]
+}
+
+export type ConditionEntry = StateCondition | OrCondition
+
+/** Tap-action variant: navigate to a sibling view in the dashboard. */
+export interface NavigateAction {
+  action: 'navigate'
+  navigation_path: string
+}
 
 export interface ThermostatCard {
   type: 'thermostat'
@@ -91,4 +135,18 @@ export interface PictureEntityCard {
   entity: string
   /** `live` streams the camera; `auto` shows a refreshing snapshot. Snake_case matches HA's YAML schema. */
   camera_view?: 'live' | 'auto'
+}
+
+/**
+ * HA's conditional card: renders `card` only when ALL `conditions`
+ * match. Combine with an `or` composite to get an OR-ANY semantic.
+ *
+ * P1b-5 uses this for the Active Rooms section: per room, an `or`
+ * composite of state checks (lights/motion sensors), wrapping a tile
+ * that navigates to the room view.
+ */
+export interface ConditionalCard {
+  type: 'conditional'
+  conditions: ConditionEntry[]
+  card: LovelaceCard
 }

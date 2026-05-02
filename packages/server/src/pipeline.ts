@@ -48,9 +48,10 @@ export class InvalidConfigError extends Error {
  * has no entities with `haAreaId` set (i.e., entities matched only via
  * name signals so we can't pull a localized area name).
  *
- * Mirrors the titles used in `packages/generator/src/room-view.ts`'s
- * `ROOM_DISPLAY` table. P1b-2 may DRY these up; for now the duplication
- * is small and self-contained.
+ * Mirrors the titles used in `packages/generator/src/rooms.ts`'s
+ * `ROOM_DISPLAY` table. The duplication is small and self-contained;
+ * a future ticket may share the source-of-truth across the
+ * server/generator boundary.
  */
 const CANONICAL_ROOM_NAMES: Record<CanonicalRoomId, string> = {
   kitchen: 'Kitchen',
@@ -249,7 +250,7 @@ export async function runPreview(ha: HaClient, overrides: OverrideStore): Promis
   // via the analyze response's `misc[]` field, not as a dashboard view.
   const dashboardGroupings = state.groupings.filter((g) => g.roomId !== 'misc')
 
-  const home = buildHomeView({ entities: state.entities })
+  const home = buildHomeView({ entities: state.entities, groupings: dashboardGroupings })
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
 

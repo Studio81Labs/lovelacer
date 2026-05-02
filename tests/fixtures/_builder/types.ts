@@ -18,6 +18,8 @@ export type FixtureDomain =
   | 'fan'
   | 'camera'
   | 'vacuum'
+  | 'person'
+  | 'scene'
 
 export interface FloorSpec {
   id: string

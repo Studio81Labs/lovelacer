@@ -1,5 +1,17 @@
 import type { NormalizedEntity } from '@lovelacer/shared'
-import type { GlanceCard, GridSection, MarkdownCard, RoomView } from './lovelace-types.js'
+import type { RoomGrouping } from '@lovelacer/analyzer'
+import type {
+  ConditionalCard,
+  ConditionEntry,
+  GlanceCard,
+  GridSection,
+  MarkdownCard,
+  PictureEntityCard,
+  RoomView,
+  StateCondition,
+  TileCard,
+} from './lovelace-types.js'
+import { roomIdToDisplay } from './rooms.js'
 
 /**
  * Home view shares RoomView's structural shape (sections layout). The
@@ -9,9 +21,11 @@ export type HomeView = RoomView
 
 export interface BuildHomeViewInput {
   entities: NormalizedEntity[]
+  groupings: RoomGrouping[]
 }
 
 const PRESENCE_ID_PATTERN = /anyone[_-]?home|someone[_-]?home|presence/i
+const SCENE_NAME_FILTER = /test|setup/i
 
 const GREETING_LINE =
   "## Good {{ now().strftime('%H')|int < 12 and 'morning' or now().strftime('%H')|int < 18 and 'afternoon' or 'evening' }}"
@@ -69,8 +83,22 @@ function hasOutdoorMarker(entity: NormalizedEntity): boolean {
  */
 export function buildHomeView(input: BuildHomeViewInput): HomeView {
   const sections: GridSection[] = [buildWelcomeSection(input.entities)]
+
   const quickStats = buildQuickStatsSection(input.entities)
   if (quickStats !== null) sections.push(quickStats)
+
+  const people = buildPeopleSection(input.entities)
+  if (people !== null) sections.push(people)
+
+  const activeRooms = buildActiveRoomsSection(input.groupings)
+  if (activeRooms !== null) sections.push(activeRooms)
+
+  const scenes = buildScenesSection(input.entities)
+  if (scenes !== null) sections.push(scenes)
+
+  const cameras = buildCamerasSection(input.entities)
+  if (cameras !== null) sections.push(cameras)
+
   return {
     type: 'sections',
     title: 'Home',
@@ -99,4 +127,115 @@ function buildQuickStatsSection(entities: NormalizedEntity[]): GridSection | nul
     entities: picked.map((e) => e.entityId),
   }
   return { type: 'grid', cards: [card] }
+}
+
+/**
+ * Find person.* entities and emit a single glance card. HA renders
+ * each person's photo + state (home/away). Returns null if no
+ * (visible) person entities exist.
+ */
+export function buildPeopleSection(entities: NormalizedEntity[]): GridSection | null {
+  const people = entities
+    .filter((e) => e.domain === 'person' && !e.isHidden && !e.isDisabled)
+    .sort((a, b) => a.friendlyName.localeCompare(b.friendlyName, 'en'))
+  if (people.length === 0) return null
+  const card: GlanceCard = {
+    type: 'glance',
+    title: 'People',
+    entities: people.map((e) => e.entityId),
+  }
+  return { type: 'grid', cards: [card] }
+}
+
+/**
+ * Find scene.* entities, drop any whose entityId or friendlyName
+ * contains "test" or "setup" (case-insensitive), sort alphabetically,
+ * cap at 6, emit one tile per scene. Returns null if no scenes
+ * survive the filter.
+ */
+export function buildScenesSection(entities: NormalizedEntity[]): GridSection | null {
+  const scenes = entities
+    .filter((e) => e.domain === 'scene' && !e.isHidden && !e.isDisabled)
+    .filter((e) => !SCENE_NAME_FILTER.test(e.entityId) && !SCENE_NAME_FILTER.test(e.friendlyName))
+    .sort((a, b) => a.friendlyName.localeCompare(b.friendlyName, 'en'))
+    .slice(0, 6)
+  if (scenes.length === 0) return null
+  const cards: TileCard[] = scenes.map((e) => ({ type: 'tile', entity: e.entityId }))
+  return { type: 'grid', cards }
+}
+
+/**
+ * Find camera.* entities and emit one picture-entity card per camera
+ * with camera_view: 'live' so HA streams the feed. Returns null if no
+ * (visible) cameras exist.
+ */
+export function buildCamerasSection(entities: NormalizedEntity[]): GridSection | null {
+  const cameras = entities
+    .filter((e) => e.domain === 'camera' && !e.isHidden && !e.isDisabled)
+    .sort((a, b) => a.friendlyName.localeCompare(b.friendlyName, 'en'))
+  if (cameras.length === 0) return null
+  const cards: PictureEntityCard[] = cameras.map((e) => ({
+    type: 'picture-entity',
+    entity: e.entityId,
+    camera_view: 'live',
+  }))
+  return { type: 'grid', cards }
+}
+
+/**
+ * Build the Active Rooms section: per room, a conditional card that
+ * renders ONLY when at least one of the room's lights or activity
+ * sensors is on. The wrapped tile points at the room's primary entity
+ * (first light if any, else first activity sensor) and tap-navigates
+ * to the room's view.
+ *
+ * Skips rooms with no lights AND no activity sensors. Skips the misc
+ * bucket (no view to navigate to). Returns null if no rooms qualify.
+ */
+export function buildActiveRoomsSection(groupings: RoomGrouping[]): GridSection | null {
+  const cards: ConditionalCard[] = []
+
+  for (const grouping of groupings) {
+    if (grouping.roomId === 'misc') continue
+
+    const lights = grouping.groups.find((g) => g.key === 'lights')?.entities ?? []
+    const activity = grouping.groups.find((g) => g.key === 'activity')?.entities ?? []
+    const candidates = [...lights, ...activity].filter((e) => !e.isHidden && !e.isDisabled)
+    if (candidates.length === 0) continue
+
+    const primary = candidates[0]!
+    const stateConditions: StateCondition[] = candidates.map((e) => ({
+      condition: 'state',
+      entity: e.entityId,
+      state: 'on',
+    }))
+    const innerCondition: ConditionEntry =
+      stateConditions.length === 1
+        ? stateConditions[0]!
+        : { condition: 'or', conditions: stateConditions }
+
+    const display = roomIdToDisplay(grouping.roomId)
+    const tile: TileCard = {
+      type: 'tile',
+      entity: primary.entityId,
+      name: display.title,
+      tap_action: { action: 'navigate', navigation_path: display.path },
+    }
+
+    cards.push({
+      type: 'conditional',
+      conditions: [innerCondition],
+      card: tile,
+    })
+  }
+
+  if (cards.length === 0) return null
+
+  cards.sort((a, b) => {
+    const an = (a.card as TileCard).name ?? ''
+    const bn = (b.card as TileCard).name ?? ''
+    return an.localeCompare(bn, 'en')
+  })
+
+  return { type: 'grid', cards }
 }

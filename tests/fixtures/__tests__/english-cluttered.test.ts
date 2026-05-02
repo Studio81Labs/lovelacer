@@ -47,7 +47,8 @@ describe('english-cluttered fixture', () => {
     ).length
     const ratio = orphaned / fx.entities.length
     expect(ratio).toBeGreaterThan(0.18)
-    expect(ratio).toBeLessThan(0.32)
+    // Bumped +3 in P1b-5 (1 person + 2 scenes); all three are floating orphans
+    expect(ratio).toBeLessThan(0.35)
   })
 
   it('includes at least one diagnostic, one disabled, one hidden, one nameByUser', () => {
