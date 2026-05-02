@@ -74,7 +74,13 @@ watch(
       class="sticky top-0 z-10 flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs"
     >
       <span class="font-medium text-amber-900">{{ selectedCount }} selected</span>
-      <button type="button" class="text-amber-700 hover:underline" @click="toggleAll">
+      <button
+        type="button"
+        data-testid="misc-bulk-toggle-all"
+        class="text-amber-700 hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+        :disabled="isSaving"
+        @click="toggleAll"
+      >
         {{ allSelected ? 'Select none' : 'Select all' }}
       </button>
 
@@ -109,7 +115,9 @@ watch(
       </button>
       <button
         type="button"
-        class="ml-auto text-stone-600 hover:text-stone-900"
+        data-testid="misc-bulk-clear"
+        class="ml-auto text-stone-600 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+        :disabled="isSaving"
         @click="clearSelection"
       >
         Clear

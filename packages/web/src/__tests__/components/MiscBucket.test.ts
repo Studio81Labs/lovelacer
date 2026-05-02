@@ -203,11 +203,20 @@ describe('MiscBucket bulk select', () => {
     const assignBtn = wrapper.find('[data-testid="misc-bulk-assign"]')
     const hideBtn = wrapper.find('[data-testid="misc-bulk-hide"]')
     const roomSelect = wrapper.find('[data-testid="misc-bulk-room"]')
+    const toggleAllBtn = wrapper.find('[data-testid="misc-bulk-toggle-all"]')
+    const clearBtn = wrapper.find('[data-testid="misc-bulk-clear"]')
     const checkbox = wrapper.findAll('[data-testid="misc-row-checkbox"]')[0]!
 
     expect(assignBtn.attributes('disabled')).toBeDefined()
     expect(hideBtn.attributes('disabled')).toBeDefined()
     expect(roomSelect.attributes('disabled')).toBeDefined()
+    // Bugbot caught: toggle-all and Clear were initially un-gated, which
+    // would let the user inflate or zero the selection mid-save. If the
+    // save then failed (phase → 'error', no re-analyze fires the
+    // watch-clear), the manipulated selection would persist. Lock the
+    // contract that ALL selection-mutating controls disable during save.
+    expect(toggleAllBtn.attributes('disabled')).toBeDefined()
+    expect(clearBtn.attributes('disabled')).toBeDefined()
     expect((checkbox.element as HTMLInputElement).disabled).toBe(true)
   })
 
