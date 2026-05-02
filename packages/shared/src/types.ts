@@ -109,6 +109,38 @@ export interface RoomAssignment {
    * patch step in `runFullPipeline` sets it.
    */
   manual?: boolean
+  /**
+   * P2-5 — top-N candidate rooms (excluding the winner) that scored
+   * above the detector's alternative threshold. Used by the suggestion
+   * engine to power "consider X instead" prompts. Capped at 2 entries
+   * to avoid noise. Field is omitted entirely when empty so consumers
+   * can `if (a.alternatives !== undefined)` cleanly under
+   * exactOptionalPropertyTypes.
+   */
+  alternatives?: AlternativeAssignment[]
+}
+
+export interface AlternativeAssignment {
+  roomId: CanonicalRoomId
+  confidence: number
+}
+
+/**
+ * P2-5 — three rule-based hints surfaced on the analyze view. Each has
+ * an Accept verb (delegated to existing override calls or a HA deep-link)
+ * and a Dismiss verb that persists across runs via DismissedSuggestionStore.
+ */
+export type SuggestionType = 'set_area_id' | 'move_room' | 'hide_diagnostic'
+
+export interface Suggestion {
+  entityId: string
+  type: SuggestionType
+  /** Brief user-facing prose. Localizable later (P2-9). */
+  message: string
+  /** For move_room only: the suggested target room (top alternative). */
+  suggestedRoomId?: CanonicalRoomId
+  /** For set_area_id only: the canonical room we matched. Used for the deep-link + display. */
+  matchedRoomId?: CanonicalRoomId
 }
 
 /**
