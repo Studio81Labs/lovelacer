@@ -87,6 +87,11 @@ export interface ApplyResult {
   ok: true
   urlPath: string
   created: boolean
+  /**
+   * Snake_case is intentional — these fields match the server wire shape
+   * (see `packages/server/src/routes/apply.ts` `ApplySuccessResponse`).
+   * Don't auto-reformat to camelCase or the contract breaks.
+   */
   /** Server flag: snapshot was rejected as malformed. Push still succeeded. */
   snapshot_skipped?: 'invalid'
   /** Server flag: snapshot persist failed. Push still succeeded. */
