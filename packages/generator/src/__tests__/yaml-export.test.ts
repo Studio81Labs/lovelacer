@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { parse as yamlParse } from 'yaml'
 import { configToYaml } from '../yaml-export.js'
-import { GENERATOR_VERSION } from '../index.js'
+import { GENERATOR_VERSION } from '../version.js'
 import type { LovelaceConfig } from '../lovelace-config.js'
 
 const sampleConfig: LovelaceConfig = {

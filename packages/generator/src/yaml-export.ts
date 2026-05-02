@@ -1,5 +1,5 @@
 import { stringify } from 'yaml'
-import { GENERATOR_VERSION } from './index.js'
+import { GENERATOR_VERSION } from './version.js'
 import type { LovelaceConfig } from './lovelace-config.js'
 
 export interface ConfigToYamlOptions {

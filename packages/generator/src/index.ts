@@ -14,7 +14,7 @@
  * Future packages/generator-smartpanel will be a sibling using the
  * same analyzer output. See SMART_PANEL_BRIDGE.md.
  */
-export const GENERATOR_VERSION = '0.0.0'
+export { GENERATOR_VERSION } from './version.js'
 export { buildRoomView, buildRoomViews } from './room-view.js'
 export type {
   ConditionalCard,
