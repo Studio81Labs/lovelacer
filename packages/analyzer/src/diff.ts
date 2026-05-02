@@ -23,6 +23,9 @@ export interface ComputeDiffInput {
  * Removed entities (in snapshot, not in current) intentionally do NOT
  * accumulate into `perRoom` — they have no current room. The frontend
  * surfaces them in a dedicated `RemovedEntitiesPanel`.
+ *
+ * Caller must deduplicate `assignments` on both sides — duplicates are
+ * silently last-wins via `Map.set()`.
  */
 export function computeDiff(input: ComputeDiffInput): DiffResult {
   const prev = new Map<string, CanonicalRoomId | null>()

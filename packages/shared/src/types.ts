@@ -173,7 +173,10 @@ export interface RoomDiffSummary {
   added: number
   /** Subset of `added`: entities that were assigned to a different room before. */
   movedIn: number
-  /** Entities that left this room — they are now in a different room (or misc, or removed). */
+  /**
+   * Entities that moved to a different room or to misc. Removals are tracked
+   * in the top-level `removed` total, not here.
+   */
   movedOut: number
 }
 
