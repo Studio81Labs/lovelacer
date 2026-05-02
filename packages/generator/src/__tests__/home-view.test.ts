@@ -459,6 +459,35 @@ describe('buildActiveRoomsSection', () => {
     expect(cond.card.entity).toBe('binary_sensor.kitchen_motion')
   })
 
+  it('filters out hidden + disabled candidates', () => {
+    // Construct a room with one hidden light and one visible motion sensor.
+    // Expected: hidden light excluded from condition; tile uses the motion sensor.
+    const grouping: RoomGrouping = {
+      roomId: 'kitchen' as RoomGrouping['roomId'],
+      groups: [
+        {
+          key: 'lights' as const,
+          entities: [ent('light.hidden_kitchen', { isHidden: true })],
+        },
+        {
+          key: 'activity' as const,
+          entities: [ent('binary_sensor.kitchen_motion', { deviceClass: 'motion' })],
+        },
+      ],
+    }
+    const section = buildActiveRoomsSection([grouping])
+    const cond = section!.cards[0] as {
+      conditions: unknown[]
+      card: { entity: string }
+    }
+    // Hidden light absent from conditions; only motion sensor present.
+    expect(cond.conditions).toEqual([
+      { condition: 'state', entity: 'binary_sensor.kitchen_motion', state: 'on' },
+    ])
+    // Tile points at the motion sensor since the light was filtered.
+    expect(cond.card.entity).toBe('binary_sensor.kitchen_motion')
+  })
+
   it('tile has tap_action.navigation_path === room.roomId', () => {
     const groupings = [grp('living_room', ['light.lr_main'])]
     const section = buildActiveRoomsSection(groupings)
