@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { getInvite, postInvite } from '../api/client.js'
 import type { ApiError } from '../api/types.js'
 
@@ -17,6 +17,22 @@ export const useInviteStore = defineStore('invite', () => {
   const accepted = ref<boolean | null>(null)
   const phase = ref<Phase>('idle')
   const error = ref<ApiError | null>(null)
+
+  /**
+   * Whether the gate modal should be shown. Encapsulates the three-state
+   * `accepted` logic so callers don't have to:
+   * - `true` accepted → never show
+   * - `false` not accepted → always show
+   * - `null` unknown → show only if the status check failed, otherwise the
+   *   user would be stranded on the app skeleton with every API returning
+   *   403 and no way to enter a code (the gate's own form provides the
+   *   recovery path — submit drives a fresh POST that bypasses loadStatus).
+   */
+  const shouldShowGate = computed<boolean>(() => {
+    if (accepted.value === true) return false
+    if (accepted.value === false) return true
+    return phase.value === 'error'
+  })
 
   async function loadStatus(): Promise<void> {
     phase.value = 'loading'
@@ -44,5 +60,5 @@ export const useInviteStore = defineStore('invite', () => {
     }
   }
 
-  return { accepted, phase, error, loadStatus, submit }
+  return { accepted, phase, error, shouldShowGate, loadStatus, submit }
 })

@@ -184,4 +184,20 @@ describe('App invite gate', () => {
     // Synchronously: no modal yet because we haven't resolved.
     expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
   })
+
+  it('renders InviteGate when loadStatus fails (network error) so the user is not stranded', async () => {
+    // Without this fallback, accepted stays null forever and every other
+    // API call returns 403 invite_required — page refresh is the only out.
+    vi.mocked(getInvite).mockRejectedValueOnce({ error: 'network', message: 'offline' })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
+  })
 })

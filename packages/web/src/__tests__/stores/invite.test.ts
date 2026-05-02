@@ -62,4 +62,35 @@ describe('useInviteStore', () => {
     expect(store.error).toEqual(apiError)
     expect(store.accepted).toBeNull() // unchanged
   })
+
+  describe('shouldShowGate', () => {
+    it('is false initially (accepted=null, phase=idle) so the page does not flash a modal during the status check', () => {
+      const store = useInviteStore()
+      expect(store.shouldShowGate).toBe(false)
+    })
+
+    it('is true when loadStatus fails (network error) so the user has a recovery path instead of being stranded', async () => {
+      const apiError: ApiError = { error: 'network', message: 'offline' }
+      vi.mocked(getInvite).mockRejectedValueOnce(apiError)
+      const store = useInviteStore()
+      await store.loadStatus()
+      expect(store.accepted).toBeNull()
+      expect(store.phase).toBe('error')
+      expect(store.shouldShowGate).toBe(true)
+    })
+
+    it('is true when accepted=false', async () => {
+      vi.mocked(getInvite).mockResolvedValueOnce({ accepted: false })
+      const store = useInviteStore()
+      await store.loadStatus()
+      expect(store.shouldShowGate).toBe(true)
+    })
+
+    it('is false when accepted=true', async () => {
+      vi.mocked(getInvite).mockResolvedValueOnce({ accepted: true })
+      const store = useInviteStore()
+      await store.loadStatus()
+      expect(store.shouldShowGate).toBe(false)
+    })
+  })
 })

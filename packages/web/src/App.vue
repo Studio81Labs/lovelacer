@@ -70,5 +70,5 @@ watch(
     </section>
   </main>
 
-  <InviteGate v-if="invite.accepted === false" />
+  <InviteGate v-if="invite.shouldShowGate" />
 </template>
