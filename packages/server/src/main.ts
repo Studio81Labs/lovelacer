@@ -3,6 +3,7 @@ import { HaClient } from '@lovelacer/ha-client'
 import { pino } from 'pino'
 import { config } from './config.js'
 import { createApp } from './app.js'
+import { InviteStore } from './storage/invite-store.js'
 import { OverrideStore } from './storage/override-store.js'
 
 async function main() {
@@ -30,9 +31,14 @@ async function main() {
   const overrides = new OverrideStore(overridesPath)
   logger.info({ path: overridesPath }, 'override store opened')
 
+  const invitePath = resolve(config.dataDir, 'lovelacer.sqlite')
+  const invite = new InviteStore(invitePath)
+  logger.info({ path: invitePath }, 'invite store opened')
+
   const app = await createApp({
     ha,
     overrides,
+    invite,
     isDev,
     logLevel: config.logLevel,
     logger,
@@ -52,6 +58,7 @@ async function main() {
       await app.close()
     } finally {
       overrides.close()
+      invite.close()
     }
     process.exit(0)
   }

@@ -4,15 +4,18 @@ import sensible from '@fastify/sensible'
 import fastifyStatic from '@fastify/static'
 import { pino, type Logger } from 'pino'
 import type { HaClient } from '@lovelacer/ha-client'
-import type { OverrideStore } from './storage/override-store.js'
 import { analyzeRoute } from './routes/analyze.js'
 import { applyRoute } from './routes/apply.js'
-import { previewRoute } from './routes/preview.js'
+import { inviteRoute } from './routes/invite.js'
 import { overridesRoute } from './routes/overrides.js'
+import { previewRoute } from './routes/preview.js'
+import type { InviteStore } from './storage/invite-store.js'
+import type { OverrideStore } from './storage/override-store.js'
 
 export interface CreateAppOptions {
   ha: HaClient
   overrides: OverrideStore
+  invite: InviteStore  // NEW
   isDev?: boolean
   logLevel?: string
   /**
@@ -59,6 +62,22 @@ export async function createApp(opts: CreateAppOptions) {
     ha: { connected: opts.ha.isConnected() },
   }))
 
+  // Gate hook: returns 403 invite_required for any /api/* request unless
+  // the invite has been accepted. /api/health and /api/invite are always
+  // public (Supervisor health-checks the former; the user submits the
+  // code to the latter on first run).
+  app.addHook('onRequest', async (req, reply) => {
+    if (!req.url.startsWith('/api/')) return
+    if (req.url.startsWith('/api/health') || req.url.startsWith('/api/invite')) return
+    if (!opts.invite.isAccepted()) {
+      return reply.code(403).send({
+        error: 'invite_required',
+        message: 'Invite code required to continue.',
+      })
+    }
+  })
+
+  await app.register(inviteRoute, { invite: opts.invite })
   await app.register(analyzeRoute, { ha: opts.ha, overrides: opts.overrides })
   await app.register(previewRoute, { ha: opts.ha, overrides: opts.overrides })
   await app.register(applyRoute, {
