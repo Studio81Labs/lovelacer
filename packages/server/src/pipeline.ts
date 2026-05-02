@@ -1,4 +1,5 @@
 import {
+  assignFloors,
   computeDiff,
   detect,
   groupByDomain,
@@ -16,7 +17,9 @@ import type {
   AnalyzedRoom,
   CanonicalRoomId,
   DiffResult,
+  FloorAssignment,
   HaAreaRegistryEntry,
+  HaFloorRegistryEntry,
   NormalizedEntity,
   Override,
   RoomAssignment,
@@ -140,6 +143,8 @@ interface PipelineState {
   rooms: AnalyzedRoom[]
   misc: AnalyzeOutput['misc']
   summary: AnalyzeOutput['summary']
+  floors: HaFloorRegistryEntry[]
+  floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
 }
 
 /**
@@ -185,10 +190,19 @@ export function applyOverrides(
 }
 
 async function runFullPipeline(ha: HaClient, overrides: OverrideStore): Promise<PipelineState> {
-  const [entityRegistry, deviceRegistry, areaRegistry] = await Promise.all([
+  // Floor registry is opportunistic — older HA versions may not expose
+  // `config/floor_registry/list`. If it errors, we treat as empty and
+  // proceed; the rest of analyze must not depend on floor data.
+  const [entityRegistry, deviceRegistry, areaRegistry, floorRegistry] = await Promise.all([
     ha.getEntityRegistry(),
     ha.getDeviceRegistry(),
     ha.getAreaRegistry(),
+    ha.getFloorRegistry().catch((err: unknown) => {
+      // Don't have access to a logger here; return empty list quietly.
+      // Route-layer logging picks up the absent section if needed.
+      void err
+      return [] as Awaited<ReturnType<typeof ha.getFloorRegistry>>
+    }),
   ])
 
   const entities = normalize({
@@ -235,6 +249,12 @@ async function runFullPipeline(ha: HaClient, overrides: OverrideStore): Promise<
   // hidden + disabled entities don't appear in any view, so don't count them.
   const visibleEntityCount = entities.filter((e) => !e.isHidden && !e.isDisabled).length
 
+  const floorAssignments = assignFloors({
+    rooms,
+    areas: areaRegistry,
+    floors: floorRegistry,
+  })
+
   return {
     entities,
     groupings,
@@ -245,6 +265,8 @@ async function runFullPipeline(ha: HaClient, overrides: OverrideStore): Promise<
       roomCount: rooms.length,
       miscCount: misc.length,
     },
+    floors: floorRegistry,
+    floorAssignments,
   }
 }
 
@@ -316,7 +338,7 @@ export async function runPreview(
     entities: state.entities,
     groupings: dashboardGroupings,
     rooms: state.rooms,
-    floorAssignments: new Map(), // Task 3 fills this in via assignFloors
+    floorAssignments: state.floorAssignments,
   })
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })

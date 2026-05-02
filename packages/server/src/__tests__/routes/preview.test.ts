@@ -31,7 +31,7 @@ function makeHa(connected = true): HaClient {
     getEntityRegistry: vi.fn(async () => ha.entities),
     getDeviceRegistry: vi.fn(async () => ha.devices),
     getAreaRegistry: vi.fn(async () => ha.areas),
-    getFloorRegistry: vi.fn(async () => []),
+    getFloorRegistry: vi.fn(async () => ha.floors),
   } as unknown as HaClient
 }
 
@@ -204,6 +204,74 @@ describe('POST /api/preview', () => {
         kind: 'removed',
         previousRoomId: 'living_room',
       })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('home view contains a "Rooms by floor" section when fixture has floor data', async () => {
+    const app = await createApp({
+      ha: makeHa(true),
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const res = await app.inject({ method: 'POST', url: '/api/preview' })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        config: {
+          views: { path: string; sections: { cards: { type: string; heading?: string }[] }[] }[]
+        }
+      }
+      const home = body.config.views.find((v) => v.path === 'home')
+      expect(home).toBeDefined()
+      const headings = home!.sections
+        .flatMap((s) => s.cards)
+        .filter((c) => c.type === 'heading')
+        .map((c) => c.heading)
+      // englishCluttered has two floors: Ground and Upstairs.
+      expect(headings).toContain('Ground')
+      expect(headings).toContain('Upstairs')
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('home view omits the "Rooms by floor" section when getFloorRegistry rejects (defensive)', async () => {
+    const ha = fixtureToHaRegistries(englishCluttered)
+    const fakeHa = {
+      isConnected: () => true,
+      getEntityRegistry: vi.fn(async () => ha.entities),
+      getDeviceRegistry: vi.fn(async () => ha.devices),
+      getAreaRegistry: vi.fn(async () => ha.areas),
+      getFloorRegistry: vi.fn(async () => {
+        throw new Error('not supported')
+      }),
+    } as unknown as HaClient
+    const app = await createApp({
+      ha: fakeHa,
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const res = await app.inject({ method: 'POST', url: '/api/preview' })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        config: {
+          views: { path: string; sections: { cards: { type: string; heading?: string }[] }[] }[]
+        }
+      }
+      const home = body.config.views.find((v) => v.path === 'home')
+      expect(home).toBeDefined()
+      // No floor data → no headings on the home view.
+      const headings = home!.sections.flatMap((s) => s.cards).filter((c) => c.type === 'heading')
+      expect(headings).toHaveLength(0)
     } finally {
       await app.close()
     }
