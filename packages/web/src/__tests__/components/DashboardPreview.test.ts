@@ -40,4 +40,19 @@ describe('DashboardPreview', () => {
     const pills = wrapper.findAll('[data-testid="view-pill"]')
     expect(pills).toHaveLength(0)
   })
+
+  it('renders a Download YAML link pointing at /api/export.yaml when views are present', () => {
+    const wrapper = mount(DashboardPreview, { props: { config } })
+    const link = wrapper.find('[data-testid="export-yaml-link"]')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('/api/export.yaml')
+    expect(link.attributes('download')).toBeDefined()
+    expect(link.text()).toContain('Download YAML')
+  })
+
+  it('does not render the Download YAML link when views are empty', () => {
+    const empty: LovelaceConfig = { title: 'x', views: [] }
+    const wrapper = mount(DashboardPreview, { props: { config: empty } })
+    expect(wrapper.find('[data-testid="export-yaml-link"]').exists()).toBe(false)
+  })
 })
