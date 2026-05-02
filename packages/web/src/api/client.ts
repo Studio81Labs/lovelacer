@@ -73,3 +73,15 @@ export function putOverrides(body: { overrides: Override[] }): Promise<{ overrid
     body: JSON.stringify(body),
   })
 }
+
+export function getInvite(): Promise<{ accepted: boolean }> {
+  return fetchJson('api/invite')
+}
+
+export function postInvite(body: { code: string }): Promise<{ accepted: boolean }> {
+  return fetchJson('api/invite', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(body),
+  })
+}

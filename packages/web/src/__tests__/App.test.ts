@@ -11,9 +11,12 @@ vi.mock('../api/client.js', () => ({
   postApply: vi.fn(),
   getOverrides: vi.fn(),
   putOverrides: vi.fn(),
+  getInvite: vi.fn(),
+  postInvite: vi.fn(),
 }))
 
-const { postPreview, getOverrides, putOverrides } = await import('../api/client.js')
+const { postPreview, getOverrides, putOverrides, getInvite, postInvite } =
+  await import('../api/client.js')
 
 const mockPreview: PreviewOutput = {
   rooms: [
@@ -38,6 +41,10 @@ describe('App integration', () => {
     vi.mocked(postPreview).mockReset()
     vi.mocked(getOverrides).mockReset()
     vi.mocked(putOverrides).mockReset()
+    vi.mocked(getInvite).mockReset()
+    // Default: most existing tests assume the gate is already accepted.
+    // Tests that need accepted=false will override this.
+    vi.mocked(getInvite).mockResolvedValue({ accepted: true })
   })
 
   it('triggers loadFromServer when analyze.phase transitions to ready', async () => {
@@ -116,5 +123,113 @@ describe('App integration', () => {
       overrides: [{ entityId: 'light.kitchen_ceiling', roomId: 'living_room' }],
     })
     expect(postPreview).toHaveBeenCalled()
+  })
+})
+
+describe('App invite gate', () => {
+  beforeEach(() => {
+    vi.mocked(getInvite).mockReset()
+  })
+
+  it('calls invite.loadStatus on mount', async () => {
+    vi.mocked(getInvite).mockResolvedValueOnce({ accepted: true })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await wrapper.vm.$nextTick()
+
+    expect(getInvite).toHaveBeenCalledOnce()
+  })
+
+  it('renders InviteGate when accepted === false', async () => {
+    vi.mocked(getInvite).mockResolvedValueOnce({ accepted: false })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
+  })
+
+  it('does not render InviteGate when accepted === true', async () => {
+    vi.mocked(getInvite).mockResolvedValueOnce({ accepted: true })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+  })
+
+  it('does not render InviteGate while accepted === null (loading state)', () => {
+    // Don't resolve the mock; accepted stays null.
+    vi.mocked(getInvite).mockReturnValue(new Promise(() => {})) // never resolves
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+
+    // Synchronously: no modal yet because we haven't resolved.
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+  })
+
+  it('renders InviteGate when loadStatus fails (network error) so the user is not stranded', async () => {
+    // Without this fallback, accepted stays null forever and every other
+    // API call returns 403 invite_required — page refresh is the only out.
+    vi.mocked(getInvite).mockRejectedValueOnce({ error: 'network', message: 'offline' })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
+  })
+
+  it('keeps the typed code in the gate input while a submit from the recovery gate is in flight (regression: gate must not unmount)', async () => {
+    // Set up the recovery path: initial loadStatus fails so the gate
+    // surfaces with accepted=null + phase=error.
+    vi.mocked(getInvite).mockRejectedValueOnce({ error: 'network', message: 'offline' })
+    // Hold the POST open so we can observe the in-flight render.
+    vi.mocked(postInvite).mockReturnValueOnce(new Promise(() => {}))
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
+
+    const input = wrapper.find('[data-testid="invite-input"]')
+    await input.setValue('BETA-2026-ALPHA')
+    await wrapper.find('form').trigger('submit')
+    await wrapper.vm.$nextTick()
+
+    // Mid-request: gate must still be mounted (otherwise the local
+    // `code` ref is destroyed and remounts blank on failure) and the
+    // typed value must still be there.
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
+    expect((wrapper.find('[data-testid="invite-input"]').element as HTMLInputElement).value).toBe(
+      'BETA-2026-ALPHA',
+    )
   })
 })

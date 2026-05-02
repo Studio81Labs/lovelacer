@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { postApply, postPreview, getOverrides, putOverrides } from '../../api/client.js'
+import {
+  postApply,
+  postPreview,
+  getOverrides,
+  putOverrides,
+  getInvite,
+  postInvite,
+} from '../../api/client.js'
 import type { ApiError, LovelaceConfig, Override, PreviewOutput } from '../../api/types.js'
 
 const mockPreviewResponse: PreviewOutput = {
@@ -188,5 +195,59 @@ describe('putOverrides', () => {
       error: 'invalid_body',
       message: 'duplicate entityId',
     } satisfies ApiError)
+  })
+})
+
+describe('getInvite', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('returns parsed body on 200', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ accepted: true }),
+    } as unknown as Response)
+
+    const result = await getInvite()
+    expect(result).toEqual({ accepted: true })
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/invite', {})
+  })
+})
+
+describe('postInvite', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('sends POST with body and returns parsed result', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ accepted: true }),
+    } as unknown as Response)
+
+    const result = await postInvite({ code: 'BETA-2026-ALPHA' })
+    expect(result).toEqual({ accepted: true })
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/invite', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: 'BETA-2026-ALPHA' }),
+    })
+  })
+
+  it('throws ApiError on invalid_code 400', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: () =>
+        Promise.resolve({
+          error: 'invalid_code',
+          message: 'Invite code not recognized.',
+        }),
+    } as unknown as Response)
+
+    await expect(postInvite({ code: 'WRONG' })).rejects.toMatchObject({
+      error: 'invalid_code',
+    })
   })
 })

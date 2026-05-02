@@ -5,10 +5,17 @@ import type { LovelaceConfig } from '@lovelacer/generator'
 import { englishCluttered } from '../../../../../tests/fixtures/english-cluttered.js'
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
 import { createApp } from '../../app.js'
+import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 
 function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
+}
+
+function makeAcceptedInvite(): InviteStore {
+  const s = new InviteStore(':memory:')
+  s.accept('BETA-2026-ALPHA')
+  return s
 }
 
 interface FakeHa {
@@ -57,6 +64,7 @@ describe('POST /api/apply — happy paths', () => {
     const app = await createApp({
       ha: fake.client,
       overrides: makeStore(),
+      invite: makeAcceptedInvite(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -84,6 +92,7 @@ describe('POST /api/apply — happy paths', () => {
     const app = await createApp({
       ha: fake.client,
       overrides: makeStore(),
+      invite: makeAcceptedInvite(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -113,6 +122,7 @@ describe('POST /api/apply — happy paths', () => {
     const app = await createApp({
       ha: fake.client,
       overrides: makeStore(),
+      invite: makeAcceptedInvite(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -136,6 +146,7 @@ describe('POST /api/apply — error paths', () => {
     const app = await createApp({
       ha: fake.client,
       overrides: makeStore(),
+      invite: makeAcceptedInvite(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -153,6 +164,7 @@ describe('POST /api/apply — error paths', () => {
     const app = await createApp({
       ha: fake.client,
       overrides: makeStore(),
+      invite: makeAcceptedInvite(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -175,6 +187,7 @@ describe('POST /api/apply — error paths', () => {
     const app = await createApp({
       ha: fake.client,
       overrides: makeStore(),
+      invite: makeAcceptedInvite(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -199,6 +212,7 @@ describe('POST /api/apply — error paths', () => {
     const app = await createApp({
       ha: fake.client,
       overrides: makeStore(),
+      invite: makeAcceptedInvite(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
