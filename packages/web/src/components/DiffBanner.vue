@@ -56,6 +56,6 @@ function formatApplied(unixSeconds: number): string {
         >✗ {{ diff.totals.removed }} removed</span
       >
     </div>
-    <span class="text-xs text-stone-500">{{ formatApplied(diff.appliedAt) }}</span>
+    <span v-if="!isZero" class="text-xs text-stone-500">{{ formatApplied(diff.appliedAt) }}</span>
   </section>
 </template>
