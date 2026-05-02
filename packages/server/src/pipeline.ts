@@ -56,6 +56,11 @@ export interface RunApplyResult extends ApplyDashboardResult {
   snapshotSkipped?: 'invalid'
   /** Set when persistence threw (SQLite write failure, etc). */
   snapshotPersisted?: false
+  /**
+   * Internal — only set when persistence threw, so the route can include
+   * the cause in its error log. NOT part of the wire response.
+   */
+  snapshotError?: unknown
 }
 
 /**
@@ -74,6 +79,13 @@ export class InvalidConfigError extends Error {
  * Validates the snapshot body. Returns true iff `assignments` is an array
  * of `{ entityId: string, roomId: string|null }` and `config` is an object.
  * Defense-in-depth — the route is the trust boundary.
+ *
+ * Hand-rolled instead of zod (the project's typical body validator) by
+ * design: the snapshot body is a closed shape that won't grow, and the
+ * validator runs on every successful apply. The looseness on `config`
+ * (any non-null object) is intentional — the snapshot's config is
+ * archival, not consumed by the diff. Tightening it would silently
+ * reject valid frontend payloads if the LovelaceConfig shape evolves.
  */
 function isValidSnapshotShape(value: unknown): value is NonNullable<ApplyInput['snapshot']> {
   if (typeof value !== 'object' || value === null) return false
@@ -367,9 +379,9 @@ export async function runApply(
       config: body.snapshot.config,
     })
     return result
-  } catch {
+  } catch (err) {
     // SQLite write failed (disk full, IO error). The dashboard is live in
     // HA; the user just doesn't get a fresh diff baseline this time.
-    return { ...result, snapshotPersisted: false }
+    return { ...result, snapshotPersisted: false, snapshotError: err }
   }
 }

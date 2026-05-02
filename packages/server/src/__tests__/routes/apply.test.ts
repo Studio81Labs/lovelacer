@@ -362,4 +362,39 @@ describe('POST /api/apply — snapshot persistence', () => {
       await app.close()
     }
   })
+
+  it('returns snapshot_persisted: false when the store save throws (push still succeeds)', async () => {
+    const fake = makeHa(true)
+    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: false })
+    const snap = makeAppliedSnapshot()
+    // Replace `save` with a thrower to simulate disk-full / SQLite failure.
+    // Casting via `unknown` because save is a method on a class instance.
+    ;(snap as unknown as { save: () => void }).save = () => {
+      throw new Error('disk full')
+    }
+    const app = await createApp({
+      ha: fake.client,
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: snap,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const body = {
+        config: validConfig,
+        snapshot: {
+          assignments: [{ entityId: 'light.kitchen_ceiling', roomId: 'kitchen' }],
+          config: validConfig,
+        },
+      }
+      const res = await app.inject({ method: 'POST', url: '/api/apply', payload: body })
+      expect(res.statusCode).toBe(200)
+      expect((res.json() as Record<string, unknown>).snapshot_persisted).toBe(false)
+      // Note: snap.get() may return null since we replaced save before it ever ran.
+      // The contract is that the route surfaces the failure, not that the store recovers.
+    } finally {
+      await app.close()
+    }
+  })
 })

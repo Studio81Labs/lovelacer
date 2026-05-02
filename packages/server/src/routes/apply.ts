@@ -5,6 +5,21 @@ import type { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import type { OverrideStore } from '../storage/override-store.js'
 import { InvalidConfigError, runApply, type ApplyInput } from '../pipeline.js'
 
+/**
+ * Wire shape of the 200 response. Snake_case fields (`snapshot_skipped`,
+ * `snapshot_persisted`) are intentional — they're flags the route emits
+ * and the frontend mirrors verbatim. Existing fields (`urlPath`,
+ * `created`) come from `ApplyDashboardResult` and stay camelCase to
+ * preserve backward compatibility.
+ */
+interface ApplySuccessResponse {
+  ok: true
+  urlPath: string
+  created: boolean
+  snapshot_skipped?: 'invalid'
+  snapshot_persisted?: false
+}
+
 export interface ApplyRouteOptions {
   ha: HaClient
   overrides: OverrideStore
@@ -46,11 +61,11 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
       })
       if (result.snapshotPersisted === false) {
         req.log.error(
-          { urlPath: result.urlPath },
+          { err: result.snapshotError, urlPath: result.urlPath },
           'snapshot persistence failed after successful apply',
         )
       }
-      const responseBody: Record<string, unknown> = {
+      const responseBody: ApplySuccessResponse = {
         ok: true,
         urlPath: result.urlPath,
         created: result.created,
