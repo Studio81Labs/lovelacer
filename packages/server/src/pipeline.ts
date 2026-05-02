@@ -19,7 +19,6 @@ import type {
   DiffResult,
   FloorAssignment,
   HaAreaRegistryEntry,
-  HaFloorRegistryEntry,
   NormalizedEntity,
   Override,
   RoomAssignment,
@@ -143,7 +142,6 @@ interface PipelineState {
   rooms: AnalyzedRoom[]
   misc: AnalyzeOutput['misc']
   summary: AnalyzeOutput['summary']
-  floors: HaFloorRegistryEntry[]
   floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
 }
 
@@ -265,7 +263,6 @@ async function runFullPipeline(ha: HaClient, overrides: OverrideStore): Promise<
       roomCount: rooms.length,
       miscCount: misc.length,
     },
-    floors: floorRegistry,
     floorAssignments,
   }
 }
