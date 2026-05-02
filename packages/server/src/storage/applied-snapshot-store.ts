@@ -55,7 +55,7 @@ export class AppliedSnapshotStore {
     if (row === undefined) return null
     return {
       assignments: JSON.parse(row.assignments) as SnapshotAssignment[],
-      config: JSON.parse(row.config) as unknown,
+      config: JSON.parse(row.config),
       appliedAt: row.applied_at,
     }
   }

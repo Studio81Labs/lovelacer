@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type Database from 'better-sqlite3'
 import type { AppliedSnapshot } from '@lovelacer/shared'
 import { AppliedSnapshotStore } from '../applied-snapshot-store.js'
 
@@ -48,14 +49,29 @@ describe('AppliedSnapshotStore', () => {
     const store = new AppliedSnapshotStore(':memory:')
     try {
       store.save(sample)
-      const updated = {
-        assignments: [{ entityId: 'light.bedroom_lamp', roomId: 'bedroom' as const }],
+      const updated: Omit<AppliedSnapshot, 'appliedAt'> = {
+        assignments: [{ entityId: 'light.bedroom_lamp', roomId: 'bedroom' }],
         config: { title: 'After', views: [] },
       }
       store.save(updated)
       const got = store.get()
       expect(got?.assignments).toEqual(updated.assignments)
       expect(got?.config).toEqual(updated.config)
+    } finally {
+      store.close()
+    }
+  })
+
+  it('schema CHECK rejects insert with id != 1', () => {
+    const store = new AppliedSnapshotStore(':memory:')
+    try {
+      const db = (store as unknown as { db: Database.Database }).db
+      expect(() => {
+        db.prepare('INSERT INTO applied_snapshot (id, assignments, config) VALUES (2, ?, ?)').run(
+          '[]',
+          '{}',
+        )
+      }).toThrow()
     } finally {
       store.close()
     }
