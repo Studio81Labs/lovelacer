@@ -25,18 +25,23 @@ export const useSuggestionsStore = defineStore('suggestions', () => {
   }
 
   async function dismiss(entityId: string, type: SuggestionType): Promise<void> {
+    const key = `${entityId}|${type}`
     phase.value = 'dismissing'
     error.value = null
+    // Add the key before awaiting so the card disappears on click — this is
+    // the optimistic part the variable name promises. Replace the Set
+    // (don't mutate in place) so Vue's reactivity picks up the change.
+    const optimistic = new Set(optimisticallyDismissed.value)
+    optimistic.add(key)
+    optimisticallyDismissed.value = optimistic
     try {
       await postDismissSuggestion({ entityId, suggestionType: type })
-      // Replace the Set so Vue's reactivity picks the change up. Mutating
-      // in place wouldn't trigger a re-render under Pinia's setup-store
-      // tracking.
-      const next = new Set(optimisticallyDismissed.value)
-      next.add(`${entityId}|${type}`)
-      optimisticallyDismissed.value = next
       phase.value = 'idle'
     } catch (err) {
+      // Roll back the optimistic add so the card re-appears for retry.
+      const rolled = new Set(optimisticallyDismissed.value)
+      rolled.delete(key)
+      optimisticallyDismissed.value = rolled
       error.value = err as ApiError
       phase.value = 'error'
       throw err
