@@ -92,5 +92,35 @@ describe('useInviteStore', () => {
       await store.loadStatus()
       expect(store.shouldShowGate).toBe(false)
     })
+
+    it('stays true while submit is in flight from the recovery-path gate (regression: prevents the modal from unmounting and losing the typed code)', async () => {
+      // Set up the recovery state: loadStatus failed.
+      vi.mocked(getInvite).mockRejectedValueOnce({ error: 'network', message: 'offline' })
+      const store = useInviteStore()
+      await store.loadStatus()
+      expect(store.accepted).toBeNull()
+      expect(store.shouldShowGate).toBe(true)
+
+      // Hold the POST open so we can observe the in-flight state.
+      let resolvePost: (value: { accepted: boolean }) => void = () => {}
+      vi.mocked(postInvite).mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolvePost = resolve
+        }),
+      )
+
+      const submission = store.submit('BETA-2026-ALPHA')
+      // Mid-request: phase=submitting, accepted still null. Gate must stay
+      // mounted, otherwise the InviteGate component's local `code` ref
+      // (the user's typed input) is destroyed.
+      expect(store.phase).toBe('submitting')
+      expect(store.accepted).toBeNull()
+      expect(store.shouldShowGate).toBe(true)
+
+      // Resolve with success so the test cleans up.
+      resolvePost({ accepted: true })
+      await submission
+      expect(store.shouldShowGate).toBe(false)
+    })
   })
 })

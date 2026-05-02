@@ -22,16 +22,19 @@ export const useInviteStore = defineStore('invite', () => {
    * Whether the gate modal should be shown. Encapsulates the three-state
    * `accepted` logic so callers don't have to:
    * - `true` accepted → never show
-   * - `false` not accepted → always show
-   * - `null` unknown → show only if the status check failed, otherwise the
-   *   user would be stranded on the app skeleton with every API returning
-   *   403 and no way to enter a code (the gate's own form provides the
-   *   recovery path — submit drives a fresh POST that bypasses loadStatus).
+   * - `false` not accepted → always show (submission keeps `accepted`
+   *   pinned at `false`, so the gate stays mounted for free)
+   * - `null` unknown → show on `error` (load failed; user needs a way in)
+   *   AND on `submitting` (the user is mid-request from the error gate;
+   *   unmounting would destroy the typed code in the component-local
+   *   `code` ref and remount with an empty input on failure). `idle` and
+   *   `loading` with null both stay hidden so the page doesn't flash a
+   *   modal during the initial status check.
    */
   const shouldShowGate = computed<boolean>(() => {
     if (accepted.value === true) return false
     if (accepted.value === false) return true
-    return phase.value === 'error'
+    return phase.value === 'error' || phase.value === 'submitting'
   })
 
   async function loadStatus(): Promise<void> {
