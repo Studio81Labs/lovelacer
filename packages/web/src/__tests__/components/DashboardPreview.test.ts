@@ -41,11 +41,15 @@ describe('DashboardPreview', () => {
     expect(pills).toHaveLength(0)
   })
 
-  it('renders a Download YAML link pointing at /api/export.yaml when views are present', () => {
+  it('renders a document-relative Download YAML link when views are present', () => {
+    // The href must be document-relative (no leading slash) so it
+    // resolves under the HA Supervisor ingress path. Absolute /api/...
+    // would 404 in production. Locks the contract.
     const wrapper = mount(DashboardPreview, { props: { config } })
     const link = wrapper.find('[data-testid="export-yaml-link"]')
     expect(link.exists()).toBe(true)
-    expect(link.attributes('href')).toBe('/api/export.yaml')
+    expect(link.attributes('href')).toBe('api/export.yaml')
+    expect(link.attributes('href')).not.toMatch(/^\//)
     expect(link.attributes('download')).toBeDefined()
     expect(link.text()).toContain('Download YAML')
   })
