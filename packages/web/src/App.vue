@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import HealthBar from './components/HealthBar.vue'
 import AnalyzeButton from './components/AnalyzeButton.vue'
 import RoomList from './components/RoomList.vue'
@@ -8,13 +8,27 @@ import OverridesBar from './components/OverridesBar.vue'
 import DashboardPreview from './components/DashboardPreview.vue'
 import ApplyBar from './components/ApplyBar.vue'
 import InviteGate from './components/InviteGate.vue'
+import DiffBanner from './components/DiffBanner.vue'
+import RemovedEntitiesPanel from './components/RemovedEntitiesPanel.vue'
 import { useAnalyzeStore } from './stores/analyze.js'
 import { useOverridesStore } from './stores/overrides.js'
 import { useInviteStore } from './stores/invite.js'
+import type { EntityDiff, RoomDiffSummary } from './api/types.js'
 
 const analyze = useAnalyzeStore()
 const overrides = useOverridesStore()
 const invite = useInviteStore()
+
+const diffByRoom = computed<Record<string, RoomDiffSummary>>(
+  () => analyze.preview?.diff?.perRoom ?? {},
+)
+
+const diffByEntityId = computed<Map<string, EntityDiff>>(() => {
+  const map = new Map<string, EntityDiff>()
+  const entities = analyze.preview?.diff?.entities ?? []
+  for (const e of entities) map.set(e.entityId, e)
+  return map
+})
 
 onMounted(() => {
   void invite.loadStatus()
@@ -62,7 +76,16 @@ watch(
     </section>
 
     <section v-if="analyze.phase === 'ready' && analyze.preview !== null" class="space-y-4">
-      <RoomList :rooms="analyze.preview.rooms" />
+      <DiffBanner :diff="analyze.preview.diff" />
+      <RemovedEntitiesPanel
+        v-if="analyze.preview.diff !== null && analyze.preview.diff.totals.removed > 0"
+        :diff="analyze.preview.diff"
+      />
+      <RoomList
+        :rooms="analyze.preview.rooms"
+        :diff-by-room="diffByRoom"
+        :diff-by-entity-id="diffByEntityId"
+      />
       <MiscBucket :misc="analyze.preview.misc" />
       <OverridesBar />
       <DashboardPreview :config="analyze.preview.config" />

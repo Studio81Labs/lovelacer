@@ -140,3 +140,82 @@ describe('EntityRow', () => {
     expect(wrapper.classes()).toContain('opacity-60')
   })
 })
+
+describe('EntityRow diff tag', () => {
+  it('renders no tag when diff prop is undefined', () => {
+    const wrapper = mount(EntityRow, {
+      props: {
+        entityId: 'light.kitchen_ceiling',
+        friendlyName: 'Kitchen Ceiling',
+        roomId: 'kitchen',
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    expect(wrapper.find('[data-testid="entity-diff-tag"]').exists()).toBe(false)
+  })
+
+  it('renders "New" pill when diff.kind is added', () => {
+    const wrapper = mount(EntityRow, {
+      props: {
+        entityId: 'light.new_lamp',
+        friendlyName: 'New Lamp',
+        roomId: 'kitchen',
+        diff: {
+          entityId: 'light.new_lamp',
+          kind: 'added' as const,
+          currentRoomId: 'kitchen',
+        },
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const tag = wrapper.find('[data-testid="entity-diff-tag"]')
+    expect(tag.exists()).toBe(true)
+    expect(tag.text()).toBe('New')
+  })
+
+  it('renders "Moved from {previous}" when diff.kind is moved', () => {
+    const wrapper = mount(EntityRow, {
+      props: {
+        entityId: 'light.lamp',
+        friendlyName: 'Lamp',
+        roomId: 'bedroom',
+        diff: {
+          entityId: 'light.lamp',
+          kind: 'moved' as const,
+          previousRoomId: 'living_room',
+          currentRoomId: 'bedroom',
+        },
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const tag = wrapper.find('[data-testid="entity-diff-tag"]')
+    expect(tag.text()).toContain('Moved from')
+    expect(tag.text()).toContain('Living Room')
+  })
+
+  it('renders "Moved from Misc" when previousRoomId is null', () => {
+    const wrapper = mount(EntityRow, {
+      props: {
+        entityId: 'light.was_misc',
+        friendlyName: 'Was Misc',
+        roomId: 'kitchen',
+        diff: {
+          entityId: 'light.was_misc',
+          kind: 'moved' as const,
+          previousRoomId: null,
+          currentRoomId: 'kitchen',
+        },
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    expect(wrapper.find('[data-testid="entity-diff-tag"]').text()).toContain('Misc')
+  })
+})

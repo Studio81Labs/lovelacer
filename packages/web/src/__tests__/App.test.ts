@@ -86,6 +86,68 @@ describe('App integration', () => {
     expect(getOverrides).toHaveBeenCalledOnce()
   })
 
+  it('renders DiffBanner, room badges, and entity tags when preview includes a diff', async () => {
+    const previewWithDiff: PreviewOutput = {
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          entityCount: 2,
+          averageConfidence: 0.9,
+          assignments: [
+            {
+              entityId: 'light.kitchen_ceiling',
+              roomId: 'kitchen',
+              confidence: 0.9,
+              signals: [],
+            },
+            { entityId: 'light.new_lamp', roomId: 'kitchen', confidence: 0.9, signals: [] },
+          ],
+        },
+      ],
+      misc: [],
+      summary: { entityCount: 2, roomCount: 1, miscCount: 0 },
+      config: { title: 'x', views: [] },
+      diff: {
+        entities: [
+          {
+            entityId: 'light.new_lamp',
+            kind: 'added',
+            currentRoomId: 'kitchen',
+          },
+          {
+            entityId: 'light.guest_lamp',
+            kind: 'removed',
+            previousRoomId: 'guest_room',
+          },
+        ],
+        perRoom: { kitchen: { added: 1, movedIn: 0, movedOut: 0 } },
+        totals: { added: 1, moved: 0, removed: 1 },
+        appliedAt: Math.floor(Date.now() / 1000),
+      },
+    }
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const analyze = useAnalyzeStore()
+    analyze.$patch({ phase: 'ready', preview: previewWithDiff })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="diff-banner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="diff-banner-added"]').text()).toContain('1')
+    expect(wrapper.find('[data-testid="diff-banner-removed"]').text()).toContain('1')
+    expect(wrapper.find('[data-testid="removed-panel"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="room-diff-added"]').text()).toContain('1')
+    // Open the room details to render the entity rows
+    await wrapper.find('details').trigger('click')
+    const tags = wrapper.findAll('[data-testid="entity-diff-tag"]')
+    expect(tags.some((t) => t.text() === 'New')).toBe(true)
+  })
+
   it('end-to-end: edit → save → re-analyze flow', async () => {
     vi.mocked(getOverrides).mockResolvedValueOnce({ overrides: [] })
     vi.mocked(putOverrides).mockResolvedValueOnce({
