@@ -598,7 +598,12 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown')
   })
 
-  it('sections appear in spec order: Welcome, Quick stats, People, Active Rooms, Scenes, Cameras', () => {
+  // When floorAssignments is empty (no rooms have a floor), buildRoomsByFloorSection
+  // returns null and the section is omitted. The full prod order with floor data is
+  // Welcome, Quick stats, People, Rooms by floor, Active Rooms, Scenes, Cameras —
+  // the floored path is exercised by buildRoomsByFloorSection's own describe block
+  // and by the route-level integration test in preview.test.ts.
+  it('sections appear in spec order without floor data: Welcome, Quick stats, People, Active Rooms, Scenes, Cameras', () => {
     const entities = [
       ent('weather.home'),
       ent('sensor.outdoor_temp', { deviceClass: 'temperature' }),
