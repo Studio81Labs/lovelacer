@@ -13,7 +13,7 @@ Show what changed between the dashboard the user is looking at right now and the
 
 ## Context
 
-Phase 1b shipped: SQLite override storage (P1b-3), per-entity override UI (P1b-4), full home overview sections (P1b-5), and the closed-beta invite gate (P1b-6). The product is stable enough to ship to ~10 friendly testers, but it has no way to communicate what's *different* between an analysis and the user's current live dashboard. Re-applying feels like a black box: the user can't see what they're committing to before clicking Apply.
+Phase 1b shipped: SQLite override storage (P1b-3), per-entity override UI (P1b-4), full home overview sections (P1b-5), and the closed-beta invite gate (P1b-6). The product is stable enough to ship to ~10 friendly testers, but it has no way to communicate what's _different_ between an analysis and the user's current live dashboard. Re-applying feels like a black box: the user can't see what they're committing to before clicking Apply.
 
 P2-1 closes that gap. After the first apply, every subsequent analyze shows a diff against the last-applied state. Users can edit overrides and watch the diff update live, so "Apply" becomes a confirmation of changes they already understand.
 
@@ -21,7 +21,7 @@ P2-1 closes that gap. After the first apply, every subsequent analyze shows a di
 
 Three pieces, no new routes:
 
-1. **At apply time** (frontend → server → SQLite). When the user clicks Apply, the frontend sends `body.snapshot = { assignments, config }` alongside `body.config` in the existing `POST /api/apply` call. `assignments` is `[{ entityId, roomId | null }]` derived client-side from `analyze.preview.rooms` (with their `roomId`) and `analyze.preview.misc` (encoded as `roomId: null`). The server persists both fields into a new `AppliedSnapshotStore` (single-row SQLite table, mirrors `InviteStore`). Persistence happens *after* `ha.applyDashboard()` succeeds — a failed apply doesn't poison the snapshot.
+1. **At apply time** (frontend → server → SQLite). When the user clicks Apply, the frontend sends `body.snapshot = { assignments, config }` alongside `body.config` in the existing `POST /api/apply` call. `assignments` is `[{ entityId, roomId | null }]` derived client-side from `analyze.preview.rooms` (with their `roomId`) and `analyze.preview.misc` (encoded as `roomId: null`). The server persists both fields into a new `AppliedSnapshotStore` (single-row SQLite table, mirrors `InviteStore`). Persistence happens _after_ `ha.applyDashboard()` succeeds — a failed apply doesn't poison the snapshot.
 
 2. **At analyze time** (server). `runPreview()` (the function `POST /api/preview` calls) loads the persisted snapshot and computes a `DiffResult` against the current analysis. The diff lives in a new pure module `packages/analyzer/src/diff.ts` so it's testable in isolation. Output is included in `PreviewOutput`: `diff: DiffResult | null` (null when no snapshot exists yet).
 
@@ -50,16 +50,16 @@ Public API:
 interface AppliedSnapshot {
   assignments: SnapshotAssignment[]
   config: LovelaceConfig
-  appliedAt: number  // unix seconds
+  appliedAt: number // unix seconds
 }
 interface SnapshotAssignment {
   entityId: string
-  roomId: CanonicalRoomId | null  // null = misc / not in any room view
+  roomId: CanonicalRoomId | null // null = misc / not in any room view
 }
 
 class AppliedSnapshotStore {
-  get(): AppliedSnapshot | null     // null when first-run
-  save(snapshot: Omit<AppliedSnapshot, 'appliedAt'>): void  // INSERT OR REPLACE
+  get(): AppliedSnapshot | null // null when first-run
+  save(snapshot: Omit<AppliedSnapshot, 'appliedAt'>): void // INSERT OR REPLACE
   close(): void
 }
 ```
@@ -87,16 +87,16 @@ export interface EntityDiff {
 }
 
 export interface RoomDiffSummary {
-  added: number       // entities new to this room (no prior assignment OR moved in)
-  movedIn: number     // subset of added: was assigned to a different room
-  movedOut: number    // entities that left this room (now elsewhere)
+  added: number // entities new to this room (no prior assignment OR moved in)
+  movedIn: number // subset of added: was assigned to a different room
+  movedOut: number // entities that left this room (now elsewhere)
 }
 
 export interface DiffResult {
   entities: EntityDiff[]
   perRoom: Partial<Record<CanonicalRoomId, RoomDiffSummary>>
   totals: { added: number; moved: number; removed: number }
-  appliedAt: number  // copied through from the snapshot
+  appliedAt: number // copied through from the snapshot
 }
 
 export function computeDiff(input: {
@@ -205,7 +205,7 @@ Pass per-entity diffs into `<EntityRow>` from `RoomList.vue`'s assignment loop (
 
 ## Edge cases & first-run handling
 
-- **First-run (no snapshot ever saved).** `appliedSnapshotStore.get()` returns null → `PreviewOutput.diff = null` → `DiffBanner` and `RemovedEntitiesPanel` don't render → no per-room badges → no inline entity tags. The review screen looks identical to today. After the user clicks Apply for the first time, the snapshot persists, and the *next* analyze starts showing diffs. No banner explaining "this is your first analysis" — silence is the right UX (it appears when it has something to say).
+- **First-run (no snapshot ever saved).** `appliedSnapshotStore.get()` returns null → `PreviewOutput.diff = null` → `DiffBanner` and `RemovedEntitiesPanel` don't render → no per-room badges → no inline entity tags. The review screen looks identical to today. After the user clicks Apply for the first time, the snapshot persists, and the _next_ analyze starts showing diffs. No banner explaining "this is your first analysis" — silence is the right UX (it appears when it has something to say).
 
 - **No-change re-analyze.** Snapshot exists but nothing has shifted. `diff.totals` is `{added: 0, moved: 0, removed: 0}` and `diff.entities` is empty. `DiffBanner` renders the muted single-line "No changes since last apply on …". Per-room badges, inline tags, and `RemovedEntitiesPanel` all hidden.
 

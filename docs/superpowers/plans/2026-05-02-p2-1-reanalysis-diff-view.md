@@ -27,47 +27,47 @@
 
 **New:**
 
-| Path | Responsibility |
-|------|----------------|
-| `packages/analyzer/src/diff.ts` | Pure `computeDiff()` — input snapshot + current, output `DiffResult` |
-| `packages/analyzer/src/__tests__/diff.test.ts` | Diff algorithm tests (added/moved/removed/null/idempotent) |
-| `packages/server/src/storage/applied-snapshot-store.ts` | Single-row SQLite table; `get()`/`save()`/`close()` |
-| `packages/server/src/storage/__tests__/applied-snapshot-store.test.ts` | Store CRUD + JSON round-trip + dir-creation tests |
-| `packages/web/src/components/DiffBanner.vue` | Top-of-screen summary; null/zero/nonzero render branches |
-| `packages/web/src/components/RemovedEntitiesPanel.vue` | Amber/red callout listing removed entities |
-| `packages/web/src/__tests__/components/DiffBanner.test.ts` | Banner render branches |
-| `packages/web/src/__tests__/components/RemovedEntitiesPanel.test.ts` | Panel render + previous-room formatting |
+| Path                                                                   | Responsibility                                                       |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `packages/analyzer/src/diff.ts`                                        | Pure `computeDiff()` — input snapshot + current, output `DiffResult` |
+| `packages/analyzer/src/__tests__/diff.test.ts`                         | Diff algorithm tests (added/moved/removed/null/idempotent)           |
+| `packages/server/src/storage/applied-snapshot-store.ts`                | Single-row SQLite table; `get()`/`save()`/`close()`                  |
+| `packages/server/src/storage/__tests__/applied-snapshot-store.test.ts` | Store CRUD + JSON round-trip + dir-creation tests                    |
+| `packages/web/src/components/DiffBanner.vue`                           | Top-of-screen summary; null/zero/nonzero render branches             |
+| `packages/web/src/components/RemovedEntitiesPanel.vue`                 | Amber/red callout listing removed entities                           |
+| `packages/web/src/__tests__/components/DiffBanner.test.ts`             | Banner render branches                                               |
+| `packages/web/src/__tests__/components/RemovedEntitiesPanel.test.ts`   | Panel render + previous-room formatting                              |
 
 **Modified:**
 
-| Path | Changes |
-|------|---------|
-| `packages/shared/src/types.ts` | Add `SnapshotAssignment`, `AppliedSnapshot`, `DiffKind`, `EntityDiff`, `RoomDiffSummary`, `DiffResult` |
-| `packages/shared/src/index.ts` | Re-export the new types |
-| `packages/analyzer/src/index.ts` | Re-export `computeDiff` and types from `./diff.js` |
-| `packages/server/src/pipeline.ts` | `runPreview()` accepts snapshot store, computes diff, attaches to `PreviewOutput.diff` |
-| `packages/server/src/app.ts` | `CreateAppOptions.appliedSnapshot: AppliedSnapshotStore`; thread into preview + apply routes |
-| `packages/server/src/routes/preview.ts` | Pass `appliedSnapshot` through to `runPreview()` |
-| `packages/server/src/routes/apply.ts` | Accept body.snapshot, validate, persist after HA push success |
-| `packages/server/src/main.ts` | Instantiate `AppliedSnapshotStore`; close on shutdown; pass into `createApp` |
-| `packages/server/src/__tests__/routes/preview.test.ts` | Add cases: no snapshot, matching snapshot, snapshot with removed entity |
-| `packages/server/src/__tests__/routes/apply.test.ts` | Add cases: with snapshot persists, malformed snapshot returns flag, no snapshot succeeds, HA failure does not persist |
-| `packages/server/src/__tests__/routes/analyze.test.ts` | Update `createApp` calls to pass `appliedSnapshot: new AppliedSnapshotStore(':memory:')` |
-| `packages/server/src/__tests__/routes/overrides.test.ts` | Same DI update |
-| `packages/server/src/__tests__/routes/invite.test.ts` | Same DI update |
-| `packages/server/src/__tests__/routes/invite-gate.test.ts` | Same DI update |
-| `packages/web/src/api/types.ts` | Add `SnapshotAssignment`, `AppliedSnapshot`, `DiffKind`, `EntityDiff`, `RoomDiffSummary`, `DiffResult`; extend `PreviewOutput` and `ApplyResponse` |
-| `packages/web/src/api/client.ts` | `postApply` accepts optional `snapshot` field |
-| `packages/web/src/__tests__/api/client.test.ts` | New test: `postApply` forwards snapshot in body |
-| `packages/web/src/stores/apply.ts` | `apply()` accepts optional snapshot and forwards to client |
-| `packages/web/src/__tests__/stores/apply.test.ts` | New test: store passes snapshot through to client |
-| `packages/web/src/components/ApplyBar.vue` | Build snapshot from `analyze.preview` and pass to `apply.apply()` |
-| `packages/web/src/components/RoomList.vue` | `diffByRoom` prop + badge rendering |
-| `packages/web/src/__tests__/components/RoomList.test.ts` | Add badge render cases |
-| `packages/web/src/components/EntityRow.vue` | `diff` prop + inline tag rendering |
-| `packages/web/src/__tests__/components/EntityRow.test.ts` | Add tag render cases |
-| `packages/web/src/App.vue` | Wire `DiffBanner`, `RemovedEntitiesPanel`; build `diffByRoom` and `diffByEntityId` |
-| `packages/web/src/__tests__/App.test.ts` | New test: preview returns diff → banner + badges + tags rendered |
+| Path                                                       | Changes                                                                                                                                            |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/shared/src/types.ts`                             | Add `SnapshotAssignment`, `AppliedSnapshot`, `DiffKind`, `EntityDiff`, `RoomDiffSummary`, `DiffResult`                                             |
+| `packages/shared/src/index.ts`                             | Re-export the new types                                                                                                                            |
+| `packages/analyzer/src/index.ts`                           | Re-export `computeDiff` and types from `./diff.js`                                                                                                 |
+| `packages/server/src/pipeline.ts`                          | `runPreview()` accepts snapshot store, computes diff, attaches to `PreviewOutput.diff`                                                             |
+| `packages/server/src/app.ts`                               | `CreateAppOptions.appliedSnapshot: AppliedSnapshotStore`; thread into preview + apply routes                                                       |
+| `packages/server/src/routes/preview.ts`                    | Pass `appliedSnapshot` through to `runPreview()`                                                                                                   |
+| `packages/server/src/routes/apply.ts`                      | Accept body.snapshot, validate, persist after HA push success                                                                                      |
+| `packages/server/src/main.ts`                              | Instantiate `AppliedSnapshotStore`; close on shutdown; pass into `createApp`                                                                       |
+| `packages/server/src/__tests__/routes/preview.test.ts`     | Add cases: no snapshot, matching snapshot, snapshot with removed entity                                                                            |
+| `packages/server/src/__tests__/routes/apply.test.ts`       | Add cases: with snapshot persists, malformed snapshot returns flag, no snapshot succeeds, HA failure does not persist                              |
+| `packages/server/src/__tests__/routes/analyze.test.ts`     | Update `createApp` calls to pass `appliedSnapshot: new AppliedSnapshotStore(':memory:')`                                                           |
+| `packages/server/src/__tests__/routes/overrides.test.ts`   | Same DI update                                                                                                                                     |
+| `packages/server/src/__tests__/routes/invite.test.ts`      | Same DI update                                                                                                                                     |
+| `packages/server/src/__tests__/routes/invite-gate.test.ts` | Same DI update                                                                                                                                     |
+| `packages/web/src/api/types.ts`                            | Add `SnapshotAssignment`, `AppliedSnapshot`, `DiffKind`, `EntityDiff`, `RoomDiffSummary`, `DiffResult`; extend `PreviewOutput` and `ApplyResponse` |
+| `packages/web/src/api/client.ts`                           | `postApply` accepts optional `snapshot` field                                                                                                      |
+| `packages/web/src/__tests__/api/client.test.ts`            | New test: `postApply` forwards snapshot in body                                                                                                    |
+| `packages/web/src/stores/apply.ts`                         | `apply()` accepts optional snapshot and forwards to client                                                                                         |
+| `packages/web/src/__tests__/stores/apply.test.ts`          | New test: store passes snapshot through to client                                                                                                  |
+| `packages/web/src/components/ApplyBar.vue`                 | Build snapshot from `analyze.preview` and pass to `apply.apply()`                                                                                  |
+| `packages/web/src/components/RoomList.vue`                 | `diffByRoom` prop + badge rendering                                                                                                                |
+| `packages/web/src/__tests__/components/RoomList.test.ts`   | Add badge render cases                                                                                                                             |
+| `packages/web/src/components/EntityRow.vue`                | `diff` prop + inline tag rendering                                                                                                                 |
+| `packages/web/src/__tests__/components/EntityRow.test.ts`  | Add tag render cases                                                                                                                               |
+| `packages/web/src/App.vue`                                 | Wire `DiffBanner`, `RemovedEntitiesPanel`; build `diffByRoom` and `diffByEntityId`                                                                 |
+| `packages/web/src/__tests__/App.test.ts`                   | New test: preview returns diff → banner + badges + tags rendered                                                                                   |
 
 ---
 
@@ -95,12 +95,12 @@ pnpm format:check
 
 Expected: all pass. If anything fails, fix before starting Task 1 — you don't want to debug pre-existing breakage layered under your changes.
 
-
 ---
 
 ## Task 1: Shared Types + AppliedSnapshotStore
 
 **Files:**
+
 - Modify: `packages/shared/src/types.ts`
 - Modify: `packages/shared/src/index.ts`
 - Create: `packages/server/src/storage/applied-snapshot-store.ts`
@@ -404,12 +404,12 @@ git add packages/shared/src/types.ts packages/shared/src/index.ts \
 git commit -m "feat(server): AppliedSnapshotStore + diff types in @lovelacer/shared"
 ```
 
-
 ---
 
 ## Task 2: computeDiff Pure Module
 
 **Files:**
+
 - Create: `packages/analyzer/src/diff.ts`
 - Create: `packages/analyzer/src/__tests__/diff.test.ts`
 - Modify: `packages/analyzer/src/index.ts`
@@ -700,12 +700,12 @@ git add packages/analyzer/src/diff.ts \
 git commit -m "feat(analyzer): computeDiff() pure module for re-analysis diff"
 ```
 
-
 ---
 
 ## Task 3: Server Preview Path — Pipeline + Route + DI
 
 **Files:**
+
 - Modify: `packages/server/src/pipeline.ts`
 - Modify: `packages/server/src/app.ts`
 - Modify: `packages/server/src/routes/preview.ts`
@@ -757,7 +757,13 @@ import type {
 Add `computeDiff` to the existing `@lovelacer/analyzer` import:
 
 ```ts
-import { computeDiff, detect, groupByDomain, normalize, type RoomGrouping } from '@lovelacer/analyzer'
+import {
+  computeDiff,
+  detect,
+  groupByDomain,
+  normalize,
+  type RoomGrouping,
+} from '@lovelacer/analyzer'
 ```
 
 Add an import for the new store at the top of the file:
@@ -848,7 +854,7 @@ export interface CreateAppOptions {
   ha: HaClient
   overrides: OverrideStore
   invite: InviteStore
-  appliedSnapshot: AppliedSnapshotStore  // NEW
+  appliedSnapshot: AppliedSnapshotStore // NEW
   // … existing fields
 }
 ```
@@ -921,7 +927,7 @@ Add `appliedSnapshot` to `ApplyRouteOptions`:
 export interface ApplyRouteOptions {
   ha: HaClient
   overrides: OverrideStore
-  appliedSnapshot: AppliedSnapshotStore  // NEW
+  appliedSnapshot: AppliedSnapshotStore // NEW
   dashboardUrlPath: string
 }
 ```
@@ -988,6 +994,7 @@ function makeAppliedSnapshot(): AppliedSnapshotStore {
 ```
 
 Files:
+
 - `packages/server/src/__tests__/routes/analyze.test.ts`
 - `packages/server/src/__tests__/routes/overrides.test.ts`
 - `packages/server/src/__tests__/routes/invite.test.ts`
@@ -1136,12 +1143,12 @@ git add packages/server/src/pipeline.ts \
 git commit -m "feat(server): wire AppliedSnapshotStore + diff into preview route"
 ```
 
-
 ---
 
 ## Task 4: Server Apply Path — Accept + Persist Snapshot
 
 **Files:**
+
 - Modify: `packages/server/src/pipeline.ts`
 - Modify: `packages/server/src/routes/apply.ts`
 - Modify: `packages/server/src/__tests__/routes/apply.test.ts`
@@ -1425,12 +1432,12 @@ git add packages/server/src/routes/apply.ts \
 git commit -m "feat(server): persist applied snapshot after successful HA push"
 ```
 
-
 ---
 
 ## Task 5: Web Foundation — Types + Client + Apply Store + ApplyBar
 
 **Files:**
+
 - Modify: `packages/web/src/api/types.ts`
 - Modify: `packages/web/src/api/client.ts`
 - Modify: `packages/web/src/__tests__/api/client.test.ts`
@@ -1489,7 +1496,7 @@ export interface PreviewOutput {
   misc: { entityId: string; friendlyName: string; domain: string }[]
   summary: { entityCount: number; roomCount: number; miscCount: number }
   config: LovelaceConfig
-  diff: DiffResult | null  // NEW
+  diff: DiffResult | null // NEW
 }
 ```
 
@@ -1688,12 +1695,12 @@ git add packages/web/src/api/types.ts \
 git commit -m "feat(web): apply path ships snapshot to server"
 ```
 
-
 ---
 
 ## Task 6: DiffBanner + RemovedEntitiesPanel Components
 
 **Files:**
+
 - Create: `packages/web/src/components/DiffBanner.vue`
 - Create: `packages/web/src/components/RemovedEntitiesPanel.vue`
 - Create: `packages/web/src/__tests__/components/DiffBanner.test.ts`
@@ -2005,12 +2012,12 @@ git add packages/web/src/components/DiffBanner.vue \
 git commit -m "feat(web): DiffBanner + RemovedEntitiesPanel components"
 ```
 
-
 ---
 
 ## Task 7: RoomList Badges + EntityRow Tags + App.vue Wiring
 
 **Files:**
+
 - Modify: `packages/web/src/components/RoomList.vue`
 - Modify: `packages/web/src/components/EntityRow.vue`
 - Modify: `packages/web/src/App.vue`
@@ -2033,7 +2040,12 @@ describe('RoomList diff badges', () => {
     entityCount: 1,
     averageConfidence: 0.9,
     assignments: [
-      { entityId: 'light.kitchen_ceiling', roomId: 'kitchen' as const, confidence: 0.9, signals: [] },
+      {
+        entityId: 'light.kitchen_ceiling',
+        roomId: 'kitchen' as const,
+        confidence: 0.9,
+        signals: [],
+      },
     ],
   }
 
@@ -2224,8 +2236,7 @@ In the template, add the tag next to the friendly name (placement depends on the
   data-testid="entity-diff-tag"
   class="ml-2 rounded px-2 py-0.5 text-xs font-medium"
   :class="diffTagClass"
-  >{{ diffTagText }}</span
->
+>{{ diffTagText }}</span>
 ```
 
 - [ ] **Step 6: Run EntityRow tests to confirm pass**
@@ -2257,7 +2268,11 @@ Append the diff binding (Vue allows multiple `v-bind` directives; with `exactOpt
   :friendly-name="entityIdToFriendly(a.entityId)"
   :room-id="a.roomId"
   v-bind="a.manual !== undefined ? { manual: a.manual } : {}"
-  v-bind="(diffByEntityId ?? new Map()).has(a.entityId) ? { diff: (diffByEntityId ?? new Map()).get(a.entityId) } : {}"
+  v-bind="
+    (diffByEntityId ?? new Map()).has(a.entityId)
+      ? { diff: (diffByEntityId ?? new Map()).get(a.entityId) }
+      : {}
+  "
 />
 ```
 
