@@ -40,4 +40,23 @@ describe('DashboardPreview', () => {
     const pills = wrapper.findAll('[data-testid="view-pill"]')
     expect(pills).toHaveLength(0)
   })
+
+  it('renders a document-relative Download YAML link when views are present', () => {
+    // The href must be document-relative (no leading slash) so it
+    // resolves under the HA Supervisor ingress path. Absolute /api/...
+    // would 404 in production. Locks the contract.
+    const wrapper = mount(DashboardPreview, { props: { config } })
+    const link = wrapper.find('[data-testid="export-yaml-link"]')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('api/export.yaml')
+    expect(link.attributes('href')).not.toMatch(/^\//)
+    expect(link.attributes('download')).toBeDefined()
+    expect(link.text()).toContain('Download YAML')
+  })
+
+  it('does not render the Download YAML link when views are empty', () => {
+    const empty: LovelaceConfig = { title: 'x', views: [] }
+    const wrapper = mount(DashboardPreview, { props: { config: empty } })
+    expect(wrapper.find('[data-testid="export-yaml-link"]').exists()).toBe(false)
+  })
 })

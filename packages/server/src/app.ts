@@ -6,6 +6,7 @@ import { pino, type Logger } from 'pino'
 import type { HaClient } from '@lovelacer/ha-client'
 import { analyzeRoute } from './routes/analyze.js'
 import { applyRoute } from './routes/apply.js'
+import { exportRoute } from './routes/export.js'
 import { inviteRoute } from './routes/invite.js'
 import { overridesRoute } from './routes/overrides.js'
 import { previewRoute } from './routes/preview.js'
@@ -91,6 +92,12 @@ export async function createApp(opts: CreateAppOptions) {
     appliedSnapshot: opts.appliedSnapshot,
   })
   await app.register(applyRoute, {
+    ha: opts.ha,
+    overrides: opts.overrides,
+    appliedSnapshot: opts.appliedSnapshot,
+    dashboardUrlPath: opts.dashboardUrlPath,
+  })
+  await app.register(exportRoute, {
     ha: opts.ha,
     overrides: opts.overrides,
     appliedSnapshot: opts.appliedSnapshot,

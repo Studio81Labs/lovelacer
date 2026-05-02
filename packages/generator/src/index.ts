@@ -14,7 +14,7 @@
  * Future packages/generator-smartpanel will be a sibling using the
  * same analyzer output. See SMART_PANEL_BRIDGE.md.
  */
-export const GENERATOR_VERSION = '0.0.0'
+export { GENERATOR_VERSION } from './version.js'
 export { buildRoomView, buildRoomViews } from './room-view.js'
 export type {
   ConditionalCard,
@@ -42,3 +42,5 @@ export { buildHomeView, pickQuickStatsEntities } from './home-view.js'
 export type { BuildHomeViewInput, HomeView } from './home-view.js'
 export { buildLovelaceConfig } from './lovelace-config.js'
 export type { BuildLovelaceConfigInput, LovelaceConfig } from './lovelace-config.js'
+export { configToYaml } from './yaml-export.js'
+export type { ConfigToYamlOptions } from './yaml-export.js'
