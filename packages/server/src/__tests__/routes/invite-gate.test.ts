@@ -91,6 +91,20 @@ describe('invite gate hook', () => {
     }
   })
 
+  it('blocks GET /api/export.yaml with 403 when not accepted', async () => {
+    // The export endpoint produces a downloadable YAML — must be gated like
+    // every other /api/* route. Locks the contract that the gate's exact-
+    // match bypass list does not include /api/export.yaml.
+    const app = await makeApp({ accepted: false })
+    try {
+      const res = await app.inject({ method: 'GET', url: '/api/export.yaml' })
+      expect(res.statusCode).toBe(403)
+      expect(res.json()).toMatchObject({ error: 'invite_required' })
+    } finally {
+      await app.close()
+    }
+  })
+
   it('allows GET /api/health regardless of acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
