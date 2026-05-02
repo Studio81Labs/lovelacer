@@ -28,7 +28,7 @@ function makeFakeHa(): FakeHa {
   const getEntityRegistry = vi.fn<[], Promise<HaEntityRegistryEntry[]>>(async () => ha.entities)
   const getDeviceRegistry = vi.fn<[], Promise<HaDeviceRegistryEntry[]>>(async () => ha.devices)
   const getAreaRegistry = vi.fn<[], Promise<HaAreaRegistryEntry[]>>(async () => ha.areas)
-  const getFloorRegistry = vi.fn<[], Promise<HaFloorRegistryEntry[]>>(async () => [])
+  const getFloorRegistry = vi.fn<[], Promise<HaFloorRegistryEntry[]>>(async () => ha.floors)
 
   const client = {
     isConnected: () => true,
@@ -40,6 +40,17 @@ function makeFakeHa(): FakeHa {
   } as unknown as HaClient
 
   return { client, applyDashboard, getEntityRegistry, getDeviceRegistry, getAreaRegistry }
+}
+
+function makeHa(connected = true): HaClient {
+  const ha = fixtureToHaRegistries(englishCluttered)
+  return {
+    isConnected: () => connected,
+    getEntityRegistry: vi.fn(async () => ha.entities),
+    getDeviceRegistry: vi.fn(async () => ha.devices),
+    getAreaRegistry: vi.fn(async () => ha.areas),
+    getFloorRegistry: vi.fn(async () => ha.floors),
+  } as unknown as HaClient
 }
 
 function makeStore(): OverrideStore {
@@ -95,6 +106,42 @@ describe('runPreview', () => {
     const titles = result.config.views.slice(1).map((v) => v.title)
     const sorted = [...titles].sort((a, b) => a.localeCompare(b, 'en'))
     expect(titles).toEqual(sorted)
+  })
+
+  it('calls getFloorRegistry and surfaces floor headings in the home view (via runPreview)', async () => {
+    const ha = makeHa(true)
+    const overrides = makeStore()
+    const appliedSnapshot = makeAppliedSnapshot()
+    const result = await runPreview(ha, overrides, appliedSnapshot)
+    // The englishCluttered fixture has two floors. After Task 3 wires
+    // assignFloors through, the home view should contain heading cards
+    // whose text matches the fixture's floor names.
+    const home = result.config.views[0]
+    expect(home).not.toBeUndefined()
+    expect(home!.path).toBe('home')
+    const allCards = (home!.sections ?? []).flatMap((s) => s.cards ?? [])
+    const headingTexts = allCards
+      .filter((c): c is { type: 'heading'; heading: string } => c.type === 'heading')
+      .map((c) => c.heading)
+    expect(headingTexts.length).toBeGreaterThan(0)
+  })
+
+  it('runPreview does not throw when getFloorRegistry rejects (defensive catch)', async () => {
+    const fixture = fixtureToHaRegistries(englishCluttered)
+    const ha = {
+      isConnected: () => true,
+      getEntityRegistry: vi.fn(async () => fixture.entities),
+      getDeviceRegistry: vi.fn(async () => fixture.devices),
+      getAreaRegistry: vi.fn(async () => fixture.areas),
+      getFloorRegistry: vi.fn(async () => {
+        throw new Error('not supported on this HA version')
+      }),
+    } as unknown as HaClient
+    const overrides = makeStore()
+    const appliedSnapshot = makeAppliedSnapshot()
+    // Should not throw — the catch in runFullPipeline downgrades the
+    // rejection to an empty floor list.
+    await expect(runPreview(ha, overrides, appliedSnapshot)).resolves.toBeDefined()
   })
 })
 

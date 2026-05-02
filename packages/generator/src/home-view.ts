@@ -1,10 +1,17 @@
-import type { NormalizedEntity } from '@lovelacer/shared'
+import type {
+  AnalyzedRoom,
+  CanonicalRoomId,
+  FloorAssignment,
+  NormalizedEntity,
+} from '@lovelacer/shared'
 import type { RoomGrouping } from '@lovelacer/analyzer'
 import type {
   ConditionalCard,
   ConditionEntry,
   GlanceCard,
+  GlanceEntityEntry,
   GridSection,
+  LovelaceCard,
   MarkdownCard,
   PictureEntityCard,
   RoomView,
@@ -22,6 +29,8 @@ export type HomeView = RoomView
 export interface BuildHomeViewInput {
   entities: NormalizedEntity[]
   groupings: RoomGrouping[]
+  rooms: AnalyzedRoom[]
+  floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
 }
 
 const PRESENCE_ID_PATTERN = /anyone[_-]?home|someone[_-]?home|presence/i
@@ -89,6 +98,13 @@ export function buildHomeView(input: BuildHomeViewInput): HomeView {
 
   const people = buildPeopleSection(input.entities)
   if (people !== null) sections.push(people)
+
+  const roomsByFloor = buildRoomsByFloorSection({
+    rooms: input.rooms,
+    groupings: input.groupings,
+    floorAssignments: input.floorAssignments,
+  })
+  if (roomsByFloor !== null) sections.push(roomsByFloor)
 
   const activeRooms = buildActiveRoomsSection(input.groupings)
   if (activeRooms !== null) sections.push(activeRooms)
@@ -183,6 +199,22 @@ export function buildCamerasSection(entities: NormalizedEntity[]): GridSection |
 }
 
 /**
+ * Pick a room's "primary" navigable entity: first visible light if any,
+ * else first visible activity sensor. Returns null if the room has no
+ * lights and no activity sensors (or only hidden/disabled ones).
+ *
+ * Used by buildActiveRoomsSection (existing) and buildRoomsByFloorSection
+ * (P2-3) — both surface a tile or glance per room and need a single
+ * representative entity per room.
+ */
+function pickPrimaryEntity(grouping: RoomGrouping): NormalizedEntity | null {
+  const lights = grouping.groups.find((g) => g.key === 'lights')?.entities ?? []
+  const activity = grouping.groups.find((g) => g.key === 'activity')?.entities ?? []
+  const candidates = [...lights, ...activity].filter((e) => !e.isHidden && !e.isDisabled)
+  return candidates.length === 0 ? null : candidates[0]!
+}
+
+/**
  * Build the Active Rooms section: per room, a conditional card that
  * renders ONLY when at least one of the room's lights or activity
  * sensors is on. The wrapped tile points at the room's primary entity
@@ -198,12 +230,15 @@ export function buildActiveRoomsSection(groupings: RoomGrouping[]): GridSection 
   for (const grouping of groupings) {
     if (grouping.roomId === 'misc') continue
 
+    const primary = pickPrimaryEntity(grouping)
+    if (primary === null) continue
+
+    // The OR condition still needs the full candidates list. Recompute
+    // here rather than threading it through pickPrimaryEntity's return.
     const lights = grouping.groups.find((g) => g.key === 'lights')?.entities ?? []
     const activity = grouping.groups.find((g) => g.key === 'activity')?.entities ?? []
     const candidates = [...lights, ...activity].filter((e) => !e.isHidden && !e.isDisabled)
-    if (candidates.length === 0) continue
 
-    const primary = candidates[0]!
     const stateConditions: StateCondition[] = candidates.map((e) => ({
       condition: 'state',
       entity: e.entityId,
@@ -238,4 +273,101 @@ export function buildActiveRoomsSection(groupings: RoomGrouping[]): GridSection 
   })
 
   return { type: 'grid', cards }
+}
+
+export interface BuildRoomsByFloorSectionInput {
+  rooms: AnalyzedRoom[]
+  groupings: RoomGrouping[]
+  floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
+}
+
+/**
+ * Build the "Rooms by floor" section: per floor, a HeadingCard followed
+ * by a GlanceCard whose entries each carry a tap_action: navigate to the
+ * room view. Floors are ordered by `level` ascending (nulls last,
+ * alphabetical within the null group). Rooms without a floor are
+ * grouped under an "Other" heading at the bottom.
+ *
+ * Returns null when no rooms are floored (the section adds no value),
+ * or when every room's primary entity is missing.
+ *
+ * Skips the misc room defensively (assignFloors already excludes it
+ * from the map; this is a second layer).
+ */
+export function buildRoomsByFloorSection(input: BuildRoomsByFloorSectionInput): GridSection | null {
+  // Index groupings by roomId for O(1) primary-entity lookup.
+  const groupingByRoom = new Map<CanonicalRoomId, RoomGrouping>()
+  for (const g of input.groupings) groupingByRoom.set(g.roomId, g)
+
+  // Bucket rooms by their floor (or null for unfloored).
+  const buckets = new Map<string | null, { floor: FloorAssignment | null; rooms: AnalyzedRoom[] }>()
+  for (const room of input.rooms) {
+    if (room.id === 'misc') continue
+    const floor = input.floorAssignments.get(room.id) ?? null
+    const key = floor === null ? null : floor.floorId
+    const existing = buckets.get(key)
+    if (existing === undefined) {
+      buckets.set(key, { floor, rooms: [room] })
+    } else {
+      existing.rooms.push(room)
+    }
+  }
+
+  // Early exit: only a null bucket means no rooms are floored.
+  const hasFlooredBucket = Array.from(buckets.keys()).some((k) => k !== null)
+  if (!hasFlooredBucket) return null
+
+  // Order non-null buckets by (level ?? Infinity, name); null bucket last.
+  const flooredEntries = Array.from(buckets.entries())
+    .filter(([key]) => key !== null)
+    .sort(([, a], [, b]) => {
+      const la = a.floor?.level ?? Infinity
+      const lb = b.floor?.level ?? Infinity
+      if (la !== lb) return la - lb
+      return (a.floor?.name ?? '').localeCompare(b.floor?.name ?? '', 'en')
+    })
+  const nullEntry = buckets.get(null)
+
+  const cards: LovelaceCard[] = []
+  for (const [, { floor, rooms }] of flooredEntries) {
+    const glance = buildFloorGlance(rooms, groupingByRoom)
+    if (glance === null) continue
+    cards.push({ type: 'heading', heading: floor!.name })
+    cards.push(glance)
+  }
+  if (nullEntry !== undefined) {
+    const glance = buildFloorGlance(nullEntry.rooms, groupingByRoom)
+    if (glance !== null) {
+      cards.push({ type: 'heading', heading: 'Other' })
+      cards.push(glance)
+    }
+  }
+
+  if (cards.length === 0) return null
+  return { type: 'grid', cards }
+}
+
+/**
+ * Build a single floor's GlanceCard from its rooms. Skips rooms whose
+ * primary entity is missing. Returns null if every room is skipped.
+ */
+function buildFloorGlance(
+  rooms: AnalyzedRoom[],
+  groupingByRoom: Map<CanonicalRoomId, RoomGrouping>,
+): GlanceCard | null {
+  const entries: GlanceEntityEntry[] = []
+  for (const room of rooms) {
+    const grouping = groupingByRoom.get(room.id)
+    if (grouping === undefined) continue
+    const primary = pickPrimaryEntity(grouping)
+    if (primary === null) continue
+    const display = roomIdToDisplay(room.id)
+    entries.push({
+      entity: primary.entityId,
+      name: display.title,
+      tap_action: { action: 'navigate', navigation_path: display.path },
+    })
+  }
+  if (entries.length === 0) return null
+  return { type: 'glance', entities: entries }
 }

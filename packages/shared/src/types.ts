@@ -187,3 +187,22 @@ export interface DiffResult {
   /** Copied through from the snapshot — unix seconds. */
   appliedAt: number
 }
+
+/**
+ * P2-3 — floor-aware grouping types.
+ *
+ * Captures the floor a canonical room is associated with via the chain
+ * `room.haAreaId → area.floor_id → floor`. Surfaces in the dashboard
+ * via `buildRoomsByFloorSection` (a new home-view section); does NOT
+ * modify AnalyzedRoom — the room→floor map is a separate output of
+ * `assignFloors()` from @lovelacer/analyzer.
+ */
+export interface FloorAssignment {
+  floorId: string
+  /** Floor display name from the HA registry. */
+  name: string
+  /** HA's level number; null if not set. Used for sort order. */
+  level: number | null
+  /** Optional MDI icon from HA. Captured for forward compatibility — not yet rendered. */
+  icon: string | null
+}

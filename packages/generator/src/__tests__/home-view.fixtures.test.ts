@@ -11,7 +11,7 @@ function pipe(fixture: Fixture) {
   const entities = normalize({ entities: ha.entities, devices: ha.devices })
   const assignments = detect({ entities, areas: ha.areas })
   const groupings = groupByDomain({ assignments, entities }).filter((g) => g.roomId !== 'misc')
-  const view = buildHomeView({ entities, groupings })
+  const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map() })
   return { entities, view }
 }
 

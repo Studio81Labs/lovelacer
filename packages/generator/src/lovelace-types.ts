@@ -119,10 +119,24 @@ export interface MarkdownCard {
   content: string
 }
 
+/**
+ * P2-3 — per-entry overrides on a glance card. HA's actual schema accepts
+ * each entries[] element as either a string or an object with overrides.
+ * Used by `buildRoomsByFloorSection` to surface room display names + tap-
+ * to-navigate on each room glance entry.
+ */
+export interface GlanceEntityEntry {
+  entity: string
+  /** Override for HA's friendly_name. Used to surface room names instead of entity names. */
+  name?: string
+  /** Click behavior. Only `navigate` is modeled today; matches TileCard.tap_action. */
+  tap_action?: NavigateAction
+}
+
 export interface GlanceCard {
   type: 'glance'
   title?: string
-  entities: string[]
+  entities: (string | GlanceEntityEntry)[]
 }
 
 export interface MediaControlCard {

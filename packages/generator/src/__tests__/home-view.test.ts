@@ -1,14 +1,21 @@
 import { describe, it, expect } from 'vitest'
-import type { NormalizedEntity } from '@lovelacer/shared'
+import type {
+  AnalyzedRoom,
+  CanonicalRoomId,
+  FloorAssignment,
+  NormalizedEntity,
+} from '@lovelacer/shared'
 import {
   buildActiveRoomsSection,
   buildCamerasSection,
   buildHomeView,
   buildPeopleSection,
+  buildRoomsByFloorSection,
   buildScenesSection,
   pickQuickStatsEntities,
 } from '../home-view.js'
 import type { RoomGrouping } from '@lovelacer/analyzer'
+import type { GlanceCard, HeadingCard } from '../lovelace-types.js'
 
 const ent = (id: string, overrides: Partial<NormalizedEntity> = {}): NormalizedEntity => ({
   entityId: id,
@@ -145,7 +152,12 @@ describe('pickQuickStatsEntities — ordering and limits', () => {
 
 describe('buildHomeView — view metadata', () => {
   it('produces type=sections, title=Home, path=home, icon=mdi:home-variant', () => {
-    const view = buildHomeView({ entities: [], groupings: [] })
+    const view = buildHomeView({
+      entities: [],
+      groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
+    })
     expect(view.type).toBe('sections')
     expect(view.title).toBe('Home')
     expect(view.path).toBe('home')
@@ -155,14 +167,24 @@ describe('buildHomeView — view metadata', () => {
 
 describe('buildHomeView — Welcome section', () => {
   it('always emits a Welcome section even with empty entities', () => {
-    const view = buildHomeView({ entities: [], groupings: [] })
+    const view = buildHomeView({
+      entities: [],
+      groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
+    })
     expect(view.sections).toHaveLength(1)
     const card = view.sections[0]!.cards[0]
     expect(card?.type).toBe('markdown')
   })
 
   it('Welcome card has greeting only when no weather entity exists', () => {
-    const view = buildHomeView({ entities: [ent('light.kitchen')], groupings: [] })
+    const view = buildHomeView({
+      entities: [ent('light.kitchen')],
+      groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
+    })
     const card = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
     expect(card.content).toContain('Good ')
     expect(card.content).toContain("now().strftime('%H')")
@@ -172,7 +194,12 @@ describe('buildHomeView — Welcome section', () => {
   })
 
   it('Welcome card adds weather template when weather entity exists', () => {
-    const view = buildHomeView({ entities: [ent('weather.home')], groupings: [] })
+    const view = buildHomeView({
+      entities: [ent('weather.home')],
+      groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
+    })
     const card = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
     expect(card.content).toContain("{{ states('weather.home') }}")
     expect(card.content).toContain("{{ state_attr('weather.home', 'temperature') }}°")
@@ -182,6 +209,8 @@ describe('buildHomeView — Welcome section', () => {
     const view = buildHomeView({
       entities: [ent('weather.home'), ent('weather.forecast')],
       groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
     })
     const card = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
     expect(card.content).toContain("states('weather.home')")
@@ -191,7 +220,12 @@ describe('buildHomeView — Welcome section', () => {
 
 describe('buildHomeView — Quick stats section', () => {
   it('skips Quick stats section when 0 entities match', () => {
-    const view = buildHomeView({ entities: [ent('light.kitchen')], groupings: [] })
+    const view = buildHomeView({
+      entities: [ent('light.kitchen')],
+      groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
+    })
     expect(view.sections).toHaveLength(1) // Welcome only
   })
 
@@ -199,6 +233,8 @@ describe('buildHomeView — Quick stats section', () => {
     const view = buildHomeView({
       entities: [ent('sensor.outdoor_temperature', { deviceClass: 'temperature' })],
       groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
     })
     expect(view.sections).toHaveLength(1) // Welcome only
   })
@@ -210,6 +246,8 @@ describe('buildHomeView — Quick stats section', () => {
         ent('sensor.outdoor_humidity', { deviceClass: 'humidity' }),
       ],
       groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
     })
     expect(view.sections).toHaveLength(2)
     const glance = view.sections[1]!.cards[0] as {
@@ -230,6 +268,8 @@ describe('buildHomeView — Quick stats section', () => {
         ent('binary_sensor.anyone_home'),
       ],
       groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
     })
     expect(view.sections[1]!.cards).toHaveLength(1)
     expect(view.sections[1]!.cards[0]!.type).toBe('glance')
@@ -519,6 +559,8 @@ describe('buildHomeView — integration', () => {
         ent('light.kitchen'), // not in glance
       ],
       groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
     })
     expect(view.sections).toHaveLength(2)
     const welcome = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
@@ -532,7 +574,12 @@ describe('buildHomeView — integration', () => {
   })
 
   it('empty input → Welcome only, no Quick stats', () => {
-    const view = buildHomeView({ entities: [], groupings: [] })
+    const view = buildHomeView({
+      entities: [],
+      groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
+    })
     expect(view.sections).toHaveLength(1)
   })
 })
@@ -541,12 +588,22 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
   const emptyGroupings: RoomGrouping[] = []
 
   it('empty input → only Welcome section appears', () => {
-    const view = buildHomeView({ entities: [], groupings: emptyGroupings })
+    const view = buildHomeView({
+      entities: [],
+      groupings: emptyGroupings,
+      rooms: [],
+      floorAssignments: new Map(),
+    })
     expect(view.sections).toHaveLength(1)
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown')
   })
 
-  it('sections appear in spec order: Welcome, Quick stats, People, Active Rooms, Scenes, Cameras', () => {
+  // When floorAssignments is empty (no rooms have a floor), buildRoomsByFloorSection
+  // returns null and the section is omitted. The full prod order with floor data is
+  // Welcome, Quick stats, People, Rooms by floor, Active Rooms, Scenes, Cameras —
+  // the floored path is exercised by buildRoomsByFloorSection's own describe block
+  // and by the route-level integration test in preview.test.ts.
+  it('sections appear in spec order without floor data: Welcome, Quick stats, People, Active Rooms, Scenes, Cameras', () => {
     const entities = [
       ent('weather.home'),
       ent('sensor.outdoor_temp', { deviceClass: 'temperature' }),
@@ -556,7 +613,7 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
       ent('camera.front_door', { friendlyName: 'Front Door' }),
     ]
     const groupings = [grp('kitchen', ['light.kitchen_main'])]
-    const view = buildHomeView({ entities, groupings })
+    const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map() })
 
     expect(view.sections).toHaveLength(6)
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
@@ -571,10 +628,188 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
     // Just enough for Welcome + Active Rooms; no people/scenes/cameras/QuickStats.
     const entities = [ent('light.kitchen_main')]
     const groupings = [grp('kitchen', ['light.kitchen_main'])]
-    const view = buildHomeView({ entities, groupings })
+    const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map() })
 
     expect(view.sections).toHaveLength(2)
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
     expect(view.sections[1]!.cards[0]!.type).toBe('conditional') // Active Rooms
+  })
+})
+
+function makeRoom(id: AnalyzedRoom['id'], haAreaId: string | null): AnalyzedRoom {
+  return {
+    id,
+    haAreaId,
+    displayName: id === 'misc' ? 'Other' : id,
+    entityCount: 1,
+    averageConfidence: 0.9,
+    assignments: [],
+  }
+}
+
+function makeFloor(floorId: string, name: string, level: number | null = null): FloorAssignment {
+  return { floorId, name, level, icon: null }
+}
+
+function makeGroupingWithLight(roomId: CanonicalRoomId, entityId: string): RoomGrouping {
+  return {
+    roomId,
+    groups: [
+      {
+        key: 'lights',
+        entities: [
+          {
+            entityId,
+            domain: 'light',
+            objectId: entityId.split('.')[1] ?? entityId,
+            friendlyName: entityId,
+            deviceClass: null,
+            entityCategory: null,
+            haAreaId: null,
+            device: null,
+            isHidden: false,
+            isDisabled: false,
+          },
+        ],
+      },
+    ],
+  }
+}
+
+describe('buildRoomsByFloorSection', () => {
+  it('returns null when every room has a null floor (all-unfloored)', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', null)],
+      groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
+      floorAssignments: new Map([['kitchen', null]]),
+    })
+    expect(result).toBeNull()
+  })
+
+  it('emits HeadingCard + GlanceCard for a single floor with one room', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area')],
+      groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
+      floorAssignments: new Map([['kitchen', makeFloor('ground', 'Ground Floor', 0)]]),
+    })
+    expect(result).not.toBeNull()
+    expect(result!.cards).toHaveLength(2)
+    const heading = result!.cards[0] as HeadingCard
+    const glance = result!.cards[1] as GlanceCard
+    expect(heading.type).toBe('heading')
+    expect(heading.heading).toBe('Ground Floor')
+    expect(glance.type).toBe('glance')
+    expect(glance.entities).toEqual([
+      {
+        entity: 'light.kitchen',
+        name: 'Kitchen',
+        tap_action: { action: 'navigate', navigation_path: 'kitchen' },
+      },
+    ])
+  })
+
+  it('emits two floor groups in level-ascending order', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area'), makeRoom('bedroom', 'bedroom_area')],
+      groupings: [
+        makeGroupingWithLight('kitchen', 'light.kitchen'),
+        makeGroupingWithLight('bedroom', 'light.bedroom'),
+      ],
+      floorAssignments: new Map<CanonicalRoomId, FloorAssignment | null>([
+        ['kitchen', makeFloor('ground', 'Ground', 0)],
+        ['bedroom', makeFloor('upstairs', 'Upstairs', 1)],
+      ]),
+    })
+    expect(result).not.toBeNull()
+    expect(result!.cards).toHaveLength(4)
+    const headings = result!.cards.filter((c) => c.type === 'heading') as HeadingCard[]
+    expect(headings.map((h) => h.heading)).toEqual(['Ground', 'Upstairs'])
+  })
+
+  it('appends an "Other" heading + glance when some rooms are unfloored', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area'), makeRoom('garage', 'garage_area')],
+      groupings: [
+        makeGroupingWithLight('kitchen', 'light.kitchen'),
+        makeGroupingWithLight('garage', 'light.garage'),
+      ],
+      floorAssignments: new Map<CanonicalRoomId, FloorAssignment | null>([
+        ['kitchen', makeFloor('ground', 'Ground', 0)],
+        ['garage', null],
+      ]),
+    })
+    expect(result).not.toBeNull()
+    expect(result!.cards).toHaveLength(4)
+    const headings = result!.cards.filter((c) => c.type === 'heading') as HeadingCard[]
+    expect(headings.map((h) => h.heading)).toEqual(['Ground', 'Other'])
+  })
+
+  it('returns null when the only assigned floor is null but the registry has entries', () => {
+    // assignFloors emits null for all rooms when no area has a floor_id.
+    // The section adds no value in that case.
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area')],
+      groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
+      floorAssignments: new Map([['kitchen', null]]),
+    })
+    expect(result).toBeNull()
+  })
+
+  it('drops a room with no light or activity sensor from its glance', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area'), makeRoom('garden', 'garden_area')],
+      groupings: [
+        makeGroupingWithLight('kitchen', 'light.kitchen'),
+        // garden has no lights or activity entities
+        { roomId: 'garden', groups: [] },
+      ],
+      floorAssignments: new Map<CanonicalRoomId, FloorAssignment | null>([
+        ['kitchen', makeFloor('ground', 'Ground', 0)],
+        ['garden', makeFloor('ground', 'Ground', 0)],
+      ]),
+    })
+    expect(result).not.toBeNull()
+    const glance = result!.cards[1] as GlanceCard
+    expect(glance.entities).toHaveLength(1)
+    const entry = glance.entities[0] as { entity: string }
+    expect(entry.entity).toBe('light.kitchen')
+  })
+
+  it('orders level-null floors after level-set floors, alphabetical within nulls', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [
+        makeRoom('kitchen', 'kitchen_area'),
+        makeRoom('bedroom', 'bedroom_area'),
+        makeRoom('attic', 'attic_area'),
+      ],
+      groupings: [
+        makeGroupingWithLight('kitchen', 'light.kitchen'),
+        makeGroupingWithLight('bedroom', 'light.bedroom'),
+        makeGroupingWithLight('attic', 'light.attic'),
+      ],
+      floorAssignments: new Map<CanonicalRoomId, FloorAssignment | null>([
+        ['kitchen', makeFloor('ground', 'Ground', 0)],
+        ['bedroom', makeFloor('zeta', 'Zeta', null)],
+        ['attic', makeFloor('alpha', 'Alpha', null)],
+      ]),
+    })
+    expect(result).not.toBeNull()
+    const headings = result!.cards.filter((c) => c.type === 'heading') as HeadingCard[]
+    expect(headings.map((h) => h.heading)).toEqual(['Ground', 'Alpha', 'Zeta'])
+  })
+
+  it('filters the misc room defensively even if present in the room list', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area'), makeRoom('misc', null)],
+      groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
+      floorAssignments: new Map<CanonicalRoomId, FloorAssignment | null>([
+        ['kitchen', makeFloor('ground', 'Ground', 0)],
+      ]),
+    })
+    expect(result).not.toBeNull()
+    const glance = result!.cards[1] as GlanceCard
+    expect(glance.entities).toHaveLength(1)
+    const entry = glance.entities[0] as { entity: string }
+    expect(entry.entity).toBe('light.kitchen')
   })
 })
