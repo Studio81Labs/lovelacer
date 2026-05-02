@@ -23,6 +23,23 @@ export interface RoomAssignment {
 }
 
 /**
+ * P2-5 — three rule-based hints. Mirrored from `@lovelacer/shared`.
+ * `suggestedRoomId` and `matchedRoomId` are widened to `string` to match
+ * this package's CanonicalRoomId-isolation convention (see Override.roomId).
+ */
+export type SuggestionType = 'set_area_id' | 'move_room' | 'hide_diagnostic'
+
+export interface Suggestion {
+  entityId: string
+  type: SuggestionType
+  message: string
+  /** For move_room only. */
+  suggestedRoomId?: string
+  /** For set_area_id only. */
+  matchedRoomId?: string
+}
+
+/**
  * User-specified override for a single entity. Mirrors the server-side
  * shape from @lovelacer/shared (duplicated here to keep the web package
  * independent — the server's shape evolves in lockstep).
@@ -81,6 +98,8 @@ export interface PreviewOutput extends AnalyzeOutput {
    * (no prior snapshot to compare against).
    */
   diff: DiffResult | null
+  /** P2-5 — actionable suggestions. Always present (empty array when none). */
+  suggestions: Suggestion[]
 }
 
 export interface ApplyResult {

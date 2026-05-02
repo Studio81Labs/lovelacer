@@ -35,6 +35,7 @@ const mockPreview: PreviewOutput = {
   summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
   config: { title: 'Lovelacer — Home', views: [] },
   diff: null,
+  suggestions: [],
 }
 
 describe('App integration', () => {
@@ -126,6 +127,7 @@ describe('App integration', () => {
         totals: { added: 1, moved: 0, removed: 1 },
         appliedAt: Math.floor(Date.now() / 1000),
       },
+      suggestions: [],
     }
 
     const wrapper = mount(App, {
@@ -200,6 +202,7 @@ describe('App integration', () => {
       summary: { entityCount: 3, roomCount: 0, miscCount: 3 },
       config: { title: 'x', views: [] },
       diff: null,
+      suggestions: [],
     }
 
     // After bulk-assign + save, the misc list shrinks (server response stub
@@ -241,6 +244,7 @@ describe('App integration', () => {
       summary: { entityCount: 3, roomCount: 1, miscCount: 0 },
       config: { title: 'x', views: [] },
       diff: null,
+      suggestions: [],
     }
 
     vi.mocked(getOverrides).mockResolvedValueOnce({ overrides: [] })

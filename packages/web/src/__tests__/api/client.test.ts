@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   postApply,
   postPreview,
+  postDismissSuggestion,
   getOverrides,
   putOverrides,
   getInvite,
@@ -15,6 +16,7 @@ const mockPreviewResponse: PreviewOutput = {
   summary: { entityCount: 0, roomCount: 0, miscCount: 0 },
   config: { title: 'Lovelacer — Home', views: [] },
   diff: null,
+  suggestions: [],
 }
 
 const mockConfig: LovelaceConfig = {
@@ -287,6 +289,65 @@ describe('postInvite', () => {
 
     await expect(postInvite({ code: 'WRONG' })).rejects.toMatchObject({
       error: 'invalid_code',
+    })
+  })
+})
+
+describe('postDismissSuggestion', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('POSTs to api/suggestions/dismiss with body and returns void on 200', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ ok: true }),
+    } as unknown as Response)
+
+    await expect(
+      postDismissSuggestion({ entityId: 'sensor.foo', suggestionType: 'set_area_id' }),
+    ).resolves.toBeUndefined()
+
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/suggestions/dismiss', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entityId: 'sensor.foo', suggestionType: 'set_area_id' }),
+    })
+  })
+
+  it('throws ApiError when server returns 400 invalid_body', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: () =>
+        Promise.resolve({
+          error: 'invalid_body',
+          message: 'entityId required',
+        }),
+    } as unknown as Response)
+
+    await expect(
+      postDismissSuggestion({ entityId: '', suggestionType: 'set_area_id' }),
+    ).rejects.toMatchObject({
+      error: 'invalid_body',
+    })
+  })
+
+  it('throws ApiError when server returns 500 storage_error', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: () =>
+        Promise.resolve({
+          error: 'storage_error',
+          message: 'disk full',
+        }),
+    } as unknown as Response)
+
+    await expect(
+      postDismissSuggestion({ entityId: 'sensor.foo', suggestionType: 'set_area_id' }),
+    ).rejects.toMatchObject({
+      error: 'storage_error',
     })
   })
 })
