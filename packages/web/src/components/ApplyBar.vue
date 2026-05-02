@@ -2,6 +2,7 @@
 import { computed, onUnmounted, watch } from 'vue'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useApplyStore } from '../stores/apply.js'
+import type { SnapshotAssignment } from '../api/types.js'
 
 const analyze = useAnalyzeStore()
 const apply = useApplyStore()
@@ -38,7 +39,22 @@ onUnmounted(clearTimer)
 
 function applyClicked() {
   if (analyze.preview === null) return
-  void apply.apply(analyze.preview.config)
+  // Build the assignments list the server expects: every visible entity →
+  // its assigned room (or null for misc). Mirrors the server's preview
+  // route, so what the user sees IS what gets snapshotted.
+  const assignments: SnapshotAssignment[] = []
+  for (const room of analyze.preview.rooms) {
+    for (const a of room.assignments) {
+      assignments.push({ entityId: a.entityId, roomId: room.id })
+    }
+  }
+  for (const m of analyze.preview.misc) {
+    assignments.push({ entityId: m.entityId, roomId: null })
+  }
+  void apply.apply({
+    config: analyze.preview.config,
+    snapshot: { assignments, config: analyze.preview.config },
+  })
 }
 
 const errorMessage = computed(() => {

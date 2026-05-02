@@ -1,4 +1,10 @@
-import { detect, groupByDomain, normalize, type RoomGrouping } from '@lovelacer/analyzer'
+import {
+  computeDiff,
+  detect,
+  groupByDomain,
+  normalize,
+  type RoomGrouping,
+} from '@lovelacer/analyzer'
 import {
   buildHomeView,
   buildLovelaceConfig,
@@ -9,11 +15,14 @@ import type { ApplyDashboardOptions, ApplyDashboardResult, HaClient } from '@lov
 import type {
   AnalyzedRoom,
   CanonicalRoomId,
+  DiffResult,
   HaAreaRegistryEntry,
   NormalizedEntity,
   Override,
   RoomAssignment,
+  SnapshotAssignment,
 } from '@lovelacer/shared'
+import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import type { OverrideStore } from './storage/override-store.js'
 
 export interface AnalyzeOutput {
@@ -24,11 +33,34 @@ export interface AnalyzeOutput {
 
 export interface PreviewOutput extends AnalyzeOutput {
   config: LovelaceConfig
+  /** Null when no snapshot has been saved yet (first-run case). */
+  diff: DiffResult | null
 }
 
 export interface ApplyInput {
   config?: LovelaceConfig
   options?: ApplyDashboardOptions
+  /**
+   * Optional. When present and valid, the server persists this as the
+   * "last applied" snapshot AFTER the HA push succeeds. The production
+   * frontend always sends it; scripts and tests may omit.
+   */
+  snapshot?: {
+    assignments: SnapshotAssignment[]
+    config: unknown
+  }
+}
+
+export interface RunApplyResult extends ApplyDashboardResult {
+  /** Set when a snapshot field was sent but rejected by validation. */
+  snapshotSkipped?: 'invalid'
+  /** Set when persistence threw (SQLite write failure, etc). */
+  snapshotPersisted?: false
+  /**
+   * Internal — only set when persistence threw, so the route can include
+   * the cause in its error log. NOT part of the wire response.
+   */
+  snapshotError?: unknown
 }
 
 /**
@@ -41,6 +73,32 @@ export class InvalidConfigError extends Error {
     super(message)
     this.name = 'InvalidConfigError'
   }
+}
+
+/**
+ * Validates the snapshot body. Returns true iff `assignments` is an array
+ * of `{ entityId: string, roomId: string|null }` and `config` is an object.
+ * Defense-in-depth — the route is the trust boundary.
+ *
+ * Hand-rolled instead of zod (the project's typical body validator) by
+ * design: the snapshot body is a closed shape that won't grow, and the
+ * validator runs on every successful apply. The looseness on `config`
+ * (any non-null object) is intentional — the snapshot's config is
+ * archival, not consumed by the diff. Tightening it would silently
+ * reject valid frontend payloads if the LovelaceConfig shape evolves.
+ */
+function isValidSnapshotShape(value: unknown): value is NonNullable<ApplyInput['snapshot']> {
+  if (typeof value !== 'object' || value === null) return false
+  const v = value as Record<string, unknown>
+  if (!Array.isArray(v.assignments)) return false
+  for (const a of v.assignments) {
+    if (typeof a !== 'object' || a === null) return false
+    const r = a as Record<string, unknown>
+    if (typeof r.entityId !== 'string') return false
+    if (r.roomId !== null && typeof r.roomId !== 'string') return false
+  }
+  if (typeof v.config !== 'object' || v.config === null) return false
+  return true
 }
 
 /**
@@ -243,7 +301,11 @@ function buildAnalyzedRoom(
   }
 }
 
-export async function runPreview(ha: HaClient, overrides: OverrideStore): Promise<PreviewOutput> {
+export async function runPreview(
+  ha: HaClient,
+  overrides: OverrideStore,
+  appliedSnapshot: AppliedSnapshotStore,
+): Promise<PreviewOutput> {
   const state = await runFullPipeline(ha, overrides)
 
   // Drop the misc grouping before view generation: misc entities surface
@@ -254,28 +316,72 @@ export async function runPreview(ha: HaClient, overrides: OverrideStore): Promis
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
 
+  // Build the flat assignments list the diff expects: every visible
+  // entity → its assigned room (or null for misc). Mirrors what the
+  // frontend will send back at apply time.
+  const currentAssignments: SnapshotAssignment[] = []
+  for (const room of state.rooms) {
+    for (const a of room.assignments) {
+      currentAssignments.push({ entityId: a.entityId, roomId: room.id })
+    }
+  }
+  for (const m of state.misc) {
+    currentAssignments.push({ entityId: m.entityId, roomId: null })
+  }
+
+  const snapshot = appliedSnapshot.get()
+  const diff =
+    snapshot === null
+      ? null
+      : computeDiff({ snapshot, current: { assignments: currentAssignments } })
+
   return {
     rooms: state.rooms,
     misc: state.misc,
     summary: state.summary,
     config,
+    diff,
   }
 }
 
 export async function runApply(
   ha: HaClient,
   overrides: OverrideStore,
+  appliedSnapshot: AppliedSnapshotStore,
   body: ApplyInput,
   defaultOptions: ApplyDashboardOptions = {},
-): Promise<ApplyDashboardResult> {
+): Promise<RunApplyResult> {
   const options = { ...defaultOptions, ...body.options } // body wins
+
+  let result: ApplyDashboardResult
   if (body.config !== undefined) {
     if (typeof body.config.title !== 'string' || !Array.isArray(body.config.views)) {
       throw new InvalidConfigError('invalid_config: title must be string and views must be array')
     }
-    return ha.applyDashboard(body.config, options)
+    result = await ha.applyDashboard(body.config, options)
+  } else {
+    const preview = await runPreview(ha, overrides, appliedSnapshot)
+    result = await ha.applyDashboard(preview.config, options)
   }
 
-  const preview = await runPreview(ha, overrides)
-  return ha.applyDashboard(preview.config, options)
+  // Snapshot persistence happens AFTER the HA push succeeds. A push
+  // failure throws above and we never reach this — that's deliberate
+  // (we don't want to snapshot a config that didn't actually land).
+  if (body.snapshot === undefined) {
+    return result
+  }
+  if (!isValidSnapshotShape(body.snapshot)) {
+    return { ...result, snapshotSkipped: 'invalid' }
+  }
+  try {
+    appliedSnapshot.save({
+      assignments: body.snapshot.assignments,
+      config: body.snapshot.config,
+    })
+    return result
+  } catch (err) {
+    // SQLite write failed (disk full, IO error). The dashboard is live in
+    // HA; the user just doesn't get a fresh diff baseline this time.
+    return { ...result, snapshotPersisted: false, snapshotError: err }
+  }
 }

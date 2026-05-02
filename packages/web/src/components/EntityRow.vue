@@ -2,12 +2,14 @@
 import { computed } from 'vue'
 import { useOverridesStore } from '../stores/overrides.js'
 import { ASSIGNABLE_ROOMS, roomIdToDisplay } from '../rooms.js'
+import type { EntityDiff } from '../api/types.js'
 
 interface Props {
   entityId: string
   friendlyName: string
   roomId: string
   manual?: boolean
+  diff?: EntityDiff
 }
 
 const props = defineProps<Props>()
@@ -49,6 +51,23 @@ const rowClass = computed(() => {
   }
   return classes
 })
+
+const diffTagText = computed<string | null>(() => {
+  if (props.diff === undefined) return null
+  if (props.diff.kind === 'added') return 'New'
+  if (props.diff.kind === 'moved') {
+    const prev = props.diff.previousRoomId
+    const label = prev === null || prev === undefined ? 'Misc' : roomIdToDisplay(prev)
+    return `Moved from ${label}`
+  }
+  return null
+})
+
+const diffTagClass = computed<string>(() => {
+  if (props.diff?.kind === 'added') return 'bg-green-100 text-green-800'
+  if (props.diff?.kind === 'moved') return 'bg-blue-100 text-blue-800'
+  return ''
+})
 </script>
 
 <template>
@@ -57,7 +76,16 @@ const rowClass = computed(() => {
       <span class="truncate font-mono text-xs text-stone-700">
         {{ entityId }}<span v-if="isHidden"> (hidden)</span>
       </span>
-      <span class="truncate text-xs text-stone-500">{{ friendlyName }}</span>
+      <span class="flex items-center truncate text-xs text-stone-500">
+        {{ friendlyName }}
+        <span
+          v-if="diffTagText !== null"
+          data-testid="entity-diff-tag"
+          class="ml-2 rounded px-2 py-0.5 text-xs font-medium"
+          :class="diffTagClass"
+          >{{ diffTagText }}</span
+        >
+      </span>
     </div>
 
     <div class="flex items-center gap-3">

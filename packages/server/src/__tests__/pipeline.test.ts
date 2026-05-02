@@ -11,6 +11,7 @@ import type {
 import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { runAnalyze, runApply, runPreview } from '../pipeline.js'
+import { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import { OverrideStore } from '../storage/override-store.js'
 
 interface FakeHa {
@@ -45,6 +46,10 @@ function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
 }
 
+function makeAppliedSnapshot(): AppliedSnapshotStore {
+  return new AppliedSnapshotStore(':memory:')
+}
+
 describe('runAnalyze', () => {
   it('returns rooms, misc, summary with consistent counts', async () => {
     const fake = makeFakeHa()
@@ -76,7 +81,7 @@ describe('runAnalyze', () => {
 describe('runPreview', () => {
   it('returns analyze output plus a config', async () => {
     const fake = makeFakeHa()
-    const result = await runPreview(fake.client, makeStore())
+    const result = await runPreview(fake.client, makeStore(), makeAppliedSnapshot())
 
     expect(result.summary.entityCount).toBeGreaterThan(0)
     expect(result.config.title).toBe('Lovelacer — Home')
@@ -86,7 +91,7 @@ describe('runPreview', () => {
 
   it('rooms in config.views (after home) match alphabetical order', async () => {
     const fake = makeFakeHa()
-    const result = await runPreview(fake.client, makeStore())
+    const result = await runPreview(fake.client, makeStore(), makeAppliedSnapshot())
     const titles = result.config.views.slice(1).map((v) => v.title)
     const sorted = [...titles].sort((a, b) => a.localeCompare(b, 'en'))
     expect(titles).toEqual(sorted)
@@ -110,7 +115,7 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: true })
 
-    const result = await runApply(fake.client, makeStore(), { config })
+    const result = await runApply(fake.client, makeStore(), makeAppliedSnapshot(), { config })
 
     expect(fake.applyDashboard).toHaveBeenCalledWith(config, {})
     expect(fake.getEntityRegistry).not.toHaveBeenCalled()
@@ -124,7 +129,7 @@ describe('runApply', () => {
       created: false,
     })
 
-    const result = await runApply(fake.client, makeStore(), {})
+    const result = await runApply(fake.client, makeStore(), makeAppliedSnapshot(), {})
 
     expect(fake.getEntityRegistry).toHaveBeenCalled()
     expect(fake.applyDashboard).toHaveBeenCalledOnce()
@@ -150,7 +155,7 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
 
-    await runApply(fake.client, makeStore(), {
+    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), {
       config,
       options: { urlPath: 'foo', title: 'Foo' },
     })
@@ -167,7 +172,7 @@ describe('runApply', () => {
     fake.applyDashboard.mockRejectedValueOnce(err)
 
     await expect(
-      runApply(fake.client, makeStore(), {
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), {
         config: {
           title: 'x',
           views: [
@@ -187,18 +192,18 @@ describe('runApply', () => {
   it('rejects malformed body.config (title not string)', async () => {
     const fake = makeFakeHa()
     const bad = { title: 123, views: [] } as unknown as LovelaceConfig
-    await expect(runApply(fake.client, makeStore(), { config: bad })).rejects.toThrow(
-      /invalid_config/,
-    )
+    await expect(
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), { config: bad }),
+    ).rejects.toThrow(/invalid_config/)
     expect(fake.applyDashboard).not.toHaveBeenCalled()
   })
 
   it('rejects malformed body.config (views not array)', async () => {
     const fake = makeFakeHa()
     const bad = { title: 'x', views: {} } as unknown as LovelaceConfig
-    await expect(runApply(fake.client, makeStore(), { config: bad })).rejects.toThrow(
-      /invalid_config/,
-    )
+    await expect(
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), { config: bad }),
+    ).rejects.toThrow(/invalid_config/)
   })
 
   it('forwards defaultOptions to applyDashboard when body has no options', async () => {
@@ -217,7 +222,7 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
 
-    await runApply(fake.client, makeStore(), { config }, { urlPath: 'foo' })
+    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), { config }, { urlPath: 'foo' })
 
     expect(fake.applyDashboard).toHaveBeenCalledWith(config, { urlPath: 'foo' })
   })
@@ -241,6 +246,7 @@ describe('runApply', () => {
     await runApply(
       fake.client,
       makeStore(),
+      makeAppliedSnapshot(),
       { config, options: { urlPath: 'bar' } },
       { urlPath: 'foo' },
     )
@@ -354,13 +360,13 @@ describe('runPreview with overrides', () => {
     const fake = makeFakeHa()
     const store = makeStore()
 
-    const baseline = await runPreview(fake.client, store)
+    const baseline = await runPreview(fake.client, store, makeAppliedSnapshot())
     const targetEntityId = pickEntityIn(baseline, 'kitchen')
     expect(targetEntityId).not.toBeNull()
 
     store.replaceAll([{ entityId: targetEntityId!, roomId: 'living_room' }])
 
-    const overridden = await runPreview(fake.client, store)
+    const overridden = await runPreview(fake.client, store, makeAppliedSnapshot())
     const livingRoomView = overridden.config.views.find((v) => v.path === 'living_room')
     expect(livingRoomView).toBeDefined()
     // The entityId should appear somewhere in the living_room view's cards.

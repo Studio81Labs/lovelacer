@@ -1,12 +1,29 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import type { HaClient } from '@lovelacer/ha-client'
 import { HaApplyError } from '@lovelacer/ha-client'
+import type { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import type { OverrideStore } from '../storage/override-store.js'
 import { InvalidConfigError, runApply, type ApplyInput } from '../pipeline.js'
+
+/**
+ * Wire shape of the 200 response. Snake_case fields (`snapshot_skipped`,
+ * `snapshot_persisted`) are intentional — they're flags the route emits
+ * and the frontend mirrors verbatim. Existing fields (`urlPath`,
+ * `created`) come from `ApplyDashboardResult` and stay camelCase to
+ * preserve backward compatibility.
+ */
+interface ApplySuccessResponse {
+  ok: true
+  urlPath: string
+  created: boolean
+  snapshot_skipped?: 'invalid'
+  snapshot_persisted?: false
+}
 
 export interface ApplyRouteOptions {
   ha: HaClient
   overrides: OverrideStore
+  appliedSnapshot: AppliedSnapshotStore
   /** Default url_path for the generated dashboard. Body.options.urlPath wins when present. */
   dashboardUrlPath: string
 }
@@ -39,10 +56,24 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
     }
     try {
       const body = (req.body ?? {}) as ApplyInput
-      const result = await runApply(opts.ha, opts.overrides, body, {
+      const result = await runApply(opts.ha, opts.overrides, opts.appliedSnapshot, body, {
         urlPath: opts.dashboardUrlPath,
       })
-      return reply.code(200).send({ ok: true, ...result })
+      if (result.snapshotPersisted === false) {
+        req.log.error(
+          { err: result.snapshotError, urlPath: result.urlPath },
+          'snapshot persistence failed after successful apply',
+        )
+      }
+      const responseBody: ApplySuccessResponse = {
+        ok: true,
+        urlPath: result.urlPath,
+        created: result.created,
+      }
+      if (result.snapshotSkipped !== undefined)
+        responseBody.snapshot_skipped = result.snapshotSkipped
+      if (result.snapshotPersisted === false) responseBody.snapshot_persisted = false
+      return reply.code(200).send(responseBody)
     } catch (err) {
       if (err instanceof HaApplyError) {
         req.log.error({ err, step: err.step }, 'ha apply failed')

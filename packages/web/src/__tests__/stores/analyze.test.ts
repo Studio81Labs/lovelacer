@@ -33,6 +33,7 @@ const mockPreview: PreviewOutput = {
       },
     ],
   },
+  diff: null,
 }
 
 describe('useAnalyzeStore', () => {

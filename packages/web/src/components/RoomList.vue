@@ -2,9 +2,13 @@
 import { Icon } from '@iconify/vue'
 import { roomIdToIcon } from '../icons.js'
 import EntityRow from './EntityRow.vue'
-import type { AnalyzedRoom } from '../api/types.js'
+import type { AnalyzedRoom, EntityDiff, RoomDiffSummary } from '../api/types.js'
 
-defineProps<{ rooms: AnalyzedRoom[] }>()
+defineProps<{
+  rooms: AnalyzedRoom[]
+  diffByRoom?: Record<string, RoomDiffSummary>
+  diffByEntityId?: Map<string, EntityDiff>
+}>()
 
 function confidencePillClass(confidence: number): string {
   if (confidence >= 0.8) return 'bg-green-100 text-green-800'
@@ -55,6 +59,20 @@ function entityIdToFriendly(entityId: string): string {
 
           <div class="flex items-center gap-3 text-xs text-stone-600">
             <span>{{ room.entityCount }} entities</span>
+            <template v-if="(diffByRoom ?? {})[room.id]">
+              <span
+                v-if="(diffByRoom ?? {})[room.id]!.added > 0"
+                data-testid="room-diff-added"
+                class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                >+{{ (diffByRoom ?? {})[room.id]!.added }} new</span
+              >
+              <span
+                v-if="(diffByRoom ?? {})[room.id]!.movedOut > 0"
+                data-testid="room-diff-moved-out"
+                class="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800"
+                >↻ {{ (diffByRoom ?? {})[room.id]!.movedOut }} left</span
+              >
+            </template>
             <span
               data-testid="confidence-pill"
               class="rounded px-2 py-0.5 text-xs font-medium"
@@ -71,7 +89,12 @@ function entityIdToFriendly(entityId: string): string {
               :entity-id="a.entityId"
               :friendly-name="entityIdToFriendly(a.entityId)"
               :room-id="a.roomId"
-              v-bind="a.manual !== undefined ? { manual: a.manual } : {}"
+              v-bind="{
+                ...(a.manual !== undefined ? { manual: a.manual } : {}),
+                ...((diffByEntityId ?? new Map()).has(a.entityId)
+                  ? { diff: (diffByEntityId ?? new Map()).get(a.entityId) }
+                  : {}),
+              }"
             />
           </li>
         </ul>

@@ -5,6 +5,7 @@ import type { LovelaceConfig } from '@lovelacer/generator'
 import { englishCluttered } from '../../../../../tests/fixtures/english-cluttered.js'
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
 import { createApp } from '../../app.js'
+import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 
@@ -16,6 +17,10 @@ function makeAcceptedInvite(): InviteStore {
   const s = new InviteStore(':memory:')
   s.accept('BETA-2026-ALPHA')
   return s
+}
+
+function makeAppliedSnapshot(): AppliedSnapshotStore {
+  return new AppliedSnapshotStore(':memory:')
 }
 
 interface FakeHa {
@@ -65,6 +70,7 @@ describe('POST /api/apply — happy paths', () => {
       ha: fake.client,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -93,6 +99,7 @@ describe('POST /api/apply — happy paths', () => {
       ha: fake.client,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -123,6 +130,7 @@ describe('POST /api/apply — happy paths', () => {
       ha: fake.client,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -147,6 +155,7 @@ describe('POST /api/apply — error paths', () => {
       ha: fake.client,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -165,6 +174,7 @@ describe('POST /api/apply — error paths', () => {
       ha: fake.client,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -188,6 +198,7 @@ describe('POST /api/apply — error paths', () => {
       ha: fake.client,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -213,6 +224,7 @@ describe('POST /api/apply — error paths', () => {
       ha: fake.client,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -227,6 +239,160 @@ describe('POST /api/apply — error paths', () => {
         error: 'ha_apply_failed',
         step: 'save',
       })
+    } finally {
+      await app.close()
+    }
+  })
+})
+
+describe('POST /api/apply — snapshot persistence', () => {
+  it('persists snapshot after successful HA push', async () => {
+    const fake = makeHa(true)
+    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: false })
+    const snap = makeAppliedSnapshot()
+    const app = await createApp({
+      ha: fake.client,
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: snap,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const body = {
+        config: validConfig,
+        snapshot: {
+          assignments: [{ entityId: 'light.kitchen_ceiling', roomId: 'kitchen' }],
+          config: validConfig,
+        },
+      }
+      const res = await app.inject({ method: 'POST', url: '/api/apply', payload: body })
+      expect(res.statusCode).toBe(200)
+      const json = res.json() as Record<string, unknown>
+      expect(json.snapshot_skipped).toBeUndefined()
+      expect(json.snapshot_persisted).toBeUndefined()
+      const stored = snap.get()
+      expect(stored).not.toBeNull()
+      expect(stored?.assignments).toEqual([
+        { entityId: 'light.kitchen_ceiling', roomId: 'kitchen' },
+      ])
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns snapshot_skipped: invalid when snapshot shape is malformed (push still succeeds)', async () => {
+    const fake = makeHa(true)
+    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: false })
+    const snap = makeAppliedSnapshot()
+    const app = await createApp({
+      ha: fake.client,
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: snap,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const body = {
+        config: validConfig,
+        snapshot: { assignments: 'not-an-array', config: validConfig },
+      }
+      const res = await app.inject({ method: 'POST', url: '/api/apply', payload: body })
+      expect(res.statusCode).toBe(200)
+      expect((res.json() as Record<string, unknown>).snapshot_skipped).toBe('invalid')
+      expect(snap.get()).toBeNull()
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('does not persist snapshot when no snapshot field is sent', async () => {
+    const fake = makeHa(true)
+    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: false })
+    const snap = makeAppliedSnapshot()
+    const app = await createApp({
+      ha: fake.client,
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: snap,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/apply',
+        payload: { config: validConfig },
+      })
+      expect(res.statusCode).toBe(200)
+      const json = res.json() as Record<string, unknown>
+      expect(json.snapshot_skipped).toBeUndefined()
+      expect(json.snapshot_persisted).toBeUndefined()
+      expect(snap.get()).toBeNull()
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('does NOT persist snapshot when HA push fails', async () => {
+    const fake = makeHa(true)
+    fake.applyDashboard.mockRejectedValueOnce(new HaApplyError('save', 'boom'))
+    const snap = makeAppliedSnapshot()
+    const app = await createApp({
+      ha: fake.client,
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: snap,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const body = {
+        config: validConfig,
+        snapshot: {
+          assignments: [{ entityId: 'light.kitchen_ceiling', roomId: 'kitchen' }],
+          config: validConfig,
+        },
+      }
+      const res = await app.inject({ method: 'POST', url: '/api/apply', payload: body })
+      expect(res.statusCode).toBe(502)
+      expect(snap.get()).toBeNull()
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns snapshot_persisted: false when the store save throws (push still succeeds)', async () => {
+    const fake = makeHa(true)
+    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: false })
+    const snap = makeAppliedSnapshot()
+    // Replace `save` with a thrower to simulate disk-full / SQLite failure.
+    // Casting via `unknown` because save is a method on a class instance.
+    ;(snap as unknown as { save: () => void }).save = () => {
+      throw new Error('disk full')
+    }
+    const app = await createApp({
+      ha: fake.client,
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: snap,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const body = {
+        config: validConfig,
+        snapshot: {
+          assignments: [{ entityId: 'light.kitchen_ceiling', roomId: 'kitchen' }],
+          config: validConfig,
+        },
+      }
+      const res = await app.inject({ method: 'POST', url: '/api/apply', payload: body })
+      expect(res.statusCode).toBe(200)
+      expect((res.json() as Record<string, unknown>).snapshot_persisted).toBe(false)
+      // Note: snap.get() may return null since we replaced save before it ever ran.
+      // The contract is that the route surfaces the failure, not that the store recovers.
     } finally {
       await app.close()
     }

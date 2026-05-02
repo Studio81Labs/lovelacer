@@ -129,3 +129,61 @@ export interface AnalyzedRoom {
   averageConfidence: number
   assignments: RoomAssignment[]
 }
+
+/**
+ * P2-1 — diff view types.
+ *
+ * `SnapshotAssignment.roomId` uses `null` to encode "this entity was/is in
+ * the misc bucket" (no room view contains it). The diff treats null as just
+ * another assignment value: misc-to-room and room-to-misc both surface as
+ * `kind: 'moved'` with the appropriate side null.
+ */
+export interface SnapshotAssignment {
+  entityId: string
+  roomId: CanonicalRoomId | null
+}
+
+export interface AppliedSnapshot {
+  assignments: SnapshotAssignment[]
+  /**
+   * Full LovelaceConfig that was pushed. Stored for archival — currently
+   * not read by the diff (assignments are sufficient). Future tickets may
+   * use it for YAML drift detection.
+   *
+   * Typed as `unknown` here because @lovelacer/shared can't depend on
+   * @lovelacer/generator (cyclic). The server casts on read.
+   */
+  config: unknown
+  appliedAt: number
+}
+
+export type DiffKind = 'added' | 'moved' | 'removed'
+
+export interface EntityDiff {
+  entityId: string
+  kind: DiffKind
+  /** Room (or misc=null) the entity occupied in the snapshot. Undefined for 'added'. */
+  previousRoomId?: CanonicalRoomId | null
+  /** Room (or misc=null) the entity is in now. Undefined for 'removed'. */
+  currentRoomId?: CanonicalRoomId | null
+}
+
+export interface RoomDiffSummary {
+  /** Entities new to this room — both fresh adds and moves-in. */
+  added: number
+  /** Subset of `added`: entities that were assigned to a different room before. */
+  movedIn: number
+  /**
+   * Entities that moved to a different room or to misc. Removals are tracked
+   * in the top-level `removed` total, not here.
+   */
+  movedOut: number
+}
+
+export interface DiffResult {
+  entities: EntityDiff[]
+  perRoom: Partial<Record<CanonicalRoomId, RoomDiffSummary>>
+  totals: { added: number; moved: number; removed: number }
+  /** Copied through from the snapshot — unix seconds. */
+  appliedAt: number
+}

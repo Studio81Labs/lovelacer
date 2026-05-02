@@ -117,3 +117,53 @@ describe('RoomList', () => {
     expect(rows[1]!.text()).toContain('sensor.b')
   })
 })
+
+describe('RoomList diff badges', () => {
+  const baseRoom: AnalyzedRoom = {
+    id: 'kitchen',
+    haAreaId: 'kitchen',
+    displayName: 'Kitchen',
+    entityCount: 1,
+    averageConfidence: 0.9,
+    assignments: [
+      { entityId: 'light.kitchen_ceiling', roomId: 'kitchen', confidence: 0.9, signals: [] },
+    ],
+  }
+
+  it('renders no badges when diffByRoom prop is empty', () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [baseRoom], diffByRoom: {} },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    expect(wrapper.find('[data-testid="room-diff-added"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="room-diff-moved-out"]').exists()).toBe(false)
+  })
+
+  it('renders +N new pill when room has additions', () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [baseRoom],
+        diffByRoom: { kitchen: { added: 3, movedIn: 1, movedOut: 0 } },
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    expect(wrapper.find('[data-testid="room-diff-added"]').text()).toContain('3')
+  })
+
+  it('renders moved-out badge when entities left the room', () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [baseRoom],
+        diffByRoom: { kitchen: { added: 0, movedIn: 0, movedOut: 2 } },
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    expect(wrapper.find('[data-testid="room-diff-moved-out"]').text()).toContain('2')
+  })
+})
