@@ -14,12 +14,21 @@ const isZero = computed(
 
 /**
  * Format the snapshot's appliedAt as "today", "yesterday", or an absolute
- * date. Avoids importing a date library — the formatting is local-only.
+ * date. Compares CALENDAR DAYS (not 24-hour periods) so an apply at
+ * 11pm Mon viewed at 10pm Tue (23h elapsed) reads "yesterday", not
+ * "today". `Math.round` defends against DST transitions where a "day"
+ * is 23 or 25 hours.
  */
 function formatApplied(unixSeconds: number): string {
   const applied = new Date(unixSeconds * 1000)
   const now = new Date()
-  const diffDays = Math.floor((now.getTime() - applied.getTime()) / (1000 * 60 * 60 * 24))
+  const appliedMidnight = new Date(
+    applied.getFullYear(),
+    applied.getMonth(),
+    applied.getDate(),
+  ).getTime()
+  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const diffDays = Math.round((nowMidnight - appliedMidnight) / (1000 * 60 * 60 * 24))
   if (diffDays <= 0) return 'today'
   if (diffDays === 1) return 'yesterday'
   return applied.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
