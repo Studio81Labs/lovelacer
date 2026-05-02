@@ -565,9 +565,7 @@ export const inviteRoute: FastifyPluginAsync<InviteRouteOptions> = async (
     if (!parsed.success) {
       return reply.code(400).send({
         error: 'invalid_body',
-        message: parsed.error.issues
-          .map((i) => `${i.path.join('.')}: ${i.message}`)
-          .join('; '),
+        message: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
       })
     }
 
@@ -575,8 +573,7 @@ export const inviteRoute: FastifyPluginAsync<InviteRouteOptions> = async (
     if (!isValidInviteCode(code)) {
       return reply.code(400).send({
         error: 'invalid_code',
-        message:
-          'Invite code not recognized. Double-check the code or contact the project owner.',
+        message: 'Invite code not recognized. Double-check the code or contact the project owner.',
       })
     }
 
@@ -667,7 +664,7 @@ Read `packages/server/src/app.ts`. Find the `CreateAppOptions` interface. Add th
 export interface CreateAppOptions {
   ha: HaClient
   overrides: OverrideStore
-  invite: InviteStore  // NEW
+  invite: InviteStore // NEW
   isDev?: boolean
   // ... rest unchanged
 }
@@ -683,34 +680,34 @@ import type { InviteStore } from './storage/invite-store.js'
 Find where the existing routes are registered. BEFORE the route registrations, add the gate hook:
 
 ```ts
-  // Gate hook: returns 403 invite_required for any /api/* request unless
-  // the invite has been accepted. /api/health and /api/invite are always
-  // public (Supervisor health-checks the former; the user submits the
-  // code to the latter on first run).
-  app.addHook('onRequest', async (req, reply) => {
-    if (!req.url.startsWith('/api/')) return
-    if (req.url.startsWith('/api/health') || req.url.startsWith('/api/invite')) return
-    if (!opts.invite.isAccepted()) {
-      return reply.code(403).send({
-        error: 'invite_required',
-        message: 'Invite code required to continue.',
-      })
-    }
-  })
+// Gate hook: returns 403 invite_required for any /api/* request unless
+// the invite has been accepted. /api/health and /api/invite are always
+// public (Supervisor health-checks the former; the user submits the
+// code to the latter on first run).
+app.addHook('onRequest', async (req, reply) => {
+  if (!req.url.startsWith('/api/')) return
+  if (req.url.startsWith('/api/health') || req.url.startsWith('/api/invite')) return
+  if (!opts.invite.isAccepted()) {
+    return reply.code(403).send({
+      error: 'invite_required',
+      message: 'Invite code required to continue.',
+    })
+  }
+})
 ```
 
 Add the invite route registration alongside the existing route registrations:
 
 ```ts
-  await app.register(inviteRoute, { invite: opts.invite })
-  await app.register(analyzeRoute, { ha: opts.ha, overrides: opts.overrides })
-  await app.register(previewRoute, { ha: opts.ha, overrides: opts.overrides })
-  await app.register(applyRoute, {
-    ha: opts.ha,
-    overrides: opts.overrides,
-    dashboardUrlPath: opts.dashboardUrlPath,
-  })
-  await app.register(overridesRoute, { overrides: opts.overrides })
+await app.register(inviteRoute, { invite: opts.invite })
+await app.register(analyzeRoute, { ha: opts.ha, overrides: opts.overrides })
+await app.register(previewRoute, { ha: opts.ha, overrides: opts.overrides })
+await app.register(applyRoute, {
+  ha: opts.ha,
+  overrides: opts.overrides,
+  dashboardUrlPath: opts.dashboardUrlPath,
+})
+await app.register(overridesRoute, { overrides: opts.overrides })
 ```
 
 (Order matters for plugin precedence; invite first so it's available even if subsequent routes throw on registration.)
@@ -726,9 +723,9 @@ import { InviteStore } from './storage/invite-store.js'
 After the `OverrideStore` instantiation, add:
 
 ```ts
-  const invitePath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const invite = new InviteStore(invitePath)
-  logger.info({ path: invitePath }, 'invite store opened')
+const invitePath = resolve(config.dataDir, 'lovelacer.sqlite')
+const invite = new InviteStore(invitePath)
+logger.info({ path: invitePath }, 'invite store opened')
 ```
 
 (Same path as the override store's. Both `CREATE TABLE IF NOT EXISTS` so they share the file safely.)
@@ -736,29 +733,29 @@ After the `OverrideStore` instantiation, add:
 Update the `createApp` call to pass `invite`:
 
 ```ts
-  const app = await createApp({
-    ha,
-    overrides,
-    invite,  // NEW
-    isDev,
-    // ... rest unchanged
-  })
+const app = await createApp({
+  ha,
+  overrides,
+  invite, // NEW
+  isDev,
+  // ... rest unchanged
+})
 ```
 
 Update the shutdown handler to close `invite` alongside `overrides`:
 
 ```ts
-  const shutdown = async (signal: string) => {
-    app.log.info({ signal }, 'shutting down')
-    try {
-      await ha.disconnect()
-      await app.close()
-    } finally {
-      overrides.close()
-      invite.close()  // NEW
-    }
-    process.exit(0)
+const shutdown = async (signal: string) => {
+  app.log.info({ signal }, 'shutting down')
+  try {
+    await ha.disconnect()
+    await app.close()
+  } finally {
+    overrides.close()
+    invite.close() // NEW
   }
+  process.exit(0)
+}
 ```
 
 - [ ] **Step 3: Update `analyze.test.ts` to pass `invite` and accept the gate**
@@ -805,6 +802,7 @@ Find every `createApp` call (typically 3 in `analyze.test.ts`) and apply the sam
 - [ ] **Step 4: Apply the same pattern to `preview.test.ts` and `apply.test.ts`**
 
 Read each of:
+
 - `packages/server/src/__tests__/routes/preview.test.ts`
 - `packages/server/src/__tests__/routes/apply.test.ts`
 
@@ -1424,7 +1422,9 @@ describe('InviteGate', () => {
     store.$patch({ phase: 'error', error: apiError })
 
     await wrapper.vm.$nextTick()
-    expect(wrapper.find('[data-testid="invite-error"]').text()).toContain('Could not reach the server')
+    expect(wrapper.find('[data-testid="invite-error"]').text()).toContain(
+      'Could not reach the server',
+    )
   })
 
   it('preserves typed code after a wrong-code submission', async () => {
@@ -1515,11 +1515,7 @@ async function onSubmit(e: Event) {
         placeholder="BETA-2026-XXXX"
       />
 
-      <p
-        v-if="errorMessage !== ''"
-        data-testid="invite-error"
-        class="mt-2 text-xs text-red-700"
-      >
+      <p v-if="errorMessage !== ''" data-testid="invite-error" class="mt-2 text-xs text-red-700">
         {{ errorMessage }}
       </p>
 

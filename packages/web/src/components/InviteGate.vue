@@ -53,11 +53,7 @@ async function onSubmit(e: Event) {
         placeholder="BETA-2026-XXXX"
       />
 
-      <p
-        v-if="errorMessage !== ''"
-        data-testid="invite-error"
-        class="mt-2 text-xs text-red-700"
-      >
+      <p v-if="errorMessage !== ''" data-testid="invite-error" class="mt-2 text-xs text-red-700">
         {{ errorMessage }}
       </p>
 

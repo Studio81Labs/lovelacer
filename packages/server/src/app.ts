@@ -15,7 +15,7 @@ import type { OverrideStore } from './storage/override-store.js'
 export interface CreateAppOptions {
   ha: HaClient
   overrides: OverrideStore
-  invite: InviteStore  // NEW
+  invite: InviteStore
   isDev?: boolean
   logLevel?: string
   /**

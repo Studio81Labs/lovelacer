@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { postApply, postPreview, getOverrides, putOverrides, getInvite, postInvite } from '../../api/client.js'
+import {
+  postApply,
+  postPreview,
+  getOverrides,
+  putOverrides,
+  getInvite,
+  postInvite,
+} from '../../api/client.js'
 import type { ApiError, LovelaceConfig, Override, PreviewOutput } from '../../api/types.js'
 
 const mockPreviewResponse: PreviewOutput = {

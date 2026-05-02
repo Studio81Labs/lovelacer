@@ -38,9 +38,7 @@ export const inviteRoute: FastifyPluginAsync<InviteRouteOptions> = async (
     if (!parsed.success) {
       return reply.code(400).send({
         error: 'invalid_body',
-        message: parsed.error.issues
-          .map((i) => `${i.path.join('.')}: ${i.message}`)
-          .join('; '),
+        message: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
       })
     }
 
@@ -48,8 +46,7 @@ export const inviteRoute: FastifyPluginAsync<InviteRouteOptions> = async (
     if (!isValidInviteCode(code)) {
       return reply.code(400).send({
         error: 'invalid_code',
-        message:
-          'Invite code not recognized. Double-check the code or contact the project owner.',
+        message: 'Invite code not recognized. Double-check the code or contact the project owner.',
       })
     }
 

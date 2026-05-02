@@ -79,7 +79,9 @@ describe('InviteGate', () => {
     store.$patch({ phase: 'error', error: apiError })
 
     await wrapper.vm.$nextTick()
-    expect(wrapper.find('[data-testid="invite-error"]').text()).toContain('Could not reach the server')
+    expect(wrapper.find('[data-testid="invite-error"]').text()).toContain(
+      'Could not reach the server',
+    )
   })
 
   it('preserves typed code after a wrong-code submission', async () => {
