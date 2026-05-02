@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import type { NormalizedEntity } from '@lovelacer/shared'
-import { buildHomeView, pickQuickStatsEntities } from '../home-view.js'
+import {
+  buildCamerasSection,
+  buildHomeView,
+  buildPeopleSection,
+  buildScenesSection,
+  pickQuickStatsEntities,
+} from '../home-view.js'
 
 const ent = (id: string, overrides: Partial<NormalizedEntity> = {}): NormalizedEntity => ({
   entityId: id,
@@ -221,6 +227,138 @@ describe('buildHomeView — Quick stats section', () => {
     })
     expect(view.sections[1]!.cards).toHaveLength(1)
     expect(view.sections[1]!.cards[0]!.type).toBe('glance')
+  })
+})
+
+describe('buildPeopleSection', () => {
+  it('returns null when no person entities', () => {
+    expect(buildPeopleSection([ent('light.kitchen')])).toBeNull()
+  })
+
+  it('emits a glance card with all person entityIds', () => {
+    const section = buildPeopleSection([
+      ent('person.alice', { friendlyName: 'Alice' }),
+      ent('person.bob', { friendlyName: 'Bob' }),
+    ])
+    expect(section).toEqual({
+      type: 'grid',
+      cards: [
+        {
+          type: 'glance',
+          title: 'People',
+          entities: ['person.alice', 'person.bob'],
+        },
+      ],
+    })
+  })
+
+  it('sorts alphabetically by friendlyName', () => {
+    const section = buildPeopleSection([
+      ent('person.bob', { friendlyName: 'Bob' }),
+      ent('person.alice', { friendlyName: 'Alice' }),
+      ent('person.carol', { friendlyName: 'Carol' }),
+    ])
+    expect((section!.cards[0] as { entities: string[] }).entities).toEqual([
+      'person.alice',
+      'person.bob',
+      'person.carol',
+    ])
+  })
+
+  it('filters out hidden + disabled people', () => {
+    const section = buildPeopleSection([
+      ent('person.alice', { friendlyName: 'Alice' }),
+      ent('person.bob', { friendlyName: 'Bob', isHidden: true }),
+      ent('person.carol', { friendlyName: 'Carol', isDisabled: true }),
+    ])
+    expect((section!.cards[0] as { entities: string[] }).entities).toEqual(['person.alice'])
+  })
+})
+
+describe('buildScenesSection', () => {
+  it('returns null when no scene entities', () => {
+    expect(buildScenesSection([ent('light.kitchen')])).toBeNull()
+  })
+
+  it('returns null when all scenes are filtered out by test/setup keyword', () => {
+    expect(
+      buildScenesSection([
+        ent('scene.test_kitchen'),
+        ent('scene.setup_lights'),
+        ent('scene.foo', { friendlyName: 'Test Scene' }),
+      ]),
+    ).toBeNull()
+  })
+
+  it('emits one tile per surviving scene', () => {
+    const section = buildScenesSection([
+      ent('scene.movie_night', { friendlyName: 'Movie Night' }),
+      ent('scene.dinner', { friendlyName: 'Dinner' }),
+    ])
+    expect(section!.cards).toHaveLength(2)
+    expect(section!.cards[0]).toEqual({ type: 'tile', entity: 'scene.dinner' })
+    expect(section!.cards[1]).toEqual({ type: 'tile', entity: 'scene.movie_night' })
+  })
+
+  it('filter is case-insensitive on entityId AND friendlyName', () => {
+    const section = buildScenesSection([
+      ent('scene.morning', { friendlyName: 'Morning' }),
+      ent('scene.kitchen_test'),  // entityId match
+      ent('scene.evening', { friendlyName: 'Evening Setup' }),  // friendlyName match
+      ent('scene.SETUP_lights'),  // case-insensitive match
+    ])
+    const ids = section!.cards.map((c) => (c as { entity: string }).entity)
+    expect(ids).toEqual(['scene.morning'])
+  })
+
+  it('caps at 6 scenes (alphabetical, take first 6)', () => {
+    const section = buildScenesSection([
+      ent('scene.a'),
+      ent('scene.b'),
+      ent('scene.c'),
+      ent('scene.d'),
+      ent('scene.e'),
+      ent('scene.f'),
+      ent('scene.g'),
+      ent('scene.h'),
+    ])
+    expect(section!.cards).toHaveLength(6)
+    const ids = section!.cards.map((c) => (c as { entity: string }).entity)
+    expect(ids).toEqual([
+      'scene.a',
+      'scene.b',
+      'scene.c',
+      'scene.d',
+      'scene.e',
+      'scene.f',
+    ])
+  })
+})
+
+describe('buildCamerasSection', () => {
+  it('returns null when no camera entities', () => {
+    expect(buildCamerasSection([ent('light.kitchen')])).toBeNull()
+  })
+
+  it('emits one picture-entity per camera with camera_view: live', () => {
+    const section = buildCamerasSection([
+      ent('camera.front_door', { friendlyName: 'Front Door' }),
+      ent('camera.back_yard', { friendlyName: 'Back Yard' }),
+    ])
+    expect(section!.cards).toEqual([
+      { type: 'picture-entity', entity: 'camera.back_yard', camera_view: 'live' },
+      { type: 'picture-entity', entity: 'camera.front_door', camera_view: 'live' },
+    ])
+  })
+
+  it('sorts alphabetically and filters hidden + disabled', () => {
+    const section = buildCamerasSection([
+      ent('camera.zone_a', { friendlyName: 'Zone A', isHidden: true }),
+      ent('camera.zone_b', { friendlyName: 'Zone B' }),
+      ent('camera.zone_c', { friendlyName: 'Zone C', isDisabled: true }),
+    ])
+    expect(section!.cards).toHaveLength(1)
+    expect((section!.cards[0] as { entity: string }).entity).toBe('camera.zone_b')
   })
 })
 
