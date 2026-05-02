@@ -6,6 +6,7 @@ import { englishCluttered } from '../../../../../tests/fixtures/english-cluttere
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
 import { createApp } from '../../app.js'
 import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
+import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 
@@ -21,6 +22,10 @@ function makeAcceptedInvite(): InviteStore {
 
 function makeAppliedSnapshot(): AppliedSnapshotStore {
   return new AppliedSnapshotStore(':memory:')
+}
+
+function makeDismissed(): DismissedSuggestionStore {
+  return new DismissedSuggestionStore(':memory:')
 }
 
 interface FakeHa {
@@ -71,6 +76,7 @@ describe('POST /api/apply — happy paths', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -100,6 +106,7 @@ describe('POST /api/apply — happy paths', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -131,6 +138,7 @@ describe('POST /api/apply — happy paths', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -156,6 +164,7 @@ describe('POST /api/apply — error paths', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -175,6 +184,7 @@ describe('POST /api/apply — error paths', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -199,6 +209,7 @@ describe('POST /api/apply — error paths', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -225,6 +236,7 @@ describe('POST /api/apply — error paths', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -255,6 +267,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -290,6 +303,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -316,6 +330,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -344,6 +359,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -377,6 +393,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })

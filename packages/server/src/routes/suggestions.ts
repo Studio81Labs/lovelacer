@@ -1,12 +1,11 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
+import { SUGGESTION_TYPES } from '@lovelacer/shared'
 import type { DismissedSuggestionStore } from '../storage/dismissed-suggestion-store.js'
 
 export interface SuggestionsRouteOptions {
   dismissed: DismissedSuggestionStore
 }
-
-const SUGGESTION_TYPES = ['set_area_id', 'move_room', 'hide_diagnostic'] as const
 
 const DismissBodySchema = z.object({
   entityId: z.string().min(1).max(255),

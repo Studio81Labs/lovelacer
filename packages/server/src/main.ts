@@ -4,6 +4,7 @@ import { pino } from 'pino'
 import { config } from './config.js'
 import { createApp } from './app.js'
 import { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
+import { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.js'
 import { InviteStore } from './storage/invite-store.js'
 import { OverrideStore } from './storage/override-store.js'
 
@@ -40,11 +41,16 @@ async function main() {
   const appliedSnapshot = new AppliedSnapshotStore(appliedSnapshotPath)
   logger.info({ path: appliedSnapshotPath }, 'applied-snapshot store opened')
 
+  const dismissedSuggestionsPath = resolve(config.dataDir, 'lovelacer.sqlite')
+  const dismissedSuggestions = new DismissedSuggestionStore(dismissedSuggestionsPath)
+  logger.info({ path: dismissedSuggestionsPath }, 'dismissed-suggestion store opened')
+
   const app = await createApp({
     ha,
     overrides,
     invite,
     appliedSnapshot,
+    dismissedSuggestions,
     isDev,
     logLevel: config.logLevel,
     logger,
@@ -66,6 +72,7 @@ async function main() {
       overrides.close()
       invite.close()
       appliedSnapshot.close()
+      dismissedSuggestions.close()
     }
     process.exit(0)
   }

@@ -126,11 +126,19 @@ export interface AlternativeAssignment {
 }
 
 /**
+ * P2-5 — the canonical list of valid SuggestionType values, exposed as
+ * a tuple `as const` so Zod (and any future runtime validator) can
+ * derive an enum from it. Keep this in lockstep with the union below;
+ * adding a new type means appending here AND extending `SuggestionType`.
+ */
+export const SUGGESTION_TYPES = ['set_area_id', 'move_room', 'hide_diagnostic'] as const
+
+/**
  * P2-5 — three rule-based hints surfaced on the analyze view. Each has
  * an Accept verb (delegated to existing override calls or a HA deep-link)
  * and a Dismiss verb that persists across runs via DismissedSuggestionStore.
  */
-export type SuggestionType = 'set_area_id' | 'move_room' | 'hide_diagnostic'
+export type SuggestionType = (typeof SUGGESTION_TYPES)[number]
 
 export interface Suggestion {
   entityId: string

@@ -5,6 +5,7 @@ import { englishCluttered } from '../../../../../tests/fixtures/english-cluttere
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
 import { createApp } from '../../app.js'
 import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
+import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 
@@ -20,6 +21,10 @@ function makeAcceptedInvite(): InviteStore {
 
 function makeAppliedSnapshot(): AppliedSnapshotStore {
   return new AppliedSnapshotStore(':memory:')
+}
+
+function makeDismissed(): DismissedSuggestionStore {
+  return new DismissedSuggestionStore(':memory:')
 }
 
 function makeHa(connected = true): HaClient {
@@ -40,6 +45,7 @@ describe('GET /api/export.yaml', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -58,6 +64,7 @@ describe('GET /api/export.yaml', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -96,6 +103,7 @@ describe('GET /api/export.yaml', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -114,6 +122,7 @@ describe('GET /api/export.yaml', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: 'my-dash',
     })
@@ -135,6 +144,7 @@ describe('GET /api/export.yaml', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: makeDismissed(),
       logLevel: 'silent',
       dashboardUrlPath: '../etc/passwd',
     })

@@ -12,6 +12,7 @@ import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.j
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { runAnalyze, runApply, runPreview } from '../pipeline.js'
 import { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
+import { DismissedSuggestionStore } from '../storage/dismissed-suggestion-store.js'
 import { OverrideStore } from '../storage/override-store.js'
 
 interface FakeHa {
@@ -61,6 +62,10 @@ function makeAppliedSnapshot(): AppliedSnapshotStore {
   return new AppliedSnapshotStore(':memory:')
 }
 
+function makeDismissed(): DismissedSuggestionStore {
+  return new DismissedSuggestionStore(':memory:')
+}
+
 describe('runAnalyze', () => {
   it('returns rooms, misc, summary with consistent counts', async () => {
     const fake = makeFakeHa()
@@ -92,7 +97,7 @@ describe('runAnalyze', () => {
 describe('runPreview', () => {
   it('returns analyze output plus a config', async () => {
     const fake = makeFakeHa()
-    const result = await runPreview(fake.client, makeStore(), makeAppliedSnapshot())
+    const result = await runPreview(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed())
 
     expect(result.summary.entityCount).toBeGreaterThan(0)
     expect(result.config.title).toBe('Lovelacer — Home')
@@ -102,7 +107,7 @@ describe('runPreview', () => {
 
   it('rooms in config.views (after home) match alphabetical order', async () => {
     const fake = makeFakeHa()
-    const result = await runPreview(fake.client, makeStore(), makeAppliedSnapshot())
+    const result = await runPreview(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed())
     const titles = result.config.views.slice(1).map((v) => v.title)
     const sorted = [...titles].sort((a, b) => a.localeCompare(b, 'en'))
     expect(titles).toEqual(sorted)
@@ -112,7 +117,7 @@ describe('runPreview', () => {
     const ha = makeHa(true)
     const overrides = makeStore()
     const appliedSnapshot = makeAppliedSnapshot()
-    const result = await runPreview(ha, overrides, appliedSnapshot)
+    const result = await runPreview(ha, overrides, appliedSnapshot, makeDismissed())
     // The englishCluttered fixture has two floors. After Task 3 wires
     // assignFloors through, the home view should contain heading cards
     // whose text matches the fixture's floor names.
@@ -141,7 +146,7 @@ describe('runPreview', () => {
     const appliedSnapshot = makeAppliedSnapshot()
     // Should not throw — the catch in runFullPipeline downgrades the
     // rejection to an empty floor list.
-    await expect(runPreview(ha, overrides, appliedSnapshot)).resolves.toBeDefined()
+    await expect(runPreview(ha, overrides, appliedSnapshot, makeDismissed())).resolves.toBeDefined()
   })
 })
 
@@ -162,7 +167,7 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: true })
 
-    const result = await runApply(fake.client, makeStore(), makeAppliedSnapshot(), { config })
+    const result = await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), { config })
 
     expect(fake.applyDashboard).toHaveBeenCalledWith(config, {})
     expect(fake.getEntityRegistry).not.toHaveBeenCalled()
@@ -176,7 +181,7 @@ describe('runApply', () => {
       created: false,
     })
 
-    const result = await runApply(fake.client, makeStore(), makeAppliedSnapshot(), {})
+    const result = await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), {})
 
     expect(fake.getEntityRegistry).toHaveBeenCalled()
     expect(fake.applyDashboard).toHaveBeenCalledOnce()
@@ -202,7 +207,7 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
 
-    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), {
+    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), {
       config,
       options: { urlPath: 'foo', title: 'Foo' },
     })
@@ -219,7 +224,7 @@ describe('runApply', () => {
     fake.applyDashboard.mockRejectedValueOnce(err)
 
     await expect(
-      runApply(fake.client, makeStore(), makeAppliedSnapshot(), {
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), {
         config: {
           title: 'x',
           views: [
@@ -240,7 +245,7 @@ describe('runApply', () => {
     const fake = makeFakeHa()
     const bad = { title: 123, views: [] } as unknown as LovelaceConfig
     await expect(
-      runApply(fake.client, makeStore(), makeAppliedSnapshot(), { config: bad }),
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), { config: bad }),
     ).rejects.toThrow(/invalid_config/)
     expect(fake.applyDashboard).not.toHaveBeenCalled()
   })
@@ -249,7 +254,7 @@ describe('runApply', () => {
     const fake = makeFakeHa()
     const bad = { title: 'x', views: {} } as unknown as LovelaceConfig
     await expect(
-      runApply(fake.client, makeStore(), makeAppliedSnapshot(), { config: bad }),
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), { config: bad }),
     ).rejects.toThrow(/invalid_config/)
   })
 
@@ -269,7 +274,7 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
 
-    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), { config }, { urlPath: 'foo' })
+    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), { config }, { urlPath: 'foo' })
 
     expect(fake.applyDashboard).toHaveBeenCalledWith(config, { urlPath: 'foo' })
   })
@@ -294,6 +299,7 @@ describe('runApply', () => {
       fake.client,
       makeStore(),
       makeAppliedSnapshot(),
+      makeDismissed(),
       { config, options: { urlPath: 'bar' } },
       { urlPath: 'foo' },
     )
@@ -407,13 +413,13 @@ describe('runPreview with overrides', () => {
     const fake = makeFakeHa()
     const store = makeStore()
 
-    const baseline = await runPreview(fake.client, store, makeAppliedSnapshot())
+    const baseline = await runPreview(fake.client, store, makeAppliedSnapshot(), makeDismissed())
     const targetEntityId = pickEntityIn(baseline, 'kitchen')
     expect(targetEntityId).not.toBeNull()
 
     store.replaceAll([{ entityId: targetEntityId!, roomId: 'living_room' }])
 
-    const overridden = await runPreview(fake.client, store, makeAppliedSnapshot())
+    const overridden = await runPreview(fake.client, store, makeAppliedSnapshot(), makeDismissed())
     const livingRoomView = overridden.config.views.find((v) => v.path === 'living_room')
     expect(livingRoomView).toBeDefined()
     // The entityId should appear somewhere in the living_room view's cards.

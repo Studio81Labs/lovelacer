@@ -10,7 +10,9 @@ import { exportRoute } from './routes/export.js'
 import { inviteRoute } from './routes/invite.js'
 import { overridesRoute } from './routes/overrides.js'
 import { previewRoute } from './routes/preview.js'
+import { suggestionsRoute } from './routes/suggestions.js'
 import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
+import type { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.js'
 import type { InviteStore } from './storage/invite-store.js'
 import type { OverrideStore } from './storage/override-store.js'
 
@@ -19,6 +21,7 @@ export interface CreateAppOptions {
   overrides: OverrideStore
   invite: InviteStore
   appliedSnapshot: AppliedSnapshotStore
+  dismissedSuggestions: DismissedSuggestionStore
   isDev?: boolean
   logLevel?: string
   /**
@@ -90,20 +93,24 @@ export async function createApp(opts: CreateAppOptions) {
     ha: opts.ha,
     overrides: opts.overrides,
     appliedSnapshot: opts.appliedSnapshot,
+    dismissedSuggestions: opts.dismissedSuggestions,
   })
   await app.register(applyRoute, {
     ha: opts.ha,
     overrides: opts.overrides,
     appliedSnapshot: opts.appliedSnapshot,
+    dismissedSuggestions: opts.dismissedSuggestions,
     dashboardUrlPath: opts.dashboardUrlPath,
   })
   await app.register(exportRoute, {
     ha: opts.ha,
     overrides: opts.overrides,
     appliedSnapshot: opts.appliedSnapshot,
+    dismissedSuggestions: opts.dismissedSuggestions,
     dashboardUrlPath: opts.dashboardUrlPath,
   })
   await app.register(overridesRoute, { overrides: opts.overrides })
+  await app.register(suggestionsRoute, { dismissed: opts.dismissedSuggestions })
 
   // SPA static serving — only enabled in add-on / production. In dev Vite
   // owns serving the SPA. With `wildcard: true` (default), @fastify/static
