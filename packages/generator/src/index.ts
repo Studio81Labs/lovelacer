@@ -39,8 +39,8 @@ export type {
   TileCard,
   TileFeature,
 } from './lovelace-types.js'
-export { buildHomeView, pickQuickStatsEntities } from './home-view.js'
-export type { BuildHomeViewInput, HomeView } from './home-view.js'
+export { buildHomeView, buildRoomsByFloorSection, pickQuickStatsEntities } from './home-view.js'
+export type { BuildHomeViewInput, BuildRoomsByFloorSectionInput, HomeView } from './home-view.js'
 export { buildLovelaceConfig } from './lovelace-config.js'
 export type { BuildLovelaceConfigInput, LovelaceConfig } from './lovelace-config.js'
 export { configToYaml } from './yaml-export.js'

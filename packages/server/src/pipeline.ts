@@ -312,7 +312,12 @@ export async function runPreview(
   // via the analyze response's `misc[]` field, not as a dashboard view.
   const dashboardGroupings = state.groupings.filter((g) => g.roomId !== 'misc')
 
-  const home = buildHomeView({ entities: state.entities, groupings: dashboardGroupings })
+  const home = buildHomeView({
+    entities: state.entities,
+    groupings: dashboardGroupings,
+    rooms: state.rooms,
+    floorAssignments: new Map(), // Task 3 fills this in via assignFloors
+  })
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
 
