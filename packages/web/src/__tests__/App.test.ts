@@ -187,6 +187,131 @@ describe('App integration', () => {
     })
     expect(postPreview).toHaveBeenCalled()
   })
+
+  it('bulk-assigns 3 misc entities and saves through OverridesBar', async () => {
+    // Initial preview: 3 misc entities, no rooms.
+    const initialPreview: PreviewOutput = {
+      rooms: [],
+      misc: [
+        { entityId: 'sensor.a', friendlyName: 'A', domain: 'sensor' },
+        { entityId: 'sensor.b', friendlyName: 'B', domain: 'sensor' },
+        { entityId: 'sensor.c', friendlyName: 'C', domain: 'sensor' },
+      ],
+      summary: { entityCount: 3, roomCount: 0, miscCount: 3 },
+      config: { title: 'x', views: [] },
+      diff: null,
+    }
+
+    // After bulk-assign + save, the misc list shrinks (server response stub
+    // returned by the post-save re-analyze).
+    const reanalyzedPreview: PreviewOutput = {
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          entityCount: 3,
+          averageConfidence: 1,
+          assignments: [
+            {
+              entityId: 'sensor.a',
+              roomId: 'kitchen',
+              confidence: 1,
+              signals: [],
+              manual: true,
+            },
+            {
+              entityId: 'sensor.b',
+              roomId: 'kitchen',
+              confidence: 1,
+              signals: [],
+              manual: true,
+            },
+            {
+              entityId: 'sensor.c',
+              roomId: 'kitchen',
+              confidence: 1,
+              signals: [],
+              manual: true,
+            },
+          ],
+        },
+      ],
+      misc: [],
+      summary: { entityCount: 3, roomCount: 1, miscCount: 0 },
+      config: { title: 'x', views: [] },
+      diff: null,
+    }
+
+    vi.mocked(getOverrides).mockResolvedValueOnce({ overrides: [] })
+    vi.mocked(putOverrides).mockResolvedValueOnce({
+      overrides: [
+        { entityId: 'sensor.a', roomId: 'kitchen' },
+        { entityId: 'sensor.b', roomId: 'kitchen' },
+        { entityId: 'sensor.c', roomId: 'kitchen' },
+      ],
+    })
+    // Only the post-save re-analyze hits postPreview in this flow — the
+    // initial preview is injected via $patch (matches the existing e2e
+    // test pattern above).
+    vi.mocked(postPreview).mockResolvedValueOnce(reanalyzedPreview)
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const analyze = useAnalyzeStore()
+    const overrides = useOverridesStore()
+
+    // Bring app to ready state with 3 misc entities.
+    analyze.$patch({ phase: 'ready', preview: initialPreview })
+    await wrapper.vm.$nextTick()
+
+    // Expand the misc bucket. With rooms: [], the only <details> is misc.
+    await wrapper.find('details').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    // Check all 3 misc rows.
+    const checkboxes = wrapper.findAll('[data-testid="misc-row-checkbox"]')
+    expect(checkboxes).toHaveLength(3)
+    for (const cb of checkboxes) await cb.setValue(true)
+
+    // Pick Kitchen and click Assign.
+    await wrapper.find('[data-testid="misc-bulk-room"]').setValue('kitchen')
+    await wrapper.find('[data-testid="misc-bulk-assign"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    // OverridesBar should now show 3 dirty changes.
+    expect(overrides.dirtyCount).toBe(3)
+
+    // Click Save on the OverridesBar.
+    await wrapper.find('[data-testid="save-button"]').trigger('click')
+    // saveAndReanalyze runs putOverrides → setServerState → analyze.analyze()
+    // → postPreview → setPreview, all chained microtasks. The two
+    // `Promise.resolve()` flushes microtask queues; the `setTimeout(0)`
+    // adds a macrotask flush because the bulk variant also runs three
+    // setRoomId calls before Save (each one a reactive Pinia mutation),
+    // which lengthens the chain enough that microtask flushes alone don't
+    // fully drain it. Don't strip the setTimeout without re-running this
+    // test against a deeper Pinia chain.
+    await Promise.resolve()
+    await Promise.resolve()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await wrapper.vm.$nextTick()
+
+    // putOverrides was called once with the bulk batch — three entries,
+    // all assigned to kitchen.
+    expect(putOverrides).toHaveBeenCalledTimes(1)
+    const putArgs = vi.mocked(putOverrides).mock.calls[0]![0] as {
+      overrides: { entityId: string; roomId?: string }[]
+    }
+    expect(putArgs.overrides).toHaveLength(3)
+    expect(putArgs.overrides.every((o) => o.roomId === 'kitchen')).toBe(true)
+
+    // Re-analyze fired after save.
+    expect(postPreview).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('App invite gate', () => {
