@@ -21,6 +21,7 @@ export type HomeView = RoomView
 
 export interface BuildHomeViewInput {
   entities: NormalizedEntity[]
+  groupings: RoomGrouping[]
 }
 
 const PRESENCE_ID_PATTERN = /anyone[_-]?home|someone[_-]?home|presence/i
@@ -82,8 +83,22 @@ function hasOutdoorMarker(entity: NormalizedEntity): boolean {
  */
 export function buildHomeView(input: BuildHomeViewInput): HomeView {
   const sections: GridSection[] = [buildWelcomeSection(input.entities)]
+
   const quickStats = buildQuickStatsSection(input.entities)
   if (quickStats !== null) sections.push(quickStats)
+
+  const people = buildPeopleSection(input.entities)
+  if (people !== null) sections.push(people)
+
+  const activeRooms = buildActiveRoomsSection(input.groupings)
+  if (activeRooms !== null) sections.push(activeRooms)
+
+  const scenes = buildScenesSection(input.entities)
+  if (scenes !== null) sections.push(scenes)
+
+  const cameras = buildCamerasSection(input.entities)
+  if (cameras !== null) sections.push(cameras)
+
   return {
     type: 'sections',
     title: 'Home',

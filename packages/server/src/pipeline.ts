@@ -249,7 +249,7 @@ export async function runPreview(ha: HaClient, overrides: OverrideStore): Promis
   // via the analyze response's `misc[]` field, not as a dashboard view.
   const dashboardGroupings = state.groupings.filter((g) => g.roomId !== 'misc')
 
-  const home = buildHomeView({ entities: state.entities })
+  const home = buildHomeView({ entities: state.entities, groupings: state.groupings })
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
 

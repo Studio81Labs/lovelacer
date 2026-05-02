@@ -145,7 +145,7 @@ describe('pickQuickStatsEntities — ordering and limits', () => {
 
 describe('buildHomeView — view metadata', () => {
   it('produces type=sections, title=Home, path=home, icon=mdi:home-variant', () => {
-    const view = buildHomeView({ entities: [] })
+    const view = buildHomeView({ entities: [], groupings: [] })
     expect(view.type).toBe('sections')
     expect(view.title).toBe('Home')
     expect(view.path).toBe('home')
@@ -155,14 +155,14 @@ describe('buildHomeView — view metadata', () => {
 
 describe('buildHomeView — Welcome section', () => {
   it('always emits a Welcome section even with empty entities', () => {
-    const view = buildHomeView({ entities: [] })
+    const view = buildHomeView({ entities: [], groupings: [] })
     expect(view.sections).toHaveLength(1)
     const card = view.sections[0]!.cards[0]
     expect(card?.type).toBe('markdown')
   })
 
   it('Welcome card has greeting only when no weather entity exists', () => {
-    const view = buildHomeView({ entities: [ent('light.kitchen')] })
+    const view = buildHomeView({ entities: [ent('light.kitchen')], groupings: [] })
     const card = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
     expect(card.content).toContain('Good ')
     expect(card.content).toContain("now().strftime('%H')")
@@ -172,7 +172,7 @@ describe('buildHomeView — Welcome section', () => {
   })
 
   it('Welcome card adds weather template when weather entity exists', () => {
-    const view = buildHomeView({ entities: [ent('weather.home')] })
+    const view = buildHomeView({ entities: [ent('weather.home')], groupings: [] })
     const card = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
     expect(card.content).toContain("{{ states('weather.home') }}")
     expect(card.content).toContain("{{ state_attr('weather.home', 'temperature') }}°")
@@ -181,6 +181,7 @@ describe('buildHomeView — Welcome section', () => {
   it('Welcome card uses the first weather entity when multiple exist', () => {
     const view = buildHomeView({
       entities: [ent('weather.home'), ent('weather.forecast')],
+      groupings: [],
     })
     const card = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
     expect(card.content).toContain("states('weather.home')")
@@ -190,13 +191,14 @@ describe('buildHomeView — Welcome section', () => {
 
 describe('buildHomeView — Quick stats section', () => {
   it('skips Quick stats section when 0 entities match', () => {
-    const view = buildHomeView({ entities: [ent('light.kitchen')] })
+    const view = buildHomeView({ entities: [ent('light.kitchen')], groupings: [] })
     expect(view.sections).toHaveLength(1) // Welcome only
   })
 
   it('skips Quick stats section when only 1 entity matches', () => {
     const view = buildHomeView({
       entities: [ent('sensor.outdoor_temperature', { deviceClass: 'temperature' })],
+      groupings: [],
     })
     expect(view.sections).toHaveLength(1) // Welcome only
   })
@@ -207,6 +209,7 @@ describe('buildHomeView — Quick stats section', () => {
         ent('sensor.outdoor_temperature', { deviceClass: 'temperature' }),
         ent('sensor.outdoor_humidity', { deviceClass: 'humidity' }),
       ],
+      groupings: [],
     })
     expect(view.sections).toHaveLength(2)
     const glance = view.sections[1]!.cards[0] as {
@@ -226,6 +229,7 @@ describe('buildHomeView — Quick stats section', () => {
         ent('sensor.outdoor_temperature', { deviceClass: 'temperature' }),
         ent('binary_sensor.anyone_home'),
       ],
+      groupings: [],
     })
     expect(view.sections[1]!.cards).toHaveLength(1)
     expect(view.sections[1]!.cards[0]!.type).toBe('glance')
@@ -490,6 +494,7 @@ describe('buildHomeView — integration', () => {
         ent('binary_sensor.anyone_home'),
         ent('light.kitchen'), // not in glance
       ],
+      groupings: [],
     })
     expect(view.sections).toHaveLength(2)
     const welcome = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
@@ -503,7 +508,49 @@ describe('buildHomeView — integration', () => {
   })
 
   it('empty input → Welcome only, no Quick stats', () => {
-    const view = buildHomeView({ entities: [] })
+    const view = buildHomeView({ entities: [], groupings: [] })
     expect(view.sections).toHaveLength(1)
+  })
+})
+
+describe('buildHomeView — section ordering and conditional rendering', () => {
+  const emptyGroupings: RoomGrouping[] = []
+
+  it('empty input → only Welcome section appears', () => {
+    const view = buildHomeView({ entities: [], groupings: emptyGroupings })
+    expect(view.sections).toHaveLength(1)
+    expect(view.sections[0]!.cards[0]!.type).toBe('markdown')
+  })
+
+  it('sections appear in spec order: Welcome, Quick stats, People, Active Rooms, Scenes, Cameras', () => {
+    const entities = [
+      ent('weather.home'),
+      ent('sensor.outdoor_temp', { deviceClass: 'temperature' }),
+      ent('sensor.outdoor_humidity', { deviceClass: 'humidity' }),
+      ent('person.alice', { friendlyName: 'Alice' }),
+      ent('scene.movie_night', { friendlyName: 'Movie Night' }),
+      ent('camera.front_door', { friendlyName: 'Front Door' }),
+    ]
+    const groupings = [grp('kitchen', ['light.kitchen_main'])]
+    const view = buildHomeView({ entities, groupings })
+
+    expect(view.sections).toHaveLength(6)
+    expect(view.sections[0]!.cards[0]!.type).toBe('markdown')      // Welcome
+    expect(view.sections[1]!.cards[0]!.type).toBe('glance')        // Quick stats
+    expect((view.sections[2]!.cards[0] as { title: string }).title).toBe('People')
+    expect(view.sections[3]!.cards[0]!.type).toBe('conditional')   // Active Rooms
+    expect(view.sections[4]!.cards[0]!.type).toBe('tile')          // Scenes (first card)
+    expect(view.sections[5]!.cards[0]!.type).toBe('picture-entity') // Cameras
+  })
+
+  it('sections that have no qualifying entities are absent', () => {
+    // Just enough for Welcome + Active Rooms; no people/scenes/cameras/QuickStats.
+    const entities = [ent('light.kitchen_main')]
+    const groupings = [grp('kitchen', ['light.kitchen_main'])]
+    const view = buildHomeView({ entities, groupings })
+
+    expect(view.sections).toHaveLength(2)
+    expect(view.sections[0]!.cards[0]!.type).toBe('markdown')      // Welcome
+    expect(view.sections[1]!.cards[0]!.type).toBe('conditional')   // Active Rooms
   })
 })

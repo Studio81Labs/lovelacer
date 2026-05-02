@@ -17,7 +17,7 @@ function pipe(fixture: Fixture) {
   // Mirror the production pipeline: misc entities surface only via the
   // analyze response's `misc[]` field, never as a dashboard view.
   const dashboardGroupings = groupings.filter((g) => g.roomId !== 'misc')
-  const home = buildHomeView({ entities })
+  const home = buildHomeView({ entities, groupings: dashboardGroupings })
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
   return { entities, config }
