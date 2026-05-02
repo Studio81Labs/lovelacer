@@ -40,6 +40,22 @@ export interface PreviewOutput extends AnalyzeOutput {
 export interface ApplyInput {
   config?: LovelaceConfig
   options?: ApplyDashboardOptions
+  /**
+   * Optional. When present and valid, the server persists this as the
+   * "last applied" snapshot AFTER the HA push succeeds. The production
+   * frontend always sends it; scripts and tests may omit.
+   */
+  snapshot?: {
+    assignments: SnapshotAssignment[]
+    config: unknown
+  }
+}
+
+export interface RunApplyResult extends ApplyDashboardResult {
+  /** Set when a snapshot field was sent but rejected by validation. */
+  snapshotSkipped?: 'invalid'
+  /** Set when persistence threw (SQLite write failure, etc). */
+  snapshotPersisted?: false
 }
 
 /**
@@ -52,6 +68,25 @@ export class InvalidConfigError extends Error {
     super(message)
     this.name = 'InvalidConfigError'
   }
+}
+
+/**
+ * Validates the snapshot body. Returns true iff `assignments` is an array
+ * of `{ entityId: string, roomId: string|null }` and `config` is an object.
+ * Defense-in-depth — the route is the trust boundary.
+ */
+function isValidSnapshotShape(value: unknown): value is NonNullable<ApplyInput['snapshot']> {
+  if (typeof value !== 'object' || value === null) return false
+  const v = value as Record<string, unknown>
+  if (!Array.isArray(v.assignments)) return false
+  for (const a of v.assignments) {
+    if (typeof a !== 'object' || a === null) return false
+    const r = a as Record<string, unknown>
+    if (typeof r.entityId !== 'string') return false
+    if (r.roomId !== null && typeof r.roomId !== 'string') return false
+  }
+  if (typeof v.config !== 'object' || v.config === null) return false
+  return true
 }
 
 /**
@@ -303,15 +338,38 @@ export async function runApply(
   appliedSnapshot: AppliedSnapshotStore,
   body: ApplyInput,
   defaultOptions: ApplyDashboardOptions = {},
-): Promise<ApplyDashboardResult> {
+): Promise<RunApplyResult> {
   const options = { ...defaultOptions, ...body.options } // body wins
+
+  let result: ApplyDashboardResult
   if (body.config !== undefined) {
     if (typeof body.config.title !== 'string' || !Array.isArray(body.config.views)) {
       throw new InvalidConfigError('invalid_config: title must be string and views must be array')
     }
-    return ha.applyDashboard(body.config, options)
+    result = await ha.applyDashboard(body.config, options)
+  } else {
+    const preview = await runPreview(ha, overrides, appliedSnapshot)
+    result = await ha.applyDashboard(preview.config, options)
   }
 
-  const preview = await runPreview(ha, overrides, appliedSnapshot)
-  return ha.applyDashboard(preview.config, options)
+  // Snapshot persistence happens AFTER the HA push succeeds. A push
+  // failure throws above and we never reach this — that's deliberate
+  // (we don't want to snapshot a config that didn't actually land).
+  if (body.snapshot === undefined) {
+    return result
+  }
+  if (!isValidSnapshotShape(body.snapshot)) {
+    return { ...result, snapshotSkipped: 'invalid' }
+  }
+  try {
+    appliedSnapshot.save({
+      assignments: body.snapshot.assignments,
+      config: body.snapshot.config,
+    })
+    return result
+  } catch {
+    // SQLite write failed (disk full, IO error). The dashboard is live in
+    // HA; the user just doesn't get a fresh diff baseline this time.
+    return { ...result, snapshotPersisted: false }
+  }
 }

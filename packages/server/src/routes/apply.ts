@@ -44,7 +44,21 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
       const result = await runApply(opts.ha, opts.overrides, opts.appliedSnapshot, body, {
         urlPath: opts.dashboardUrlPath,
       })
-      return reply.code(200).send({ ok: true, ...result })
+      if (result.snapshotPersisted === false) {
+        req.log.error(
+          { urlPath: result.urlPath },
+          'snapshot persistence failed after successful apply',
+        )
+      }
+      const responseBody: Record<string, unknown> = {
+        ok: true,
+        urlPath: result.urlPath,
+        created: result.created,
+      }
+      if (result.snapshotSkipped !== undefined)
+        responseBody.snapshot_skipped = result.snapshotSkipped
+      if (result.snapshotPersisted === false) responseBody.snapshot_persisted = false
+      return reply.code(200).send(responseBody)
     } catch (err) {
       if (err instanceof HaApplyError) {
         req.log.error({ err, step: err.step }, 'ha apply failed')
