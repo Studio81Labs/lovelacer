@@ -103,6 +103,10 @@ const floatingEntities = [
   registryEntry(FX, 'sensor', 'Hidden Battery 2', { hidden: true }),
   registryEntry(FX, 'switch', 'Disabled Old Plug 1', { disabled: true }),
   registryEntry(FX, 'switch', 'Disabled Old Plug 2', { disabled: true }),
+  // P1b-5: People + Scenes sections
+  registryEntry(FX, 'person', 'Resident'),
+  registryEntry(FX, 'scene', 'Good Morning'),
+  registryEntry(FX, 'scene', 'Setup Smart Lights'), // Filtered out by SCENE_NAME_FILTER
 ]
 
 export const kitchenSink = fixture({

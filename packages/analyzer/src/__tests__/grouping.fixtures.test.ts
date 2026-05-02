@@ -234,7 +234,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "security",
             },
             {
-              "count": 14,
+              "count": 17,
               "key": "other",
             },
           ],

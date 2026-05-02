@@ -198,13 +198,9 @@ export function buildActiveRoomsSection(groupings: RoomGrouping[]): GridSection 
   for (const grouping of groupings) {
     if (grouping.roomId === 'misc') continue
 
-    const lights =
-      grouping.groups.find((g) => g.key === 'lights')?.entities ?? []
-    const activity =
-      grouping.groups.find((g) => g.key === 'activity')?.entities ?? []
-    const candidates = [...lights, ...activity].filter(
-      (e) => !e.isHidden && !e.isDisabled,
-    )
+    const lights = grouping.groups.find((g) => g.key === 'lights')?.entities ?? []
+    const activity = grouping.groups.find((g) => g.key === 'activity')?.entities ?? []
+    const candidates = [...lights, ...activity].filter((e) => !e.isHidden && !e.isDisabled)
     if (candidates.length === 0) continue
 
     const primary = candidates[0]!

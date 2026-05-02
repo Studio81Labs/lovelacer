@@ -63,6 +63,16 @@ describe('buildHomeView — english-cluttered fixture', () => {
           {
             "cards": [
               {
+                "entities": [
+                  "person.alice",
+                ],
+                "type": "glance",
+              },
+            ],
+          },
+          {
+            "cards": [
+              {
                 "type": "conditional",
               },
               {
@@ -88,14 +98,22 @@ describe('buildHomeView — english-cluttered fixture', () => {
               },
             ],
           },
+          {
+            "cards": [
+              {
+                "type": "tile",
+              },
+            ],
+          },
         ],
         "title": "Home",
       }
     `)
   })
 
-  it('produces Welcome + Quick stats + Active Rooms — 2 outdoor sensors plus 1 presence by entityId pattern', () => {
-    expect(view.sections).toHaveLength(3)
+  it('produces Welcome + Quick stats + People + Active Rooms + Scenes — 2 outdoor sensors plus 1 presence by entityId pattern', () => {
+    // Bumped +2 in P1b-5 (People + Scenes sections added by fixture)
+    expect(view.sections).toHaveLength(5)
   })
 
   it('every glance entityId exists in the input entity list', () => {

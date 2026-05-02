@@ -499,9 +499,9 @@ describe('buildScenesSection', () => {
   it('filter is case-insensitive on entityId AND friendlyName', () => {
     const section = buildScenesSection([
       ent('scene.morning', { friendlyName: 'Morning' }),
-      ent('scene.kitchen_test'),  // entityId match
-      ent('scene.evening', { friendlyName: 'Evening Setup' }),  // friendlyName match
-      ent('scene.SETUP_lights'),  // case-insensitive match
+      ent('scene.kitchen_test'), // entityId match
+      ent('scene.evening', { friendlyName: 'Evening Setup' }), // friendlyName match
+      ent('scene.SETUP_lights'), // case-insensitive match
     ])
     const ids = section!.cards.map((c) => (c as { entity: string }).entity)
     expect(ids).toEqual(['scene.morning'])
@@ -520,14 +520,7 @@ describe('buildScenesSection', () => {
     ])
     expect(section!.cards).toHaveLength(6)
     const ids = section!.cards.map((c) => (c as { entity: string }).entity)
-    expect(ids).toEqual([
-      'scene.a',
-      'scene.b',
-      'scene.c',
-      'scene.d',
-      'scene.e',
-      'scene.f',
-    ])
+    expect(ids).toEqual(['scene.a', 'scene.b', 'scene.c', 'scene.d', 'scene.e', 'scene.f'])
   })
 })
 ```
@@ -576,11 +569,7 @@ Expected: PASS — 5 tests.
 Append to the test file:
 
 ```ts
-import {
-  buildCamerasSection,
-  buildPeopleSection,
-  buildScenesSection,
-} from '../home-view.js'
+import { buildCamerasSection, buildPeopleSection, buildScenesSection } from '../home-view.js'
 // (combine with existing imports)
 
 describe('buildCamerasSection', () => {
@@ -793,7 +782,11 @@ describe('buildActiveRoomsSection', () => {
 
   it('room with multiple lights + motion — emits OR composite', () => {
     const groupings = [
-      grp('kitchen', ['light.kitchen_main', 'light.kitchen_island'], ['binary_sensor.kitchen_motion']),
+      grp(
+        'kitchen',
+        ['light.kitchen_main', 'light.kitchen_island'],
+        ['binary_sensor.kitchen_motion'],
+      ),
     ]
     const section = buildActiveRoomsSection(groupings, [])
     const cond = section!.cards[0] as {
@@ -809,9 +802,7 @@ describe('buildActiveRoomsSection', () => {
   })
 
   it('tile points at first light when present (lights take priority)', () => {
-    const groupings = [
-      grp('kitchen', ['light.kitchen_main'], ['binary_sensor.kitchen_motion']),
-    ]
+    const groupings = [grp('kitchen', ['light.kitchen_main'], ['binary_sensor.kitchen_motion'])]
     const section = buildActiveRoomsSection(groupings, [])
     const cond = section!.cards[0] as { card: { entity: string; name: string } }
     expect(cond.card.entity).toBe('light.kitchen_main')
@@ -839,9 +830,7 @@ describe('buildActiveRoomsSection', () => {
       grp('attic', ['light.attic']),
     ]
     const section = buildActiveRoomsSection(groupings, [])
-    const names = section!.cards.map(
-      (c) => (c as { card: { name: string } }).card.name,
-    )
+    const names = section!.cards.map((c) => (c as { card: { name: string } }).card.name)
     expect(names).toEqual(['Attic', 'Bedroom', 'Living Room'])
   })
 })
@@ -911,13 +900,9 @@ export function buildActiveRoomsSection(
   for (const grouping of groupings) {
     if (grouping.roomId === 'misc') continue
 
-    const lights =
-      grouping.groups.find((g) => g.key === 'lights')?.entities ?? []
-    const activity =
-      grouping.groups.find((g) => g.key === 'activity')?.entities ?? []
-    const candidates = [...lights, ...activity].filter(
-      (e) => !e.isHidden && !e.isDisabled,
-    )
+    const lights = grouping.groups.find((g) => g.key === 'lights')?.entities ?? []
+    const activity = grouping.groups.find((g) => g.key === 'activity')?.entities ?? []
+    const candidates = [...lights, ...activity].filter((e) => !e.isHidden && !e.isDisabled)
     if (candidates.length === 0) continue
 
     const primary = lights[0] ?? activity[0]!
@@ -1139,11 +1124,11 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
     const view = buildHomeView({ entities, groupings })
 
     expect(view.sections).toHaveLength(6)
-    expect(view.sections[0]!.cards[0]!.type).toBe('markdown')      // Welcome
-    expect(view.sections[1]!.cards[0]!.type).toBe('glance')        // Quick stats
+    expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
+    expect(view.sections[1]!.cards[0]!.type).toBe('glance') // Quick stats
     expect((view.sections[2]!.cards[0] as { title: string }).title).toBe('People')
-    expect(view.sections[3]!.cards[0]!.type).toBe('conditional')   // Active Rooms
-    expect(view.sections[4]!.cards[0]!.type).toBe('tile')          // Scenes (first card)
+    expect(view.sections[3]!.cards[0]!.type).toBe('conditional') // Active Rooms
+    expect(view.sections[4]!.cards[0]!.type).toBe('tile') // Scenes (first card)
     expect(view.sections[5]!.cards[0]!.type).toBe('picture-entity') // Cameras
   })
 
@@ -1154,8 +1139,8 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
     const view = buildHomeView({ entities, groupings })
 
     expect(view.sections).toHaveLength(2)
-    expect(view.sections[0]!.cards[0]!.type).toBe('markdown')      // Welcome
-    expect(view.sections[1]!.cards[0]!.type).toBe('conditional')   // Active Rooms
+    expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
+    expect(view.sections[1]!.cards[0]!.type).toBe('conditional') // Active Rooms
   })
 })
 ```
@@ -1184,6 +1169,7 @@ pnpm --dir /Users/akadlec/Development/Studio81Labs/lovelacer/.worktrees/p1b-5-ho
 ```
 
 Inspect the regenerated snapshots. The home view should now show NEW sections per fixture based on what entities they have:
+
 - `english-cluttered`: lights/motion in rooms → Active Rooms section appears. No person/scene/camera entities yet — those sections still null.
 - `kitchen-sink`: has cameras → Cameras section appears. No person/scene yet.
 - `german-massive`/`czech-tidy`/`security-rich`/`vacuum-heavy`: depend on fixture content.

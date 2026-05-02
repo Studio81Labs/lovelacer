@@ -309,9 +309,9 @@ describe('buildScenesSection', () => {
   it('filter is case-insensitive on entityId AND friendlyName', () => {
     const section = buildScenesSection([
       ent('scene.morning', { friendlyName: 'Morning' }),
-      ent('scene.kitchen_test'),  // entityId match
-      ent('scene.evening', { friendlyName: 'Evening Setup' }),  // friendlyName match
-      ent('scene.SETUP_lights'),  // case-insensitive match
+      ent('scene.kitchen_test'), // entityId match
+      ent('scene.evening', { friendlyName: 'Evening Setup' }), // friendlyName match
+      ent('scene.SETUP_lights'), // case-insensitive match
     ])
     const ids = section!.cards.map((c) => (c as { entity: string }).entity)
     expect(ids).toEqual(['scene.morning'])
@@ -330,14 +330,7 @@ describe('buildScenesSection', () => {
     ])
     expect(section!.cards).toHaveLength(6)
     const ids = section!.cards.map((c) => (c as { entity: string }).entity)
-    expect(ids).toEqual([
-      'scene.a',
-      'scene.b',
-      'scene.c',
-      'scene.d',
-      'scene.e',
-      'scene.f',
-    ])
+    expect(ids).toEqual(['scene.a', 'scene.b', 'scene.c', 'scene.d', 'scene.e', 'scene.f'])
   })
 })
 
@@ -432,7 +425,11 @@ describe('buildActiveRoomsSection', () => {
 
   it('room with multiple lights + motion — emits OR composite', () => {
     const groupings = [
-      grp('kitchen', ['light.kitchen_main', 'light.kitchen_island'], ['binary_sensor.kitchen_motion']),
+      grp(
+        'kitchen',
+        ['light.kitchen_main', 'light.kitchen_island'],
+        ['binary_sensor.kitchen_motion'],
+      ),
     ]
     const section = buildActiveRoomsSection(groupings)
     const cond = section!.cards[0] as {
@@ -448,9 +445,7 @@ describe('buildActiveRoomsSection', () => {
   })
 
   it('tile points at first light when present (lights take priority)', () => {
-    const groupings = [
-      grp('kitchen', ['light.kitchen_main'], ['binary_sensor.kitchen_motion']),
-    ]
+    const groupings = [grp('kitchen', ['light.kitchen_main'], ['binary_sensor.kitchen_motion'])]
     const section = buildActiveRoomsSection(groupings)
     const cond = section!.cards[0] as { card: { entity: string; name: string } }
     expect(cond.card.entity).toBe('light.kitchen_main')
@@ -478,9 +473,7 @@ describe('buildActiveRoomsSection', () => {
       grp('attic', ['light.attic']),
     ]
     const section = buildActiveRoomsSection(groupings)
-    const names = section!.cards.map(
-      (c) => (c as { card: { name: string } }).card.name,
-    )
+    const names = section!.cards.map((c) => (c as { card: { name: string } }).card.name)
     expect(names).toEqual(['Attic', 'Bedroom', 'Living Room'])
   })
 })
@@ -535,11 +528,11 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
     const view = buildHomeView({ entities, groupings })
 
     expect(view.sections).toHaveLength(6)
-    expect(view.sections[0]!.cards[0]!.type).toBe('markdown')      // Welcome
-    expect(view.sections[1]!.cards[0]!.type).toBe('glance')        // Quick stats
+    expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
+    expect(view.sections[1]!.cards[0]!.type).toBe('glance') // Quick stats
     expect((view.sections[2]!.cards[0] as { title: string }).title).toBe('People')
-    expect(view.sections[3]!.cards[0]!.type).toBe('conditional')   // Active Rooms
-    expect(view.sections[4]!.cards[0]!.type).toBe('tile')          // Scenes (first card)
+    expect(view.sections[3]!.cards[0]!.type).toBe('conditional') // Active Rooms
+    expect(view.sections[4]!.cards[0]!.type).toBe('tile') // Scenes (first card)
     expect(view.sections[5]!.cards[0]!.type).toBe('picture-entity') // Cameras
   })
 
@@ -550,7 +543,7 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
     const view = buildHomeView({ entities, groupings })
 
     expect(view.sections).toHaveLength(2)
-    expect(view.sections[0]!.cards[0]!.type).toBe('markdown')      // Welcome
-    expect(view.sections[1]!.cards[0]!.type).toBe('conditional')   // Active Rooms
+    expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
+    expect(view.sections[1]!.cards[0]!.type).toBe('conditional') // Active Rooms
   })
 })
