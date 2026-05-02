@@ -68,7 +68,11 @@ export async function createApp(opts: CreateAppOptions) {
   // code to the latter on first run).
   app.addHook('onRequest', async (req, reply) => {
     if (!req.url.startsWith('/api/')) return
-    if (req.url.startsWith('/api/health') || req.url.startsWith('/api/invite')) return
+    // Strip query string + fragment, then exact-match. Using startsWith
+    // would silently bypass /api/healthcheck or /api/invitations if those
+    // routes ever existed — exact match makes the bypass list explicit.
+    const path = req.url.split('?', 1)[0]?.split('#', 1)[0] ?? req.url
+    if (path === '/api/health' || path === '/api/invite') return
     if (!opts.invite.isAccepted()) {
       return reply.code(403).send({
         error: 'invite_required',

@@ -132,4 +132,32 @@ describe('invite gate hook', () => {
       await app.close()
     }
   })
+
+  it('blocks /api/healthcheck (NOT a bypass) when not accepted', async () => {
+    const app = await makeApp({ accepted: false })
+    try {
+      // Even though /api/healthcheck doesn't exist as a route, the gate
+      // should NOT bypass it just because the path starts with /api/health.
+      // Fastify will return 404 if the gate lets it through; 403 if the
+      // gate properly blocks it. The point: the gate should NOT prefix-
+      // match the public bypass list.
+      const res = await app.inject({ method: 'GET', url: '/api/healthcheck' })
+      expect(res.statusCode).toBe(403)
+      expect(res.json()).toMatchObject({ error: 'invite_required' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('allows /api/invite with query string (?cache=0)', async () => {
+    // The gate must let through the legit endpoint even with a query string.
+    const app = await makeApp({ accepted: false })
+    try {
+      const res = await app.inject({ method: 'GET', url: '/api/invite?cache=0' })
+      expect(res.statusCode).toBe(200)
+      expect(res.json()).toEqual({ accepted: false })
+    } finally {
+      await app.close()
+    }
+  })
 })
