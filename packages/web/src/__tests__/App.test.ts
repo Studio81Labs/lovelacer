@@ -15,9 +15,8 @@ vi.mock('../api/client.js', () => ({
   postInvite: vi.fn(),
 }))
 
-const { postPreview, getOverrides, putOverrides, getInvite, postInvite } = await import(
-  '../api/client.js'
-)
+const { postPreview, getOverrides, putOverrides, getInvite, postInvite } =
+  await import('../api/client.js')
 
 const mockPreview: PreviewOutput = {
   rooms: [
@@ -229,8 +228,8 @@ describe('App invite gate', () => {
     // `code` ref is destroyed and remounts blank on failure) and the
     // typed value must still be there.
     expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
-    expect(
-      (wrapper.find('[data-testid="invite-input"]').element as HTMLInputElement).value,
-    ).toBe('BETA-2026-ALPHA')
+    expect((wrapper.find('[data-testid="invite-input"]').element as HTMLInputElement).value).toBe(
+      'BETA-2026-ALPHA',
+    )
   })
 })
