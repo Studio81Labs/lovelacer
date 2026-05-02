@@ -44,7 +44,7 @@ describe('useApplyStore', () => {
     vi.mocked(postApply).mockResolvedValueOnce(mockResult)
     const store = useApplyStore()
 
-    const promise = store.apply(config)
+    const promise = store.apply({ config })
     expect(store.phase).toBe('applying')
     await promise
 
@@ -62,7 +62,7 @@ describe('useApplyStore', () => {
     vi.mocked(postApply).mockRejectedValueOnce(apiErr)
     const store = useApplyStore()
 
-    await store.apply(config)
+    await store.apply({ config })
 
     expect(store.phase).toBe('error')
     expect(store.error).toEqual(apiErr)
@@ -75,7 +75,7 @@ describe('useApplyStore', () => {
     vi.mocked(postApply).mockRejectedValueOnce(apiErr)
     const store = useApplyStore()
 
-    await store.apply(config)
+    await store.apply({ config })
 
     expect(store.phase).toBe('error')
     expect(store.error?.error).toBe('invalid_config')
@@ -84,12 +84,25 @@ describe('useApplyStore', () => {
   it('reset() clears all fields', async () => {
     vi.mocked(postApply).mockResolvedValueOnce(mockResult)
     const store = useApplyStore()
-    await store.apply(config)
+    await store.apply({ config })
 
     store.reset()
 
     expect(store.phase).toBe('idle')
     expect(store.result).toBeNull()
     expect(store.error).toBeNull()
+  })
+
+  it('passes snapshot through to postApply when provided', async () => {
+    const snapshot = {
+      assignments: [{ entityId: 'light.k', roomId: 'kitchen' }],
+      config,
+    }
+    vi.mocked(postApply).mockResolvedValueOnce(mockResult)
+    const store = useApplyStore()
+
+    await store.apply({ config, snapshot })
+
+    expect(vi.mocked(postApply)).toHaveBeenCalledWith({ config, snapshot })
   })
 })

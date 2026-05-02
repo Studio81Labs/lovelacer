@@ -34,6 +34,7 @@ const mockPreview: PreviewOutput = {
   misc: [],
   summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
   config: { title: 'Lovelacer — Home', views: [] },
+  diff: null,
 }
 
 describe('App integration', () => {

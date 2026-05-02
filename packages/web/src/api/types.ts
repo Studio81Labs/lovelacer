@@ -76,12 +76,61 @@ export interface AnalyzeOutput {
 
 export interface PreviewOutput extends AnalyzeOutput {
   config: LovelaceConfig
+  /**
+   * Diff vs. the last applied snapshot, or `null` on first ever preview
+   * (no prior snapshot to compare against).
+   */
+  diff: DiffResult | null
 }
 
 export interface ApplyResult {
   ok: true
   urlPath: string
   created: boolean
+  /** Server flag: snapshot was rejected as malformed. Push still succeeded. */
+  snapshot_skipped?: 'invalid'
+  /** Server flag: snapshot persist failed. Push still succeeded. */
+  snapshot_persisted?: false
+}
+
+/**
+ * Snapshot/diff types mirror the server contract.
+ *
+ * `roomId` is `string | null` (not the full `CanonicalRoomId` union from
+ * `@lovelacer/shared`) to keep the web package independent of the shared
+ * runtime — same widening pattern used by `Override.roomId` above.
+ */
+export interface SnapshotAssignment {
+  entityId: string
+  roomId: string | null
+}
+
+export interface AppliedSnapshot {
+  assignments: SnapshotAssignment[]
+  config: unknown
+  appliedAt: number
+}
+
+export type DiffKind = 'added' | 'moved' | 'removed'
+
+export interface EntityDiff {
+  entityId: string
+  kind: DiffKind
+  previousRoomId?: string | null
+  currentRoomId?: string | null
+}
+
+export interface RoomDiffSummary {
+  added: number
+  movedIn: number
+  movedOut: number
+}
+
+export interface DiffResult {
+  entities: EntityDiff[]
+  perRoom: Record<string, RoomDiffSummary>
+  totals: { added: number; moved: number; removed: number }
+  appliedAt: number
 }
 
 /**

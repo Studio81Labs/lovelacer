@@ -14,6 +14,7 @@ const mockPreviewResponse: PreviewOutput = {
   misc: [],
   summary: { entityCount: 0, roomCount: 0, miscCount: 0 },
   config: { title: 'Lovelacer — Home', views: [] },
+  diff: null,
 }
 
 const mockConfig: LovelaceConfig = {
@@ -117,6 +118,44 @@ describe('postApply', () => {
       step: 'save',
       message: 'config invalid',
     })
+  })
+
+  it('forwards snapshot in the request body when provided', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ ok: true, urlPath: 'home', created: false }),
+    } as unknown as Response)
+
+    const snapshot = {
+      assignments: [{ entityId: 'light.k', roomId: 'kitchen' }],
+      config: mockConfig,
+    }
+    await postApply({ config: mockConfig, snapshot })
+
+    const callArgs = vi.mocked(globalThis.fetch).mock.calls[0]
+    expect(callArgs).toBeDefined()
+    // eslint-disable-next-line no-undef
+    const init = callArgs![1] as RequestInit
+    const callBody = JSON.parse(init.body as string) as Record<string, unknown>
+    expect(callBody.config).toEqual(mockConfig)
+    expect(callBody.snapshot).toEqual(snapshot)
+  })
+
+  it('omits snapshot from the body when not provided', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ ok: true, urlPath: 'home', created: false }),
+    } as unknown as Response)
+
+    await postApply({ config: mockConfig })
+
+    const callArgs = vi.mocked(globalThis.fetch).mock.calls[0]
+    expect(callArgs).toBeDefined()
+    // eslint-disable-next-line no-undef
+    const init = callArgs![1] as RequestInit
+    const callBody = JSON.parse(init.body as string) as Record<string, unknown>
+    expect(callBody.snapshot).toBeUndefined()
+    expect(callBody.config).toEqual(mockConfig)
   })
 })
 

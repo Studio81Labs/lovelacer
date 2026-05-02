@@ -5,6 +5,7 @@ import type {
   LovelaceConfig,
   Override,
   PreviewOutput,
+  SnapshotAssignment,
 } from './types.js'
 
 /**
@@ -54,7 +55,23 @@ export function postPreview(): Promise<PreviewOutput> {
   return fetchJson<PreviewOutput>('api/preview', { method: 'POST', headers: JSON_HEADERS })
 }
 
-export function postApply(body: { config: LovelaceConfig }): Promise<ApplyResult> {
+/**
+ * Request shape for `postApply`. `snapshot` is optional: when provided,
+ * the server snapshots `(assignments, config)` after a successful HA push
+ * so future previews can diff against it. When omitted, the server keeps
+ * its previous snapshot (or has none).
+ */
+export interface PostApplyInput {
+  config: LovelaceConfig
+  snapshot?: {
+    assignments: SnapshotAssignment[]
+    config: LovelaceConfig
+  }
+}
+
+export function postApply(input: PostApplyInput): Promise<ApplyResult> {
+  const body: Record<string, unknown> = { config: input.config }
+  if (input.snapshot !== undefined) body.snapshot = input.snapshot
   return fetchJson<ApplyResult>('api/apply', {
     method: 'POST',
     headers: JSON_HEADERS,
