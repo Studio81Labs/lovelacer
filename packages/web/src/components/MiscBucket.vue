@@ -41,6 +41,8 @@ function applyAssign(): void {
 }
 
 function applyHide(): void {
+  // No bulkRoom reset: hiding is independent of the room dropdown,
+  // and the user may want to keep the room picked for a follow-up Assign.
   for (const id of selected.value) overrides.setHidden(id, true)
   selected.value = new Set()
 }
