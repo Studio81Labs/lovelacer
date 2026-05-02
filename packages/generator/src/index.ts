@@ -23,6 +23,7 @@ export type {
   EntitiesCard,
   FanSpeedFeature,
   GlanceCard,
+  GlanceEntityEntry,
   GridSection,
   HeadingCard,
   LightBrightnessFeature,
