@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { HaClient } from '@lovelacer/ha-client'
-import type { AppliedSnapshot } from '@lovelacer/shared'
+import type { AppliedSnapshot, CanonicalRoomId, SnapshotAssignment } from '@lovelacer/shared'
 import { englishCluttered } from '../../../../../tests/fixtures/english-cluttered.js'
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
 import { createApp } from '../../app.js'
@@ -137,7 +137,7 @@ describe('POST /api/preview', () => {
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
-    const assignments: { entityId: string; roomId: string | null }[] = []
+    const assignments: SnapshotAssignment[] = []
     try {
       const res = await learner.inject({ method: 'POST', url: '/api/preview' })
       const body = res.json() as {
@@ -145,7 +145,9 @@ describe('POST /api/preview', () => {
         misc: { entityId: string }[]
       }
       for (const r of body.rooms) {
-        for (const a of r.assignments) assignments.push({ entityId: a.entityId, roomId: r.id })
+        for (const a of r.assignments) {
+          assignments.push({ entityId: a.entityId, roomId: r.id as CanonicalRoomId })
+        }
       }
       for (const m of body.misc) assignments.push({ entityId: m.entityId, roomId: null })
     } finally {
@@ -157,7 +159,7 @@ describe('POST /api/preview', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot({
-        assignments: assignments as { entityId: string; roomId: 'kitchen' | null }[],
+        assignments,
         config: { title: 'x', views: [] },
       }),
       logLevel: 'silent',
