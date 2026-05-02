@@ -167,6 +167,9 @@ importers:
         specifier: ^3.5.10
         version: 3.5.33(typescript@5.9.3)
     devDependencies:
+      '@pinia/testing':
+        specifier: ^0.1.7
+        version: 0.1.7(pinia@2.3.1(typescript@5.9.3)(vue@3.5.33(typescript@5.9.3)))(vue@3.5.33(typescript@5.9.3))
       '@tailwindcss/vite':
         specifier: ^4.0.0-beta.4
         version: 4.2.4(vite@5.4.21(@types/node@22.19.17)(lightningcss@1.32.0))
@@ -630,6 +633,11 @@ packages:
 
   '@one-ini/wasm@0.1.1':
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
+
+  '@pinia/testing@0.1.7':
+    resolution: {integrity: sha512-xcDq6Ry/kNhZ5bsUMl7DeoFXwdume1NYzDggCiDUDKoPQ6Mo0eH9VU7bJvBtlurqe6byAntWoX5IhVFqWzRz/Q==}
+    peerDependencies:
+      pinia: '>=2.2.6'
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -2786,6 +2794,14 @@ snapshots:
   '@lukeed/ms@2.0.2': {}
 
   '@one-ini/wasm@0.1.1': {}
+
+  '@pinia/testing@0.1.7(pinia@2.3.1(typescript@5.9.3)(vue@3.5.33(typescript@5.9.3)))(vue@3.5.33(typescript@5.9.3))':
+    dependencies:
+      pinia: 2.3.1(typescript@5.9.3)(vue@3.5.33(typescript@5.9.3))
+      vue-demi: 0.14.10(vue@3.5.33(typescript@5.9.3))
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+      - vue
 
   '@pinojs/redact@0.4.0': {}
 

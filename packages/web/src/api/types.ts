@@ -18,6 +18,20 @@ export interface RoomAssignment {
   roomId: string
   confidence: number
   signals: DetectionSignal[]
+  /** Set to true by the server's pipeline patch when an override moved this entity. */
+  manual?: boolean
+}
+
+/**
+ * User-specified override for a single entity. Mirrors the server-side
+ * shape from @lovelacer/shared (duplicated here to keep the web package
+ * independent — the server's shape evolves in lockstep).
+ */
+export interface Override {
+  entityId: string
+  /** CanonicalRoomId at runtime; widened to string to avoid duplicating the union here. */
+  roomId?: string
+  hidden?: boolean
 }
 
 export interface AnalyzedRoom {
@@ -84,6 +98,8 @@ export interface ApiError {
     | 'invalid_config'
     | 'ha_apply_failed'
     | 'apply_failed'
+    | 'invalid_body'
+    | 'storage_error'
     | 'network'
   step?: 'list' | 'create' | 'save'
   message: string
