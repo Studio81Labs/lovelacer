@@ -23,7 +23,12 @@ export interface ComputeSuggestionsInput {
 const NAME_BASED_SOURCES = new Set(['friendly_name', 'entity_id', 'device_name'])
 const SET_AREA_MIN_CONFIDENCE = 0.6
 const MOVE_ROOM_MAX_CONFIDENCE = 0.5
-/** Top alternative must be within this delta of the winner to be considered close. */
+/**
+ * Maximum confidence gap (exclusive) for move_room to fire.
+ * Top alternative qualifies when `alt.confidence > winner - MOVE_ROOM_GAP`.
+ * A gap of exactly 0.15 is NOT considered close — matches the spec's
+ * strict `alternatives[0].confidence > assignment.confidence - 0.15`.
+ */
 const MOVE_ROOM_GAP = 0.15
 
 /**
