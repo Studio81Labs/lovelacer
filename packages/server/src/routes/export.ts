@@ -36,7 +36,12 @@ export const exportRoute: FastifyPluginAsync<ExportRouteOptions> = async (
         .send({ error: 'ha_unavailable', message: 'Home Assistant connection not ready' })
     }
     try {
-      const preview = await runPreview(opts.ha, opts.overrides, opts.appliedSnapshot, opts.dismissedSuggestions)
+      const preview = await runPreview(
+        opts.ha,
+        opts.overrides,
+        opts.appliedSnapshot,
+        opts.dismissedSuggestions,
+      )
       const yaml = configToYaml(preview.config)
       const safeStem = SAFE_FILENAME.test(opts.dashboardUrlPath)
         ? opts.dashboardUrlPath

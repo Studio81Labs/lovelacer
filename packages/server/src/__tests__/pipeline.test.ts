@@ -97,7 +97,12 @@ describe('runAnalyze', () => {
 describe('runPreview', () => {
   it('returns analyze output plus a config', async () => {
     const fake = makeFakeHa()
-    const result = await runPreview(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed())
+    const result = await runPreview(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+    )
 
     expect(result.summary.entityCount).toBeGreaterThan(0)
     expect(result.config.title).toBe('Lovelacer — Home')
@@ -107,7 +112,12 @@ describe('runPreview', () => {
 
   it('rooms in config.views (after home) match alphabetical order', async () => {
     const fake = makeFakeHa()
-    const result = await runPreview(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed())
+    const result = await runPreview(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+    )
     const titles = result.config.views.slice(1).map((v) => v.title)
     const sorted = [...titles].sort((a, b) => a.localeCompare(b, 'en'))
     expect(titles).toEqual(sorted)
@@ -167,7 +177,13 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: true })
 
-    const result = await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), { config })
+    const result = await runApply(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      { config },
+    )
 
     expect(fake.applyDashboard).toHaveBeenCalledWith(config, {})
     expect(fake.getEntityRegistry).not.toHaveBeenCalled()
@@ -181,7 +197,13 @@ describe('runApply', () => {
       created: false,
     })
 
-    const result = await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), {})
+    const result = await runApply(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      {},
+    )
 
     expect(fake.getEntityRegistry).toHaveBeenCalled()
     expect(fake.applyDashboard).toHaveBeenCalledOnce()
@@ -274,7 +296,14 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
 
-    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), { config }, { urlPath: 'foo' })
+    await runApply(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      { config },
+      { urlPath: 'foo' },
+    )
 
     expect(fake.applyDashboard).toHaveBeenCalledWith(config, { urlPath: 'foo' })
   })

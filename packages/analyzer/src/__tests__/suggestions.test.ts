@@ -194,7 +194,9 @@ describe('computeSuggestions — move_room', () => {
     const overridesById = new Map<string, Override>([
       [entity.entityId, { entityId: entity.entityId, roomId: 'office' as CanonicalRoomId }],
     ])
-    const result = computeSuggestions(input({ rooms: [makeRoom([a])], entitiesById, overridesById }))
+    const result = computeSuggestions(
+      input({ rooms: [makeRoom([a])], entitiesById, overridesById }),
+    )
     expect(result.find((s) => s.type === 'move_room')).toBeUndefined()
   })
 })

@@ -76,10 +76,7 @@ describe('SuggestionsPanel', () => {
   it('Accept on set_area_id calls window.open with the deep-link URL', async () => {
     const wrapper = mountPanel([setAreaSuggestion])
     await wrapper.find('[data-testid="suggestion-accept"]').trigger('click')
-    expect(window.open).toHaveBeenCalledWith(
-      '/config/entities?entity_id=sensor.lamp',
-      '_blank',
-    )
+    expect(window.open).toHaveBeenCalledWith('/config/entities?entity_id=sensor.lamp', '_blank')
   })
 
   it('Accept on move_room calls overrides.setRoomId(entityId, suggestedRoomId)', async () => {
@@ -125,11 +122,7 @@ describe('SuggestionsPanel', () => {
     suggestions.phase = 'dismissing'
     await wrapper.vm.$nextTick()
 
-    expect(
-      wrapper.find('[data-testid="suggestion-accept"]').attributes('disabled'),
-    ).toBeDefined()
-    expect(
-      wrapper.find('[data-testid="suggestion-dismiss"]').attributes('disabled'),
-    ).toBeDefined()
+    expect(wrapper.find('[data-testid="suggestion-accept"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('[data-testid="suggestion-dismiss"]').attributes('disabled')).toBeDefined()
   })
 })

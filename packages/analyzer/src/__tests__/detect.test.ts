@@ -409,7 +409,6 @@ describe('detectEntity — alternatives (P2-5 top-N)', () => {
     expect(result.alternatives?.[0]?.roomId).toBe('living_room')
     expect(result.alternatives?.[1]?.roomId).toBe('bedroom')
   })
-
 })
 
 describe('detectEntity — corroboration boost', () => {

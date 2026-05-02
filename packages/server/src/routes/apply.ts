@@ -58,9 +58,16 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
     }
     try {
       const body = (req.body ?? {}) as ApplyInput
-      const result = await runApply(opts.ha, opts.overrides, opts.appliedSnapshot, opts.dismissedSuggestions, body, {
-        urlPath: opts.dashboardUrlPath,
-      })
+      const result = await runApply(
+        opts.ha,
+        opts.overrides,
+        opts.appliedSnapshot,
+        opts.dismissedSuggestions,
+        body,
+        {
+          urlPath: opts.dashboardUrlPath,
+        },
+      )
       if (result.snapshotPersisted === false) {
         req.log.error(
           { err: result.snapshotError, urlPath: result.urlPath },

@@ -43,7 +43,9 @@ function makeHa(connected = true): HaClient {
   } as unknown as HaClient
 }
 
-async function makeApp(opts: { connected?: boolean; snapshot?: Omit<AppliedSnapshot, 'appliedAt'> } = {}) {
+async function makeApp(
+  opts: { connected?: boolean; snapshot?: Omit<AppliedSnapshot, 'appliedAt'> } = {},
+) {
   dismissed = new DismissedSuggestionStore(':memory:')
   return createApp({
     ha: makeHa(opts.connected ?? true),

@@ -10,14 +10,17 @@ import ApplyBar from './components/ApplyBar.vue'
 import InviteGate from './components/InviteGate.vue'
 import DiffBanner from './components/DiffBanner.vue'
 import RemovedEntitiesPanel from './components/RemovedEntitiesPanel.vue'
+import SuggestionsPanel from './components/SuggestionsPanel.vue'
 import { useAnalyzeStore } from './stores/analyze.js'
 import { useOverridesStore } from './stores/overrides.js'
 import { useInviteStore } from './stores/invite.js'
+import { useSuggestionsStore } from './stores/suggestions.js'
 import type { EntityDiff, RoomDiffSummary } from './api/types.js'
 
 const analyze = useAnalyzeStore()
 const overrides = useOverridesStore()
 const invite = useInviteStore()
+const suggestions = useSuggestionsStore()
 
 const diffByRoom = computed<Record<string, RoomDiffSummary>>(
   () => analyze.preview?.diff?.perRoom ?? {},
@@ -42,6 +45,17 @@ watch(
       loadedOnce = true
       void overrides.loadFromServer()
     }
+  },
+)
+
+// On every fresh preview, clear the optimistic-dismissed set so the
+// authoritative server response in `analyze.preview.suggestions[]`
+// drives what's visible. Dismissed-on-server keys are filtered there;
+// if the user cleared a dismissal out-of-band, it'll re-appear.
+watch(
+  () => analyze.preview,
+  () => {
+    suggestions.reset()
   },
 )
 </script>
@@ -81,6 +95,7 @@ watch(
         v-if="analyze.preview.diff !== null && analyze.preview.diff.totals.removed > 0"
         :diff="analyze.preview.diff"
       />
+      <SuggestionsPanel :suggestions="analyze.preview.suggestions" />
       <RoomList
         :rooms="analyze.preview.rooms"
         :diff-by-room="diffByRoom"
