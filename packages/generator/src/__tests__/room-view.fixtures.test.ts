@@ -38,7 +38,8 @@ function entityIdsInCard(card: LovelaceCard): string[] {
   if (card.type === 'tile' || card.type === 'thermostat') return [card.entity]
   if (card.type === 'media-control' || card.type === 'picture-entity') return [card.entity]
   if (card.type === 'entities') return card.entities
-  return [] // heading
+  if (card.type === 'conditional') return entityIdsInCard(card.card)
+  return [] // heading, markdown, glance
 }
 
 describe('buildRoomViews — english-cluttered fixture', () => {

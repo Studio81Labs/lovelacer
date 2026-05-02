@@ -17,6 +17,8 @@
 export const GENERATOR_VERSION = '0.0.0'
 export { buildRoomView, buildRoomViews } from './room-view.js'
 export type {
+  ConditionalCard,
+  ConditionEntry,
   CoverOpenCloseFeature,
   EntitiesCard,
   FanSpeedFeature,
@@ -27,8 +29,11 @@ export type {
   LovelaceCard,
   MarkdownCard,
   MediaControlCard,
+  NavigateAction,
+  OrCondition,
   PictureEntityCard,
   RoomView,
+  StateCondition,
   ThermostatCard,
   TileCard,
   TileFeature,
