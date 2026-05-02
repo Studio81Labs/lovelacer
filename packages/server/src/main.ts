@@ -3,6 +3,7 @@ import { HaClient } from '@lovelacer/ha-client'
 import { pino } from 'pino'
 import { config } from './config.js'
 import { createApp } from './app.js'
+import { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import { InviteStore } from './storage/invite-store.js'
 import { OverrideStore } from './storage/override-store.js'
 
@@ -35,10 +36,15 @@ async function main() {
   const invite = new InviteStore(invitePath)
   logger.info({ path: invitePath }, 'invite store opened')
 
+  const appliedSnapshotPath = resolve(config.dataDir, 'lovelacer.sqlite')
+  const appliedSnapshot = new AppliedSnapshotStore(appliedSnapshotPath)
+  logger.info({ path: appliedSnapshotPath }, 'applied-snapshot store opened')
+
   const app = await createApp({
     ha,
     overrides,
     invite,
+    appliedSnapshot,
     isDev,
     logLevel: config.logLevel,
     logger,
@@ -59,6 +65,7 @@ async function main() {
     } finally {
       overrides.close()
       invite.close()
+      appliedSnapshot.close()
     }
     process.exit(0)
   }

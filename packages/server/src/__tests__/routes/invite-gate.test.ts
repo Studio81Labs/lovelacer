@@ -3,8 +3,13 @@ import type { HaClient } from '@lovelacer/ha-client'
 import { englishCluttered } from '../../../../../tests/fixtures/english-cluttered.js'
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
 import { createApp } from '../../app.js'
+import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
+
+function makeAppliedSnapshot(): AppliedSnapshotStore {
+  return new AppliedSnapshotStore(':memory:')
+}
 
 let invite: InviteStore | null = null
 
@@ -31,6 +36,7 @@ async function makeApp(opts: { accepted: boolean }) {
     ha: makeHa(),
     overrides: new OverrideStore(':memory:'),
     invite,
+    appliedSnapshot: makeAppliedSnapshot(),
     logLevel: 'silent',
     dashboardUrlPath: 'lovelacer-home',
   })

@@ -3,6 +3,7 @@ import type { HaClient } from '@lovelacer/ha-client'
 import { englishCluttered } from '../../../../../tests/fixtures/english-cluttered.js'
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
 import { createApp } from '../../app.js'
+import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 
@@ -14,6 +15,10 @@ function makeAcceptedInvite(): InviteStore {
   const s = new InviteStore(':memory:')
   s.accept('BETA-2026-ALPHA')
   return s
+}
+
+function makeAppliedSnapshot(): AppliedSnapshotStore {
+  return new AppliedSnapshotStore(':memory:')
 }
 
 function makeHa(connected = true): HaClient {
@@ -34,6 +39,7 @@ describe('POST /api/analyze', () => {
       ha,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -59,6 +65,7 @@ describe('POST /api/analyze', () => {
       ha,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -84,6 +91,7 @@ describe('POST /api/analyze', () => {
       ha,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })

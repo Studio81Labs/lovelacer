@@ -9,6 +9,7 @@ import { applyRoute } from './routes/apply.js'
 import { inviteRoute } from './routes/invite.js'
 import { overridesRoute } from './routes/overrides.js'
 import { previewRoute } from './routes/preview.js'
+import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import type { InviteStore } from './storage/invite-store.js'
 import type { OverrideStore } from './storage/override-store.js'
 
@@ -16,6 +17,7 @@ export interface CreateAppOptions {
   ha: HaClient
   overrides: OverrideStore
   invite: InviteStore
+  appliedSnapshot: AppliedSnapshotStore
   isDev?: boolean
   logLevel?: string
   /**
@@ -83,10 +85,15 @@ export async function createApp(opts: CreateAppOptions) {
 
   await app.register(inviteRoute, { invite: opts.invite })
   await app.register(analyzeRoute, { ha: opts.ha, overrides: opts.overrides })
-  await app.register(previewRoute, { ha: opts.ha, overrides: opts.overrides })
+  await app.register(previewRoute, {
+    ha: opts.ha,
+    overrides: opts.overrides,
+    appliedSnapshot: opts.appliedSnapshot,
+  })
   await app.register(applyRoute, {
     ha: opts.ha,
     overrides: opts.overrides,
+    appliedSnapshot: opts.appliedSnapshot,
     dashboardUrlPath: opts.dashboardUrlPath,
   })
   await app.register(overridesRoute, { overrides: opts.overrides })

@@ -1,4 +1,10 @@
-import { detect, groupByDomain, normalize, type RoomGrouping } from '@lovelacer/analyzer'
+import {
+  computeDiff,
+  detect,
+  groupByDomain,
+  normalize,
+  type RoomGrouping,
+} from '@lovelacer/analyzer'
 import {
   buildHomeView,
   buildLovelaceConfig,
@@ -9,11 +15,14 @@ import type { ApplyDashboardOptions, ApplyDashboardResult, HaClient } from '@lov
 import type {
   AnalyzedRoom,
   CanonicalRoomId,
+  DiffResult,
   HaAreaRegistryEntry,
   NormalizedEntity,
   Override,
   RoomAssignment,
+  SnapshotAssignment,
 } from '@lovelacer/shared'
+import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import type { OverrideStore } from './storage/override-store.js'
 
 export interface AnalyzeOutput {
@@ -24,6 +33,8 @@ export interface AnalyzeOutput {
 
 export interface PreviewOutput extends AnalyzeOutput {
   config: LovelaceConfig
+  /** Null when no snapshot has been saved yet (first-run case). */
+  diff: DiffResult | null
 }
 
 export interface ApplyInput {
@@ -243,7 +254,11 @@ function buildAnalyzedRoom(
   }
 }
 
-export async function runPreview(ha: HaClient, overrides: OverrideStore): Promise<PreviewOutput> {
+export async function runPreview(
+  ha: HaClient,
+  overrides: OverrideStore,
+  appliedSnapshot: AppliedSnapshotStore,
+): Promise<PreviewOutput> {
   const state = await runFullPipeline(ha, overrides)
 
   // Drop the misc grouping before view generation: misc entities surface
@@ -254,17 +269,38 @@ export async function runPreview(ha: HaClient, overrides: OverrideStore): Promis
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
 
+  // Build the flat assignments list the diff expects: every visible
+  // entity → its assigned room (or null for misc). Mirrors what the
+  // frontend will send back at apply time.
+  const currentAssignments: SnapshotAssignment[] = []
+  for (const room of state.rooms) {
+    for (const a of room.assignments) {
+      currentAssignments.push({ entityId: a.entityId, roomId: room.id })
+    }
+  }
+  for (const m of state.misc) {
+    currentAssignments.push({ entityId: m.entityId, roomId: null })
+  }
+
+  const snapshot = appliedSnapshot.get()
+  const diff =
+    snapshot === null
+      ? null
+      : computeDiff({ snapshot, current: { assignments: currentAssignments } })
+
   return {
     rooms: state.rooms,
     misc: state.misc,
     summary: state.summary,
     config,
+    diff,
   }
 }
 
 export async function runApply(
   ha: HaClient,
   overrides: OverrideStore,
+  appliedSnapshot: AppliedSnapshotStore,
   body: ApplyInput,
   defaultOptions: ApplyDashboardOptions = {},
 ): Promise<ApplyDashboardResult> {
@@ -276,6 +312,6 @@ export async function runApply(
     return ha.applyDashboard(body.config, options)
   }
 
-  const preview = await runPreview(ha, overrides)
+  const preview = await runPreview(ha, overrides, appliedSnapshot)
   return ha.applyDashboard(preview.config, options)
 }

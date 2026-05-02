@@ -1,11 +1,13 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import type { HaClient } from '@lovelacer/ha-client'
+import type { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import type { OverrideStore } from '../storage/override-store.js'
 import { runPreview } from '../pipeline.js'
 
 export interface PreviewRouteOptions {
   ha: HaClient
   overrides: OverrideStore
+  appliedSnapshot: AppliedSnapshotStore
 }
 
 /**
@@ -28,7 +30,7 @@ export const previewRoute: FastifyPluginAsync<PreviewRouteOptions> = async (
         .send({ error: 'ha_unavailable', message: 'Home Assistant connection not ready' })
     }
     try {
-      const result = await runPreview(opts.ha, opts.overrides)
+      const result = await runPreview(opts.ha, opts.overrides, opts.appliedSnapshot)
       return reply.code(200).send(result)
     } catch (err) {
       req.log.error({ err }, 'preview failed')
