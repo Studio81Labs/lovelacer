@@ -287,7 +287,14 @@ describe('App integration', () => {
 
     // Click Save on the OverridesBar.
     await wrapper.find('[data-testid="save-button"]').trigger('click')
-    // Wait for the saveAndReanalyze promise chain to settle.
+    // saveAndReanalyze runs putOverrides → setServerState → analyze.analyze()
+    // → postPreview → setPreview, all chained microtasks. The two
+    // `Promise.resolve()` flushes microtask queues; the `setTimeout(0)`
+    // adds a macrotask flush because the bulk variant also runs three
+    // setRoomId calls before Save (each one a reactive Pinia mutation),
+    // which lengthens the chain enough that microtask flushes alone don't
+    // fully drain it. Don't strip the setTimeout without re-running this
+    // test against a deeper Pinia chain.
     await Promise.resolve()
     await Promise.resolve()
     await new Promise((resolve) => setTimeout(resolve, 0))
