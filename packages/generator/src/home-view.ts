@@ -219,7 +219,7 @@ export function buildActiveRoomsSection(groupings: RoomGrouping[]): GridSection 
       type: 'tile',
       entity: primary.entityId,
       name: display.title,
-      tap_action: { action: 'navigate', navigation_path: grouping.roomId },
+      tap_action: { action: 'navigate', navigation_path: display.path },
     }
 
     cards.push({

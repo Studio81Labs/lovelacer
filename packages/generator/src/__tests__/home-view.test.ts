@@ -488,10 +488,12 @@ describe('buildActiveRoomsSection', () => {
     expect(cond.card.entity).toBe('binary_sensor.kitchen_motion')
   })
 
-  it('tile has tap_action.navigation_path === room.roomId', () => {
+  it('tile has tap_action.navigation_path === display.path (matches the room view URL)', () => {
     const groupings = [grp('living_room', ['light.lr_main'])]
     const section = buildActiveRoomsSection(groupings)
     const cond = section!.cards[0] as { card: { tap_action: { navigation_path: string } } }
+    // For all assignable rooms, display.path === roomId. The contract is
+    // navigation_path = display.path (matches buildRoomView's URL).
     expect(cond.card.tap_action.navigation_path).toBe('living_room')
   })
 
