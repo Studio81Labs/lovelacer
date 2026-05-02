@@ -129,6 +129,25 @@ describe('MiscBucket bulk select', () => {
     expect(assignBtn.attributes('disabled')).toBeUndefined()
   })
 
+  it('does NOT clear room overrides when Assign somehow fires with no room picked (defense-in-depth)', async () => {
+    // The Assign button is disabled when bulkRoom is empty, but if a
+    // future trigger path (keyboard shortcut, programmatic call) skips
+    // that gate, applyAssign must NOT silently call setRoomId(id, null)
+    // and wipe room overrides for the selection.
+    const wrapper = mountBucket(sample)
+    const overrides = useOverridesStore()
+    await wrapper.findAll('[data-testid="misc-row-checkbox"]')[0]!.setValue(true)
+    await wrapper.findAll('[data-testid="misc-row-checkbox"]')[1]!.setValue(true)
+    // bulkRoom remains '' — bypass the disabled attribute by clicking
+    // anyway via the DOM (simulates a hostile or accidental trigger).
+    const assignBtn = wrapper.find('[data-testid="misc-bulk-assign"]')
+    await assignBtn.trigger('click')
+    // No overrides should have been staged.
+    expect(overrides.dirtyCount).toBe(0)
+    // Selection should remain (the no-op exit returns before the clear).
+    expect(wrapper.find('[data-testid="misc-bulk-bar"]').text()).toContain('2 selected')
+  })
+
   it('bulk-assigns selected entities and stages them in the override store', async () => {
     const wrapper = mountBucket(sample)
     const overrides = useOverridesStore()

@@ -29,7 +29,12 @@ function toggleAll(): void {
 }
 
 function applyAssign(): void {
-  const target = bulkRoom.value === '' ? null : bulkRoom.value
+  // Defense-in-depth: the Assign button is disabled when bulkRoom is
+  // empty, but if a future trigger path (keyboard shortcut, programmatic
+  // call) misses that gate, silently calling setRoomId(id, null) for
+  // every selected entity would wipe their room overrides without intent.
+  if (bulkRoom.value === '') return
+  const target = bulkRoom.value
   for (const id of selected.value) overrides.setRoomId(id, target)
   selected.value = new Set()
   bulkRoom.value = ''
