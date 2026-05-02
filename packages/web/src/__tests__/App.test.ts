@@ -11,9 +11,11 @@ vi.mock('../api/client.js', () => ({
   postApply: vi.fn(),
   getOverrides: vi.fn(),
   putOverrides: vi.fn(),
+  getInvite: vi.fn(),
+  postInvite: vi.fn(),
 }))
 
-const { postPreview, getOverrides, putOverrides } = await import('../api/client.js')
+const { postPreview, getOverrides, putOverrides, getInvite } = await import('../api/client.js')
 
 const mockPreview: PreviewOutput = {
   rooms: [
@@ -38,6 +40,10 @@ describe('App integration', () => {
     vi.mocked(postPreview).mockReset()
     vi.mocked(getOverrides).mockReset()
     vi.mocked(putOverrides).mockReset()
+    vi.mocked(getInvite).mockReset()
+    // Default: most existing tests assume the gate is already accepted.
+    // Tests that need accepted=false will override this.
+    vi.mocked(getInvite).mockResolvedValue({ accepted: true })
   })
 
   it('triggers loadFromServer when analyze.phase transitions to ready', async () => {
@@ -116,5 +122,66 @@ describe('App integration', () => {
       overrides: [{ entityId: 'light.kitchen_ceiling', roomId: 'living_room' }],
     })
     expect(postPreview).toHaveBeenCalled()
+  })
+})
+
+describe('App invite gate', () => {
+  beforeEach(() => {
+    vi.mocked(getInvite).mockReset()
+  })
+
+  it('calls invite.loadStatus on mount', async () => {
+    vi.mocked(getInvite).mockResolvedValueOnce({ accepted: true })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await wrapper.vm.$nextTick()
+
+    expect(getInvite).toHaveBeenCalledOnce()
+  })
+
+  it('renders InviteGate when accepted === false', async () => {
+    vi.mocked(getInvite).mockResolvedValueOnce({ accepted: false })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
+  })
+
+  it('does not render InviteGate when accepted === true', async () => {
+    vi.mocked(getInvite).mockResolvedValueOnce({ accepted: true })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+  })
+
+  it('does not render InviteGate while accepted === null (loading state)', () => {
+    // Don't resolve the mock; accepted stays null.
+    vi.mocked(getInvite).mockReturnValue(new Promise(() => {})) // never resolves
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+
+    // Synchronously: no modal yet because we haven't resolved.
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
   })
 })
