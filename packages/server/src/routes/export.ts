@@ -39,10 +39,16 @@ export const exportRoute: FastifyPluginAsync<ExportRouteOptions> = async (
       const safeStem = SAFE_FILENAME.test(opts.dashboardUrlPath)
         ? opts.dashboardUrlPath
         : 'lovelacer-home'
+      // X-Content-Type-Options: nosniff prevents browsers from re-interpreting
+      // the YAML body as HTML/JS if a future bug ever lets unsafe content slip
+      // into the LovelaceConfig. Defense-in-depth — application/yaml is already
+      // the IANA-registered type and fixture content is structured data, but
+      // the header is free.
       return reply
         .code(200)
         .header('Content-Type', 'application/yaml; charset=utf-8')
         .header('Content-Disposition', `attachment; filename="${safeStem}.yaml"`)
+        .header('X-Content-Type-Options', 'nosniff')
         .send(yaml)
     } catch (err) {
       req.log.error({ err }, 'export failed')
