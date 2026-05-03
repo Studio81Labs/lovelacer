@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import App from '../App.vue'
 import { useAnalyzeStore } from '../stores/analyze.js'
@@ -496,5 +496,36 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
     expect(wrapper.find('main').exists()).toBe(false)
+  })
+
+  it('wizard stays mounted after onboarding.completedAt flips to a number (until close emit) — P2-7 Bug 2 regression', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    const onboarding = useOnboardingStore()
+    invite.accepted = true
+    onboarding.completedAt = null
+    await wrapper.vm.$nextTick()
+
+    // Wizard should be mounted because wizardOpen was set true by the watch.
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(true)
+
+    // Simulate the apply-success watch flipping completedAt to a number
+    // (what onboarding.complete() does in the background).
+    onboarding.completedAt = 1700000000
+    await wrapper.vm.$nextTick()
+
+    // Wizard should still be mounted — App.vue gates on wizardOpen (which
+    // only flips false on the close emit), not on shouldShowWizard directly.
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(true)
+
+    // Once the wizard emits close, the wizard should unmount and main appears.
+    await wrapper.findComponent({ name: 'OnboardingWizard' }).vm.$emit('close')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(true)
   })
 })

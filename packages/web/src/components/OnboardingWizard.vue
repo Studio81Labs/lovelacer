@@ -11,6 +11,8 @@ import ProgressDots from './onboarding/ProgressDots.vue'
 
 type Step = 'welcome' | 'preview' | 'done'
 
+const emit = defineEmits<{ close: [] }>()
+
 const currentStep = ref<Step>('welcome')
 
 const onboarding = useOnboardingStore()
@@ -18,20 +20,21 @@ const settings = useSettingsStore()
 const analyze = useAnalyzeStore()
 const apply = useApplyStore()
 
-// On apply success, mark onboarding complete and advance to Done.
-// We swallow errors from complete() — the dashboard is already live in
-// HA, so the user sees the success state. Next visit's loadStatus
-// retries via the GET endpoint.
+// On apply success, transition to Done step and persist completion in
+// the background. The wizard stays mounted (App.vue tracks its own
+// open state) until the user clicks "Continue to Lovelacer" or Skip.
 watch(
   () => apply.phase,
-  async (phase) => {
+  (phase) => {
     if (phase === 'success' && currentStep.value === 'preview') {
-      try {
-        await onboarding.complete()
-      } catch {
-        // Silent — let the user reach DoneStep; retry happens on reload.
-      }
       currentStep.value = 'done'
+      // Fire-and-forget — persistence happens in the background while
+      // the user reads the DoneStep. If complete() fails, the next visit
+      // will re-show the wizard, but the dashboard is already live in HA
+      // so the user can just skip.
+      void onboarding.complete().catch(() => {
+        // Silent — dashboard is live; retry on next visit.
+      })
     }
   },
 )
@@ -54,12 +57,11 @@ async function onSkip(): Promise<void> {
   } catch {
     // Silent — main view will retry on next loadStatus.
   }
-  // Wizard unmounts via App.vue's shouldShowWizard flip.
+  emit('close')
 }
 
 function onFinishFromDone(): void {
-  // No-op — shouldShowWizard already false (complete ran on apply success).
-  // Vue unmounts the wizard on the next render.
+  emit('close')
 }
 </script>
 

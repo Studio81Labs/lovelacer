@@ -29,6 +29,36 @@ const settings = useSettingsStore()
 const onboarding = useOnboardingStore()
 const settingsOpen = ref(false)
 
+// Local wizard-mount state, decoupled from onboarding.completedAt so
+// the wizard's DoneStep stays visible after apply success (which flips
+// completedAt to a number) until the user clicks Continue/Skip.
+const wizardOpen = ref(false)
+
+// Open the wizard when we know we should: invite accepted + onboarding
+// not yet completed. Once opened, wizardOpen stays true until the
+// wizard emits close.
+watch(
+  [() => invite.accepted, () => onboarding.shouldShowWizard],
+  ([accepted, shouldShow]) => {
+    if (accepted === true && shouldShow && !wizardOpen.value) {
+      wizardOpen.value = true
+    }
+  },
+  { immediate: true },
+)
+
+// On a fresh install the GET /api/onboarding fires before invite is
+// accepted and gets 403'd. When the user accepts the invite, retry the
+// load so we know whether to show the wizard.
+watch(
+  () => invite.accepted,
+  (accepted) => {
+    if (accepted === true && onboarding.completedAt === undefined) {
+      void onboarding.loadStatus()
+    }
+  },
+)
+
 async function openSettings(): Promise<void> {
   // Await the load BEFORE opening so the user can't edit dirtyState mid-fetch
   // and have their edits silently wiped when loadFromServer's `dirtyState = null`
@@ -48,12 +78,9 @@ const diffByEntityId = computed<Map<string, EntityDiff>>(() => {
   return map
 })
 
-const showWizard = computed(() => invite.accepted === true && onboarding.shouldShowWizard)
+const showWizard = computed(() => invite.accepted === true && wizardOpen.value)
 const showMainView = computed(
-  () =>
-    invite.accepted === true &&
-    onboarding.completedAt !== null &&
-    onboarding.completedAt !== undefined,
+  () => invite.accepted === true && !wizardOpen.value && onboarding.completedAt !== undefined,
 )
 
 onMounted(() => {
@@ -143,7 +170,7 @@ watch(
     </section>
   </main>
 
-  <OnboardingWizard v-else-if="showWizard" />
+  <OnboardingWizard v-else-if="showWizard" @close="wizardOpen = false" />
 
   <SettingsModal v-if="settingsOpen" @close="settingsOpen = false" />
   <InviteGate v-if="invite.shouldShowGate" />
