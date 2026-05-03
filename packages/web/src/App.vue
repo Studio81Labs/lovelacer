@@ -26,8 +26,11 @@ const suggestions = useSuggestionsStore()
 const settings = useSettingsStore()
 const settingsOpen = ref(false)
 
-function openSettings(): void {
-  void settings.loadFromServer()
+async function openSettings(): Promise<void> {
+  // Await the load BEFORE opening so the user can't edit dirtyState mid-fetch
+  // and have their edits silently wiped when loadFromServer's `dirtyState = null`
+  // line resolves. The GET is sub-second; the brief delay is acceptable UX.
+  await settings.loadFromServer()
   settingsOpen.value = true
 }
 

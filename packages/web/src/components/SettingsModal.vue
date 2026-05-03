@@ -26,8 +26,10 @@ const SECTION_LABELS: Record<keyof SettingsSections, string> = {
   cameras: 'Cameras',
 }
 
-function onBackdropClick(): void {
-  // Dirty guard: don't lose edits silently. User must Discard or Save.
+function requestClose(): void {
+  // Dirty guard: don't lose edits silently — applies to ALL close gestures
+  // (backdrop click, × button, future ESC handler). User must Discard or
+  // Save before any close path emits.
   if (store.hasDirty) return
   emit('close')
 }
@@ -47,7 +49,7 @@ async function onSave(): Promise<void> {
   <div
     data-testid="settings-modal-backdrop"
     class="fixed inset-0 z-40 flex items-start justify-center bg-stone-900/40 p-4"
-    @click="onBackdropClick"
+    @click="requestClose"
   >
     <div
       data-testid="settings-modal"
@@ -59,8 +61,10 @@ async function onSave(): Promise<void> {
         <button
           data-testid="settings-close"
           aria-label="Close"
-          class="text-stone-500 hover:text-stone-900"
-          @click="emit('close')"
+          class="text-stone-500 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="store.hasDirty"
+          :title="store.hasDirty ? 'Discard or save changes first' : 'Close'"
+          @click="requestClose"
         >
           ×
         </button>

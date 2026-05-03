@@ -141,4 +141,24 @@ describe('SettingsModal', () => {
     await wrapper.find('[data-testid="settings-modal"]').trigger('click')
     expect(wrapper.emitted('close')).toBeFalsy()
   })
+
+  it('× close button click while NOT dirty emits close', async () => {
+    const wrapper = mountModal()
+    await wrapper.find('[data-testid="settings-close"]').trigger('click')
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('× close button is disabled while dirty (consistent with backdrop guard)', async () => {
+    const wrapper = mountModal()
+    const store = useSettingsStore()
+    store.setLanguage('cs')
+    await wrapper.vm.$nextTick()
+
+    const closeBtn = wrapper.find('[data-testid="settings-close"]')
+    expect(closeBtn.attributes('disabled')).toBeDefined()
+
+    // Even if a click somehow fires, the requestClose handler short-circuits.
+    await closeBtn.trigger('click')
+    expect(wrapper.emitted('close')).toBeFalsy()
+  })
 })
