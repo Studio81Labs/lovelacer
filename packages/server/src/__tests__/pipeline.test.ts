@@ -14,6 +14,7 @@ import { runAnalyze, runApply, runPreview } from '../pipeline.js'
 import { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import { DismissedSuggestionStore } from '../storage/dismissed-suggestion-store.js'
 import { OverrideStore } from '../storage/override-store.js'
+import { SettingsStore } from '../storage/settings-store.js'
 
 interface FakeHa {
   client: HaClient
@@ -66,10 +67,14 @@ function makeDismissed(): DismissedSuggestionStore {
   return new DismissedSuggestionStore(':memory:')
 }
 
+function makeSettings(): SettingsStore {
+  return new SettingsStore(':memory:')
+}
+
 describe('runAnalyze', () => {
   it('returns rooms, misc, summary with consistent counts', async () => {
     const fake = makeFakeHa()
-    const result = await runAnalyze(fake.client, makeStore())
+    const result = await runAnalyze(fake.client, makeStore(), makeSettings())
 
     expect(result.summary.entityCount).toBeGreaterThan(0)
     expect(result.summary.roomCount).toBe(result.rooms.length)
@@ -81,7 +86,7 @@ describe('runAnalyze', () => {
 
   it('rooms are sorted alphabetically by displayName', async () => {
     const fake = makeFakeHa()
-    const result = await runAnalyze(fake.client, makeStore())
+    const result = await runAnalyze(fake.client, makeStore(), makeSettings())
     const names = result.rooms.map((r) => r.displayName)
     const sorted = [...names].sort((a, b) => a.localeCompare(b, 'en'))
     expect(names).toEqual(sorted)
@@ -89,7 +94,7 @@ describe('runAnalyze', () => {
 
   it('rooms array does not contain the misc room', async () => {
     const fake = makeFakeHa()
-    const result = await runAnalyze(fake.client, makeStore())
+    const result = await runAnalyze(fake.client, makeStore(), makeSettings())
     expect(result.rooms.every((r) => r.id !== 'misc')).toBe(true)
   })
 })
@@ -102,6 +107,7 @@ describe('runPreview', () => {
       makeStore(),
       makeAppliedSnapshot(),
       makeDismissed(),
+      makeSettings(),
     )
 
     expect(result.summary.entityCount).toBeGreaterThan(0)
@@ -117,6 +123,7 @@ describe('runPreview', () => {
       makeStore(),
       makeAppliedSnapshot(),
       makeDismissed(),
+      makeSettings(),
     )
     const titles = result.config.views.slice(1).map((v) => v.title)
     const sorted = [...titles].sort((a, b) => a.localeCompare(b, 'en'))
@@ -127,7 +134,7 @@ describe('runPreview', () => {
     const ha = makeHa(true)
     const overrides = makeStore()
     const appliedSnapshot = makeAppliedSnapshot()
-    const result = await runPreview(ha, overrides, appliedSnapshot, makeDismissed())
+    const result = await runPreview(ha, overrides, appliedSnapshot, makeDismissed(), makeSettings())
     // The englishCluttered fixture has two floors. After Task 3 wires
     // assignFloors through, the home view should contain heading cards
     // whose text matches the fixture's floor names.
@@ -156,7 +163,7 @@ describe('runPreview', () => {
     const appliedSnapshot = makeAppliedSnapshot()
     // Should not throw — the catch in runFullPipeline downgrades the
     // rejection to an empty floor list.
-    await expect(runPreview(ha, overrides, appliedSnapshot, makeDismissed())).resolves.toBeDefined()
+    await expect(runPreview(ha, overrides, appliedSnapshot, makeDismissed(), makeSettings())).resolves.toBeDefined()
   })
 })
 
@@ -182,6 +189,7 @@ describe('runApply', () => {
       makeStore(),
       makeAppliedSnapshot(),
       makeDismissed(),
+      makeSettings(),
       { config },
     )
 
@@ -202,6 +210,7 @@ describe('runApply', () => {
       makeStore(),
       makeAppliedSnapshot(),
       makeDismissed(),
+      makeSettings(),
       {},
     )
 
@@ -229,7 +238,7 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
 
-    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), {
+    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), makeSettings(), {
       config,
       options: { urlPath: 'foo', title: 'Foo' },
     })
@@ -246,7 +255,7 @@ describe('runApply', () => {
     fake.applyDashboard.mockRejectedValueOnce(err)
 
     await expect(
-      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), {
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), makeSettings(), {
         config: {
           title: 'x',
           views: [
@@ -267,7 +276,7 @@ describe('runApply', () => {
     const fake = makeFakeHa()
     const bad = { title: 123, views: [] } as unknown as LovelaceConfig
     await expect(
-      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), { config: bad }),
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), makeSettings(), { config: bad }),
     ).rejects.toThrow(/invalid_config/)
     expect(fake.applyDashboard).not.toHaveBeenCalled()
   })
@@ -276,7 +285,7 @@ describe('runApply', () => {
     const fake = makeFakeHa()
     const bad = { title: 'x', views: {} } as unknown as LovelaceConfig
     await expect(
-      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), { config: bad }),
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), makeSettings(), { config: bad }),
     ).rejects.toThrow(/invalid_config/)
   })
 
@@ -301,6 +310,7 @@ describe('runApply', () => {
       makeStore(),
       makeAppliedSnapshot(),
       makeDismissed(),
+      makeSettings(),
       { config },
       { urlPath: 'foo' },
     )
@@ -329,6 +339,7 @@ describe('runApply', () => {
       makeStore(),
       makeAppliedSnapshot(),
       makeDismissed(),
+      makeSettings(),
       { config, options: { urlPath: 'bar' } },
       { urlPath: 'foo' },
     )
@@ -343,14 +354,14 @@ describe('runAnalyze with overrides', () => {
     const store = makeStore()
 
     // Baseline run — record where the entity lands without any overrides.
-    const baseline = await runAnalyze(fake.client, store)
+    const baseline = await runAnalyze(fake.client, store, makeSettings())
     const targetEntityId = pickEntityIn(baseline, 'kitchen')
     expect(targetEntityId, 'fixture must have at least one entity routed to kitchen').not.toBeNull()
 
     // Set an override moving the entity to living_room.
     store.replaceAll([{ entityId: targetEntityId!, roomId: 'living_room' }])
 
-    const overridden = await runAnalyze(fake.client, store)
+    const overridden = await runAnalyze(fake.client, store, makeSettings())
     const livingRoom = overridden.rooms.find((r) => r.id === 'living_room')
     expect(livingRoom, 'living_room must exist in overridden output').toBeDefined()
     const movedAssignment = livingRoom!.assignments.find((a) => a.entityId === targetEntityId)
@@ -371,7 +382,7 @@ describe('runAnalyze with overrides', () => {
     const fake = makeFakeHa()
     const store = makeStore()
 
-    const baseline = await runAnalyze(fake.client, store)
+    const baseline = await runAnalyze(fake.client, store, makeSettings())
     const baselineEntityCount = baseline.summary.entityCount
 
     const targetEntityId = pickEntityIn(baseline, 'kitchen')
@@ -388,7 +399,7 @@ describe('runAnalyze with overrides', () => {
 
     store.replaceAll([{ entityId: targetEntityId!, hidden: true }])
 
-    const filtered = await runAnalyze(fake.client, store)
+    const filtered = await runAnalyze(fake.client, store, makeSettings())
     expect(filtered.summary.entityCount).toBe(baselineEntityCount - 1)
 
     // The entity is in NO room and NOT in misc.
@@ -403,13 +414,13 @@ describe('runAnalyze with overrides', () => {
     const fake = makeFakeHa()
     const store = makeStore()
 
-    const baseline = await runAnalyze(fake.client, store)
+    const baseline = await runAnalyze(fake.client, store, makeSettings())
     const targetEntityId = pickEntityIn(baseline, 'kitchen')
     expect(targetEntityId).not.toBeNull()
 
     store.replaceAll([{ entityId: targetEntityId!, roomId: 'living_room', hidden: true }])
 
-    const result = await runAnalyze(fake.client, store)
+    const result = await runAnalyze(fake.client, store, makeSettings())
     // Hidden takes precedence over room move at the visibility level.
     const inAnyRoom = result.rooms.some((r) =>
       r.assignments.some((a) => a.entityId === targetEntityId),
@@ -423,12 +434,12 @@ describe('runAnalyze with overrides', () => {
     const store = makeStore()
 
     // Capture baseline before applying the orphan override.
-    const baseline = await runAnalyze(fake.client, store)
+    const baseline = await runAnalyze(fake.client, store, makeSettings())
 
     // Now load the orphan override.
     store.replaceAll([{ entityId: 'light.does_not_exist', roomId: 'bedroom' }])
 
-    const result = await runAnalyze(fake.client, store)
+    const result = await runAnalyze(fake.client, store, makeSettings())
     // Identical entity count — the orphan didn't add a phantom entity nor
     // corrupt the existing count.
     expect(result.summary.entityCount).toBe(baseline.summary.entityCount)
@@ -442,13 +453,13 @@ describe('runPreview with overrides', () => {
     const fake = makeFakeHa()
     const store = makeStore()
 
-    const baseline = await runPreview(fake.client, store, makeAppliedSnapshot(), makeDismissed())
+    const baseline = await runPreview(fake.client, store, makeAppliedSnapshot(), makeDismissed(), makeSettings())
     const targetEntityId = pickEntityIn(baseline, 'kitchen')
     expect(targetEntityId).not.toBeNull()
 
     store.replaceAll([{ entityId: targetEntityId!, roomId: 'living_room' }])
 
-    const overridden = await runPreview(fake.client, store, makeAppliedSnapshot(), makeDismissed())
+    const overridden = await runPreview(fake.client, store, makeAppliedSnapshot(), makeDismissed(), makeSettings())
     const livingRoomView = overridden.config.views.find((v) => v.path === 'living_room')
     expect(livingRoomView).toBeDefined()
     // The entityId should appear somewhere in the living_room view's cards.

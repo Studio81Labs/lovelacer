@@ -3,6 +3,7 @@ import type { HaClient } from '@lovelacer/ha-client'
 import type { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from '../storage/dismissed-suggestion-store.js'
 import type { OverrideStore } from '../storage/override-store.js'
+import type { SettingsStore } from '../storage/settings-store.js'
 import { runPreview } from '../pipeline.js'
 
 export interface PreviewRouteOptions {
@@ -10,6 +11,7 @@ export interface PreviewRouteOptions {
   overrides: OverrideStore
   appliedSnapshot: AppliedSnapshotStore
   dismissedSuggestions: DismissedSuggestionStore
+  settings: SettingsStore
 }
 
 /**
@@ -37,6 +39,7 @@ export const previewRoute: FastifyPluginAsync<PreviewRouteOptions> = async (
         opts.overrides,
         opts.appliedSnapshot,
         opts.dismissedSuggestions,
+        opts.settings,
       )
       return reply.code(200).send(result)
     } catch (err) {

@@ -7,6 +7,7 @@ import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
+import { SettingsStore } from '../../storage/settings-store.js'
 
 function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
@@ -46,6 +47,7 @@ describe('POST /api/analyze', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -73,6 +75,7 @@ describe('POST /api/analyze', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -100,6 +103,7 @@ describe('POST /api/analyze', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })

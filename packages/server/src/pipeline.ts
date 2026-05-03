@@ -23,12 +23,15 @@ import type {
   NormalizedEntity,
   Override,
   RoomAssignment,
+  Settings,
+  SettingsSections,
   SnapshotAssignment,
   Suggestion,
 } from '@lovelacer/shared'
 import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.js'
 import type { OverrideStore } from './storage/override-store.js'
+import type { SettingsStore } from './storage/settings-store.js'
 
 export interface AnalyzeOutput {
   rooms: AnalyzedRoom[]
@@ -148,6 +151,8 @@ interface PipelineState {
   misc: AnalyzeOutput['misc']
   summary: AnalyzeOutput['summary']
   floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
+  /** P2-6 — per-section toggles read from SettingsStore at the top of runFullPipeline. */
+  sectionFlags: SettingsSections
 }
 
 /**
@@ -192,7 +197,16 @@ export function applyOverrides(
   }
 }
 
-async function runFullPipeline(ha: HaClient, overrides: OverrideStore): Promise<PipelineState> {
+async function runFullPipeline(
+  ha: HaClient,
+  overrides: OverrideStore,
+  settings: SettingsStore,
+): Promise<PipelineState> {
+  // P2-6 — read settings at the top so language/sections threading is
+  // consistent across the entire pipeline call.
+  const cfg: Settings = settings.get()
+  const detectLanguage = cfg.language === 'auto' ? undefined : cfg.language
+
   // Floor registry is opportunistic — older HA versions may not expose
   // `config/floor_registry/list`. If it errors, we treat as empty and
   // proceed; the rest of analyze must not depend on floor data.
@@ -212,7 +226,11 @@ async function runFullPipeline(ha: HaClient, overrides: OverrideStore): Promise<
     entities: entityRegistry,
     devices: deviceRegistry,
   })
-  const assignments = detect({ entities, areas: areaRegistry })
+  const assignments = detect({
+    entities,
+    areas: areaRegistry,
+    ...(detectLanguage !== undefined ? { language: detectLanguage } : {}),
+  })
   applyOverrides({ assignments, entities }, overrides.getAll())
   const groupings = groupByDomain({ assignments, entities })
 
@@ -269,11 +287,16 @@ async function runFullPipeline(ha: HaClient, overrides: OverrideStore): Promise<
       miscCount: misc.length,
     },
     floorAssignments,
+    sectionFlags: cfg.sections,
   }
 }
 
-export async function runAnalyze(ha: HaClient, overrides: OverrideStore): Promise<AnalyzeOutput> {
-  const state = await runFullPipeline(ha, overrides)
+export async function runAnalyze(
+  ha: HaClient,
+  overrides: OverrideStore,
+  settings: SettingsStore,
+): Promise<AnalyzeOutput> {
+  const state = await runFullPipeline(ha, overrides, settings)
   return { rooms: state.rooms, misc: state.misc, summary: state.summary }
 }
 
@@ -330,8 +353,9 @@ export async function runPreview(
   overrides: OverrideStore,
   appliedSnapshot: AppliedSnapshotStore,
   dismissedSuggestions: DismissedSuggestionStore,
+  settings: SettingsStore,
 ): Promise<PreviewOutput> {
-  const state = await runFullPipeline(ha, overrides)
+  const state = await runFullPipeline(ha, overrides, settings)
 
   // Drop the misc grouping before view generation: misc entities surface
   // via the analyze response's `misc[]` field, not as a dashboard view.
@@ -342,6 +366,7 @@ export async function runPreview(
     groupings: dashboardGroupings,
     rooms: state.rooms,
     floorAssignments: state.floorAssignments,
+    sections: state.sectionFlags,
   })
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })
@@ -398,6 +423,7 @@ export async function runApply(
   overrides: OverrideStore,
   appliedSnapshot: AppliedSnapshotStore,
   dismissedSuggestions: DismissedSuggestionStore,
+  settings: SettingsStore,
   body: ApplyInput,
   defaultOptions: ApplyDashboardOptions = {},
 ): Promise<RunApplyResult> {
@@ -410,7 +436,7 @@ export async function runApply(
     }
     result = await ha.applyDashboard(body.config, options)
   } else {
-    const preview = await runPreview(ha, overrides, appliedSnapshot, dismissedSuggestions)
+    const preview = await runPreview(ha, overrides, appliedSnapshot, dismissedSuggestions, settings)
     result = await ha.applyDashboard(preview.config, options)
   }
 

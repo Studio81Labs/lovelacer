@@ -4,6 +4,7 @@ import { configToYaml } from '@lovelacer/generator'
 import type { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from '../storage/dismissed-suggestion-store.js'
 import type { OverrideStore } from '../storage/override-store.js'
+import type { SettingsStore } from '../storage/settings-store.js'
 import { runPreview } from '../pipeline.js'
 
 export interface ExportRouteOptions {
@@ -11,6 +12,7 @@ export interface ExportRouteOptions {
   overrides: OverrideStore
   appliedSnapshot: AppliedSnapshotStore
   dismissedSuggestions: DismissedSuggestionStore
+  settings: SettingsStore
   /** Filename suggested via Content-Disposition. Matches dashboardUrlPath. */
   dashboardUrlPath: string
 }
@@ -41,6 +43,7 @@ export const exportRoute: FastifyPluginAsync<ExportRouteOptions> = async (
         opts.overrides,
         opts.appliedSnapshot,
         opts.dismissedSuggestions,
+        opts.settings,
       )
       const yaml = configToYaml(preview.config)
       const safeStem = SAFE_FILENAME.test(opts.dashboardUrlPath)
