@@ -149,7 +149,7 @@ watch(
             :entity-id="entity.entityId"
             :friendly-name="entity.friendlyName"
             room-id="misc"
-            :read-only="readOnly"
+            :read-only="readOnly ?? false"
           />
         </div>
       </li>

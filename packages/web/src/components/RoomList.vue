@@ -94,7 +94,7 @@ function entityIdToFriendly(entityId: string): string {
               :entity-id="a.entityId"
               :friendly-name="entityIdToFriendly(a.entityId)"
               :room-id="a.roomId"
-              :read-only="readOnly"
+              :read-only="readOnly ?? false"
               v-bind="{
                 ...(a.manual !== undefined ? { manual: a.manual } : {}),
                 ...((diffByEntityId ?? new Map()).has(a.entityId)

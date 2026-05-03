@@ -51,12 +51,38 @@ describe('OnboardingWizard', () => {
     expect(wrapper.find('[data-testid="welcome-step"]').exists()).toBe(true)
   })
 
-  it('Continue from WelcomeStep calls settings.saveAndReanalyze and transitions to PreviewStep', async () => {
+  it('Continue from WelcomeStep when settings is dirty: calls saveAndReanalyze and transitions to PreviewStep', async () => {
     const wrapper = mountWizard()
     const settings = useSettingsStore()
+    const analyze = useAnalyzeStore()
+    vi.mocked(settings.saveAndReanalyze).mockResolvedValue(undefined)
+    settings.setLanguage('cs')
+    await flushPromises()
     await wrapper.find('[data-testid="welcome-continue"]').trigger('click')
     await flushPromises()
     expect(vi.mocked(settings.saveAndReanalyze)).toHaveBeenCalled()
+    // analyze.analyze should NOT be called separately — saveAndReanalyze does it.
+    expect(vi.mocked(analyze.analyze)).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="preview-step"]').exists()).toBe(true)
+  })
+
+  it('Continue from WelcomeStep when settings is NOT dirty: calls analyze + transitions to PreviewStep (regression: Bugbot #25)', async () => {
+    // Regression for the bug where saveAndReanalyze early-returns on a clean
+    // dirty state, so a user who Continues without changing the language
+    // would land on PreviewStep with phase='idle' and no template branch
+    // matching. The fix mirrors onSkip's hasDirty branching.
+    const wrapper = mountWizard()
+    const settings = useSettingsStore()
+    const analyze = useAnalyzeStore()
+    // Stub analyze.analyze so the non-dirty branch's fire-and-forget call
+    // doesn't reject (postAnalyze isn't fully mocked) and pollute later tests
+    // with unhandled rejections.
+    vi.mocked(analyze.analyze).mockResolvedValue(undefined)
+    expect(settings.hasDirty).toBe(false)
+    await wrapper.find('[data-testid="welcome-continue"]').trigger('click')
+    await flushPromises()
+    expect(vi.mocked(analyze.analyze)).toHaveBeenCalled()
+    expect(vi.mocked(settings.saveAndReanalyze)).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="preview-step"]').exists()).toBe(true)
   })
 
@@ -65,7 +91,12 @@ describe('OnboardingWizard', () => {
     const settings = useSettingsStore()
     const onboarding = useOnboardingStore()
     const apply = useApplyStore()
-    // Skip Welcome by triggering Continue first.
+    // Dirty the settings + stub saveAndReanalyze so Continue goes through
+    // the awaited dirty-branch (same as the original test's behavior before
+    // onContinueFromWelcome got its hasDirty guard added).
+    vi.mocked(settings.saveAndReanalyze).mockResolvedValue(undefined)
+    settings.setLanguage('cs')
+    await flushPromises()
     await wrapper.find('[data-testid="welcome-continue"]').trigger('click')
     await flushPromises()
     // Now on PreviewStep; simulate apply success via store mutation.
@@ -73,14 +104,15 @@ describe('OnboardingWizard', () => {
     await flushPromises()
     expect(vi.mocked(onboarding.complete)).toHaveBeenCalled()
     expect(wrapper.find('[data-testid="done-step"]').exists()).toBe(true)
-    // settings.saveAndReanalyze was called once during Continue, not again.
-    expect(vi.mocked(settings.saveAndReanalyze)).toHaveBeenCalledTimes(1)
   })
 
   it('Apply error does NOT call onboarding.complete and does NOT transition', async () => {
     const wrapper = mountWizard()
+    const analyze = useAnalyzeStore()
     const onboarding = useOnboardingStore()
     const apply = useApplyStore()
+    // Stub the non-dirty Continue branch's fire-and-forget analyze call.
+    vi.mocked(analyze.analyze).mockResolvedValue(undefined)
     await wrapper.find('[data-testid="welcome-continue"]').trigger('click')
     await flushPromises()
     apply.phase = 'error'

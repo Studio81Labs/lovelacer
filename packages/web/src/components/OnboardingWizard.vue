@@ -40,7 +40,15 @@ watch(
 )
 
 async function onContinueFromWelcome(): Promise<void> {
-  await settings.saveAndReanalyze()
+  // saveAndReanalyze early-returns when nothing is dirty, which would skip
+  // analysis entirely — PreviewStep would mount with phase='idle' and no
+  // template branch matches. Mirror onSkip's branching so the analyze step
+  // always runs, regardless of whether the user touched the language.
+  if (settings.hasDirty) {
+    await settings.saveAndReanalyze()
+  } else {
+    void analyze.analyze()
+  }
   currentStep.value = 'preview'
 }
 
