@@ -8,6 +8,7 @@ import OverridesBar from './components/OverridesBar.vue'
 import DashboardPreview from './components/DashboardPreview.vue'
 import ApplyBar from './components/ApplyBar.vue'
 import InviteGate from './components/InviteGate.vue'
+import OnboardingWizard from './components/OnboardingWizard.vue'
 import DiffBanner from './components/DiffBanner.vue'
 import RemovedEntitiesPanel from './components/RemovedEntitiesPanel.vue'
 import SuggestionsPanel from './components/SuggestionsPanel.vue'
@@ -17,6 +18,7 @@ import { useOverridesStore } from './stores/overrides.js'
 import { useInviteStore } from './stores/invite.js'
 import { useSuggestionsStore } from './stores/suggestions.js'
 import { useSettingsStore } from './stores/settings.js'
+import { useOnboardingStore } from './stores/onboarding.js'
 import type { EntityDiff, RoomDiffSummary } from './api/types.js'
 
 const analyze = useAnalyzeStore()
@@ -24,6 +26,7 @@ const overrides = useOverridesStore()
 const invite = useInviteStore()
 const suggestions = useSuggestionsStore()
 const settings = useSettingsStore()
+const onboarding = useOnboardingStore()
 const settingsOpen = ref(false)
 
 async function openSettings(): Promise<void> {
@@ -45,8 +48,17 @@ const diffByEntityId = computed<Map<string, EntityDiff>>(() => {
   return map
 })
 
+const showWizard = computed(() => invite.accepted === true && onboarding.shouldShowWizard)
+const showMainView = computed(
+  () =>
+    invite.accepted === true &&
+    onboarding.completedAt !== null &&
+    onboarding.completedAt !== undefined,
+)
+
 onMounted(() => {
   void invite.loadStatus()
+  void onboarding.loadStatus()
 })
 
 let loadedOnce = false
@@ -73,7 +85,7 @@ watch(
 </script>
 
 <template>
-  <main class="mx-auto max-w-3xl space-y-6 p-8">
+  <main v-if="showMainView" class="mx-auto max-w-3xl space-y-6 p-8">
     <header class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-semibold text-stone-900">Lovelacer</h1>
@@ -130,6 +142,8 @@ watch(
       <ApplyBar />
     </section>
   </main>
+
+  <OnboardingWizard v-else-if="showWizard" />
 
   <SettingsModal v-if="settingsOpen" @close="settingsOpen = false" />
   <InviteGate v-if="invite.shouldShowGate" />

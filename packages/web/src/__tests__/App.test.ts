@@ -4,6 +4,8 @@ import { createTestingPinia } from '@pinia/testing'
 import App from '../App.vue'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useOverridesStore } from '../stores/overrides.js'
+import { useInviteStore } from '../stores/invite.js'
+import { useOnboardingStore } from '../stores/onboarding.js'
 import type { PreviewOutput } from '../api/types.js'
 
 vi.mock('../api/client.js', () => ({
@@ -13,9 +15,11 @@ vi.mock('../api/client.js', () => ({
   putOverrides: vi.fn(),
   getInvite: vi.fn(),
   postInvite: vi.fn(),
+  getOnboarding: vi.fn(),
+  postOnboardingComplete: vi.fn(),
 }))
 
-const { postPreview, getOverrides, putOverrides, getInvite, postInvite } =
+const { postPreview, getOverrides, putOverrides, getInvite, postInvite, getOnboarding } =
   await import('../api/client.js')
 
 const mockPreview: PreviewOutput = {
@@ -44,9 +48,11 @@ describe('App integration', () => {
     vi.mocked(getOverrides).mockReset()
     vi.mocked(putOverrides).mockReset()
     vi.mocked(getInvite).mockReset()
-    // Default: most existing tests assume the gate is already accepted.
-    // Tests that need accepted=false will override this.
+    vi.mocked(getOnboarding).mockReset()
+    // Default: most existing tests assume the gate is already accepted
+    // and onboarding already completed so the main view is visible.
     vi.mocked(getInvite).mockResolvedValue({ accepted: true })
+    vi.mocked(getOnboarding).mockResolvedValue({ completedAt: 1700000000 })
   })
 
   it('triggers loadFromServer when analyze.phase transitions to ready', async () => {
@@ -135,6 +141,9 @@ describe('App integration', () => {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
       },
     })
+    // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
     const analyze = useAnalyzeStore()
     analyze.$patch({ phase: 'ready', preview: previewWithDiff })
     await wrapper.vm.$nextTick()
@@ -162,6 +171,9 @@ describe('App integration', () => {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
       },
     })
+    // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
     const analyze = useAnalyzeStore()
     const overrides = useOverridesStore()
 
@@ -265,6 +277,9 @@ describe('App integration', () => {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
       },
     })
+    // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
     const analyze = useAnalyzeStore()
     const overrides = useOverridesStore()
 
@@ -423,5 +438,63 @@ describe('App invite gate', () => {
     expect((wrapper.find('[data-testid="invite-input"]').element as HTMLInputElement).value).toBe(
       'BETA-2026-ALPHA',
     )
+  })
+})
+
+describe('App.vue — onboarding gating (P2-7)', () => {
+  it('initial render (both invite and onboarding loading): all three views hidden', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    // No call to loadStatus has resolved yet — accepted is null, completedAt undefined.
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(false)
+  })
+
+  it('invite accepted, onboarding pending → wizard visible, main hidden', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    const onboarding = useOnboardingStore()
+    invite.accepted = true
+    onboarding.completedAt = null
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(true)
+    expect(wrapper.find('main').exists()).toBe(false)
+  })
+
+  it('invite accepted, onboarding completed → main visible, wizard hidden', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    const onboarding = useOnboardingStore()
+    invite.accepted = true
+    onboarding.completedAt = 1700000000
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(true)
+  })
+
+  it('invite not accepted → InviteGate visible, neither wizard nor main', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    invite.accepted = false
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(false)
   })
 })
