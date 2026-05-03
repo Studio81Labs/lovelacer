@@ -163,7 +163,9 @@ describe('runPreview', () => {
     const appliedSnapshot = makeAppliedSnapshot()
     // Should not throw — the catch in runFullPipeline downgrades the
     // rejection to an empty floor list.
-    await expect(runPreview(ha, overrides, appliedSnapshot, makeDismissed(), makeSettings())).resolves.toBeDefined()
+    await expect(
+      runPreview(ha, overrides, appliedSnapshot, makeDismissed(), makeSettings()),
+    ).resolves.toBeDefined()
   })
 })
 
@@ -238,10 +240,17 @@ describe('runApply', () => {
     }
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'foo', created: true })
 
-    await runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), makeSettings(), {
-      config,
-      options: { urlPath: 'foo', title: 'Foo' },
-    })
+    await runApply(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+      {
+        config,
+        options: { urlPath: 'foo', title: 'Foo' },
+      },
+    )
 
     expect(fake.applyDashboard).toHaveBeenCalledWith(config, {
       urlPath: 'foo',
@@ -276,7 +285,9 @@ describe('runApply', () => {
     const fake = makeFakeHa()
     const bad = { title: 123, views: [] } as unknown as LovelaceConfig
     await expect(
-      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), makeSettings(), { config: bad }),
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), makeSettings(), {
+        config: bad,
+      }),
     ).rejects.toThrow(/invalid_config/)
     expect(fake.applyDashboard).not.toHaveBeenCalled()
   })
@@ -285,7 +296,9 @@ describe('runApply', () => {
     const fake = makeFakeHa()
     const bad = { title: 'x', views: {} } as unknown as LovelaceConfig
     await expect(
-      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), makeSettings(), { config: bad }),
+      runApply(fake.client, makeStore(), makeAppliedSnapshot(), makeDismissed(), makeSettings(), {
+        config: bad,
+      }),
     ).rejects.toThrow(/invalid_config/)
   })
 
@@ -453,13 +466,25 @@ describe('runPreview with overrides', () => {
     const fake = makeFakeHa()
     const store = makeStore()
 
-    const baseline = await runPreview(fake.client, store, makeAppliedSnapshot(), makeDismissed(), makeSettings())
+    const baseline = await runPreview(
+      fake.client,
+      store,
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+    )
     const targetEntityId = pickEntityIn(baseline, 'kitchen')
     expect(targetEntityId).not.toBeNull()
 
     store.replaceAll([{ entityId: targetEntityId!, roomId: 'living_room' }])
 
-    const overridden = await runPreview(fake.client, store, makeAppliedSnapshot(), makeDismissed(), makeSettings())
+    const overridden = await runPreview(
+      fake.client,
+      store,
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+    )
     const livingRoomView = overridden.config.views.find((v) => v.path === 'living_room')
     expect(livingRoomView).toBeDefined()
     // The entityId should appear somewhere in the living_room view's cards.

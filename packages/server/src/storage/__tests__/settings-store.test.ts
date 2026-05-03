@@ -123,9 +123,9 @@ describe('SettingsStore (file-backed)', () => {
           updated_at INTEGER NOT NULL DEFAULT (unixepoch())
         );
       `)
-      raw.prepare('INSERT INTO settings (id, payload) VALUES (1, ?)').run(
-        JSON.stringify({ language: 'klingon', cardPack: 'default', sections: {} }),
-      )
+      raw
+        .prepare('INSERT INTO settings (id, payload) VALUES (1, ?)')
+        .run(JSON.stringify({ language: 'klingon', cardPack: 'default', sections: {} }))
       raw.close()
 
       const store = new SettingsStore(filename)

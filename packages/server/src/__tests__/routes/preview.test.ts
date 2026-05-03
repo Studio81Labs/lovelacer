@@ -48,7 +48,11 @@ function makeHa(connected = true): HaClient {
 }
 
 async function makeApp(
-  opts: { connected?: boolean; snapshot?: Omit<AppliedSnapshot, 'appliedAt'>; accepted?: boolean } = {},
+  opts: {
+    connected?: boolean
+    snapshot?: Omit<AppliedSnapshot, 'appliedAt'>
+    accepted?: boolean
+  } = {},
 ) {
   dismissed = new DismissedSuggestionStore(':memory:')
   settings = new SettingsStore(':memory:')

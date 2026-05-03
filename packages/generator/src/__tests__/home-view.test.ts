@@ -638,7 +638,13 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
       ent('camera.front_door', { friendlyName: 'Front Door' }),
     ]
     const groupings = [grp('kitchen', ['light.kitchen_main'])]
-    const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map(), sections: ALL_SECTIONS_ON })
+    const view = buildHomeView({
+      entities,
+      groupings,
+      rooms: [],
+      floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
+    })
 
     expect(view.sections).toHaveLength(6)
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
@@ -653,7 +659,13 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
     // Just enough for Welcome + Active Rooms; no people/scenes/cameras/QuickStats.
     const entities = [ent('light.kitchen_main')]
     const groupings = [grp('kitchen', ['light.kitchen_main'])]
-    const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map(), sections: ALL_SECTIONS_ON })
+    const view = buildHomeView({
+      entities,
+      groupings,
+      rooms: [],
+      floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
+    })
 
     expect(view.sections).toHaveLength(2)
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
@@ -885,9 +897,7 @@ describe('buildHomeView — section toggles (P2-6)', () => {
 
   it('with welcome=false, omits the welcome section', () => {
     const home = buildHomeView(makeInput({ ...ALL_SECTIONS_ON, welcome: false }))
-    const hasMarkdown = home.sections.some((s) =>
-      s.cards.some((c) => c.type === 'markdown'),
-    )
+    const hasMarkdown = home.sections.some((s) => s.cards.some((c) => c.type === 'markdown'))
     expect(hasMarkdown).toBe(false)
   })
 

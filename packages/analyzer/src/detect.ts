@@ -136,10 +136,7 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
       (s): s is string => s !== null,
     )
     for (const name of candidates) {
-      const match = findRoom(
-        name,
-        ctx.language !== undefined ? { language: ctx.language } : {},
-      )
+      const match = findRoom(name, ctx.language !== undefined ? { language: ctx.language } : {})
       if (match !== null) {
         fired.push({
           source: 'device_name',

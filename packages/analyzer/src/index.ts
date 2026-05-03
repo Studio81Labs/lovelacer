@@ -17,7 +17,12 @@ export type { NormalizeInput } from './normalize.js'
 export { findRoom } from './match-room.js'
 export type { FindRoomOptions, RoomMatch } from './match-room.js'
 export { buildDetectionContext, detect, detectEntity } from './detect.js'
-export type { AreaIndexEntry, BuildDetectionContextOptions, DetectInput, DetectionContext } from './detect.js'
+export type {
+  AreaIndexEntry,
+  BuildDetectionContextOptions,
+  DetectInput,
+  DetectionContext,
+} from './detect.js'
 export { domainGroup, groupByDomain } from './grouping.js'
 export type { DomainGroupKey, DomainGroup, GroupByDomainInput, RoomGrouping } from './grouping.js'
 export { computeDiff } from './diff.js'
