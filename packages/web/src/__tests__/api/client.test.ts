@@ -7,8 +7,17 @@ import {
   putOverrides,
   getInvite,
   postInvite,
+  getSettings,
+  putSettings,
 } from '../../api/client.js'
-import type { ApiError, LovelaceConfig, Override, PreviewOutput } from '../../api/types.js'
+import type {
+  ApiError,
+  LovelaceConfig,
+  Override,
+  PreviewOutput,
+  Settings,
+} from '../../api/types.js'
+import { DEFAULT_SETTINGS } from '../../api/types.js'
 
 const mockPreviewResponse: PreviewOutput = {
   rooms: [],
@@ -348,6 +357,73 @@ describe('postDismissSuggestion', () => {
       postDismissSuggestion({ entityId: 'sensor.foo', suggestionType: 'set_area_id' }),
     ).rejects.toMatchObject({
       error: 'storage_error',
+    })
+  })
+})
+
+describe('getSettings', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('GETs api/settings and returns the parsed payload', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ settings: DEFAULT_SETTINGS }),
+    } as unknown as Response)
+
+    const result = await getSettings()
+    expect(result).toEqual({ settings: DEFAULT_SETTINGS })
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/settings', {})
+  })
+})
+
+describe('putSettings', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('PUTs api/settings with body and returns the parsed payload', async () => {
+    const next: Settings = {
+      language: 'cs',
+      cardPack: 'default',
+      sections: {
+        welcome: false,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+    }
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ settings: next }),
+    } as unknown as Response)
+
+    const result = await putSettings({ settings: next })
+    expect(result).toEqual({ settings: next })
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings: next }),
+    })
+  })
+
+  it('throws ApiError when server returns 400 invalid_body', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: () =>
+        Promise.resolve({
+          error: 'invalid_body',
+          message: 'language: must be auto/en/cs',
+        }),
+    } as unknown as Response)
+
+    await expect(putSettings({ settings: DEFAULT_SETTINGS })).rejects.toMatchObject({
+      error: 'invalid_body',
     })
   })
 })

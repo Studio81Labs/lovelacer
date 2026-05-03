@@ -5,6 +5,7 @@ import type {
   LovelaceConfig,
   Override,
   PreviewOutput,
+  Settings,
   SnapshotAssignment,
   SuggestionType,
 } from './types.js'
@@ -119,5 +120,17 @@ export async function postDismissSuggestion(input: DismissSuggestionInput): Prom
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify(input),
+  })
+}
+
+export function getSettings(): Promise<{ settings: Settings }> {
+  return fetchJson<{ settings: Settings }>('api/settings')
+}
+
+export function putSettings(body: { settings: Settings }): Promise<{ settings: Settings }> {
+  return fetchJson<{ settings: Settings }>('api/settings', {
+    method: 'PUT',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(body),
   })
 }

@@ -158,6 +158,47 @@ export interface DiffResult {
 }
 
 /**
+ * P2-6 — Settings shape. Mirrored from `@lovelacer/shared`. All field
+ * names match the server-side shape exactly. `language` and `cardPack`
+ * stay as their string literal unions (no widening — there's no
+ * CanonicalRoomId concern here).
+ */
+export type SettingsLanguage = 'auto' | 'en' | 'cs'
+
+export type SettingsCardPack = 'default'
+
+export interface SettingsSections {
+  welcome: boolean
+  quickStats: boolean
+  people: boolean
+  roomsByFloor: boolean
+  activeRooms: boolean
+  scenes: boolean
+  cameras: boolean
+}
+
+export interface Settings {
+  language: SettingsLanguage
+  cardPack: SettingsCardPack
+  sections: SettingsSections
+}
+
+/** Defaults preserve current behavior — mirror of @lovelacer/shared's value. */
+export const DEFAULT_SETTINGS: Settings = {
+  language: 'auto',
+  cardPack: 'default',
+  sections: {
+    welcome: true,
+    quickStats: true,
+    people: true,
+    roomsByFloor: true,
+    activeRooms: true,
+    scenes: true,
+    cameras: true,
+  },
+}
+
+/**
  * The error envelope every non-2xx response body conforms to. `step` is
  * present only when `error === 'ha_apply_failed'`. `'network'` is a
  * client-side signal that fetch itself rejected or the response wasn't
