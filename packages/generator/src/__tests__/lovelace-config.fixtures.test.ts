@@ -8,6 +8,17 @@ import { detect, groupByDomain, normalize } from '@lovelacer/analyzer'
 import { buildHomeView } from '../home-view.js'
 import { buildLovelaceConfig } from '../lovelace-config.js'
 import { buildRoomViews } from '../room-view.js'
+import type { SettingsSections } from '@lovelacer/shared'
+
+const ALL_SECTIONS_ON: SettingsSections = {
+  welcome: true,
+  quickStats: true,
+  people: true,
+  roomsByFloor: true,
+  activeRooms: true,
+  scenes: true,
+  cameras: true,
+}
 
 function pipe(fixture: Fixture) {
   const ha = fixtureToHaRegistries(fixture)
@@ -22,6 +33,7 @@ function pipe(fixture: Fixture) {
     groupings: dashboardGroupings,
     rooms: [],
     floorAssignments: new Map(),
+    sections: ALL_SECTIONS_ON,
   })
   const rooms = buildRoomViews(dashboardGroupings)
   const config = buildLovelaceConfig({ home, rooms })

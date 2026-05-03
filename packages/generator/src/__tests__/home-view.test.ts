@@ -14,7 +14,9 @@ import {
   buildScenesSection,
   pickQuickStatsEntities,
 } from '../home-view.js'
+import type { BuildHomeViewInput } from '../home-view.js'
 import type { RoomGrouping } from '@lovelacer/analyzer'
+import type { SettingsSections } from '@lovelacer/shared'
 import type { GlanceCard, HeadingCard } from '../lovelace-types.js'
 
 const ent = (id: string, overrides: Partial<NormalizedEntity> = {}): NormalizedEntity => ({
@@ -30,6 +32,17 @@ const ent = (id: string, overrides: Partial<NormalizedEntity> = {}): NormalizedE
   isDisabled: false,
   ...overrides,
 })
+
+/** All sections enabled — used by pre-P2-6 tests to preserve existing behaviour. */
+const ALL_SECTIONS_ON: SettingsSections = {
+  welcome: true,
+  quickStats: true,
+  people: true,
+  roomsByFloor: true,
+  activeRooms: true,
+  scenes: true,
+  cameras: true,
+}
 
 describe('pickQuickStatsEntities — patterns', () => {
   it('picks weather entity (any weather.* domain)', () => {
@@ -157,6 +170,7 @@ describe('buildHomeView — view metadata', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     expect(view.type).toBe('sections')
     expect(view.title).toBe('Home')
@@ -172,6 +186,7 @@ describe('buildHomeView — Welcome section', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     expect(view.sections).toHaveLength(1)
     const card = view.sections[0]!.cards[0]
@@ -184,6 +199,7 @@ describe('buildHomeView — Welcome section', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     const card = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
     expect(card.content).toContain('Good ')
@@ -199,6 +215,7 @@ describe('buildHomeView — Welcome section', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     const card = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
     expect(card.content).toContain("{{ states('weather.home') }}")
@@ -211,6 +228,7 @@ describe('buildHomeView — Welcome section', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     const card = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
     expect(card.content).toContain("states('weather.home')")
@@ -225,6 +243,7 @@ describe('buildHomeView — Quick stats section', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     expect(view.sections).toHaveLength(1) // Welcome only
   })
@@ -235,6 +254,7 @@ describe('buildHomeView — Quick stats section', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     expect(view.sections).toHaveLength(1) // Welcome only
   })
@@ -248,6 +268,7 @@ describe('buildHomeView — Quick stats section', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     expect(view.sections).toHaveLength(2)
     const glance = view.sections[1]!.cards[0] as {
@@ -270,6 +291,7 @@ describe('buildHomeView — Quick stats section', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     expect(view.sections[1]!.cards).toHaveLength(1)
     expect(view.sections[1]!.cards[0]!.type).toBe('glance')
@@ -561,6 +583,7 @@ describe('buildHomeView — integration', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     expect(view.sections).toHaveLength(2)
     const welcome = view.sections[0]!.cards[0] as { type: 'markdown'; content: string }
@@ -579,6 +602,7 @@ describe('buildHomeView — integration', () => {
       groupings: [],
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     expect(view.sections).toHaveLength(1)
   })
@@ -593,6 +617,7 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
       groupings: emptyGroupings,
       rooms: [],
       floorAssignments: new Map(),
+      sections: ALL_SECTIONS_ON,
     })
     expect(view.sections).toHaveLength(1)
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown')
@@ -613,7 +638,7 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
       ent('camera.front_door', { friendlyName: 'Front Door' }),
     ]
     const groupings = [grp('kitchen', ['light.kitchen_main'])]
-    const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map() })
+    const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map(), sections: ALL_SECTIONS_ON })
 
     expect(view.sections).toHaveLength(6)
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
@@ -628,7 +653,7 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
     // Just enough for Welcome + Active Rooms; no people/scenes/cameras/QuickStats.
     const entities = [ent('light.kitchen_main')]
     const groupings = [grp('kitchen', ['light.kitchen_main'])]
-    const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map() })
+    const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map(), sections: ALL_SECTIONS_ON })
 
     expect(view.sections).toHaveLength(2)
     expect(view.sections[0]!.cards[0]!.type).toBe('markdown') // Welcome
@@ -811,5 +836,65 @@ describe('buildRoomsByFloorSection', () => {
     expect(glance.entities).toHaveLength(1)
     const entry = glance.entities[0] as { entity: string }
     expect(entry.entity).toBe('light.kitchen')
+  })
+})
+
+describe('buildHomeView — section toggles (P2-6)', () => {
+  // Minimal fixture: one weather entity (powers Welcome + QuickStats),
+  // one person (powers People), one scene (powers Scenes), one camera
+  // (powers Cameras). Active rooms / floor sections need groupings.
+
+  function makeInput(sections: SettingsSections): BuildHomeViewInput {
+    return {
+      entities: [
+        {
+          entityId: 'weather.home',
+          domain: 'weather',
+          objectId: 'home',
+          friendlyName: 'Home weather',
+          deviceClass: null,
+          entityCategory: null,
+          haAreaId: null,
+          device: null,
+          isHidden: false,
+          isDisabled: false,
+        },
+      ],
+      groupings: [],
+      rooms: [],
+      floorAssignments: new Map(),
+      sections,
+    }
+  }
+
+  const ALL_OFF: SettingsSections = {
+    welcome: false,
+    quickStats: false,
+    people: false,
+    roomsByFloor: false,
+    activeRooms: false,
+    scenes: false,
+    cameras: false,
+  }
+
+  it('with all toggles on, includes the welcome section', () => {
+    const home = buildHomeView(makeInput(ALL_SECTIONS_ON))
+    // The Welcome section's first card is a markdown card.
+    expect(home.sections[0]?.cards[0]?.type).toBe('markdown')
+  })
+
+  it('with welcome=false, omits the welcome section', () => {
+    const home = buildHomeView(makeInput({ ...ALL_SECTIONS_ON, welcome: false }))
+    const hasMarkdown = home.sections.some((s) =>
+      s.cards.some((c) => c.type === 'markdown'),
+    )
+    expect(hasMarkdown).toBe(false)
+  })
+
+  it('with all toggles off, returns a HomeView with empty sections', () => {
+    const home = buildHomeView(makeInput(ALL_OFF))
+    expect(home.type).toBe('sections')
+    expect(home.path).toBe('home')
+    expect(home.sections).toEqual([])
   })
 })

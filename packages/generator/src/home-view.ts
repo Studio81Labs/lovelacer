@@ -3,6 +3,7 @@ import type {
   CanonicalRoomId,
   FloorAssignment,
   NormalizedEntity,
+  SettingsSections,
 } from '@lovelacer/shared'
 import type { RoomGrouping } from '@lovelacer/analyzer'
 import type {
@@ -31,6 +32,12 @@ export interface BuildHomeViewInput {
   groupings: RoomGrouping[]
   rooms: AnalyzedRoom[]
   floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
+  /**
+   * P2-6 — per-section toggles. Each conditional builder is gated by
+   * its corresponding flag. With all flags false, the returned HomeView
+   * has an empty `sections` array (valid but empty home view).
+   */
+  sections: SettingsSections
 }
 
 const PRESENCE_ID_PATTERN = /anyone[_-]?home|someone[_-]?home|presence/i
@@ -84,36 +91,53 @@ function hasOutdoorMarker(entity: NormalizedEntity): boolean {
 }
 
 /**
- * Build the dashboard's first view: Welcome markdown card + an
- * optional Quick stats glance card (dropped when fewer than 2
- * entities match the curated patterns).
+ * Build the dashboard's first view: a list of grid sections gated by
+ * `input.sections` flags. Each builder may also return null when the
+ * input has nothing to render (e.g., no scenes); both gates apply.
  *
- * Pure function. Always emits the Welcome section.
+ * Pure function. Returns a HomeView with `sections: []` when all
+ * P2-6 toggles are off — valid but empty home view.
  */
 export function buildHomeView(input: BuildHomeViewInput): HomeView {
-  const sections: GridSection[] = [buildWelcomeSection(input.entities)]
+  const sections: GridSection[] = []
 
-  const quickStats = buildQuickStatsSection(input.entities)
-  if (quickStats !== null) sections.push(quickStats)
+  if (input.sections.welcome) {
+    sections.push(buildWelcomeSection(input.entities))
+  }
 
-  const people = buildPeopleSection(input.entities)
-  if (people !== null) sections.push(people)
+  if (input.sections.quickStats) {
+    const quickStats = buildQuickStatsSection(input.entities)
+    if (quickStats !== null) sections.push(quickStats)
+  }
 
-  const roomsByFloor = buildRoomsByFloorSection({
-    rooms: input.rooms,
-    groupings: input.groupings,
-    floorAssignments: input.floorAssignments,
-  })
-  if (roomsByFloor !== null) sections.push(roomsByFloor)
+  if (input.sections.people) {
+    const people = buildPeopleSection(input.entities)
+    if (people !== null) sections.push(people)
+  }
 
-  const activeRooms = buildActiveRoomsSection(input.groupings)
-  if (activeRooms !== null) sections.push(activeRooms)
+  if (input.sections.roomsByFloor) {
+    const roomsByFloor = buildRoomsByFloorSection({
+      rooms: input.rooms,
+      groupings: input.groupings,
+      floorAssignments: input.floorAssignments,
+    })
+    if (roomsByFloor !== null) sections.push(roomsByFloor)
+  }
 
-  const scenes = buildScenesSection(input.entities)
-  if (scenes !== null) sections.push(scenes)
+  if (input.sections.activeRooms) {
+    const activeRooms = buildActiveRoomsSection(input.groupings)
+    if (activeRooms !== null) sections.push(activeRooms)
+  }
 
-  const cameras = buildCamerasSection(input.entities)
-  if (cameras !== null) sections.push(cameras)
+  if (input.sections.scenes) {
+    const scenes = buildScenesSection(input.entities)
+    if (scenes !== null) sections.push(scenes)
+  }
+
+  if (input.sections.cameras) {
+    const cameras = buildCamerasSection(input.entities)
+    if (cameras !== null) sections.push(cameras)
+  }
 
   return {
     type: 'sections',
