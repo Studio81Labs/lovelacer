@@ -47,9 +47,18 @@ watch(
   { immediate: true },
 )
 
-// On a fresh install the GET /api/onboarding fires before invite is
-// accepted and gets 403'd. When the user accepts the invite, retry the
-// load so we know whether to show the wizard.
+// Single source of truth for when onboarding status loads: only after
+// invite is accepted (so /api/onboarding doesn't 403 against the gate).
+// `immediate: true` handles the existing-install case where invite is
+// already accepted at mount; the conditional skips the no-op pre-mount
+// firing where `accepted === undefined`.
+//
+// `flush: 'pre'` is critical for the fresh-install path: when invite
+// flips from false to true, the loadStatus call must land its
+// synchronous `phase = 'loading'` mutation BEFORE the next render —
+// otherwise `onboarding.isResolved` could still be true from a stale
+// state and `showMainView` would briefly evaluate true between
+// invite acceptance and wizard mount, flashing the main view.
 watch(
   () => invite.accepted,
   (accepted) => {
@@ -57,6 +66,7 @@ watch(
       void onboarding.loadStatus()
     }
   },
+  { immediate: true, flush: 'pre' },
 )
 
 async function openSettings(): Promise<void> {
@@ -88,7 +98,9 @@ const showMainView = computed(
 
 onMounted(() => {
   void invite.loadStatus()
-  void onboarding.loadStatus()
+  // Onboarding status loads via the watch on `invite.accepted` below
+  // (single source of truth) — firing it here would race the invite
+  // load and 403 on a fresh install.
 })
 
 let loadedOnce = false

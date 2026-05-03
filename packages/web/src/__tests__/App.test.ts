@@ -442,6 +442,13 @@ describe('App invite gate', () => {
 })
 
 describe('App.vue — onboarding gating (P2-7)', () => {
+  beforeEach(() => {
+    // Reset both mocks each test — earlier tests in the file may have
+    // installed `mockReturnValueOnce` queues that would leak in.
+    vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
+    vi.mocked(getOnboarding).mockReset().mockResolvedValue({ completedAt: 1700000000 })
+  })
+
   it('initial render (both invite and onboarding loading): all three views hidden', async () => {
     const wrapper = mount(App, {
       global: {
@@ -495,6 +502,54 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(false)
+  })
+
+  it('main view does not flash during invite acceptance after a stale onboarding 403 (regression: Bugbot #25 Medium flicker)', async () => {
+    // Bug: on a fresh install, the initial onboarding.loadStatus 403'd
+    // (gated), leaving phase='error' and isResolved=true. When invite
+    // was accepted, the post-flush retry watch fired AFTER Vue's
+    // render — so `showMainView` briefly evaluated true with the stale
+    // resolved state, flashing the main view before the wizard mounted.
+    //
+    // Fix: drop the speculative onMounted load and gate loadStatus on
+    // invite.accepted via a `flush: 'pre'` watch so the synchronous
+    // `phase='loading'` mutation lands before the next render.
+    let resolveSecondLoad: (v: { completedAt: number | null }) => void = () => {}
+    const secondLoadPromise = new Promise<{ completedAt: number | null }>((r) => {
+      resolveSecondLoad = r
+    })
+    vi.mocked(getOnboarding).mockReset().mockReturnValueOnce(secondLoadPromise)
+    vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: false })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await flushPromises()
+    // Invite gate is up; onboarding.loadStatus has NOT yet fired (no
+    // onMounted call), so the store is in its initial state.
+    const onboarding = useOnboardingStore()
+    expect(onboarding.phase).toBe('idle')
+    expect(onboarding.completedAt).toBeUndefined()
+
+    // Simulate invite acceptance.
+    const invite = useInviteStore()
+    invite.accepted = true
+    // Pre-flush watch fires synchronously and queues loadStatus, which
+    // synchronously sets phase='loading'. After nextTick, the render
+    // should see isResolved=false and hide both views.
+    await wrapper.vm.$nextTick()
+    expect(onboarding.phase).toBe('loading')
+    expect(onboarding.isResolved).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(false) // no flicker
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+
+    // Now resolve the load — the wizard should mount.
+    resolveSecondLoad({ completedAt: null })
+    await flushPromises()
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(true)
     expect(wrapper.find('main').exists()).toBe(false)
   })
 
