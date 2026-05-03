@@ -139,6 +139,22 @@ describe('EntityRow', () => {
     expect(wrapper.text()).toContain('(hidden)')
     expect(wrapper.classes()).toContain('opacity-60')
   })
+
+  it('with readOnly: true, hides the room dropdown and the hide checkbox', () => {
+    const wrapper = mount(EntityRow, {
+      props: {
+        entityId: 'sensor.foo',
+        friendlyName: 'Sensor Foo',
+        roomId: 'kitchen',
+        readOnly: true,
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    expect(wrapper.find('[data-testid="room-select"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="hide-toggle"]').exists()).toBe(false)
+  })
 })
 
 describe('EntityRow diff tag', () => {

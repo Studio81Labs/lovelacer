@@ -10,6 +10,12 @@ interface Props {
   roomId: string
   manual?: boolean
   diff?: EntityDiff
+  /**
+   * P2-7 — when true, the room override dropdown and hide checkbox are
+   * hidden. Used by the onboarding wizard's PreviewStep, which renders a
+   * non-editable preview of the upcoming dashboard.
+   */
+  readOnly?: boolean
 }
 
 const props = defineProps<Props>()
@@ -88,7 +94,7 @@ const diffTagClass = computed<string>(() => {
       </span>
     </div>
 
-    <div class="flex items-center gap-3">
+    <div v-if="!readOnly" class="flex items-center gap-3">
       <select
         data-testid="room-select"
         aria-label="Assign room"

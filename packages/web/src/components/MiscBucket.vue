@@ -5,7 +5,15 @@ import { useOverridesStore } from '../stores/overrides.js'
 import { ASSIGNABLE_ROOMS, roomIdToDisplay } from '../rooms.js'
 import type { MiscEntity } from '../api/types.js'
 
-const props = defineProps<{ misc: MiscEntity[] }>()
+const props = defineProps<{
+  misc: MiscEntity[]
+  /**
+   * P2-7 — when true, the bulk-select checkboxes, per-row hide toggle,
+   * and bulk action bar are hidden. Used by the onboarding wizard's
+   * PreviewStep.
+   */
+  readOnly?: boolean
+}>()
 const overrides = useOverridesStore()
 
 const selected = ref<Set<string>>(new Set())
@@ -69,7 +77,7 @@ watch(
     </summary>
 
     <div
-      v-if="selectedCount > 0"
+      v-if="!readOnly && selectedCount > 0"
       data-testid="misc-bulk-bar"
       class="sticky top-0 z-10 flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs"
     >
@@ -127,6 +135,7 @@ watch(
     <ul class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
       <li v-for="entity in misc" :key="entity.entityId" class="flex items-center gap-3 pl-5">
         <input
+          v-if="!readOnly"
           type="checkbox"
           :checked="selected.has(entity.entityId)"
           :disabled="isSaving"
@@ -140,6 +149,7 @@ watch(
             :entity-id="entity.entityId"
             :friendly-name="entity.friendlyName"
             room-id="misc"
+            :read-only="readOnly"
           />
         </div>
       </li>

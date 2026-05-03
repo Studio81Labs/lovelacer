@@ -8,6 +8,11 @@ defineProps<{
   rooms: AnalyzedRoom[]
   diffByRoom?: Record<string, RoomDiffSummary>
   diffByEntityId?: Map<string, EntityDiff>
+  /**
+   * P2-7 — when true, EntityRow children render in read-only mode
+   * (no override dropdowns, no hide toggles). Forwarded as-is.
+   */
+  readOnly?: boolean
 }>()
 
 function confidencePillClass(confidence: number): string {
@@ -89,6 +94,7 @@ function entityIdToFriendly(entityId: string): string {
               :entity-id="a.entityId"
               :friendly-name="entityIdToFriendly(a.entityId)"
               :room-id="a.roomId"
+              :read-only="readOnly"
               v-bind="{
                 ...(a.manual !== undefined ? { manual: a.manual } : {}),
                 ...((diffByEntityId ?? new Map()).has(a.entityId)
