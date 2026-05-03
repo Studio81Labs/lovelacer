@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { HaClient } from '@lovelacer/ha-client'
 import { englishCluttered } from '../../../../../tests/fixtures/english-cluttered.js'
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
@@ -8,6 +8,7 @@ import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-sto
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 import { SettingsStore } from '../../storage/settings-store.js'
+import { OnboardingStore } from '../../storage/onboarding-store.js'
 
 function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
@@ -27,6 +28,13 @@ function makeDismissed(): DismissedSuggestionStore {
   return new DismissedSuggestionStore(':memory:')
 }
 
+let onboarding: OnboardingStore | null = null
+
+afterEach(() => {
+  onboarding?.close()
+  onboarding = null
+})
+
 function makeHa(connected = true): HaClient {
   const ha = fixtureToHaRegistries(englishCluttered)
   return {
@@ -41,6 +49,7 @@ function makeHa(connected = true): HaClient {
 describe('POST /api/analyze', () => {
   it('returns 200 with rooms, misc, summary when HA connected', async () => {
     const ha = makeHa(true)
+    onboarding = new OnboardingStore(':memory:')
     const app = await createApp({
       ha,
       overrides: makeStore(),
@@ -48,6 +57,7 @@ describe('POST /api/analyze', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -69,6 +79,7 @@ describe('POST /api/analyze', () => {
 
   it('returns 503 ha_unavailable when HA disconnected', async () => {
     const ha = makeHa(false)
+    onboarding = new OnboardingStore(':memory:')
     const app = await createApp({
       ha,
       overrides: makeStore(),
@@ -76,6 +87,7 @@ describe('POST /api/analyze', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -97,6 +109,7 @@ describe('POST /api/analyze', () => {
       getDeviceRegistry: vi.fn(async () => []),
       getAreaRegistry: vi.fn(async () => []),
     } as unknown as HaClient
+    onboarding = new OnboardingStore(':memory:')
     const app = await createApp({
       ha,
       overrides: makeStore(),
@@ -104,6 +117,7 @@ describe('POST /api/analyze', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })

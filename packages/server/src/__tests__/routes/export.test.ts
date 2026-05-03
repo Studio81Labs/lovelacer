@@ -9,6 +9,7 @@ import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-sto
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 import { SettingsStore } from '../../storage/settings-store.js'
+import { OnboardingStore } from '../../storage/onboarding-store.js'
 
 function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
@@ -48,6 +49,7 @@ describe('GET /api/export.yaml', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -68,6 +70,7 @@ describe('GET /api/export.yaml', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -108,6 +111,7 @@ describe('GET /api/export.yaml', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -128,6 +132,7 @@ describe('GET /api/export.yaml', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'my-dash',
     })
@@ -151,6 +156,7 @@ describe('GET /api/export.yaml', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: '../etc/passwd',
     })

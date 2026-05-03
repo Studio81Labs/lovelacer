@@ -8,6 +8,7 @@ import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 import { SettingsStore } from '../../storage/settings-store.js'
+import { OnboardingStore } from '../../storage/onboarding-store.js'
 
 function makeAppliedSnapshot(): AppliedSnapshotStore {
   return new AppliedSnapshotStore(':memory:')
@@ -16,6 +17,7 @@ function makeAppliedSnapshot(): AppliedSnapshotStore {
 let invite: InviteStore | null = null
 let dismissed: DismissedSuggestionStore | null = null
 let settings: SettingsStore | null = null
+let onboarding: OnboardingStore | null = null
 
 afterEach(() => {
   invite?.close()
@@ -24,6 +26,8 @@ afterEach(() => {
   dismissed = null
   settings?.close()
   settings = null
+  onboarding?.close()
+  onboarding = null
 })
 
 function makeHa(): HaClient {
@@ -41,6 +45,7 @@ async function makeApp(opts: { accepted: boolean }) {
   invite = new InviteStore(':memory:')
   dismissed = new DismissedSuggestionStore(':memory:')
   settings = new SettingsStore(':memory:')
+  onboarding = new OnboardingStore(':memory:')
   if (opts.accepted) invite.accept('BETA-2026-ALPHA')
   return createApp({
     ha: makeHa(),
@@ -49,6 +54,7 @@ async function makeApp(opts: { accepted: boolean }) {
     appliedSnapshot: makeAppliedSnapshot(),
     dismissedSuggestions: dismissed,
     settings,
+    onboarding,
     logLevel: 'silent',
     dashboardUrlPath: 'lovelacer-home',
   })
@@ -242,6 +248,28 @@ describe('invite gate hook', () => {
           },
         },
       })
+      expect(res.statusCode).toBe(403)
+      expect(res.json()).toMatchObject({ error: 'invite_required' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('blocks GET /api/onboarding with 403 when not accepted', async () => {
+    const app = await makeApp({ accepted: false })
+    try {
+      const res = await app.inject({ method: 'GET', url: '/api/onboarding' })
+      expect(res.statusCode).toBe(403)
+      expect(res.json()).toMatchObject({ error: 'invite_required' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('blocks POST /api/onboarding/complete with 403 when not accepted', async () => {
+    const app = await makeApp({ accepted: false })
+    try {
+      const res = await app.inject({ method: 'POST', url: '/api/onboarding/complete' })
       expect(res.statusCode).toBe(403)
       expect(res.json()).toMatchObject({ error: 'invite_required' })
     } finally {
