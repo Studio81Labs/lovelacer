@@ -1,0 +1,166 @@
+<script setup lang="ts">
+import { useSettingsStore } from '../stores/settings.js'
+import type { SettingsLanguage, SettingsSections } from '../api/types.js'
+
+const emit = defineEmits<{ close: [] }>()
+
+const store = useSettingsStore()
+
+const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [
+  'welcome',
+  'quickStats',
+  'people',
+  'roomsByFloor',
+  'activeRooms',
+  'scenes',
+  'cameras',
+]
+
+const SECTION_LABELS: Record<keyof SettingsSections, string> = {
+  welcome: 'Welcome message',
+  quickStats: 'Quick stats',
+  people: 'People',
+  roomsByFloor: 'Rooms by floor',
+  activeRooms: 'Active rooms',
+  scenes: 'Scenes',
+  cameras: 'Cameras',
+}
+
+function requestClose(): void {
+  // Dirty guard: don't lose edits silently — applies to ALL close gestures
+  // (backdrop click, × button, future ESC handler). User must Discard or
+  // Save before any close path emits.
+  if (store.hasDirty) return
+  emit('close')
+}
+
+async function onSave(): Promise<void> {
+  try {
+    await store.saveAndReanalyze()
+    emit('close')
+  } catch {
+    // Store already set phase=error and stashed the ApiError. Modal
+    // stays open with dirty state preserved for retry.
+  }
+}
+</script>
+
+<template>
+  <div
+    data-testid="settings-modal-backdrop"
+    class="fixed inset-0 z-40 flex items-start justify-center bg-stone-900/40 p-4"
+    @click="requestClose"
+  >
+    <div
+      data-testid="settings-modal"
+      class="mt-20 w-full max-w-md rounded-lg bg-white p-5 shadow-xl"
+      @click.stop
+    >
+      <header class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-medium text-stone-900">Settings</h2>
+        <button
+          data-testid="settings-close"
+          aria-label="Close"
+          class="text-stone-500 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="store.hasDirty"
+          :title="store.hasDirty ? 'Discard or save changes first' : 'Close'"
+          @click="requestClose"
+        >
+          ×
+        </button>
+      </header>
+
+      <section class="space-y-5 text-sm">
+        <!-- Language -->
+        <div>
+          <label for="settings-language" class="block font-medium text-stone-700">
+            Detection language
+          </label>
+          <select
+            id="settings-language"
+            data-testid="settings-language"
+            class="mt-1 w-full rounded border border-stone-300 px-2 py-1.5"
+            :value="store.effective.language"
+            @change="
+              store.setLanguage(($event.target as HTMLSelectElement).value as SettingsLanguage)
+            "
+          >
+            <option value="auto">Auto (match all)</option>
+            <option value="en">English</option>
+            <option value="cs">Čeština</option>
+          </select>
+          <p class="mt-1 text-xs text-stone-500">
+            Auto matches all keyword sets. Pick a specific language to narrow name-based detection.
+          </p>
+        </div>
+
+        <!-- Card pack -->
+        <div>
+          <label for="settings-card-pack" class="block font-medium text-stone-700">
+            Card pack
+          </label>
+          <select
+            id="settings-card-pack"
+            data-testid="settings-card-pack"
+            class="mt-1 w-full rounded border border-stone-300 px-2 py-1.5 disabled:opacity-50"
+            :value="store.effective.cardPack"
+            disabled
+          >
+            <option value="default">Default</option>
+          </select>
+          <p class="mt-1 text-xs text-stone-500">More packs coming soon.</p>
+        </div>
+
+        <!-- Sections -->
+        <fieldset>
+          <legend class="font-medium text-stone-700">Home view sections</legend>
+          <div class="mt-1 space-y-1.5">
+            <label
+              v-for="key in SECTION_KEYS"
+              :key="key"
+              class="flex items-center gap-2 text-stone-700"
+            >
+              <input
+                type="checkbox"
+                :data-testid="`settings-section-${key}`"
+                :checked="store.effective.sections[key]"
+                @change="store.setSection(key, ($event.target as HTMLInputElement).checked)"
+              />
+              <span>{{ SECTION_LABELS[key] }}</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Error banner -->
+        <p
+          v-if="store.phase === 'error' && store.error !== null"
+          data-testid="settings-error"
+          class="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-900"
+        >
+          {{ store.error.message }}
+        </p>
+      </section>
+
+      <footer class="mt-5 flex justify-end gap-2">
+        <button
+          v-if="store.hasDirty"
+          type="button"
+          data-testid="settings-discard"
+          class="rounded border border-stone-300 px-3 py-1.5 text-stone-700 hover:bg-stone-50"
+          @click="store.discardChanges"
+        >
+          Discard changes
+        </button>
+        <button
+          type="button"
+          data-testid="settings-save"
+          class="rounded bg-brand-600 px-3 py-1.5 font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="!store.hasDirty || store.phase === 'saving'"
+          @click="onSave"
+        >
+          Save & re-analyze
+        </button>
+      </footer>
+    </div>
+  </div>
+</template>

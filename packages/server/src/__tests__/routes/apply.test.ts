@@ -9,6 +9,7 @@ import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
+import { SettingsStore } from '../../storage/settings-store.js'
 
 function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
@@ -77,6 +78,7 @@ describe('POST /api/apply — happy paths', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -107,6 +109,7 @@ describe('POST /api/apply — happy paths', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -139,6 +142,7 @@ describe('POST /api/apply — happy paths', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -165,6 +169,7 @@ describe('POST /api/apply — error paths', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -185,6 +190,7 @@ describe('POST /api/apply — error paths', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -210,6 +216,7 @@ describe('POST /api/apply — error paths', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -237,6 +244,7 @@ describe('POST /api/apply — error paths', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -268,6 +276,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -304,6 +313,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -331,6 +341,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -360,6 +371,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -394,6 +406,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })

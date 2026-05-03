@@ -10,11 +10,13 @@ import { exportRoute } from './routes/export.js'
 import { inviteRoute } from './routes/invite.js'
 import { overridesRoute } from './routes/overrides.js'
 import { previewRoute } from './routes/preview.js'
+import { settingsRoute } from './routes/settings.js'
 import { suggestionsRoute } from './routes/suggestions.js'
 import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.js'
 import type { InviteStore } from './storage/invite-store.js'
 import type { OverrideStore } from './storage/override-store.js'
+import type { SettingsStore } from './storage/settings-store.js'
 
 export interface CreateAppOptions {
   ha: HaClient
@@ -22,6 +24,7 @@ export interface CreateAppOptions {
   invite: InviteStore
   appliedSnapshot: AppliedSnapshotStore
   dismissedSuggestions: DismissedSuggestionStore
+  settings: SettingsStore
   isDev?: boolean
   logLevel?: string
   /**
@@ -88,18 +91,24 @@ export async function createApp(opts: CreateAppOptions) {
   })
 
   await app.register(inviteRoute, { invite: opts.invite })
-  await app.register(analyzeRoute, { ha: opts.ha, overrides: opts.overrides })
+  await app.register(analyzeRoute, {
+    ha: opts.ha,
+    overrides: opts.overrides,
+    settings: opts.settings,
+  })
   await app.register(previewRoute, {
     ha: opts.ha,
     overrides: opts.overrides,
     appliedSnapshot: opts.appliedSnapshot,
     dismissedSuggestions: opts.dismissedSuggestions,
+    settings: opts.settings,
   })
   await app.register(applyRoute, {
     ha: opts.ha,
     overrides: opts.overrides,
     appliedSnapshot: opts.appliedSnapshot,
     dismissedSuggestions: opts.dismissedSuggestions,
+    settings: opts.settings,
     dashboardUrlPath: opts.dashboardUrlPath,
   })
   await app.register(exportRoute, {
@@ -107,9 +116,11 @@ export async function createApp(opts: CreateAppOptions) {
     overrides: opts.overrides,
     appliedSnapshot: opts.appliedSnapshot,
     dismissedSuggestions: opts.dismissedSuggestions,
+    settings: opts.settings,
     dashboardUrlPath: opts.dashboardUrlPath,
   })
   await app.register(overridesRoute, { overrides: opts.overrides })
+  await app.register(settingsRoute, { settings: opts.settings })
   await app.register(suggestionsRoute, { dismissed: opts.dismissedSuggestions })
 
   // SPA static serving — only enabled in add-on / production. In dev Vite

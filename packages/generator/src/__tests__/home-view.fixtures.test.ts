@@ -5,13 +5,30 @@ import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index
 import type { Fixture } from '../../../../tests/fixtures/_builder/index.js'
 import { detect, groupByDomain, normalize } from '@lovelacer/analyzer'
 import { buildHomeView } from '../home-view.js'
+import type { SettingsSections } from '@lovelacer/shared'
+
+const ALL_SECTIONS_ON: SettingsSections = {
+  welcome: true,
+  quickStats: true,
+  people: true,
+  roomsByFloor: true,
+  activeRooms: true,
+  scenes: true,
+  cameras: true,
+}
 
 function pipe(fixture: Fixture) {
   const ha = fixtureToHaRegistries(fixture)
   const entities = normalize({ entities: ha.entities, devices: ha.devices })
   const assignments = detect({ entities, areas: ha.areas })
   const groupings = groupByDomain({ assignments, entities }).filter((g) => g.roomId !== 'misc')
-  const view = buildHomeView({ entities, groupings, rooms: [], floorAssignments: new Map() })
+  const view = buildHomeView({
+    entities,
+    groupings,
+    rooms: [],
+    floorAssignments: new Map(),
+    sections: ALL_SECTIONS_ON,
+  })
   return { entities, view }
 }
 

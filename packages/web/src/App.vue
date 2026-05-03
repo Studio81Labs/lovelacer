@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import HealthBar from './components/HealthBar.vue'
 import AnalyzeButton from './components/AnalyzeButton.vue'
 import RoomList from './components/RoomList.vue'
@@ -11,16 +11,28 @@ import InviteGate from './components/InviteGate.vue'
 import DiffBanner from './components/DiffBanner.vue'
 import RemovedEntitiesPanel from './components/RemovedEntitiesPanel.vue'
 import SuggestionsPanel from './components/SuggestionsPanel.vue'
+import SettingsModal from './components/SettingsModal.vue'
 import { useAnalyzeStore } from './stores/analyze.js'
 import { useOverridesStore } from './stores/overrides.js'
 import { useInviteStore } from './stores/invite.js'
 import { useSuggestionsStore } from './stores/suggestions.js'
+import { useSettingsStore } from './stores/settings.js'
 import type { EntityDiff, RoomDiffSummary } from './api/types.js'
 
 const analyze = useAnalyzeStore()
 const overrides = useOverridesStore()
 const invite = useInviteStore()
 const suggestions = useSuggestionsStore()
+const settings = useSettingsStore()
+const settingsOpen = ref(false)
+
+async function openSettings(): Promise<void> {
+  // Await the load BEFORE opening so the user can't edit dirtyState mid-fetch
+  // and have their edits silently wiped when loadFromServer's `dirtyState = null`
+  // line resolves. The GET is sub-second; the brief delay is acceptable UX.
+  await settings.loadFromServer()
+  settingsOpen.value = true
+}
 
 const diffByRoom = computed<Record<string, RoomDiffSummary>>(
   () => analyze.preview?.diff?.perRoom ?? {},
@@ -62,9 +74,20 @@ watch(
 
 <template>
   <main class="mx-auto max-w-3xl space-y-6 p-8">
-    <header>
-      <h1 class="text-3xl font-semibold text-stone-900">Lovelacer</h1>
-      <p class="text-sm text-stone-600">Home Assistant dashboard generator · alpha</p>
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-semibold text-stone-900">Lovelacer</h1>
+        <p class="text-sm text-stone-600">Home Assistant dashboard generator · alpha</p>
+      </div>
+      <button
+        type="button"
+        data-testid="settings-button"
+        aria-label="Settings"
+        class="rounded p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+        @click="openSettings"
+      >
+        ⚙
+      </button>
     </header>
 
     <HealthBar />
@@ -108,5 +131,6 @@ watch(
     </section>
   </main>
 
+  <SettingsModal v-if="settingsOpen" @close="settingsOpen = false" />
   <InviteGate v-if="invite.shouldShowGate" />
 </template>

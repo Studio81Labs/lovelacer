@@ -3,6 +3,7 @@ import type {
   CanonicalRoomId,
   DetectionSignal,
   HaAreaRegistryEntry,
+  LanguageCode,
   NormalizedEntity,
   RoomAssignment,
 } from '@lovelacer/shared'
@@ -25,23 +26,46 @@ export interface DetectionContext {
    * priorities 1/2 treat that the same as a null canonical (they don't fire).
    */
   areaIndex: ReadonlyMap<string, AreaIndexEntry>
+  /**
+   * P2-6 — narrows priorities 3-5 (friendly_name, entity_id, device_name)
+   * to a single language's keyword set. Undefined = match-all (today's
+   * default). Priorities 1-2 (HA-supplied area names) ignore this — area
+   * names from HA's registry are matched against ALL keyword sets in
+   * `buildDetectionContext`, regardless of the user's language pick.
+   */
+  language?: LanguageCode
 }
 
 export interface DetectInput {
   entities: NormalizedEntity[]
   areas: HaAreaRegistryEntry[]
+  /** P2-6 — narrows priorities 3-5 to this language. Undefined = match all. */
+  language?: LanguageCode
 }
 
-export function buildDetectionContext(areas: HaAreaRegistryEntry[]): DetectionContext {
+export interface BuildDetectionContextOptions {
+  /** P2-6 — forwarded to the returned `DetectionContext.language`. */
+  language?: LanguageCode
+}
+
+export function buildDetectionContext(
+  areas: HaAreaRegistryEntry[],
+  opts: BuildDetectionContextOptions = {},
+): DetectionContext {
   const areaIndex = new Map<string, AreaIndexEntry>()
   for (const area of areas) {
+    // Area-name matching stays multilingual — HA's registry data is
+    // what it is. Only priorities 3-5 narrow.
     const match = findRoom(area.name)
     areaIndex.set(area.area_id, {
       name: area.name,
       canonical: match !== null ? match.canonical : null,
     })
   }
-  return { areaIndex }
+  return {
+    areaIndex,
+    ...(opts.language !== undefined ? { language: opts.language } : {}),
+  }
 }
 
 interface FiredSignal extends DetectionSignal {
@@ -79,7 +103,10 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
   }
 
   // Priority 3 — friendly_name
-  const fnMatch = findRoom(entity.friendlyName)
+  const fnMatch = findRoom(
+    entity.friendlyName,
+    ctx.language !== undefined ? { language: ctx.language } : {},
+  )
   if (fnMatch !== null) {
     fired.push({
       source: 'friendly_name',
@@ -90,7 +117,10 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
   }
 
   // Priority 4 — entity_id (objectId)
-  const idMatch = findRoom(entity.objectId)
+  const idMatch = findRoom(
+    entity.objectId,
+    ctx.language !== undefined ? { language: ctx.language } : {},
+  )
   if (idMatch !== null) {
     fired.push({
       source: 'entity_id',
@@ -106,7 +136,7 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
       (s): s is string => s !== null,
     )
     for (const name of candidates) {
-      const match = findRoom(name)
+      const match = findRoom(name, ctx.language !== undefined ? { language: ctx.language } : {})
       if (match !== null) {
         fired.push({
           source: 'device_name',
@@ -123,7 +153,9 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
 }
 
 export function detect(input: DetectInput): RoomAssignment[] {
-  const ctx = buildDetectionContext(input.areas)
+  const ctx = buildDetectionContext(input.areas, {
+    ...(input.language !== undefined ? { language: input.language } : {}),
+  })
   return input.entities.map((entity) => detectEntity(entity, ctx))
 }
 

@@ -8,12 +8,16 @@ import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
+import { SettingsStore } from '../../storage/settings-store.js'
 
 let dismissed: DismissedSuggestionStore | null = null
+let settings: SettingsStore | null = null
 
 afterEach(() => {
   dismissed?.close()
   dismissed = null
+  settings?.close()
+  settings = null
 })
 
 function makeStore(): OverrideStore {
@@ -44,15 +48,21 @@ function makeHa(connected = true): HaClient {
 }
 
 async function makeApp(
-  opts: { connected?: boolean; snapshot?: Omit<AppliedSnapshot, 'appliedAt'> } = {},
+  opts: {
+    connected?: boolean
+    snapshot?: Omit<AppliedSnapshot, 'appliedAt'>
+    accepted?: boolean
+  } = {},
 ) {
   dismissed = new DismissedSuggestionStore(':memory:')
+  settings = new SettingsStore(':memory:')
   return createApp({
     ha: makeHa(opts.connected ?? true),
     overrides: makeStore(),
     invite: makeAcceptedInvite(),
     appliedSnapshot: makeAppliedSnapshot(opts.snapshot),
     dismissedSuggestions: dismissed,
+    settings,
     logLevel: 'silent',
     dashboardUrlPath: 'lovelacer-home',
   })
@@ -99,12 +109,14 @@ describe('POST /api/preview', () => {
       getFloorRegistry: vi.fn(async () => []),
     } as unknown as HaClient
     dismissed = new DismissedSuggestionStore(':memory:')
+    settings = new SettingsStore(':memory:')
     const app = await createApp({
       ha,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: dismissed,
+      settings,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -131,12 +143,14 @@ describe('POST /api/preview', () => {
   it('returns diff with totals all zero when snapshot matches current analysis', async () => {
     const ha = makeHa(true)
     dismissed = new DismissedSuggestionStore(':memory:')
+    settings = new SettingsStore(':memory:')
     const learner = await createApp({
       ha,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: dismissed,
+      settings,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -157,7 +171,7 @@ describe('POST /api/preview', () => {
       await learner.close()
     }
 
-    // dismissed is reused for the second app instance in this test
+    // dismissed and settings are reused for the second app instance in this test
     const app = await createApp({
       ha,
       overrides: makeStore(),
@@ -167,6 +181,7 @@ describe('POST /api/preview', () => {
         config: { title: 'x', views: [] },
       }),
       dismissedSuggestions: dismissed,
+      settings: settings!,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -244,12 +259,14 @@ describe('POST /api/preview', () => {
       }),
     } as unknown as HaClient
     dismissed = new DismissedSuggestionStore(':memory:')
+    settings = new SettingsStore(':memory:')
     const app = await createApp({
       ha: fakeHa,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: dismissed,
+      settings,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -321,6 +338,115 @@ describe('POST /api/preview — suggestions', () => {
         (s) => s.entityId === target!.entityId && s.type === target!.type,
       )
       expect(stillThere).toBeUndefined()
+    } finally {
+      await app.close()
+    }
+  })
+})
+
+describe('POST /api/preview — section toggles (P2-6)', () => {
+  it('default settings include all 7 home-view section types when fixture supports them', async () => {
+    const app = await makeApp({ accepted: true })
+    try {
+      const res = await app.inject({ method: 'POST', url: '/api/preview' })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        config: { views: { path: string; sections: { cards: { type: string }[] }[] }[] }
+      }
+      const home = body.config.views.find((v) => v.path === 'home')
+      expect(home).toBeDefined()
+      // Welcome (markdown card) should be present in the default config
+      const hasMarkdown = home!.sections.some((s) => s.cards.some((c) => c.type === 'markdown'))
+      expect(hasMarkdown).toBe(true)
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('saving sections.welcome=false removes the markdown card from the home view', async () => {
+    const app = await makeApp({ accepted: true })
+    try {
+      const payload = {
+        settings: {
+          language: 'auto',
+          cardPack: 'default',
+          sections: {
+            welcome: false,
+            quickStats: true,
+            people: true,
+            roomsByFloor: true,
+            activeRooms: true,
+            scenes: true,
+            cameras: true,
+          },
+        },
+      }
+      const put = await app.inject({ method: 'PUT', url: '/api/settings', payload })
+      expect(put.statusCode).toBe(200)
+
+      const res = await app.inject({ method: 'POST', url: '/api/preview' })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        config: { views: { path: string; sections: { cards: { type: string }[] }[] }[] }
+      }
+      const home = body.config.views.find((v) => v.path === 'home')
+      const hasMarkdown = home!.sections.some((s) => s.cards.some((c) => c.type === 'markdown'))
+      expect(hasMarkdown).toBe(false)
+    } finally {
+      await app.close()
+    }
+  })
+})
+
+describe('POST /api/preview — language filter (P2-6)', () => {
+  it('language=auto matches all keyword sets (regression baseline)', async () => {
+    const app = await makeApp({ accepted: true })
+    try {
+      const res = await app.inject({ method: 'POST', url: '/api/preview' })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as { rooms: { id: string; entityCount: number }[] }
+      const totalAssigned = body.rooms.reduce((sum, r) => sum + r.entityCount, 0)
+      expect(totalAssigned).toBeGreaterThan(0)
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('language=cs filters EN-only friendly names — fewer or equal detections than auto', async () => {
+    const app = await makeApp({ accepted: true })
+    try {
+      const baseline = await app.inject({ method: 'POST', url: '/api/preview' })
+      const baselineBody = baseline.json() as { rooms: { entityCount: number }[] }
+      const baselineCount = baselineBody.rooms.reduce((s, r) => s + r.entityCount, 0)
+
+      await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: {
+          settings: {
+            language: 'cs',
+            cardPack: 'default',
+            sections: {
+              welcome: true,
+              quickStats: true,
+              people: true,
+              roomsByFloor: true,
+              activeRooms: true,
+              scenes: true,
+              cameras: true,
+            },
+          },
+        },
+      })
+
+      const cs = await app.inject({ method: 'POST', url: '/api/preview' })
+      const csBody = cs.json() as { rooms: { entityCount: number }[] }
+      const csCount = csBody.rooms.reduce((s, r) => s + r.entityCount, 0)
+
+      // The English fixture has English friendly names → priorities 3-5
+      // narrow to CS produces equal-or-fewer assignments. Priorities 1-2
+      // (HA area names) still fire for entities with haAreaId set.
+      expect(csCount).toBeLessThanOrEqual(baselineCount)
     } finally {
       await app.close()
     }

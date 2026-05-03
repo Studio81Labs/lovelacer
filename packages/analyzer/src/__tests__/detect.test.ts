@@ -411,6 +411,60 @@ describe('detectEntity — alternatives (P2-5 top-N)', () => {
   })
 })
 
+describe('detectEntity — language filter (P2-6)', () => {
+  // Priorities 3-5 narrow when `language` is set on the context.
+  // Priorities 1-2 (entity_area, device_area) ignore the language and
+  // always match against all keyword sets via buildDetectionContext.
+
+  it('omits priority-3 friendly_name match when language=cs and name is English-only', () => {
+    // 'Living Room Light' is matched by EN keywords only, not CS.
+    const ctx = buildDetectionContext([], { language: 'cs' })
+    const result = detectEntity({ ...baseEntity, friendlyName: 'Living Room Light' }, ctx)
+    expect(result.roomId).toBe('misc')
+    expect(result.signals).toEqual([])
+  })
+
+  it('keeps priority-3 friendly_name match when language=auto / undefined', () => {
+    const ctx = buildDetectionContext([], {}) // language undefined
+    const result = detectEntity({ ...baseEntity, friendlyName: 'Living Room Light' }, ctx)
+    expect(result.roomId).toBe('living_room')
+    expect(result.signals[0]?.source).toBe('friendly_name')
+  })
+
+  it('keeps priority-1 entity_area match even when language is narrow', () => {
+    // The HA area "Living Room" should still match via priority 1
+    // regardless of the user's language pick — area names are
+    // multilingual by construction.
+    const ctx = buildDetectionContext(
+      [{ area_id: 'a1', name: 'Living Room', floor_id: null, icon: null }],
+      {
+        language: 'cs',
+      },
+    )
+    const result = detectEntity({ ...baseEntity, haAreaId: 'a1' }, ctx)
+    expect(result.roomId).toBe('living_room')
+    expect(result.signals[0]?.source).toBe('entity_area')
+  })
+
+  it('detect() forwards language to the context (regression: undefined still works)', () => {
+    const result = detect({
+      entities: [{ ...baseEntity, friendlyName: 'Kitchen' }],
+      areas: [],
+      // language omitted entirely — match-all baseline preserved
+    })
+    expect(result[0]?.roomId).toBe('kitchen')
+  })
+
+  it('detect() with language=cs suppresses EN-only friendly_name matches', () => {
+    const result = detect({
+      entities: [{ ...baseEntity, friendlyName: 'Kitchen Light' }],
+      areas: [],
+      language: 'cs',
+    })
+    expect(result[0]?.roomId).toBe('misc')
+  })
+})
+
 describe('detectEntity — corroboration boost', () => {
   const livingRoomAreaForBoost: HaAreaRegistryEntry = {
     area_id: 'living_room',

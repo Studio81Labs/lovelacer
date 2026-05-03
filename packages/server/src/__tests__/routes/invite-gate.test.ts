@@ -7,6 +7,7 @@ import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
+import { SettingsStore } from '../../storage/settings-store.js'
 
 function makeAppliedSnapshot(): AppliedSnapshotStore {
   return new AppliedSnapshotStore(':memory:')
@@ -14,12 +15,15 @@ function makeAppliedSnapshot(): AppliedSnapshotStore {
 
 let invite: InviteStore | null = null
 let dismissed: DismissedSuggestionStore | null = null
+let settings: SettingsStore | null = null
 
 afterEach(() => {
   invite?.close()
   invite = null
   dismissed?.close()
   dismissed = null
+  settings?.close()
+  settings = null
 })
 
 function makeHa(): HaClient {
@@ -36,6 +40,7 @@ function makeHa(): HaClient {
 async function makeApp(opts: { accepted: boolean }) {
   invite = new InviteStore(':memory:')
   dismissed = new DismissedSuggestionStore(':memory:')
+  settings = new SettingsStore(':memory:')
   if (opts.accepted) invite.accept('BETA-2026-ALPHA')
   return createApp({
     ha: makeHa(),
@@ -43,6 +48,7 @@ async function makeApp(opts: { accepted: boolean }) {
     invite,
     appliedSnapshot: makeAppliedSnapshot(),
     dismissedSuggestions: dismissed,
+    settings,
     logLevel: 'silent',
     dashboardUrlPath: 'lovelacer-home',
   })
@@ -198,6 +204,46 @@ describe('invite gate hook', () => {
       const res = await app.inject({ method: 'GET', url: '/api/invite?cache=0' })
       expect(res.statusCode).toBe(200)
       expect(res.json()).toEqual({ accepted: false })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('blocks GET /api/settings with 403 when not accepted', async () => {
+    const app = await makeApp({ accepted: false })
+    try {
+      const res = await app.inject({ method: 'GET', url: '/api/settings' })
+      expect(res.statusCode).toBe(403)
+      expect(res.json()).toMatchObject({ error: 'invite_required' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('blocks PUT /api/settings with 403 when not accepted', async () => {
+    const app = await makeApp({ accepted: false })
+    try {
+      const res = await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: {
+          settings: {
+            language: 'auto',
+            cardPack: 'default',
+            sections: {
+              welcome: true,
+              quickStats: true,
+              people: true,
+              roomsByFloor: true,
+              activeRooms: true,
+              scenes: true,
+              cameras: true,
+            },
+          },
+        },
+      })
+      expect(res.statusCode).toBe(403)
+      expect(res.json()).toMatchObject({ error: 'invite_required' })
     } finally {
       await app.close()
     }

@@ -4,6 +4,7 @@ import { HaApplyError } from '@lovelacer/ha-client'
 import type { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from '../storage/dismissed-suggestion-store.js'
 import type { OverrideStore } from '../storage/override-store.js'
+import type { SettingsStore } from '../storage/settings-store.js'
 import { InvalidConfigError, runApply, type ApplyInput } from '../pipeline.js'
 
 /**
@@ -26,6 +27,7 @@ export interface ApplyRouteOptions {
   overrides: OverrideStore
   appliedSnapshot: AppliedSnapshotStore
   dismissedSuggestions: DismissedSuggestionStore
+  settings: SettingsStore
   /** Default url_path for the generated dashboard. Body.options.urlPath wins when present. */
   dashboardUrlPath: string
 }
@@ -63,6 +65,7 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
         opts.overrides,
         opts.appliedSnapshot,
         opts.dismissedSuggestions,
+        opts.settings,
         body,
         {
           urlPath: opts.dashboardUrlPath,

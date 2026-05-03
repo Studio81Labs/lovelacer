@@ -8,6 +8,7 @@ import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
+import { SettingsStore } from '../../storage/settings-store.js'
 
 function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
@@ -46,6 +47,7 @@ describe('GET /api/export.yaml', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -65,6 +67,7 @@ describe('GET /api/export.yaml', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -104,6 +107,7 @@ describe('GET /api/export.yaml', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -123,6 +127,7 @@ describe('GET /api/export.yaml', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'my-dash',
     })
@@ -145,6 +150,7 @@ describe('GET /api/export.yaml', () => {
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: '../etc/passwd',
     })
