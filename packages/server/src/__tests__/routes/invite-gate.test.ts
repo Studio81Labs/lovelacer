@@ -6,16 +6,20 @@ import { createApp } from '../../app.js'
 import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
+import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 
 function makeAppliedSnapshot(): AppliedSnapshotStore {
   return new AppliedSnapshotStore(':memory:')
 }
 
 let invite: InviteStore | null = null
+let dismissed: DismissedSuggestionStore | null = null
 
 afterEach(() => {
   invite?.close()
   invite = null
+  dismissed?.close()
+  dismissed = null
 })
 
 function makeHa(): HaClient {
@@ -31,12 +35,14 @@ function makeHa(): HaClient {
 
 async function makeApp(opts: { accepted: boolean }) {
   invite = new InviteStore(':memory:')
+  dismissed = new DismissedSuggestionStore(':memory:')
   if (opts.accepted) invite.accept('BETA-2026-ALPHA')
   return createApp({
     ha: makeHa(),
     overrides: new OverrideStore(':memory:'),
     invite,
     appliedSnapshot: makeAppliedSnapshot(),
+    dismissedSuggestions: dismissed,
     logLevel: 'silent',
     dashboardUrlPath: 'lovelacer-home',
   })
@@ -98,6 +104,22 @@ describe('invite gate hook', () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({ method: 'GET', url: '/api/export.yaml' })
+      expect(res.statusCode).toBe(403)
+      expect(res.json()).toMatchObject({ error: 'invite_required' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('blocks POST /api/suggestions/dismiss with 403 when not accepted', async () => {
+    // P2-5 — the dismiss endpoint must be gated like every other /api/* route.
+    const app = await makeApp({ accepted: false })
+    try {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/suggestions/dismiss',
+        payload: { entityId: 'sensor.foo', suggestionType: 'set_area_id' },
+      })
       expect(res.statusCode).toBe(403)
       expect(res.json()).toMatchObject({ error: 'invite_required' })
     } finally {

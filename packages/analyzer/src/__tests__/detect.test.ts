@@ -346,6 +346,71 @@ describe('detect — bulk API', () => {
   })
 })
 
+describe('detectEntity — alternatives (P2-5 top-N)', () => {
+  // ctx has four areas: kitchen, living_room, bedroom (all mapping to canonical),
+  // and barts_den (canonical=null). 'bathroom' is not an HA area here but
+  // device_name matching works via findRoom on the name string alone.
+  const ctx = buildDetectionContext([
+    { area_id: 'kitchen', name: 'Kitchen', floor_id: null, icon: null },
+    { area_id: 'living_room', name: 'Living Room', floor_id: null, icon: null },
+    { area_id: 'bedroom', name: 'Bedroom', floor_id: null, icon: null },
+    { area_id: 'barts_den', name: "Bart's Den", floor_id: null, icon: null },
+  ])
+
+  it('omits alternatives entirely when only one target fired', () => {
+    const result = detectEntity({ ...baseEntity, haAreaId: 'living_room' }, ctx)
+    expect(result.roomId).toBe('living_room')
+    expect(result.alternatives).toBeUndefined()
+  })
+
+  it('emits alternatives sorted by score descending, excluding the winner', () => {
+    // entity_area for kitchen (weight 1.0) wins.
+    // friendly_name "Living Room" fires (weight 0.6) → living_room alternative.
+    // entity_id "bedroom_lamp" fires (weight 0.5) → bedroom alternative.
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        haAreaId: 'kitchen',
+        friendlyName: 'Living Room Light',
+        objectId: 'bedroom_lamp',
+      },
+      ctx,
+    )
+    expect(result.roomId).toBe('kitchen')
+    expect(result.alternatives).toEqual([
+      { roomId: 'living_room', confidence: 0.6 },
+      { roomId: 'bedroom', confidence: 0.5 },
+    ])
+  })
+
+  it('caps alternatives at 2 entries even when more candidates score above threshold', () => {
+    // entity_area for kitchen wins (1.0).
+    // friendly_name match → living_room (0.6).
+    // entity_id match → bedroom (0.5).
+    // device_name match → bathroom (0.45).
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        haAreaId: 'kitchen',
+        friendlyName: 'Living Room Light',
+        objectId: 'bedroom_lamp',
+        device: {
+          id: 'd1',
+          name: 'Bathroom Hub',
+          nameByUser: null,
+          manufacturer: null,
+          model: null,
+          haAreaId: null,
+        },
+      },
+      ctx,
+    )
+    expect(result.alternatives).toHaveLength(2)
+    expect(result.alternatives?.[0]?.roomId).toBe('living_room')
+    expect(result.alternatives?.[1]?.roomId).toBe('bedroom')
+  })
+})
+
 describe('detectEntity — corroboration boost', () => {
   const livingRoomAreaForBoost: HaAreaRegistryEntry = {
     area_id: 'living_room',

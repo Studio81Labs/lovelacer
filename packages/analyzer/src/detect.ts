@@ -1,4 +1,5 @@
 import type {
+  AlternativeAssignment,
   CanonicalRoomId,
   DetectionSignal,
   HaAreaRegistryEntry,
@@ -126,6 +127,19 @@ export function detect(input: DetectInput): RoomAssignment[] {
   return input.entities.map((entity) => detectEntity(entity, ctx))
 }
 
+const ALTERNATIVE_THRESHOLD = 0.2
+const ALTERNATIVE_LIMIT = 2
+
+/**
+ * Confidence = top signal weight + corroboration boost (5% per extra
+ * signal, capped at 10%), final result capped at 1.0. Used both for the
+ * winner score in `assemble` and for each alternative target.
+ */
+function scoreTarget(topWeight: number, corroborationCount: number): number {
+  const boost = Math.min(0.1, (corroborationCount - 1) * 0.05)
+  return Math.min(1.0, topWeight + boost)
+}
+
 function assemble(entityId: string, fired: FiredSignal[]): RoomAssignment {
   if (fired.length === 0) {
     return { entityId, roomId: 'misc', confidence: 0, signals: [] }
@@ -141,15 +155,40 @@ function assemble(entityId: string, fired: FiredSignal[]): RoomAssignment {
   // capped at 1.0. Different-target signals don't corroborate — see
   // docs/HEURISTICS.md "Boost for corroboration" and the P1a-4 spec.
   const corroborationCount = fired.filter((s) => s.target === winner.target).length
-  const boost = Math.min(0.1, (corroborationCount - 1) * 0.05)
-  const confidence = Math.min(1.0, winner.weight + boost)
+  const confidence = scoreTarget(winner.weight, corroborationCount)
 
   // Strip the internal `target` field before exposing signals publicly.
   const signals: DetectionSignal[] = fired.map(({ target: _t, ...rest }) => rest)
+
+  // P2-5 — compute alternative rooms. Group fired signals by target,
+  // score each non-winner target the same way (top weight + same
+  // corroboration formula capped at 1.0), filter below threshold, sort
+  // desc, take top N. Same boost formula as the winner so users see
+  // comparable confidence numbers across the panel.
+  const byTarget = new Map<Exclude<CanonicalRoomId, 'misc'>, FiredSignal[]>()
+  for (const s of fired) {
+    const list = byTarget.get(s.target)
+    if (list === undefined) byTarget.set(s.target, [s])
+    else list.push(s)
+  }
+  const altScores: AlternativeAssignment[] = []
+  for (const [target, sigs] of byTarget) {
+    if (target === winner.target) continue
+    // Priority order means sigs[0] is always the highest-weight signal for this target.
+    const topWeight = sigs[0]!.weight
+    const altConfidence = scoreTarget(topWeight, sigs.length)
+    if (altConfidence >= ALTERNATIVE_THRESHOLD) {
+      altScores.push({ roomId: target, confidence: altConfidence })
+    }
+  }
+  altScores.sort((a, b) => b.confidence - a.confidence)
+  const alternatives = altScores.slice(0, ALTERNATIVE_LIMIT)
+
   return {
     entityId,
     roomId: winner.target,
     confidence,
     signals,
+    ...(alternatives.length > 0 ? { alternatives } : {}),
   }
 }

@@ -1,6 +1,7 @@
 import {
   assignFloors,
   computeDiff,
+  computeSuggestions,
   detect,
   groupByDomain,
   normalize,
@@ -23,8 +24,10 @@ import type {
   Override,
   RoomAssignment,
   SnapshotAssignment,
+  Suggestion,
 } from '@lovelacer/shared'
 import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
+import type { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.js'
 import type { OverrideStore } from './storage/override-store.js'
 
 export interface AnalyzeOutput {
@@ -37,6 +40,8 @@ export interface PreviewOutput extends AnalyzeOutput {
   config: LovelaceConfig
   /** Null when no snapshot has been saved yet (first-run case). */
   diff: DiffResult | null
+  /** P2-5 — actionable hints. Always present (empty array when none). */
+  suggestions: Suggestion[]
 }
 
 export interface ApplyInput {
@@ -324,6 +329,7 @@ export async function runPreview(
   ha: HaClient,
   overrides: OverrideStore,
   appliedSnapshot: AppliedSnapshotStore,
+  dismissedSuggestions: DismissedSuggestionStore,
 ): Promise<PreviewOutput> {
   const state = await runFullPipeline(ha, overrides)
 
@@ -359,12 +365,31 @@ export async function runPreview(
       ? null
       : computeDiff({ snapshot, current: { assignments: currentAssignments } })
 
+  // P2-5 — compute suggestions. Pre-build the lookups computeSuggestions
+  // expects so the engine stays a pure O(n) walk. miscEntityIds is
+  // derived from state.misc which is already filtered to visible
+  // (non-hidden, non-disabled) entities by runFullPipeline.
+  const overridesById = new Map<string, Override>()
+  for (const o of overrides.getAll()) overridesById.set(o.entityId, o)
+  const entitiesById = new Map<string, NormalizedEntity>()
+  for (const e of state.entities) entitiesById.set(e.entityId, e)
+  const miscEntityIds = new Set(state.misc.map((m) => m.entityId))
+
+  const suggestions = computeSuggestions({
+    rooms: state.rooms,
+    miscEntityIds,
+    entitiesById,
+    overridesById,
+    dismissed: dismissedSuggestions.getAllAsKeySet(),
+  })
+
   return {
     rooms: state.rooms,
     misc: state.misc,
     summary: state.summary,
     config,
     diff,
+    suggestions,
   }
 }
 
@@ -372,6 +397,7 @@ export async function runApply(
   ha: HaClient,
   overrides: OverrideStore,
   appliedSnapshot: AppliedSnapshotStore,
+  dismissedSuggestions: DismissedSuggestionStore,
   body: ApplyInput,
   defaultOptions: ApplyDashboardOptions = {},
 ): Promise<RunApplyResult> {
@@ -384,7 +410,7 @@ export async function runApply(
     }
     result = await ha.applyDashboard(body.config, options)
   } else {
-    const preview = await runPreview(ha, overrides, appliedSnapshot)
+    const preview = await runPreview(ha, overrides, appliedSnapshot, dismissedSuggestions)
     result = await ha.applyDashboard(preview.config, options)
   }
 

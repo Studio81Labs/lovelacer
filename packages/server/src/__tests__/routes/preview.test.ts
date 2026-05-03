@@ -1,12 +1,20 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { HaClient } from '@lovelacer/ha-client'
 import type { AppliedSnapshot, CanonicalRoomId, SnapshotAssignment } from '@lovelacer/shared'
 import { englishCluttered } from '../../../../../tests/fixtures/english-cluttered.js'
 import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/index.js'
 import { createApp } from '../../app.js'
 import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
+import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
+
+let dismissed: DismissedSuggestionStore | null = null
+
+afterEach(() => {
+  dismissed?.close()
+  dismissed = null
+})
 
 function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
@@ -35,17 +43,24 @@ function makeHa(connected = true): HaClient {
   } as unknown as HaClient
 }
 
+async function makeApp(
+  opts: { connected?: boolean; snapshot?: Omit<AppliedSnapshot, 'appliedAt'> } = {},
+) {
+  dismissed = new DismissedSuggestionStore(':memory:')
+  return createApp({
+    ha: makeHa(opts.connected ?? true),
+    overrides: makeStore(),
+    invite: makeAcceptedInvite(),
+    appliedSnapshot: makeAppliedSnapshot(opts.snapshot),
+    dismissedSuggestions: dismissed,
+    logLevel: 'silent',
+    dashboardUrlPath: 'lovelacer-home',
+  })
+}
+
 describe('POST /api/preview', () => {
   it('returns 200 with rooms + config when HA connected', async () => {
-    const ha = makeHa(true)
-    const app = await createApp({
-      ha,
-      overrides: makeStore(),
-      invite: makeAcceptedInvite(),
-      appliedSnapshot: makeAppliedSnapshot(),
-      logLevel: 'silent',
-      dashboardUrlPath: 'lovelacer-home',
-    })
+    const app = await makeApp({ connected: true })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/preview' })
       expect(res.statusCode).toBe(200)
@@ -63,15 +78,7 @@ describe('POST /api/preview', () => {
   })
 
   it('returns 503 ha_unavailable when HA disconnected', async () => {
-    const ha = makeHa(false)
-    const app = await createApp({
-      ha,
-      overrides: makeStore(),
-      invite: makeAcceptedInvite(),
-      appliedSnapshot: makeAppliedSnapshot(),
-      logLevel: 'silent',
-      dashboardUrlPath: 'lovelacer-home',
-    })
+    const app = await makeApp({ connected: false })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/preview' })
       expect(res.statusCode).toBe(503)
@@ -91,11 +98,13 @@ describe('POST /api/preview', () => {
       getAreaRegistry: vi.fn(async () => []),
       getFloorRegistry: vi.fn(async () => []),
     } as unknown as HaClient
+    dismissed = new DismissedSuggestionStore(':memory:')
     const app = await createApp({
       ha,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: dismissed,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -109,15 +118,7 @@ describe('POST /api/preview', () => {
   })
 
   it('returns diff: null when no snapshot exists yet', async () => {
-    const ha = makeHa(true)
-    const app = await createApp({
-      ha,
-      overrides: makeStore(),
-      invite: makeAcceptedInvite(),
-      appliedSnapshot: makeAppliedSnapshot(),
-      logLevel: 'silent',
-      dashboardUrlPath: 'lovelacer-home',
-    })
+    const app = await makeApp()
     try {
       const res = await app.inject({ method: 'POST', url: '/api/preview' })
       expect(res.statusCode).toBe(200)
@@ -129,11 +130,13 @@ describe('POST /api/preview', () => {
 
   it('returns diff with totals all zero when snapshot matches current analysis', async () => {
     const ha = makeHa(true)
+    dismissed = new DismissedSuggestionStore(':memory:')
     const learner = await createApp({
       ha,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: dismissed,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -154,6 +157,7 @@ describe('POST /api/preview', () => {
       await learner.close()
     }
 
+    // dismissed is reused for the second app instance in this test
     const app = await createApp({
       ha,
       overrides: makeStore(),
@@ -162,6 +166,7 @@ describe('POST /api/preview', () => {
         assignments,
         config: { title: 'x', views: [] },
       }),
+      dismissedSuggestions: dismissed,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -177,17 +182,11 @@ describe('POST /api/preview', () => {
   })
 
   it('flags removed entities when snapshot has an entity that is no longer in HA', async () => {
-    const ha = makeHa(true)
-    const app = await createApp({
-      ha,
-      overrides: makeStore(),
-      invite: makeAcceptedInvite(),
-      appliedSnapshot: makeAppliedSnapshot({
+    const app = await makeApp({
+      snapshot: {
         assignments: [{ entityId: 'light.long_gone_entity', roomId: 'living_room' }],
         config: { title: 'x', views: [] },
-      }),
-      logLevel: 'silent',
-      dashboardUrlPath: 'lovelacer-home',
+      },
     })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/preview' })
@@ -210,14 +209,7 @@ describe('POST /api/preview', () => {
   })
 
   it('home view contains a "Rooms by floor" section when fixture has floor data', async () => {
-    const app = await createApp({
-      ha: makeHa(true),
-      overrides: makeStore(),
-      invite: makeAcceptedInvite(),
-      appliedSnapshot: makeAppliedSnapshot(),
-      logLevel: 'silent',
-      dashboardUrlPath: 'lovelacer-home',
-    })
+    const app = await makeApp()
     try {
       const res = await app.inject({ method: 'POST', url: '/api/preview' })
       expect(res.statusCode).toBe(200)
@@ -251,11 +243,13 @@ describe('POST /api/preview', () => {
         throw new Error('not supported')
       }),
     } as unknown as HaClient
+    dismissed = new DismissedSuggestionStore(':memory:')
     const app = await createApp({
       ha: fakeHa,
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      dismissedSuggestions: dismissed,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -272,6 +266,61 @@ describe('POST /api/preview', () => {
       // No floor data → no headings on the home view.
       const headings = home!.sections.flatMap((s) => s.cards).filter((c) => c.type === 'heading')
       expect(headings).toHaveLength(0)
+    } finally {
+      await app.close()
+    }
+  })
+})
+
+describe('POST /api/preview — suggestions', () => {
+  it('returns suggestions[] for a fixture with a no-area name-detected entity', async () => {
+    // englishCluttered fixture has at least one entity that:
+    //   - has no haAreaId (and device has no haAreaId)
+    //   - matches a canonical room via friendly_name
+    //   - confidence >= 0.6 (single-source 0.6 winner; no corroboration)
+    // Test pins that the pipeline computes + attaches suggestions[] to
+    // the response.
+    const app = await makeApp()
+    try {
+      const res = await app.inject({ method: 'POST', url: '/api/preview' })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as { suggestions: { type: string }[] }
+      expect(Array.isArray(body.suggestions)).toBe(true)
+      expect(body.suggestions.some((s) => s.type === 'set_area_id')).toBe(true)
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('does NOT return dismissed suggestions in the preview response', async () => {
+    const app = await makeApp()
+    try {
+      // First call: discover a real (entityId, type) pair that's currently
+      // suggested.
+      const first = await app.inject({ method: 'POST', url: '/api/preview' })
+      const firstBody = first.json() as {
+        suggestions: { entityId: string; type: string }[]
+      }
+      const target = firstBody.suggestions.find((s) => s.type === 'set_area_id')
+      expect(target).toBeDefined()
+
+      // Dismiss it via the new endpoint.
+      const dismissRes = await app.inject({
+        method: 'POST',
+        url: '/api/suggestions/dismiss',
+        payload: { entityId: target!.entityId, suggestionType: target!.type },
+      })
+      expect(dismissRes.statusCode).toBe(200)
+
+      // Re-preview — the dismissed (entityId, type) is gone.
+      const second = await app.inject({ method: 'POST', url: '/api/preview' })
+      const secondBody = second.json() as {
+        suggestions: { entityId: string; type: string }[]
+      }
+      const stillThere = secondBody.suggestions.find(
+        (s) => s.entityId === target!.entityId && s.type === target!.type,
+      )
+      expect(stillThere).toBeUndefined()
     } finally {
       await app.close()
     }

@@ -6,6 +6,7 @@ import type {
   Override,
   PreviewOutput,
   SnapshotAssignment,
+  SuggestionType,
 } from './types.js'
 
 /**
@@ -100,5 +101,23 @@ export function postInvite(body: { code: string }): Promise<{ accepted: boolean 
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify(body),
+  })
+}
+
+export interface DismissSuggestionInput {
+  entityId: string
+  suggestionType: SuggestionType
+}
+
+/**
+ * POST /api/suggestions/dismiss — record a dismissal so the suggestion
+ * is filtered from every future preview. Document-relative URL so it
+ * works under HA add-on ingress (`/api/hassio_ingress/<token>/...`).
+ */
+export async function postDismissSuggestion(input: DismissSuggestionInput): Promise<void> {
+  await fetchJson<{ ok: true }>('api/suggestions/dismiss', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(input),
   })
 }
