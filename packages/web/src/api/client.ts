@@ -3,6 +3,7 @@ import type {
   ApiError,
   ApplyResult,
   LovelaceConfig,
+  OnboardingStatus,
   Override,
   PreviewOutput,
   Settings,
@@ -132,5 +133,16 @@ export function putSettings(body: { settings: Settings }): Promise<{ settings: S
     method: 'PUT',
     headers: JSON_HEADERS,
     body: JSON.stringify(body),
+  })
+}
+
+export function getOnboarding(): Promise<OnboardingStatus> {
+  return fetchJson<OnboardingStatus>('api/onboarding')
+}
+
+export function postOnboardingComplete(): Promise<OnboardingStatus> {
+  return fetchJson<OnboardingStatus>('api/onboarding/complete', {
+    method: 'POST',
+    headers: JSON_HEADERS,
   })
 }

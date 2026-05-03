@@ -228,4 +228,25 @@ describe('MiscBucket bulk select', () => {
     await rowSelect.setValue('living_room')
     expect(overrides.effective('sensor.a')?.roomId).toBe('living_room')
   })
+
+  it('with readOnly: true, hides bulk-row checkboxes and the per-row hide toggle', async () => {
+    const wrapper = mount(MiscBucket, {
+      props: {
+        misc: [
+          { entityId: 'sensor.a', friendlyName: 'A', domain: 'sensor' },
+          { entityId: 'sensor.b', friendlyName: 'B', domain: 'sensor' },
+        ],
+        readOnly: true,
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    expect(wrapper.findAll('[data-testid="misc-row-checkbox"]')).toHaveLength(0)
+    expect(wrapper.findAll('[data-testid="hide-toggle"]')).toHaveLength(0)
+    // Expand to ensure rows still render (read-only mode doesn't break the listing).
+    const summary = wrapper.find('summary')
+    await summary.trigger('click')
+    expect(wrapper.findAll('[data-testid="entity-row"]')).toHaveLength(2)
+  })
 })

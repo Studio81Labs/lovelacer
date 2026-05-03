@@ -166,4 +166,37 @@ describe('RoomList diff badges', () => {
     })
     expect(wrapper.find('[data-testid="room-diff-moved-out"]').text()).toContain('2')
   })
+
+  it('with readOnly: true, hides override dropdowns on every entity', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [
+          {
+            id: 'kitchen',
+            haAreaId: null,
+            displayName: 'Kitchen',
+            entityCount: 1,
+            averageConfidence: 0.8,
+            assignments: [
+              {
+                entityId: 'sensor.kitchen',
+                roomId: 'kitchen',
+                confidence: 0.8,
+                signals: [],
+              },
+            ],
+          },
+        ],
+        readOnly: true,
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    // Expand the room to render its EntityRow children.
+    const summary = wrapper.find('summary')
+    await summary.trigger('click')
+    expect(wrapper.findAll('[data-testid="room-select"]')).toHaveLength(0)
+    expect(wrapper.findAll('[data-testid="hide-toggle"]')).toHaveLength(0)
+  })
 })

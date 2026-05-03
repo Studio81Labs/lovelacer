@@ -8,6 +8,7 @@ import { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.j
 import { InviteStore } from './storage/invite-store.js'
 import { OverrideStore } from './storage/override-store.js'
 import { SettingsStore } from './storage/settings-store.js'
+import { OnboardingStore } from './storage/onboarding-store.js'
 
 async function main() {
   // Require an explicit `NODE_ENV=development` to enable pino-pretty, since
@@ -50,6 +51,10 @@ async function main() {
   const settings = new SettingsStore(settingsPath)
   logger.info({ path: settingsPath }, 'settings store opened')
 
+  const onboardingPath = resolve(config.dataDir, 'lovelacer.sqlite')
+  const onboarding = new OnboardingStore(onboardingPath)
+  logger.info({ path: onboardingPath }, 'onboarding store opened')
+
   const app = await createApp({
     ha,
     overrides,
@@ -57,6 +62,7 @@ async function main() {
     appliedSnapshot,
     dismissedSuggestions,
     settings,
+    onboarding,
     isDev,
     logLevel: config.logLevel,
     logger,
@@ -80,6 +86,7 @@ async function main() {
       appliedSnapshot.close()
       dismissedSuggestions.close()
       settings.close()
+      onboarding.close()
     }
     process.exit(0)
   }

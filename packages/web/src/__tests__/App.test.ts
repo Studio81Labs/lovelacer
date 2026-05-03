@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import App from '../App.vue'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useOverridesStore } from '../stores/overrides.js'
+import { useInviteStore } from '../stores/invite.js'
+import { useOnboardingStore } from '../stores/onboarding.js'
 import type { PreviewOutput } from '../api/types.js'
 
 vi.mock('../api/client.js', () => ({
@@ -13,9 +15,11 @@ vi.mock('../api/client.js', () => ({
   putOverrides: vi.fn(),
   getInvite: vi.fn(),
   postInvite: vi.fn(),
+  getOnboarding: vi.fn(),
+  postOnboardingComplete: vi.fn(),
 }))
 
-const { postPreview, getOverrides, putOverrides, getInvite, postInvite } =
+const { postPreview, getOverrides, putOverrides, getInvite, postInvite, getOnboarding } =
   await import('../api/client.js')
 
 const mockPreview: PreviewOutput = {
@@ -44,9 +48,11 @@ describe('App integration', () => {
     vi.mocked(getOverrides).mockReset()
     vi.mocked(putOverrides).mockReset()
     vi.mocked(getInvite).mockReset()
-    // Default: most existing tests assume the gate is already accepted.
-    // Tests that need accepted=false will override this.
+    vi.mocked(getOnboarding).mockReset()
+    // Default: most existing tests assume the gate is already accepted
+    // and onboarding already completed so the main view is visible.
     vi.mocked(getInvite).mockResolvedValue({ accepted: true })
+    vi.mocked(getOnboarding).mockResolvedValue({ completedAt: 1700000000 })
   })
 
   it('triggers loadFromServer when analyze.phase transitions to ready', async () => {
@@ -135,6 +141,9 @@ describe('App integration', () => {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
       },
     })
+    // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
     const analyze = useAnalyzeStore()
     analyze.$patch({ phase: 'ready', preview: previewWithDiff })
     await wrapper.vm.$nextTick()
@@ -162,6 +171,9 @@ describe('App integration', () => {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
       },
     })
+    // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
     const analyze = useAnalyzeStore()
     const overrides = useOverridesStore()
 
@@ -265,6 +277,9 @@ describe('App integration', () => {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
       },
     })
+    // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
     const analyze = useAnalyzeStore()
     const overrides = useOverridesStore()
 
@@ -423,5 +438,181 @@ describe('App invite gate', () => {
     expect((wrapper.find('[data-testid="invite-input"]').element as HTMLInputElement).value).toBe(
       'BETA-2026-ALPHA',
     )
+  })
+})
+
+describe('App.vue — onboarding gating (P2-7)', () => {
+  beforeEach(() => {
+    // Reset both mocks each test — earlier tests in the file may have
+    // installed `mockReturnValueOnce` queues that would leak in.
+    vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
+    vi.mocked(getOnboarding).mockReset().mockResolvedValue({ completedAt: 1700000000 })
+  })
+
+  it('initial render (both invite and onboarding loading): all three views hidden', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    // No call to loadStatus has resolved yet — accepted is null, completedAt undefined.
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(false)
+  })
+
+  it('invite accepted, onboarding pending → wizard visible, main hidden', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    const onboarding = useOnboardingStore()
+    invite.accepted = true
+    onboarding.completedAt = null
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(true)
+    expect(wrapper.find('main').exists()).toBe(false)
+  })
+
+  it('invite accepted, onboarding completed → main visible, wizard hidden', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    const onboarding = useOnboardingStore()
+    invite.accepted = true
+    onboarding.completedAt = 1700000000
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(true)
+  })
+
+  it('invite not accepted → InviteGate visible, neither wizard nor main', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    invite.accepted = false
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(false)
+  })
+
+  it('main view does not flash during invite acceptance after a stale onboarding 403 (regression: Bugbot #25 Medium flicker)', async () => {
+    // Bug: on a fresh install, the initial onboarding.loadStatus 403'd
+    // (gated), leaving phase='error' and isResolved=true. When invite
+    // was accepted, the post-flush retry watch fired AFTER Vue's
+    // render — so `showMainView` briefly evaluated true with the stale
+    // resolved state, flashing the main view before the wizard mounted.
+    //
+    // Fix: drop the speculative onMounted load and gate loadStatus on
+    // invite.accepted via a `flush: 'pre'` watch so the synchronous
+    // `phase='loading'` mutation lands before the next render.
+    let resolveSecondLoad: (v: { completedAt: number | null }) => void = () => {}
+    const secondLoadPromise = new Promise<{ completedAt: number | null }>((r) => {
+      resolveSecondLoad = r
+    })
+    vi.mocked(getOnboarding).mockReset().mockReturnValueOnce(secondLoadPromise)
+    vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: false })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    await flushPromises()
+    // Invite gate is up; onboarding.loadStatus has NOT yet fired (no
+    // onMounted call), so the store is in its initial state.
+    const onboarding = useOnboardingStore()
+    expect(onboarding.phase).toBe('idle')
+    expect(onboarding.completedAt).toBeUndefined()
+
+    // Simulate invite acceptance.
+    const invite = useInviteStore()
+    invite.accepted = true
+    // Pre-flush watch fires synchronously and queues loadStatus, which
+    // synchronously sets phase='loading'. After nextTick, the render
+    // should see isResolved=false and hide both views.
+    await wrapper.vm.$nextTick()
+    expect(onboarding.phase).toBe('loading')
+    expect(onboarding.isResolved).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(false) // no flicker
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+
+    // Now resolve the load — the wizard should mount.
+    resolveSecondLoad({ completedAt: null })
+    await flushPromises()
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(true)
+    expect(wrapper.find('main').exists()).toBe(false)
+  })
+
+  it('invite accepted, onboarding load failed → main view visible, wizard hidden (regression: Bugbot #25 Medium blank screen)', async () => {
+    // Regression: when GET /api/onboarding fails (network error), completedAt
+    // stays undefined and shouldShowWizard stays false. Without an isResolved
+    // fallback, `showMainView` would be false too — the user would see a
+    // blank page with no recovery. The store's isResolved computed flips
+    // true on phase==='error', so App.vue's gating fails open into main.
+    //
+    // Override the default mock so loadStatus rejects (the auto-resolve in
+    // the file-level beforeEach would otherwise set completedAt to a
+    // timestamp, masking the bug).
+    vi.mocked(getOnboarding).mockReset().mockRejectedValue({
+      error: 'network',
+      message: 'connection lost',
+    })
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    const onboarding = useOnboardingStore()
+    invite.accepted = true
+    // Wait for loadStatus to reject and store state to settle.
+    await flushPromises()
+    expect(onboarding.phase).toBe('error')
+    expect(onboarding.completedAt).toBeUndefined()
+    expect(onboarding.isResolved).toBe(true)
+    expect(wrapper.find('main').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+  })
+
+  it('wizard stays mounted after onboarding.completedAt flips to a number (until close emit) — P2-7 Bug 2 regression', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    const onboarding = useOnboardingStore()
+    invite.accepted = true
+    onboarding.completedAt = null
+    await wrapper.vm.$nextTick()
+
+    // Wizard should be mounted because wizardOpen was set true by the watch.
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(true)
+
+    // Simulate the apply-success watch flipping completedAt to a number
+    // (what onboarding.complete() does in the background).
+    onboarding.completedAt = 1700000000
+    await wrapper.vm.$nextTick()
+
+    // Wizard should still be mounted — App.vue gates on wizardOpen (which
+    // only flips false on the close emit), not on shouldShowWizard directly.
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(true)
+
+    // Once the wizard emits close, the wizard should unmount and main appears.
+    await wrapper.findComponent({ name: 'OnboardingWizard' }).vm.$emit('close')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('main').exists()).toBe(true)
   })
 })

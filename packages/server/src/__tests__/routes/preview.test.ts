@@ -9,15 +9,19 @@ import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-sto
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 import { SettingsStore } from '../../storage/settings-store.js'
+import { OnboardingStore } from '../../storage/onboarding-store.js'
 
 let dismissed: DismissedSuggestionStore | null = null
 let settings: SettingsStore | null = null
+let onboarding: OnboardingStore | null = null
 
 afterEach(() => {
   dismissed?.close()
   dismissed = null
   settings?.close()
   settings = null
+  onboarding?.close()
+  onboarding = null
 })
 
 function makeStore(): OverrideStore {
@@ -56,6 +60,7 @@ async function makeApp(
 ) {
   dismissed = new DismissedSuggestionStore(':memory:')
   settings = new SettingsStore(':memory:')
+  onboarding = new OnboardingStore(':memory:')
   return createApp({
     ha: makeHa(opts.connected ?? true),
     overrides: makeStore(),
@@ -63,6 +68,7 @@ async function makeApp(
     appliedSnapshot: makeAppliedSnapshot(opts.snapshot),
     dismissedSuggestions: dismissed,
     settings,
+    onboarding,
     logLevel: 'silent',
     dashboardUrlPath: 'lovelacer-home',
   })
@@ -110,6 +116,7 @@ describe('POST /api/preview', () => {
     } as unknown as HaClient
     dismissed = new DismissedSuggestionStore(':memory:')
     settings = new SettingsStore(':memory:')
+    onboarding = new OnboardingStore(':memory:')
     const app = await createApp({
       ha,
       overrides: makeStore(),
@@ -117,6 +124,7 @@ describe('POST /api/preview', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: dismissed,
       settings,
+      onboarding,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -144,6 +152,7 @@ describe('POST /api/preview', () => {
     const ha = makeHa(true)
     dismissed = new DismissedSuggestionStore(':memory:')
     settings = new SettingsStore(':memory:')
+    onboarding = new OnboardingStore(':memory:')
     const learner = await createApp({
       ha,
       overrides: makeStore(),
@@ -151,6 +160,7 @@ describe('POST /api/preview', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: dismissed,
       settings,
+      onboarding,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -171,7 +181,7 @@ describe('POST /api/preview', () => {
       await learner.close()
     }
 
-    // dismissed and settings are reused for the second app instance in this test
+    // dismissed, settings, and onboarding are reused for the second app instance in this test
     const app = await createApp({
       ha,
       overrides: makeStore(),
@@ -182,6 +192,7 @@ describe('POST /api/preview', () => {
       }),
       dismissedSuggestions: dismissed,
       settings: settings!,
+      onboarding: onboarding!,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -260,6 +271,7 @@ describe('POST /api/preview', () => {
     } as unknown as HaClient
     dismissed = new DismissedSuggestionStore(':memory:')
     settings = new SettingsStore(':memory:')
+    onboarding = new OnboardingStore(':memory:')
     const app = await createApp({
       ha: fakeHa,
       overrides: makeStore(),
@@ -267,6 +279,7 @@ describe('POST /api/preview', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: dismissed,
       settings,
+      onboarding,
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })

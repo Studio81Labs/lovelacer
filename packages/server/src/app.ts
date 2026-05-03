@@ -8,6 +8,7 @@ import { analyzeRoute } from './routes/analyze.js'
 import { applyRoute } from './routes/apply.js'
 import { exportRoute } from './routes/export.js'
 import { inviteRoute } from './routes/invite.js'
+import { onboardingRoute } from './routes/onboarding.js'
 import { overridesRoute } from './routes/overrides.js'
 import { previewRoute } from './routes/preview.js'
 import { settingsRoute } from './routes/settings.js'
@@ -15,6 +16,7 @@ import { suggestionsRoute } from './routes/suggestions.js'
 import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.js'
 import type { InviteStore } from './storage/invite-store.js'
+import type { OnboardingStore } from './storage/onboarding-store.js'
 import type { OverrideStore } from './storage/override-store.js'
 import type { SettingsStore } from './storage/settings-store.js'
 
@@ -25,6 +27,7 @@ export interface CreateAppOptions {
   appliedSnapshot: AppliedSnapshotStore
   dismissedSuggestions: DismissedSuggestionStore
   settings: SettingsStore
+  onboarding: OnboardingStore
   isDev?: boolean
   logLevel?: string
   /**
@@ -121,6 +124,7 @@ export async function createApp(opts: CreateAppOptions) {
   })
   await app.register(overridesRoute, { overrides: opts.overrides })
   await app.register(settingsRoute, { settings: opts.settings })
+  await app.register(onboardingRoute, { onboarding: opts.onboarding })
   await app.register(suggestionsRoute, { dismissed: opts.dismissedSuggestions })
 
   // SPA static serving — only enabled in add-on / production. In dev Vite

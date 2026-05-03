@@ -10,6 +10,7 @@ import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-sto
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 import { SettingsStore } from '../../storage/settings-store.js'
+import { OnboardingStore } from '../../storage/onboarding-store.js'
 
 function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
@@ -79,6 +80,7 @@ describe('POST /api/apply — happy paths', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -110,6 +112,7 @@ describe('POST /api/apply — happy paths', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -143,6 +146,7 @@ describe('POST /api/apply — happy paths', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -170,6 +174,7 @@ describe('POST /api/apply — error paths', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -191,6 +196,7 @@ describe('POST /api/apply — error paths', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -217,6 +223,7 @@ describe('POST /api/apply — error paths', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -245,6 +252,7 @@ describe('POST /api/apply — error paths', () => {
       appliedSnapshot: makeAppliedSnapshot(),
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -277,6 +285,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -314,6 +323,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -342,6 +352,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -372,6 +383,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })
@@ -407,6 +419,7 @@ describe('POST /api/apply — snapshot persistence', () => {
       appliedSnapshot: snap,
       dismissedSuggestions: makeDismissed(),
       settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
       logLevel: 'silent',
       dashboardUrlPath: 'lovelacer-home',
     })

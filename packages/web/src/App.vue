@@ -8,6 +8,7 @@ import OverridesBar from './components/OverridesBar.vue'
 import DashboardPreview from './components/DashboardPreview.vue'
 import ApplyBar from './components/ApplyBar.vue'
 import InviteGate from './components/InviteGate.vue'
+import OnboardingWizard from './components/OnboardingWizard.vue'
 import DiffBanner from './components/DiffBanner.vue'
 import RemovedEntitiesPanel from './components/RemovedEntitiesPanel.vue'
 import SuggestionsPanel from './components/SuggestionsPanel.vue'
@@ -17,6 +18,7 @@ import { useOverridesStore } from './stores/overrides.js'
 import { useInviteStore } from './stores/invite.js'
 import { useSuggestionsStore } from './stores/suggestions.js'
 import { useSettingsStore } from './stores/settings.js'
+import { useOnboardingStore } from './stores/onboarding.js'
 import type { EntityDiff, RoomDiffSummary } from './api/types.js'
 
 const analyze = useAnalyzeStore()
@@ -24,7 +26,48 @@ const overrides = useOverridesStore()
 const invite = useInviteStore()
 const suggestions = useSuggestionsStore()
 const settings = useSettingsStore()
+const onboarding = useOnboardingStore()
 const settingsOpen = ref(false)
+
+// Local wizard-mount state, decoupled from onboarding.completedAt so
+// the wizard's DoneStep stays visible after apply success (which flips
+// completedAt to a number) until the user clicks Continue/Skip.
+const wizardOpen = ref(false)
+
+// Open the wizard when we know we should: invite accepted + onboarding
+// not yet completed. Once opened, wizardOpen stays true until the
+// wizard emits close.
+watch(
+  [() => invite.accepted, () => onboarding.shouldShowWizard],
+  ([accepted, shouldShow]) => {
+    if (accepted === true && shouldShow && !wizardOpen.value) {
+      wizardOpen.value = true
+    }
+  },
+  { immediate: true },
+)
+
+// Single source of truth for when onboarding status loads: only after
+// invite is accepted (so /api/onboarding doesn't 403 against the gate).
+// `immediate: true` handles the existing-install case where invite is
+// already accepted at mount; the conditional skips the no-op pre-mount
+// firing where `accepted === undefined`.
+//
+// `flush: 'pre'` is critical for the fresh-install path: when invite
+// flips from false to true, the loadStatus call must land its
+// synchronous `phase = 'loading'` mutation BEFORE the next render —
+// otherwise `onboarding.isResolved` could still be true from a stale
+// state and `showMainView` would briefly evaluate true between
+// invite acceptance and wizard mount, flashing the main view.
+watch(
+  () => invite.accepted,
+  (accepted) => {
+    if (accepted === true && onboarding.completedAt === undefined) {
+      void onboarding.loadStatus()
+    }
+  },
+  { immediate: true, flush: 'pre' },
+)
 
 async function openSettings(): Promise<void> {
   // Await the load BEFORE opening so the user can't edit dirtyState mid-fetch
@@ -45,8 +88,19 @@ const diffByEntityId = computed<Map<string, EntityDiff>>(() => {
   return map
 })
 
+const showWizard = computed(() => invite.accepted === true && wizardOpen.value)
+// `onboarding.isResolved` flips true on successful load OR error — failing
+// open into the main view if the status endpoint errors. The pre-resolution
+// `false` state continues to suppress the first-paint flash.
+const showMainView = computed(
+  () => invite.accepted === true && !wizardOpen.value && onboarding.isResolved,
+)
+
 onMounted(() => {
   void invite.loadStatus()
+  // Onboarding status loads via the watch on `invite.accepted` below
+  // (single source of truth) — firing it here would race the invite
+  // load and 403 on a fresh install.
 })
 
 let loadedOnce = false
@@ -73,7 +127,7 @@ watch(
 </script>
 
 <template>
-  <main class="mx-auto max-w-3xl space-y-6 p-8">
+  <main v-if="showMainView" class="mx-auto max-w-3xl space-y-6 p-8">
     <header class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-semibold text-stone-900">Lovelacer</h1>
@@ -130,6 +184,8 @@ watch(
       <ApplyBar />
     </section>
   </main>
+
+  <OnboardingWizard v-else-if="showWizard" @close="wizardOpen = false" />
 
   <SettingsModal v-if="settingsOpen" @close="settingsOpen = false" />
   <InviteGate v-if="invite.shouldShowGate" />
