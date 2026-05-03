@@ -152,6 +152,91 @@ export interface Suggestion {
 }
 
 /**
+ * P2-6 — User-facing language setting values. Subset of `LanguageCode`
+ * (the analyzer's full keyword-data language union) plus the `'auto'`
+ * sentinel, restricted to languages with shipped keyword data today
+ * (EN + CS). Expand when a new language's keyword data ships.
+ *
+ * Exposed as a tuple `as const` so the route's Zod enum derives from
+ * a single source of truth. `'auto'` matches all available keyword
+ * sets simultaneously (today's detector behavior). Specific languages
+ * narrow the matcher to that language's keywords for priorities 3-5
+ * only.
+ */
+export const SUPPORTED_LANGUAGES = ['auto', 'en', 'cs'] as const
+
+/**
+ * Detection language for name-based matching (priorities 3-5).
+ * `'auto'` is the match-all default.
+ */
+export type SettingsLanguage = (typeof SUPPORTED_LANGUAGES)[number]
+
+/**
+ * P2-6 — User-facing card-pack setting values. Stub for a future
+ * ticket; only `'default'` ships today. Exposed as a tuple `as const`
+ * so the route's Zod enum derives from a single source of truth.
+ */
+export const SUPPORTED_CARD_PACKS = ['default'] as const
+
+/**
+ * Card-style pack identifier. Persisted but the generator currently
+ * ignores the value — wire-up for a future ticket.
+ */
+export type SettingsCardPack = (typeof SUPPORTED_CARD_PACKS)[number]
+
+/** Visibility toggles for the seven sections of the home view. */
+export interface SettingsSections {
+  welcome: boolean
+  quickStats: boolean
+  people: boolean
+  roomsByFloor: boolean
+  activeRooms: boolean
+  scenes: boolean
+  cameras: boolean
+}
+
+export interface Settings {
+  /**
+   * Detection language for name-based matching (priorities 3-5).
+   * `'auto'` matches all available keyword sets simultaneously — today's
+   * behavior. Specific languages narrow the matcher to that set's
+   * keywords; priorities 1-2 (HA-supplied area names) stay multilingual.
+   */
+  language: SettingsLanguage
+
+  /**
+   * Card-style pack for the generator. Stub for a future ticket — only
+   * `'default'` is shipped today. Persisted but the generator currently
+   * ignores the value.
+   */
+  cardPack: SettingsCardPack
+
+  /**
+   * Per-section visibility toggles for the home view. Each flag controls
+   * whether the corresponding section is rendered in `buildHomeView`.
+   */
+  sections: SettingsSections
+}
+
+/**
+ * Defaults preserve every current behavior. A user who installs P2-6
+ * and never opens the modal sees zero change.
+ */
+export const DEFAULT_SETTINGS: Settings = {
+  language: 'auto',
+  cardPack: 'default',
+  sections: {
+    welcome: true,
+    quickStats: true,
+    people: true,
+    roomsByFloor: true,
+    activeRooms: true,
+    scenes: true,
+    cameras: true,
+  },
+}
+
+/**
  * Aggregated analysis output — what /api/analyze returns.
  */
 export interface AnalysisResult {
