@@ -498,6 +498,38 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     expect(wrapper.find('main').exists()).toBe(false)
   })
 
+  it('invite accepted, onboarding load failed → main view visible, wizard hidden (regression: Bugbot #25 Medium blank screen)', async () => {
+    // Regression: when GET /api/onboarding fails (network error), completedAt
+    // stays undefined and shouldShowWizard stays false. Without an isResolved
+    // fallback, `showMainView` would be false too — the user would see a
+    // blank page with no recovery. The store's isResolved computed flips
+    // true on phase==='error', so App.vue's gating fails open into main.
+    //
+    // Override the default mock so loadStatus rejects (the auto-resolve in
+    // the file-level beforeEach would otherwise set completedAt to a
+    // timestamp, masking the bug).
+    vi.mocked(getOnboarding).mockReset().mockRejectedValue({
+      error: 'network',
+      message: 'connection lost',
+    })
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      },
+    })
+    const invite = useInviteStore()
+    const onboarding = useOnboardingStore()
+    invite.accepted = true
+    // Wait for loadStatus to reject and store state to settle.
+    await flushPromises()
+    expect(onboarding.phase).toBe('error')
+    expect(onboarding.completedAt).toBeUndefined()
+    expect(onboarding.isResolved).toBe(true)
+    expect(wrapper.find('main').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+  })
+
   it('wizard stays mounted after onboarding.completedAt flips to a number (until close emit) — P2-7 Bug 2 regression', async () => {
     const wrapper = mount(App, {
       global: {

@@ -79,8 +79,11 @@ const diffByEntityId = computed<Map<string, EntityDiff>>(() => {
 })
 
 const showWizard = computed(() => invite.accepted === true && wizardOpen.value)
+// `onboarding.isResolved` flips true on successful load OR error — failing
+// open into the main view if the status endpoint errors. The pre-resolution
+// `false` state continues to suppress the first-paint flash.
 const showMainView = computed(
-  () => invite.accepted === true && !wizardOpen.value && onboarding.completedAt !== undefined,
+  () => invite.accepted === true && !wizardOpen.value && onboarding.isResolved,
 )
 
 onMounted(() => {

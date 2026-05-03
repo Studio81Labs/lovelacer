@@ -58,6 +58,30 @@ describe('useOnboardingStore', () => {
     expect(store.shouldShowWizard).toBe(false)
   })
 
+  it('isResolved: false initially, true after successful load, true after error (regression: Bugbot #25 Medium blank screen)', async () => {
+    // Initial — neither loaded nor errored
+    const store = useOnboardingStore()
+    expect(store.isResolved).toBe(false)
+
+    // Successful load
+    vi.mocked(getOnboarding).mockResolvedValueOnce({ completedAt: null })
+    await store.loadStatus()
+    expect(store.isResolved).toBe(true)
+
+    // Error — fresh store so completedAt stays undefined; isResolved must
+    // still flip true so App.vue's gating fails open into the main view.
+    setActivePinia(createPinia())
+    vi.mocked(getOnboarding).mockRejectedValueOnce({
+      error: 'network',
+      message: 'down',
+    } satisfies ApiError)
+    const errStore = useOnboardingStore()
+    await errStore.loadStatus()
+    expect(errStore.completedAt).toBeUndefined()
+    expect(errStore.phase).toBe('error')
+    expect(errStore.isResolved).toBe(true)
+  })
+
   it('complete() happy path: completedAt set to result, phase=idle', async () => {
     const ts = 1700000000
     vi.mocked(postOnboardingComplete).mockResolvedValueOnce({ completedAt: ts })

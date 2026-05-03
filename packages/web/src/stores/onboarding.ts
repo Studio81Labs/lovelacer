@@ -18,6 +18,12 @@ type Phase = 'idle' | 'loading' | 'completing' | 'error'
  * (we know we've loaded AND know there's no completion). Mirror of
  * `useInviteStore.shouldShowGate`'s pattern.
  *
+ * `isResolved` is true once we have *any* answer about onboarding —
+ * either a successful load (`completedAt` set) or a failed load
+ * (`phase === 'error'`). App.vue's `showMainView` uses this to fail
+ * open into the main view when the status endpoint errors, instead of
+ * leaving the user on a blank screen with no recovery.
+ *
  * `complete()` re-throws on error so the wizard's apply-success watch
  * can decide what to do (current behavior: silently advance to DoneStep
  * because the dashboard is already live in HA, retry on next visit).
@@ -28,6 +34,9 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   const completedAt = ref<number | null | undefined>(undefined)
 
   const shouldShowWizard = computed<boolean>(() => completedAt.value === null)
+  const isResolved = computed<boolean>(
+    () => completedAt.value !== undefined || phase.value === 'error',
+  )
 
   async function loadStatus(): Promise<void> {
     phase.value = 'loading'
@@ -56,5 +65,5 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     }
   }
 
-  return { phase, error, completedAt, shouldShowWizard, loadStatus, complete }
+  return { phase, error, completedAt, shouldShowWizard, isResolved, loadStatus, complete }
 })
