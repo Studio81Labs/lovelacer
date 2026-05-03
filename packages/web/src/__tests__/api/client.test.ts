@@ -9,10 +9,13 @@ import {
   postInvite,
   getSettings,
   putSettings,
+  getOnboarding,
+  postOnboardingComplete,
 } from '../../api/client.js'
 import type {
   ApiError,
   LovelaceConfig,
+  OnboardingStatus,
   Override,
   PreviewOutput,
   Settings,
@@ -424,6 +427,71 @@ describe('putSettings', () => {
 
     await expect(putSettings({ settings: DEFAULT_SETTINGS })).rejects.toMatchObject({
       error: 'invalid_body',
+    })
+  })
+})
+
+describe('getOnboarding', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('GETs api/onboarding and returns the parsed payload', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ completedAt: null }),
+    } as unknown as Response)
+
+    const result = await getOnboarding()
+    expect(result).toEqual({ completedAt: null })
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/onboarding', {})
+  })
+
+  it('returns the persisted timestamp when one is set', async () => {
+    const ts = 1700000000
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ completedAt: ts }),
+    } as unknown as Response)
+
+    const result: OnboardingStatus = await getOnboarding()
+    expect(result.completedAt).toBe(ts)
+  })
+})
+
+describe('postOnboardingComplete', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('POSTs api/onboarding/complete with no body and returns the parsed payload', async () => {
+    const ts = 1700000000
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ completedAt: ts }),
+    } as unknown as Response)
+
+    const result = await postOnboardingComplete()
+    expect(result).toEqual({ completedAt: ts })
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/onboarding/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+  })
+
+  it('throws ApiError when server returns 500 storage_error', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: () =>
+        Promise.resolve({
+          error: 'storage_error',
+          message: 'disk full',
+        }),
+    } as unknown as Response)
+
+    await expect(postOnboardingComplete()).rejects.toMatchObject({
+      error: 'storage_error',
     })
   })
 })

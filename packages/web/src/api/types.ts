@@ -199,6 +199,16 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 /**
+ * P2-7 — Onboarding wizard completion status. Mirrored from
+ * `@lovelacer/server`'s `OnboardingStore`. `completedAt: null` means
+ * the user hasn't completed the wizard yet (fresh install). A unix
+ * timestamp means they completed it (via Apply success or Skip).
+ */
+export interface OnboardingStatus {
+  completedAt: number | null
+}
+
+/**
  * The error envelope every non-2xx response body conforms to. `step` is
  * present only when `error === 'ha_apply_failed'`. `'network'` is a
  * client-side signal that fetch itself rejected or the response wasn't
