@@ -6,10 +6,10 @@ import { useAnalyzeStore } from '../../stores/analyze.js'
 import { useApplyStore } from '../../stores/apply.js'
 import { useOnboardingStore } from '../../stores/onboarding.js'
 import { useSettingsStore } from '../../stores/settings.js'
+import type * as ApiTypes from '../../api/types.js'
 
 vi.mock('../../api/client.js', async () => {
-  const { DEFAULT_SETTINGS } =
-    await vi.importActual<typeof import('../../api/types.js')>('../../api/types.js')
+  const { DEFAULT_SETTINGS } = await vi.importActual<typeof ApiTypes>('../../api/types.js')
   return {
     getSettings: vi.fn().mockResolvedValue({ settings: DEFAULT_SETTINGS }),
     putSettings: vi.fn().mockResolvedValue({ settings: DEFAULT_SETTINGS }),

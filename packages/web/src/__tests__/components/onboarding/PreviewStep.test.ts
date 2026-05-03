@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import PreviewStep from '../../../components/onboarding/PreviewStep.vue'
 import { useAnalyzeStore } from '../../../stores/analyze.js'
 import { useApplyStore } from '../../../stores/apply.js'

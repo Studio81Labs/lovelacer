@@ -1,13 +1,12 @@
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import WelcomeStep from '../../../components/onboarding/WelcomeStep.vue'
 import { useSettingsStore } from '../../../stores/settings.js'
-import { DEFAULT_SETTINGS } from '../../../api/types.js'
+import type * as ApiTypes from '../../../api/types.js'
 
 vi.mock('../../../api/client.js', async () => {
-  const { DEFAULT_SETTINGS } =
-    await vi.importActual<typeof import('../../../api/types.js')>('../../../api/types.js')
+  const { DEFAULT_SETTINGS } = await vi.importActual<typeof ApiTypes>('../../../api/types.js')
   return {
     getSettings: vi.fn().mockResolvedValue({ settings: DEFAULT_SETTINGS }),
     putSettings: vi.fn(),
