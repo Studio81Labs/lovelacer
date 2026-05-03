@@ -39,27 +39,41 @@ watch(
   },
 )
 
-async function onContinueFromWelcome(): Promise<void> {
-  // saveAndReanalyze early-returns when nothing is dirty, which would skip
-  // analysis entirely — PreviewStep would mount with phase='idle' and no
-  // template branch matches. Mirror onSkip's branching so the analyze step
-  // always runs, regardless of whether the user touched the language.
+/**
+ * Persist the language pick (if dirty) and kick off analysis. Wraps
+ * `saveAndReanalyze` in try/catch because it intentionally re-throws on
+ * PUT failure for the settings modal — but in the onboarding wizard a
+ * network error must not silently freeze the flow. On failure we still
+ * trigger analyze.analyze so the wizard moves forward; the dirty
+ * language pick stays in `dirtyState` and the user can retry via the
+ * settings modal later.
+ *
+ * `saveAndReanalyze` early-returns when nothing is dirty, which would
+ * skip analysis entirely (PreviewStep would mount with phase='idle' and
+ * no template branch matches), so the non-dirty branch calls
+ * analyze.analyze directly.
+ */
+async function persistAndAnalyze(): Promise<void> {
   if (settings.hasDirty) {
-    await settings.saveAndReanalyze()
+    try {
+      await settings.saveAndReanalyze()
+    } catch {
+      // Save failed — fall back to analyze-only so the wizard still
+      // progresses with stale (but valid) settings.
+      void analyze.analyze()
+    }
   } else {
     void analyze.analyze()
   }
+}
+
+async function onContinueFromWelcome(): Promise<void> {
+  await persistAndAnalyze()
   currentStep.value = 'preview'
 }
 
 async function onSkip(): Promise<void> {
-  // Preserve language pick if user changed it but skipped without continuing.
-  // saveAndReanalyze persists settings AND triggers analyze.analyze.
-  if (settings.hasDirty) {
-    await settings.saveAndReanalyze()
-  } else {
-    void analyze.analyze() // populate the post-skip view
-  }
+  await persistAndAnalyze()
   try {
     await onboarding.complete()
   } catch {

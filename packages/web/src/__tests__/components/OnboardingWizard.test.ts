@@ -152,4 +152,44 @@ describe('OnboardingWizard', () => {
     expect(vi.mocked(onboarding.complete)).toHaveBeenCalled()
     expect(vi.mocked(settings.saveAndReanalyze)).not.toHaveBeenCalled()
   })
+
+  it('Continue when saveAndReanalyze throws: falls back to analyze and still transitions to PreviewStep (regression: Bugbot #25 Medium)', async () => {
+    // Regression: saveAndReanalyze re-throws on PUT failure (intentional —
+    // settings modal needs to know). Without try/catch in the wizard, the
+    // throw would prevent currentStep transition and freeze the wizard
+    // with no feedback.
+    const wrapper = mountWizard()
+    const settings = useSettingsStore()
+    const analyze = useAnalyzeStore()
+    vi.mocked(settings.saveAndReanalyze).mockRejectedValue(
+      Object.assign(new Error('boom'), { error: 'network', message: 'boom' }),
+    )
+    vi.mocked(analyze.analyze).mockResolvedValue(undefined)
+    settings.setLanguage('cs')
+    await flushPromises()
+    await wrapper.find('[data-testid="welcome-continue"]').trigger('click')
+    await flushPromises()
+    expect(vi.mocked(settings.saveAndReanalyze)).toHaveBeenCalled()
+    expect(vi.mocked(analyze.analyze)).toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="preview-step"]').exists()).toBe(true)
+  })
+
+  it('Skip when saveAndReanalyze throws: falls back to analyze, still calls complete + emits close (regression: Bugbot #25 Medium)', async () => {
+    const wrapper = mountWizard()
+    const settings = useSettingsStore()
+    const analyze = useAnalyzeStore()
+    const onboarding = useOnboardingStore()
+    vi.mocked(settings.saveAndReanalyze).mockRejectedValue(
+      Object.assign(new Error('boom'), { error: 'network', message: 'boom' }),
+    )
+    vi.mocked(analyze.analyze).mockResolvedValue(undefined)
+    settings.setLanguage('cs')
+    await flushPromises()
+    await wrapper.find('[data-testid="welcome-skip"]').trigger('click')
+    await flushPromises()
+    expect(vi.mocked(settings.saveAndReanalyze)).toHaveBeenCalled()
+    expect(vi.mocked(analyze.analyze)).toHaveBeenCalled()
+    expect(vi.mocked(onboarding.complete)).toHaveBeenCalled()
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
 })
