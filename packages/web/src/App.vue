@@ -152,13 +152,13 @@ watch(
 
     <section
       v-if="analyze.phase === 'error' && analyze.error !== null"
-      class="rounded-lg border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-900"
+      class="rounded-lg bg-danger-50 px-5 py-3 text-sm text-danger-700"
     >
       <div class="flex items-center justify-between">
         <span>{{ analyze.error.message }}</span>
         <button
           type="button"
-          class="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+          class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-700"
           @click="analyze.analyze()"
         >
           Retry

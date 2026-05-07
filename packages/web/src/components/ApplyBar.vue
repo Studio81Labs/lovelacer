@@ -84,7 +84,7 @@ const showRetry = computed(
     <button
       v-if="apply.phase === 'idle' || apply.phase === 'applying'"
       type="button"
-      class="w-full rounded bg-brand-600 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+      class="w-full rounded bg-amber-500 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-stone-300"
       :disabled="apply.phase === 'applying' || analyze.phase !== 'ready'"
       @click="applyClicked"
     >
@@ -93,7 +93,7 @@ const showRetry = computed(
 
     <div
       v-else-if="apply.phase === 'success' && apply.result !== null"
-      class="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-5 py-3 text-sm text-green-900"
+      class="flex items-center justify-between rounded-lg bg-forest-50 px-5 py-3 text-sm text-forest-700"
     >
       <span>
         Dashboard <span class="font-mono">{{ apply.result.urlPath }}</span>
@@ -101,7 +101,7 @@ const showRetry = computed(
       </span>
       <button
         type="button"
-        class="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+        class="rounded bg-forest-700 px-3 py-1 text-xs font-medium text-white hover:bg-forest-700"
         @click="startOver"
       >
         Done — start over
@@ -110,13 +110,13 @@ const showRetry = computed(
 
     <div
       v-else-if="apply.phase === 'error'"
-      class="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-900"
+      class="flex items-center justify-between rounded-lg bg-danger-50 px-5 py-3 text-sm text-danger-700"
     >
       <span>{{ errorMessage }}</span>
       <button
         v-if="showRetry"
         type="button"
-        class="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+        class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-700"
         @click="applyClicked"
       >
         Retry

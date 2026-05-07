@@ -50,12 +50,12 @@ function applyClicked(): void {
     <!-- Analyze error -->
     <div
       v-else-if="analyze.phase === 'error' && analyze.error !== null"
-      class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+      class="mt-4 rounded bg-danger-50 px-4 py-3 text-sm text-danger-700"
     >
       <p>{{ analyze.error.message }}</p>
       <button
         type="button"
-        class="mt-2 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+        class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-700"
         @click="analyze.analyze()"
       >
         Retry
@@ -86,12 +86,12 @@ function applyClicked(): void {
       <!-- Apply error -->
       <div
         v-if="apply.phase === 'error' && apply.error !== null"
-        class="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900"
+        class="rounded bg-danger-50 px-4 py-3 text-sm text-danger-700"
       >
         <p>Apply failed: {{ apply.error.message }}</p>
         <button
           type="button"
-          class="mt-2 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+          class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-700"
           @click="applyClicked"
         >
           Retry
@@ -112,7 +112,7 @@ function applyClicked(): void {
       <button
         type="button"
         data-testid="preview-apply"
-        class="rounded bg-brand-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+        class="rounded bg-amber-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-stone-300"
         :disabled="analyze.phase !== 'ready' || apply.phase === 'applying'"
         @click="applyClicked"
       >

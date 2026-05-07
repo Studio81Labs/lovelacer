@@ -33,7 +33,7 @@ const settings = useSettingsStore()
     <button
       type="button"
       data-testid="welcome-continue"
-      class="mt-6 w-full rounded bg-brand-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-700"
+      class="mt-6 w-full rounded bg-amber-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-amber-700"
       @click="$emit('continue')"
     >
       Continue
