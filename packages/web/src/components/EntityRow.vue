@@ -71,7 +71,7 @@ const diffTagText = computed<string | null>(() => {
 
 const diffTagClass = computed<string>(() => {
   if (props.diff?.kind === 'added') return 'bg-forest-50 text-forest-700'
-  if (props.diff?.kind === 'moved') return 'bg-stone-50 text-stone-700'
+  if (props.diff?.kind === 'moved') return 'bg-stone-200 text-stone-700'
   return ''
 })
 </script>

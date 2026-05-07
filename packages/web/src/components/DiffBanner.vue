@@ -55,7 +55,7 @@ function formatApplied(unixSeconds: number): string {
       <span
         v-if="diff.totals.moved > 0"
         data-testid="diff-banner-moved"
-        class="rounded bg-stone-50 px-2 py-0.5 text-xs font-medium text-stone-700"
+        class="rounded bg-stone-200 px-2 py-0.5 text-xs font-medium text-stone-700"
         >↻ {{ diff.totals.moved }} moved</span
       >
       <span

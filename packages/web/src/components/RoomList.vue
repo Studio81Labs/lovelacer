@@ -74,7 +74,7 @@ function entityIdToFriendly(entityId: string): string {
               <span
                 v-if="(diffByRoom ?? {})[room.id]!.movedOut > 0"
                 data-testid="room-diff-moved-out"
-                class="rounded bg-stone-50 px-2 py-0.5 text-xs font-medium text-stone-700"
+                class="rounded bg-stone-200 px-2 py-0.5 text-xs font-medium text-stone-700"
                 >↻ {{ (diffByRoom ?? {})[room.id]!.movedOut }} left</span
               >
             </template>
