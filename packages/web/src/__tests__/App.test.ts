@@ -6,7 +6,9 @@ import { useAnalyzeStore } from '../stores/analyze.js'
 import { useOverridesStore } from '../stores/overrides.js'
 import { useInviteStore } from '../stores/invite.js'
 import { useOnboardingStore } from '../stores/onboarding.js'
-import type { PreviewOutput } from '../api/types.js'
+import { useSettingsStore } from '../stores/settings.js'
+import { useI18nStore } from '../stores/i18n.js'
+import type { PreviewOutput, Settings } from '../api/types.js'
 import { createTestI18n } from './test-utils.js'
 
 vi.mock('../api/client.js', () => ({
@@ -615,5 +617,80 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     await flushPromises()
     expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
     expect(wrapper.find('main').exists()).toBe(true)
+  })
+})
+
+describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
+  beforeEach(() => {
+    vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
+    vi.mocked(getOnboarding).mockReset().mockResolvedValue({ completedAt: 1700000000 })
+  })
+
+  it('reconciles useI18nStore.locale to settings.serverState.uiLanguage after server load', async () => {
+    // Spec §4: when loadFromServer() resolves and the server's uiLanguage
+    // differs from the current locale (e.g. user opens Device B with
+    // empty localStorage and en-US browser; server has 'cs' from Device
+    // A), the server value wins and the UI updates without manual
+    // re-pick.
+    mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    expect(i18n.locale).toBe('en')
+
+    // Simulate loadFromServer() resolving with cs.
+    const serverSettings: Settings = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      uiLanguage: 'cs',
+    }
+    settings.serverState = serverSettings
+    await flushPromises()
+
+    expect(i18n.locale).toBe('cs')
+  })
+
+  it('does not flip the locale when serverState.uiLanguage matches the active locale', async () => {
+    // Smoke test for the equality guard — without it, the watcher would
+    // re-write localStorage on every server-state load even when nothing
+    // changed.
+    mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    // Simulate a same-value reconcile: locale already 'en', server 'en'.
+    expect(i18n.locale).toBe('en')
+    settings.serverState = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      uiLanguage: 'en',
+    }
+    await flushPromises()
+
+    expect(i18n.locale).toBe('en')
   })
 })

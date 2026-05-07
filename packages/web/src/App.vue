@@ -20,6 +20,7 @@ import { useInviteStore } from './stores/invite.js'
 import { useSuggestionsStore } from './stores/suggestions.js'
 import { useSettingsStore } from './stores/settings.js'
 import { useOnboardingStore } from './stores/onboarding.js'
+import { useI18nStore } from './stores/i18n.js'
 import type { EntityDiff, RoomDiffSummary } from './api/types.js'
 
 const { t } = useI18n()
@@ -29,7 +30,26 @@ const invite = useInviteStore()
 const suggestions = useSuggestionsStore()
 const settings = useSettingsStore()
 const onboarding = useOnboardingStore()
+const i18n = useI18nStore()
 const settingsOpen = ref(false)
+
+// P2-9 — post-load reconciliation watcher. When the settings store
+// resolves `loadFromServer()`, the server-saved `uiLanguage` becomes
+// the source of truth for cross-device sync (the local first paint may
+// have used a stale localStorage cache or the en-US browser default).
+// Mirror it into the active locale so opening the app on Device B with
+// an empty localStorage picks up the choice the user made on Device A.
+//
+// The setter on `useI18nStore.locale` mirrors to localStorage too, so
+// the next first paint will skip the round-trip.
+watch(
+  () => settings.serverState?.uiLanguage,
+  (next) => {
+    if (next && next !== i18n.locale) {
+      i18n.locale = next
+    }
+  },
+)
 
 // Brand asset URL — ingress-relative via Vite's BASE_URL so the path
 // resolves under HA Supervisor's `/api/hassio_ingress/<token>/` mount

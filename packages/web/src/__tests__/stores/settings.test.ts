@@ -1,7 +1,10 @@
 import { setActivePinia, createPinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { defineComponent, h } from 'vue'
+import { mount } from '@vue/test-utils'
 import type { ApiError, Settings } from '../../api/types.js'
 import { DEFAULT_SETTINGS } from '../../api/types.js'
+import { createTestI18n } from '../test-utils.js'
 
 vi.mock('../../api/client.js', () => ({
   getSettings: vi.fn(),
@@ -18,6 +21,7 @@ vi.mock('../../api/client.js', () => ({
 
 import { getSettings, putSettings } from '../../api/client.js'
 import { useSettingsStore } from '../../stores/settings.js'
+import { useI18nStore } from '../../stores/i18n.js'
 
 const SAMPLE: Settings = {
   language: 'cs',
@@ -31,6 +35,27 @@ const SAMPLE: Settings = {
     scenes: true,
     cameras: true,
   },
+  uiLanguage: 'en',
+}
+
+/**
+ * P2-9 — `useSettingsStore.discardChanges()` calls `useI18nStore()` to
+ * revert the active locale, which in turn calls `vue-i18n`'s `useI18n()`
+ * during store setup. That requires an active i18n instance. Mount a
+ * tiny harness component with both Pinia and i18n plugins so the
+ * Pinia stores resolve in a real Vue setup context, mirroring what
+ * App.vue does at runtime.
+ */
+function withI18nContext<T>(fn: () => T): T {
+  let result!: T
+  const Harness = defineComponent({
+    setup() {
+      result = fn()
+      return () => h('div')
+    },
+  })
+  mount(Harness, { global: { plugins: [createTestI18n()] } })
+  return result
 }
 
 describe('useSettingsStore', () => {
@@ -88,7 +113,10 @@ describe('useSettingsStore', () => {
 
   it('discardChanges clears dirtyState', async () => {
     vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
-    const store = useSettingsStore()
+    const { store } = withI18nContext(() => ({
+      store: useSettingsStore(),
+      i18n: useI18nStore(),
+    }))
     await store.loadFromServer()
     store.setLanguage('en')
     expect(store.hasDirty).toBe(true)
@@ -96,6 +124,50 @@ describe('useSettingsStore', () => {
     store.discardChanges()
     expect(store.hasDirty).toBe(false)
     expect(store.effective).toEqual(DEFAULT_SETTINGS)
+  })
+
+  it('discardChanges reverts useI18nStore.locale to serverState.uiLanguage (P2-9)', async () => {
+    // Spec §5: clicking Cancel must revert BOTH the dirtyState AND the
+    // active locale. Without the locale revert, picking a language and
+    // discarding would leave the locale + localStorage holding the
+    // abandoned choice — next reload would silently restore it.
+    vi.mocked(getSettings).mockResolvedValueOnce({
+      settings: { ...DEFAULT_SETTINGS, uiLanguage: 'en' },
+    })
+    const { store, i18n } = withI18nContext(() => ({
+      store: useSettingsStore(),
+      i18n: useI18nStore(),
+    }))
+    await store.loadFromServer()
+
+    // Simulate the SettingsModal flow: setUiLanguage stages the dirty
+    // change and `onUiLanguageChange` mirrors to the active locale for
+    // instant feedback (live re-render of the modal in the chosen
+    // language).
+    store.setUiLanguage('de')
+    i18n.locale = 'de'
+    expect(i18n.locale).toBe('de')
+
+    // User clicks Cancel.
+    store.discardChanges()
+
+    expect(store.hasDirty).toBe(false)
+    expect(i18n.locale).toBe('en')
+  })
+
+  it('discardChanges reverts useI18nStore.locale to "en" when serverState is null (P2-9)', async () => {
+    // Edge case: Cancel before loadFromServer ever resolved (serverState
+    // still null). Default to 'en' rather than leaving the abandoned
+    // choice active.
+    const { store, i18n } = withI18nContext(() => ({
+      store: useSettingsStore(),
+      i18n: useI18nStore(),
+    }))
+    store.setUiLanguage('cs')
+    i18n.locale = 'cs'
+
+    store.discardChanges()
+    expect(i18n.locale).toBe('en')
   })
 
   it('saveAndReanalyze happy path: PUT, replace serverState, clear dirty, trigger analyze', async () => {

@@ -11,6 +11,7 @@ import type {
 } from '../api/types.js'
 import { DEFAULT_SETTINGS } from '../api/types.js'
 import { useAnalyzeStore } from './analyze.js'
+import { useI18nStore } from './i18n.js'
 
 type Phase = 'idle' | 'loading' | 'saving' | 'error'
 
@@ -82,6 +83,16 @@ export const useSettingsStore = defineStore('settings', () => {
       phase.value = 'idle'
       error.value = null
     }
+    // P2-9 — revert the active UI locale to the server-side authoritative
+    // value. SettingsModal mirrors uiLanguage edits to `useI18nStore.locale`
+    // (and localStorage) on every change so the modal re-renders in the
+    // chosen language for instant feedback. Without this revert, clicking
+    // Cancel would clear `dirtyState` but leave the picked locale active in
+    // the UI + localStorage — next reload would silently restore the
+    // "discarded" choice. Resolve i18nStore at action-call time (Pinia's
+    // recommended pattern for cross-store access) rather than module init.
+    const i18nStore = useI18nStore()
+    i18nStore.locale = serverState.value?.uiLanguage ?? 'en'
   }
 
   async function loadFromServer(): Promise<void> {
