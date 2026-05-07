@@ -7,6 +7,7 @@ import type {
   SettingsCardPack,
   SettingsLanguage,
   SettingsSections,
+  UiLanguage,
 } from '../api/types.js'
 import { DEFAULT_SETTINGS } from '../api/types.js'
 import { useAnalyzeStore } from './analyze.js'
@@ -47,6 +48,7 @@ export const useSettingsStore = defineStore('settings', () => {
       language: e.language,
       cardPack: e.cardPack,
       sections: { ...e.sections },
+      uiLanguage: e.uiLanguage,
     }
   }
 
@@ -65,6 +67,12 @@ export const useSettingsStore = defineStore('settings', () => {
   function setSection(name: keyof SettingsSections, value: boolean): void {
     const next = cloneEffective()
     next.sections = { ...next.sections, [name]: value }
+    dirtyState.value = next
+  }
+
+  function setUiLanguage(lang: UiLanguage): void {
+    const next = cloneEffective()
+    next.uiLanguage = lang
     dirtyState.value = next
   }
 
@@ -125,6 +133,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setLanguage,
     setCardPack,
     setSection,
+    setUiLanguage,
     discardChanges,
     loadFromServer,
     saveAndReanalyze,

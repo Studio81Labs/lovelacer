@@ -6,10 +6,12 @@ import {
   DEFAULT_SETTINGS,
   SUPPORTED_CARD_PACKS,
   SUPPORTED_LANGUAGES,
+  SUPPORTED_UI_LANGUAGES,
   type Settings,
   type SettingsCardPack,
   type SettingsLanguage,
   type SettingsSections,
+  type UiLanguage,
 } from '@lovelacer/shared'
 
 const SCHEMA = `
@@ -86,6 +88,16 @@ export class SettingsStore {
       return DEFAULT_SETTINGS
     }
 
+    // P2-9 — legacy rows persisted before `uiLanguage` was added lack the
+    // field. Fill it in with the default before shape validation so the
+    // pre-P2-9 row reads cleanly without falling back to DEFAULT_SETTINGS.
+    if (typeof parsed === 'object' && parsed !== null) {
+      const v = parsed as Record<string, unknown>
+      if (v.uiLanguage === undefined) {
+        v.uiLanguage = 'en'
+      }
+    }
+
     if (!isSettings(parsed)) {
       console.warn(
         '[SettingsStore] stored payload does not match Settings shape; falling back to defaults',
@@ -116,6 +128,7 @@ function isSettings(value: unknown): value is Settings {
   if (!isLanguage(v.language)) return false
   if (!isCardPack(v.cardPack)) return false
   if (!isSections(v.sections)) return false
+  if (!isUiLanguage(v.uiLanguage)) return false
   return true
 }
 
@@ -125,6 +138,10 @@ function isLanguage(value: unknown): value is SettingsLanguage {
 
 function isCardPack(value: unknown): value is SettingsCardPack {
   return typeof value === 'string' && (SUPPORTED_CARD_PACKS as readonly string[]).includes(value)
+}
+
+function isUiLanguage(value: unknown): value is UiLanguage {
+  return typeof value === 'string' && (SUPPORTED_UI_LANGUAGES as readonly string[]).includes(value)
 }
 
 const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [

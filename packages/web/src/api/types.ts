@@ -167,6 +167,13 @@ export type SettingsLanguage = 'auto' | 'en' | 'cs'
 
 export type SettingsCardPack = 'default'
 
+/**
+ * P2-9 — UI display language. Mirrored from `@lovelacer/shared`. The
+ * web's vue-i18n `UiLocale` is the same string union; this type lives
+ * on `Settings` because the field is server-persisted.
+ */
+export type UiLanguage = 'en' | 'cs' | 'de'
+
 export interface SettingsSections {
   welcome: boolean
   quickStats: boolean
@@ -181,6 +188,7 @@ export interface Settings {
   language: SettingsLanguage
   cardPack: SettingsCardPack
   sections: SettingsSections
+  uiLanguage: UiLanguage
 }
 
 /** Defaults preserve current behavior — mirror of @lovelacer/shared's value. */
@@ -196,6 +204,7 @@ export const DEFAULT_SETTINGS: Settings = {
     scenes: true,
     cameras: true,
   },
+  uiLanguage: 'en',
 }
 
 /**

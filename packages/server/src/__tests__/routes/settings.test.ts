@@ -33,6 +33,7 @@ const VALID_BODY: { settings: Settings } = {
       scenes: true,
       cameras: true,
     },
+    uiLanguage: 'en',
   },
 }
 
@@ -134,6 +135,50 @@ describe('PUT /api/settings', () => {
       await app.inject({ method: 'PUT', url: '/api/settings', payload: VALID_BODY })
       const res = await app.inject({ method: 'GET', url: '/api/settings' })
       expect(res.json()).toEqual(VALID_BODY)
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('round-trips uiLanguage through PUT/GET', async () => {
+    const app = await makeApp()
+    try {
+      await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: {
+          settings: {
+            language: 'auto',
+            cardPack: 'default',
+            sections: {
+              welcome: true,
+              quickStats: true,
+              people: true,
+              roomsByFloor: true,
+              activeRooms: true,
+              scenes: true,
+              cameras: true,
+            },
+            uiLanguage: 'de',
+          },
+        },
+      })
+      const res = await app.inject({ method: 'GET', url: '/api/settings' })
+      expect(res.json().settings.uiLanguage).toBe('de')
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns 400 invalid_body when uiLanguage is unknown', async () => {
+    const app = await makeApp()
+    try {
+      const bad = {
+        settings: { ...VALID_BODY.settings, uiLanguage: 'klingon' },
+      }
+      const res = await app.inject({ method: 'PUT', url: '/api/settings', payload: bad })
+      expect(res.statusCode).toBe(400)
+      expect(res.json()).toMatchObject({ error: 'invalid_body' })
     } finally {
       await app.close()
     }

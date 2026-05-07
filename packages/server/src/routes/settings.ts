@@ -1,6 +1,11 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import { SUPPORTED_CARD_PACKS, SUPPORTED_LANGUAGES, type Settings } from '@lovelacer/shared'
+import {
+  SUPPORTED_CARD_PACKS,
+  SUPPORTED_LANGUAGES,
+  SUPPORTED_UI_LANGUAGES,
+  type Settings,
+} from '@lovelacer/shared'
 import type { SettingsStore } from '../storage/settings-store.js'
 
 export interface SettingsRouteOptions {
@@ -22,6 +27,7 @@ const PutBodySchema = z.object({
     language: z.enum(SUPPORTED_LANGUAGES),
     cardPack: z.enum(SUPPORTED_CARD_PACKS),
     sections: SectionsSchema,
+    uiLanguage: z.enum(SUPPORTED_UI_LANGUAGES),
   }),
 })
 
