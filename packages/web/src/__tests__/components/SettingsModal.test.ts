@@ -1,9 +1,15 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
+import { createI18n } from 'vue-i18n'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SettingsModal from '../../components/SettingsModal.vue'
 import { useSettingsStore } from '../../stores/settings.js'
 import { DEFAULT_SETTINGS } from '../../api/types.js'
+import en from '../../locales/en.json'
+
+function createTestI18n() {
+  return createI18n({ legacy: false, locale: 'en', fallbackLocale: 'en', messages: { en } })
+}
 
 vi.mock('../../api/client.js', () => ({
   getSettings: vi.fn(),
@@ -32,7 +38,7 @@ const DEFAULT_PREVIEW = {
 function mountModal() {
   return mount(SettingsModal, {
     global: {
-      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
   })
 }
@@ -160,5 +166,17 @@ describe('SettingsModal', () => {
     // Even if a click somehow fires, the requestClose handler short-circuits.
     await closeBtn.trigger('click')
     expect(wrapper.emitted('close')).toBeFalsy()
+  })
+
+  it('UI language picker updates settings.dirtyState.uiLanguage and the active i18n locale', async () => {
+    const wrapper = mount(SettingsModal, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const select = wrapper.find('[data-testid="settings-ui-language"]')
+    await select.setValue('de')
+    const settings = useSettingsStore()
+    expect(settings.effective.uiLanguage).toBe('de')
   })
 })

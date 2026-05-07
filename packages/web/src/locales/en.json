@@ -1,1 +1,6 @@
-{}
+{
+  "settings.uiLanguage.label": "Display language",
+  "settings.uiLanguage.option.en": "English",
+  "settings.uiLanguage.option.cs": "Čeština",
+  "settings.uiLanguage.option.de": "Deutsch"
+}

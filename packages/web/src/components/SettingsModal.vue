@@ -1,10 +1,20 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settings.js'
-import type { SettingsLanguage, SettingsSections } from '../api/types.js'
+import { useI18nStore } from '../stores/i18n.js'
+import type { SettingsLanguage, SettingsSections, UiLanguage } from '../api/types.js'
 
 const emit = defineEmits<{ close: [] }>()
 
 const store = useSettingsStore()
+const { t } = useI18n()
+const i18nStore = useI18nStore()
+
+function onUiLanguageChange(event: Event): void {
+  const lang = (event.target as HTMLSelectElement).value as UiLanguage
+  store.setUiLanguage(lang)
+  i18nStore.locale = lang
+}
 
 const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [
   'welcome',
@@ -71,6 +81,24 @@ async function onSave(): Promise<void> {
       </header>
 
       <section class="space-y-5 text-sm">
+        <!-- UI display language -->
+        <div>
+          <label for="settings-ui-language" class="block text-sm font-medium text-stone-700">
+            {{ t('settings.uiLanguage.label') }}
+          </label>
+          <select
+            id="settings-ui-language"
+            data-testid="settings-ui-language"
+            class="mt-1 w-full rounded border border-stone-300 px-2 py-1.5"
+            :value="store.effective.uiLanguage"
+            @change="onUiLanguageChange"
+          >
+            <option value="en">{{ t('settings.uiLanguage.option.en') }}</option>
+            <option value="cs">{{ t('settings.uiLanguage.option.cs') }}</option>
+            <option value="de">{{ t('settings.uiLanguage.option.de') }}</option>
+          </select>
+        </div>
+
         <!-- Language -->
         <div>
           <label for="settings-language" class="block font-medium text-stone-700">
