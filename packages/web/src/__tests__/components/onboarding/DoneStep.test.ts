@@ -3,6 +3,7 @@ import { createTestingPinia } from '@pinia/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import DoneStep from '../../../components/onboarding/DoneStep.vue'
 import { useApplyStore } from '../../../stores/apply.js'
+import { createTestI18n } from '../../test-utils.js'
 
 vi.mock('../../../api/client.js', () => ({
   getSettings: vi.fn(),
@@ -22,7 +23,7 @@ vi.mock('../../../api/client.js', () => ({
 function mountDone() {
   return mount(DoneStep, {
     global: {
-      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
   })
 }

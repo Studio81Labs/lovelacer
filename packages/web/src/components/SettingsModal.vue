@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18nStore } from '../stores/i18n.js'
@@ -26,15 +27,19 @@ const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [
   'cameras',
 ]
 
-const SECTION_LABELS: Record<keyof SettingsSections, string> = {
-  welcome: 'Welcome message',
-  quickStats: 'Quick stats',
-  people: 'People',
-  roomsByFloor: 'Rooms by floor',
-  activeRooms: 'Active rooms',
-  scenes: 'Scenes',
-  cameras: 'Cameras',
+const SECTION_LABEL_KEYS: Record<keyof SettingsSections, string> = {
+  welcome: 'settings.sections.welcome',
+  quickStats: 'settings.sections.quickStats',
+  people: 'settings.sections.people',
+  roomsByFloor: 'settings.sections.roomsByFloor',
+  activeRooms: 'settings.sections.activeRooms',
+  scenes: 'settings.sections.scenes',
+  cameras: 'settings.sections.cameras',
 }
+
+const closeTitle = computed(() =>
+  store.hasDirty ? t('settings.close.titleDirty') : t('settings.close.titleClean'),
+)
 
 function requestClose(): void {
   // Dirty guard: don't lose edits silently — applies to ALL close gestures
@@ -67,13 +72,13 @@ async function onSave(): Promise<void> {
       @click.stop
     >
       <header class="mb-4 flex items-center justify-between">
-        <h2 class="text-lg font-medium text-stone-900">Settings</h2>
+        <h2 class="text-lg font-medium text-stone-900">{{ t('settings.heading') }}</h2>
         <button
           data-testid="settings-close"
-          aria-label="Close"
+          :aria-label="t('settings.close.aria')"
           class="text-stone-500 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="store.hasDirty"
-          :title="store.hasDirty ? 'Discard or save changes first' : 'Close'"
+          :title="closeTitle"
           @click="requestClose"
         >
           ×
@@ -102,7 +107,7 @@ async function onSave(): Promise<void> {
         <!-- Language -->
         <div>
           <label for="settings-language" class="block font-medium text-stone-700">
-            Detection language
+            {{ t('detectionLanguage.label') }}
           </label>
           <select
             id="settings-language"
@@ -113,19 +118,19 @@ async function onSave(): Promise<void> {
               store.setLanguage(($event.target as HTMLSelectElement).value as SettingsLanguage)
             "
           >
-            <option value="auto">Auto (match all)</option>
-            <option value="en">English</option>
-            <option value="cs">Čeština</option>
+            <option value="auto">{{ t('detectionLanguage.option.auto') }}</option>
+            <option value="en">{{ t('detectionLanguage.option.en') }}</option>
+            <option value="cs">{{ t('detectionLanguage.option.cs') }}</option>
           </select>
           <p class="mt-1 text-xs text-stone-500">
-            Auto matches all keyword sets. Pick a specific language to narrow name-based detection.
+            {{ t('settings.detectionLanguage.help') }}
           </p>
         </div>
 
         <!-- Card pack -->
         <div>
           <label for="settings-card-pack" class="block font-medium text-stone-700">
-            Card pack
+            {{ t('settings.cardPack.label') }}
           </label>
           <select
             id="settings-card-pack"
@@ -134,14 +139,16 @@ async function onSave(): Promise<void> {
             :value="store.effective.cardPack"
             disabled
           >
-            <option value="default">Default</option>
+            <option value="default">{{ t('settings.cardPack.option.default') }}</option>
           </select>
-          <p class="mt-1 text-xs text-stone-500">More packs coming soon.</p>
+          <p class="mt-1 text-xs text-stone-500">
+            {{ t('settings.cardPack.morePacksComingSoon') }}
+          </p>
         </div>
 
         <!-- Sections -->
         <fieldset>
-          <legend class="font-medium text-stone-700">Home view sections</legend>
+          <legend class="font-medium text-stone-700">{{ t('settings.sections.label') }}</legend>
           <div class="mt-1 space-y-1.5">
             <label
               v-for="key in SECTION_KEYS"
@@ -154,7 +161,7 @@ async function onSave(): Promise<void> {
                 :checked="store.effective.sections[key]"
                 @change="store.setSection(key, ($event.target as HTMLInputElement).checked)"
               />
-              <span>{{ SECTION_LABELS[key] }}</span>
+              <span>{{ t(SECTION_LABEL_KEYS[key]) }}</span>
             </label>
           </div>
         </fieldset>
@@ -177,7 +184,7 @@ async function onSave(): Promise<void> {
           class="rounded border border-stone-300 px-3 py-1.5 text-stone-700 hover:bg-stone-50"
           @click="store.discardChanges"
         >
-          Discard changes
+          {{ t('settings.discardChanges') }}
         </button>
         <button
           type="button"
@@ -186,7 +193,7 @@ async function onSave(): Promise<void> {
           :disabled="!store.hasDirty || store.phase === 'saving'"
           @click="onSave"
         >
-          Save & re-analyze
+          {{ t('settings.saveAndReanalyze') }}
         </button>
       </footer>
     </div>

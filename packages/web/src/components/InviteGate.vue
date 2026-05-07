@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useInviteStore } from '../stores/invite.js'
 
+const { t } = useI18n()
 const invite = useInviteStore()
 const code = ref('')
 
@@ -10,10 +12,10 @@ const isSubmitting = computed(() => invite.phase === 'submitting')
 const errorMessage = computed(() => {
   if (invite.phase !== 'error' || invite.error === null) return ''
   if (invite.error.error === 'invalid_code') {
-    return "That invite code wasn't recognized. Double-check the code or contact the project owner."
+    return t('inviteGate.error.invalidCode')
   }
-  if (invite.error.error === 'invalid_body') return 'Please enter your invite code.'
-  if (invite.error.error === 'network') return 'Could not reach the server. Try again in a moment.'
+  if (invite.error.error === 'invalid_body') return t('inviteGate.error.invalidBody')
+  if (invite.error.error === 'network') return t('inviteGate.error.network')
   return invite.error.message
 })
 
@@ -32,13 +34,13 @@ async function onSubmit(e: Event) {
       class="w-full max-w-md rounded-lg border border-stone-200 bg-white p-6 shadow-xl"
       @submit="onSubmit"
     >
-      <h2 class="text-xl font-semibold text-stone-900">Welcome to Lovelacer</h2>
+      <h2 class="text-xl font-semibold text-stone-900">{{ t('inviteGate.heading') }}</h2>
       <p class="mt-2 text-sm text-stone-600">
-        Lovelacer is in closed beta. Enter your invite code to continue.
+        {{ t('inviteGate.description') }}
       </p>
 
       <label for="invite-code" class="mt-5 block text-xs font-medium text-stone-700">
-        Invite code
+        {{ t('inviteGate.label') }}
       </label>
       <input
         id="invite-code"
@@ -63,7 +65,7 @@ async function onSubmit(e: Event) {
         class="mt-5 w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
         :disabled="isSubmitting || code.length === 0"
       >
-        {{ isSubmitting ? 'Checking…' : 'Continue' }}
+        {{ isSubmitting ? t('inviteGate.checking') : t('common.continue') }}
       </button>
     </form>
   </div>
