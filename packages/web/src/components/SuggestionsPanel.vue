@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useOverridesStore } from '../stores/overrides.js'
 import { useSuggestionsStore } from '../stores/suggestions.js'
 import { roomIdToDisplay } from '../rooms.js'
 import type { Suggestion } from '../api/types.js'
 
+const { t } = useI18n()
 const props = defineProps<{ suggestions: Suggestion[] }>()
 const overrides = useOverridesStore()
 const suggestionsStore = useSuggestionsStore()
@@ -53,9 +55,9 @@ function suggestedLabel(s: Suggestion): string {
 }
 
 function acceptLabel(s: Suggestion): string {
-  if (s.type === 'set_area_id') return 'Open HA settings'
-  if (s.type === 'move_room') return `Move to ${suggestedLabel(s)}`
-  return 'Hide'
+  if (s.type === 'set_area_id') return t('suggestionsPanel.openHaSettings')
+  if (s.type === 'move_room') return t('suggestionsPanel.moveTo', { room: suggestedLabel(s) })
+  return t('suggestionsPanel.hide')
 }
 </script>
 
@@ -66,7 +68,7 @@ function acceptLabel(s: Suggestion): string {
     class="rounded-lg border border-stone-200 bg-white px-5 py-3 text-sm"
   >
     <h3 class="mb-3 text-sm font-medium text-stone-700">
-      {{ visible.length }} suggestion{{ visible.length === 1 ? '' : 's' }}
+      {{ t('suggestionsPanel.heading', { count: visible.length }, visible.length) }}
     </h3>
     <ul class="space-y-2">
       <li
@@ -95,7 +97,7 @@ function acceptLabel(s: Suggestion): string {
           :disabled="suggestionsStore.phase === 'dismissing'"
           @click="dismiss(s)"
         >
-          Dismiss
+          {{ t('suggestionsPanel.dismiss') }}
         </button>
       </li>
     </ul>

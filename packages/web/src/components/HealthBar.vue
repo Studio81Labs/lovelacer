@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface HealthResponse {
   ok: boolean
@@ -7,6 +8,7 @@ interface HealthResponse {
   ha: { connected: boolean }
 }
 
+const { t } = useI18n()
 const health = ref<HealthResponse | null>(null)
 const error = ref<string | null>(null)
 
@@ -32,13 +34,16 @@ onMounted(() => {
 
 <template>
   <section class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-    <div v-if="error" class="text-sm text-amber-700">Backend unreachable: {{ error }}</div>
+    <div v-if="error" class="text-sm text-amber-700">
+      {{ t('healthBar.backendUnreachable', { error }) }}
+    </div>
 
-    <div v-else-if="!health" class="text-sm text-stone-500">Loading…</div>
+    <div v-else-if="!health" class="text-sm text-stone-500">{{ t('common.loading') }}</div>
 
     <div v-else class="flex items-center justify-between text-sm">
       <span class="text-stone-600">
-        Version <span class="font-mono text-stone-900">{{ health.version }}</span>
+        {{ t('healthBar.version') }}
+        <span class="font-mono text-stone-900">{{ health.version }}</span>
       </span>
       <span
         class="inline-block rounded px-2 py-0.5 text-xs font-medium"
@@ -46,7 +51,7 @@ onMounted(() => {
           health.ha.connected ? 'bg-forest-50 text-forest-700' : 'bg-stone-200 text-stone-700'
         "
       >
-        HA {{ health.ha.connected ? 'connected' : 'disconnected' }}
+        {{ health.ha.connected ? t('healthBar.haConnected') : t('healthBar.haDisconnected') }}
       </span>
     </div>
   </section>

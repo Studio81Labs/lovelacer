@@ -4,11 +4,12 @@ import { createTestingPinia } from '@pinia/testing'
 import OverridesBar from '../../components/OverridesBar.vue'
 import { useOverridesStore } from '../../stores/overrides.js'
 import type { ApiError } from '../../api/types.js'
+import { createTestI18n } from '../test-utils.js'
 
 function mountBar() {
   return mount(OverridesBar, {
     global: {
-      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
   })
 }

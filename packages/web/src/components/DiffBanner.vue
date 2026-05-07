@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { DiffResult } from '../api/types.js'
 
+const { t } = useI18n()
 const props = defineProps<{ diff: DiffResult | null }>()
 
 const isZero = computed(
@@ -29,8 +31,8 @@ function formatApplied(unixSeconds: number): string {
   ).getTime()
   const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const diffDays = Math.round((nowMidnight - appliedMidnight) / (1000 * 60 * 60 * 24))
-  if (diffDays <= 0) return 'today'
-  if (diffDays === 1) return 'yesterday'
+  if (diffDays <= 0) return t('diffBanner.today')
+  if (diffDays === 1) return t('diffBanner.yesterday')
   return applied.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 </script>
@@ -42,27 +44,27 @@ function formatApplied(unixSeconds: number): string {
     class="flex items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-5 py-2 text-sm"
   >
     <div v-if="isZero" class="text-stone-600">
-      No changes since last apply {{ formatApplied(diff.appliedAt) }}.
+      {{ t('diffBanner.noChanges', { when: formatApplied(diff.appliedAt) }) }}
     </div>
     <div v-else class="flex items-center gap-2">
-      <span class="text-stone-600">Since last apply:</span>
+      <span class="text-stone-600">{{ t('diffBanner.sinceLastApply') }}</span>
       <span
         v-if="diff.totals.added > 0"
         data-testid="diff-banner-added"
         class="rounded bg-forest-50 px-2 py-0.5 text-xs font-medium text-forest-700"
-        >+{{ diff.totals.added }} added</span
+        >{{ t('diffBanner.added', { count: diff.totals.added }) }}</span
       >
       <span
         v-if="diff.totals.moved > 0"
         data-testid="diff-banner-moved"
         class="rounded bg-stone-200 px-2 py-0.5 text-xs font-medium text-stone-700"
-        >↻ {{ diff.totals.moved }} moved</span
+        >{{ t('diffBanner.moved', { count: diff.totals.moved }) }}</span
       >
       <span
         v-if="diff.totals.removed > 0"
         data-testid="diff-banner-removed"
         class="rounded bg-danger-50 px-2 py-0.5 text-xs font-medium text-danger-700"
-        >✗ {{ diff.totals.removed }} removed</span
+        >{{ t('diffBanner.removed', { count: diff.totals.removed }) }}</span
       >
     </div>
     <span v-if="!isZero" class="text-xs text-stone-500">{{ formatApplied(diff.appliedAt) }}</span>

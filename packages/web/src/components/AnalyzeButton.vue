@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useApplyStore } from '../stores/apply.js'
 
+const { t } = useI18n()
 const analyze = useAnalyzeStore()
 const apply = useApplyStore()
 
@@ -10,7 +12,9 @@ const apply = useApplyStore()
 // in-progress request. Re-enabled in idle/ready/error/success.
 const disabled = computed(() => analyze.phase === 'loading' || apply.phase === 'applying')
 
-const label = computed(() => (analyze.phase === 'loading' ? 'Analyzing…' : 'Analyze'))
+const label = computed(() =>
+  analyze.phase === 'loading' ? t('analyzeButton.analyzing') : t('analyzeButton.analyze'),
+)
 
 function clickAnalyze() {
   // Reset applyStore before kicking off a new analyze so a stale

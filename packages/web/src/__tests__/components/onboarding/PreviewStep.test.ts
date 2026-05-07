@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import PreviewStep from '../../../components/onboarding/PreviewStep.vue'
 import { useAnalyzeStore } from '../../../stores/analyze.js'
 import { useApplyStore } from '../../../stores/apply.js'
+import { createTestI18n } from '../../test-utils.js'
 
 vi.mock('../../../api/client.js', () => ({
   getSettings: vi.fn(),
@@ -44,7 +45,7 @@ const mockPreview = {
 function mountPreview() {
   return mount(PreviewStep, {
     global: {
-      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
   })
 }

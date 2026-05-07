@@ -6,10 +6,12 @@ import {
   DEFAULT_SETTINGS,
   SUPPORTED_CARD_PACKS,
   SUPPORTED_LANGUAGES,
+  SUPPORTED_UI_LANGUAGES,
   type Settings,
   type SettingsCardPack,
   type SettingsLanguage,
   type SettingsSections,
+  type UiLanguage,
 } from '@lovelacer/shared'
 
 const SCHEMA = `
@@ -116,6 +118,11 @@ function isSettings(value: unknown): value is Settings {
   if (!isLanguage(v.language)) return false
   if (!isCardPack(v.cardPack)) return false
   if (!isSections(v.sections)) return false
+  // uiLanguage is optional: undefined means "user has not explicitly
+  // chosen a UI language yet" (legacy rows + fresh installs). Only
+  // reject the row if the field is present but holds an unsupported
+  // value.
+  if (v.uiLanguage !== undefined && !isUiLanguage(v.uiLanguage)) return false
   return true
 }
 
@@ -125,6 +132,10 @@ function isLanguage(value: unknown): value is SettingsLanguage {
 
 function isCardPack(value: unknown): value is SettingsCardPack {
   return typeof value === 'string' && (SUPPORTED_CARD_PACKS as readonly string[]).includes(value)
+}
+
+function isUiLanguage(value: unknown): value is UiLanguage {
+  return typeof value === 'string' && (SUPPORTED_UI_LANGUAGES as readonly string[]).includes(value)
 }
 
 const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [

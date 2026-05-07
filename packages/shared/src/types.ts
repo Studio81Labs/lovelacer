@@ -184,6 +184,21 @@ export const SUPPORTED_CARD_PACKS = ['default'] as const
  */
 export type SettingsCardPack = (typeof SUPPORTED_CARD_PACKS)[number]
 
+/**
+ * P2-9 — UI display language for the web app's interface. ORTHOGONAL
+ * to `SettingsLanguage` (which controls room-name keyword detection).
+ * Limited to the locales with shipped vue-i18n message bundles today
+ * (EN + CS + DE). Exposed as a tuple `as const` so the route's Zod
+ * enum and the web store's union type derive from a single source.
+ */
+export const SUPPORTED_UI_LANGUAGES = ['en', 'cs', 'de'] as const
+
+/**
+ * UI display language. Persisted on the server alongside detection
+ * `language`; the web app mirrors it into vue-i18n's `locale` ref.
+ */
+export type UiLanguage = (typeof SUPPORTED_UI_LANGUAGES)[number]
+
 /** Visibility toggles for the seven sections of the home view. */
 export interface SettingsSections {
   welcome: boolean
@@ -216,6 +231,17 @@ export interface Settings {
    * whether the corresponding section is rendered in `buildHomeView`.
    */
   sections: SettingsSections
+
+  /**
+   * P2-9 — UI display language for the web interface. Orthogonal to
+   * `language` above (which controls room detection). OPTIONAL by
+   * design: when absent, the user has not explicitly chosen a UI
+   * language, and the SPA preserves whatever locale
+   * `detectInitialLocale()` picked (browser language → cached → 'en').
+   * When present, it represents an explicit user choice and the
+   * reconciliation watcher syncs the active locale to it.
+   */
+  uiLanguage?: UiLanguage
 }
 
 /**

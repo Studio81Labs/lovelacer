@@ -3,6 +3,14 @@ import { mount } from '@vue/test-utils'
 import { Icon } from '@iconify/vue'
 import DashboardPreview from '../../components/DashboardPreview.vue'
 import type { LovelaceConfig } from '../../api/types.js'
+import { createTestI18n } from '../test-utils.js'
+
+function mountPreview(config: LovelaceConfig) {
+  return mount(DashboardPreview, {
+    props: { config },
+    global: { plugins: [createTestI18n()] },
+  })
+}
 
 const config: LovelaceConfig = {
   title: 'Lovelacer — Home',
@@ -15,7 +23,7 @@ const config: LovelaceConfig = {
 
 describe('DashboardPreview', () => {
   it('renders one pill per view in input order', () => {
-    const wrapper = mount(DashboardPreview, { props: { config } })
+    const wrapper = mountPreview(config)
     const pills = wrapper.findAll('[data-testid="view-pill"]')
     expect(pills).toHaveLength(3)
     expect(pills[0]!.text()).toContain('Home')
@@ -24,7 +32,7 @@ describe('DashboardPreview', () => {
   })
 
   it('passes the view.icon string to the Iconify component', () => {
-    const wrapper = mount(DashboardPreview, { props: { config } })
+    const wrapper = mountPreview(config)
     const icons = wrapper.findAllComponents(Icon)
     expect(icons.length).toBeGreaterThanOrEqual(3)
     // @iconify/vue's Icon uses inheritAttrs: false and reads `icon` from $attrs,
@@ -36,7 +44,7 @@ describe('DashboardPreview', () => {
 
   it('renders nothing when views array is empty', () => {
     const empty: LovelaceConfig = { title: 'x', views: [] }
-    const wrapper = mount(DashboardPreview, { props: { config: empty } })
+    const wrapper = mountPreview(empty)
     const pills = wrapper.findAll('[data-testid="view-pill"]')
     expect(pills).toHaveLength(0)
   })
@@ -45,7 +53,7 @@ describe('DashboardPreview', () => {
     // The href must be document-relative (no leading slash) so it
     // resolves under the HA Supervisor ingress path. Absolute /api/...
     // would 404 in production. Locks the contract.
-    const wrapper = mount(DashboardPreview, { props: { config } })
+    const wrapper = mountPreview(config)
     const link = wrapper.find('[data-testid="export-yaml-link"]')
     expect(link.exists()).toBe(true)
     expect(link.attributes('href')).toBe('api/export.yaml')
@@ -56,7 +64,7 @@ describe('DashboardPreview', () => {
 
   it('does not render the Download YAML link when views are empty', () => {
     const empty: LovelaceConfig = { title: 'x', views: [] }
-    const wrapper = mount(DashboardPreview, { props: { config: empty } })
+    const wrapper = mountPreview(empty)
     expect(wrapper.find('[data-testid="export-yaml-link"]').exists()).toBe(false)
   })
 })

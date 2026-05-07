@@ -167,6 +167,13 @@ export type SettingsLanguage = 'auto' | 'en' | 'cs'
 
 export type SettingsCardPack = 'default'
 
+/**
+ * P2-9 — UI display language. Mirrored from `@lovelacer/shared`. The
+ * web's vue-i18n `UiLocale` is the same string union; this type lives
+ * on `Settings` because the field is server-persisted.
+ */
+export type UiLanguage = 'en' | 'cs' | 'de'
+
 export interface SettingsSections {
   welcome: boolean
   quickStats: boolean
@@ -181,6 +188,13 @@ export interface Settings {
   language: SettingsLanguage
   cardPack: SettingsCardPack
   sections: SettingsSections
+  /**
+   * P2-9 — Optional. Absent when the user has never explicitly chosen a
+   * UI language. The SPA preserves whatever locale `detectInitialLocale`
+   * picked in that case. When set, it represents an explicit user choice
+   * and the reconciliation watcher syncs the active locale to it.
+   */
+  uiLanguage?: UiLanguage
 }
 
 /** Defaults preserve current behavior — mirror of @lovelacer/shared's value. */

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAnalyzeStore } from '../../stores/analyze.js'
 import { useApplyStore } from '../../stores/apply.js'
 import DashboardPreview from '../DashboardPreview.vue'
@@ -9,6 +10,7 @@ import type { SnapshotAssignment } from '../../api/types.js'
 
 defineEmits<{ back: []; skip: [] }>()
 
+const { t } = useI18n()
 const analyze = useAnalyzeStore()
 const apply = useApplyStore()
 
@@ -17,9 +19,9 @@ const summary = computed(() => {
   if (p === null) return ''
   const ent = p.summary.entityCount
   const rooms = p.summary.roomCount
-  // Pluralization: "1 room" / "N rooms".
-  const roomWord = rooms === 1 ? 'room' : 'rooms'
-  return `Detected ${ent} entities across ${rooms} ${roomWord}.`
+  // Pluralization handled by the i18n catalogue (English | plural form).
+  // CS/DE bring their own plural rules in their respective locales.
+  return t('previewStep.summary', { entities: ent, count: rooms }, rooms)
 })
 
 function applyClicked(): void {
@@ -42,10 +44,12 @@ function applyClicked(): void {
 
 <template>
   <div data-testid="preview-step" class="rounded-lg bg-white p-8 shadow-sm">
-    <h1 class="text-2xl font-semibold text-stone-900">Preview</h1>
+    <h1 class="text-2xl font-semibold text-stone-900">{{ t('previewStep.heading') }}</h1>
 
     <!-- Loading state -->
-    <p v-if="analyze.phase === 'loading'" class="mt-4 text-stone-600">Scanning…</p>
+    <p v-if="analyze.phase === 'loading'" class="mt-4 text-stone-600">
+      {{ t('previewStep.scanning') }}
+    </p>
 
     <!-- Analyze error -->
     <div
@@ -58,7 +62,7 @@ function applyClicked(): void {
         class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
         @click="analyze.analyze()"
       >
-        Retry
+        {{ t('common.retry') }}
       </button>
     </div>
 
@@ -71,7 +75,9 @@ function applyClicked(): void {
       </div>
 
       <details class="rounded border border-stone-200 px-4 py-2">
-        <summary class="cursor-pointer text-sm font-medium text-stone-700">Show breakdown</summary>
+        <summary class="cursor-pointer text-sm font-medium text-stone-700">
+          {{ t('previewStep.showBreakdown') }}
+        </summary>
         <div class="mt-3 space-y-3">
           <RoomList
             :rooms="analyze.preview.rooms"
@@ -88,13 +94,13 @@ function applyClicked(): void {
         v-if="apply.phase === 'error' && apply.error !== null"
         class="rounded bg-danger-50 px-4 py-3 text-sm text-danger-700"
       >
-        <p>Apply failed: {{ apply.error.message }}</p>
+        <p>{{ t('previewStep.applyError', { message: apply.error.message }) }}</p>
         <button
           type="button"
           class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
           @click="applyClicked"
         >
-          Retry
+          {{ t('common.retry') }}
         </button>
       </div>
     </div>
@@ -107,7 +113,7 @@ function applyClicked(): void {
         class="text-sm text-stone-500 hover:text-stone-700"
         @click="$emit('back')"
       >
-        ← Back
+        {{ t('common.back') }}
       </button>
       <button
         type="button"
@@ -116,7 +122,7 @@ function applyClicked(): void {
         :disabled="analyze.phase !== 'ready' || apply.phase === 'applying'"
         @click="applyClicked"
       >
-        {{ apply.phase === 'applying' ? 'Applying…' : 'Apply to Home Assistant' }}
+        {{ apply.phase === 'applying' ? t('applyBar.applying') : t('applyBar.apply') }}
       </button>
     </div>
 
@@ -126,7 +132,7 @@ function applyClicked(): void {
       class="mt-3 w-full text-sm text-stone-500 hover:text-stone-700"
       @click="$emit('skip')"
     >
-      Skip onboarding
+      {{ t('common.skipOnboarding') }}
     </button>
   </div>
 </template>

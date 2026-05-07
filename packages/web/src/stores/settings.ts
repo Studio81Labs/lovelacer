@@ -7,6 +7,7 @@ import type {
   SettingsCardPack,
   SettingsLanguage,
   SettingsSections,
+  UiLanguage,
 } from '../api/types.js'
 import { DEFAULT_SETTINGS } from '../api/types.js'
 import { useAnalyzeStore } from './analyze.js'
@@ -43,11 +44,16 @@ export const useSettingsStore = defineStore('settings', () => {
   /** Returns a fresh deep-cloned copy of the effective settings. */
   function cloneEffective(): Settings {
     const e = effective.value
-    return {
+    const next: Settings = {
       language: e.language,
       cardPack: e.cardPack,
       sections: { ...e.sections },
     }
+    // uiLanguage is optional; only carry it forward when explicitly set.
+    if (e.uiLanguage !== undefined) {
+      next.uiLanguage = e.uiLanguage
+    }
+    return next
   }
 
   function setLanguage(lang: SettingsLanguage): void {
@@ -68,7 +74,17 @@ export const useSettingsStore = defineStore('settings', () => {
     dirtyState.value = next
   }
 
+  function setUiLanguage(lang: UiLanguage): void {
+    const next = cloneEffective()
+    next.uiLanguage = lang
+    dirtyState.value = next
+  }
+
   function discardChanges(): void {
+    // P2-9 — only clears the store's dirtyState. The active i18n locale
+    // is reverted by SettingsModal's onDiscard handler, which captures a
+    // pre-edit snapshot at component setup time. The store has no clean
+    // session boundary; the modal does, so locale ownership lives there.
     dirtyState.value = null
     if (phase.value === 'error') {
       phase.value = 'idle'
@@ -125,6 +141,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setLanguage,
     setCardPack,
     setSection,
+    setUiLanguage,
     discardChanges,
     loadFromServer,
     saveAndReanalyze,

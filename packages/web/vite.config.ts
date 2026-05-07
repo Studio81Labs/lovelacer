@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
+import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   // Relative base so the auto-generated <script>/<link> tags in dist/index.html
@@ -10,7 +12,15 @@ export default defineConfig({
   // resolve against the HA host root and 404. Same reason the API client uses
   // document-relative URLs (`api/health`) instead of `/api/health`.
   base: './',
-  plugins: [vue(), tailwindcss()],
+  plugins: [
+    vue(),
+    tailwindcss(),
+    VueI18nPlugin({
+      include: [fileURLToPath(new URL('./src/locales/**', import.meta.url))],
+      runtimeOnly: true,
+      compositionOnly: true,
+    }),
+  ],
   server: {
     port: 5173,
     proxy: {

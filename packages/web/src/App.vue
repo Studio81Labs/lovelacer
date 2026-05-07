@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import HealthBar from './components/HealthBar.vue'
 import AnalyzeButton from './components/AnalyzeButton.vue'
 import RoomList from './components/RoomList.vue'
@@ -19,15 +20,50 @@ import { useInviteStore } from './stores/invite.js'
 import { useSuggestionsStore } from './stores/suggestions.js'
 import { useSettingsStore } from './stores/settings.js'
 import { useOnboardingStore } from './stores/onboarding.js'
+import { useI18nStore } from './stores/i18n.js'
 import type { EntityDiff, RoomDiffSummary } from './api/types.js'
 
+const { t } = useI18n()
 const analyze = useAnalyzeStore()
 const overrides = useOverridesStore()
 const invite = useInviteStore()
 const suggestions = useSuggestionsStore()
 const settings = useSettingsStore()
 const onboarding = useOnboardingStore()
+const i18n = useI18nStore()
 const settingsOpen = ref(false)
+
+// P2-9 — post-load reconciliation watcher. When the settings store
+// resolves `loadFromServer()`, sync `settings.serverState.uiLanguage`
+// into the active i18n locale — but ONLY if the user has not explicitly
+// changed the locale during the load window (current === initialLocale).
+//
+// `Settings.uiLanguage` is OPTIONAL on the wire: it's only set when the
+// user has explicitly picked a UI language via the Settings modal. On
+// fresh installs the field is undefined, so `next` is undefined and the
+// watcher skips — whatever locale `detectInitialLocale()` picked
+// (browser language → 'en' fallback) wins. When set, it represents a
+// real user choice from another device and gets synced (cross-device
+// sync via single device tap on Device A → Device B).
+//
+// Per spec §4: "if the user changes UI language before settings load
+// completes, the user's choice is preserved." The `i18n.locale === initialLocale`
+// guard implements that contract — once the user clicks the picker
+// during the loadFromServer in-flight window, the watcher refuses to
+// overwrite their pick.
+//
+// The setter on `useI18nStore.locale` mirrors writes to localStorage
+// too, so the next first paint reads the synced value with no flash.
+const initialLocale = i18n.locale
+
+watch(
+  () => settings.serverState?.uiLanguage,
+  (next) => {
+    if (next && next !== i18n.locale && i18n.locale === initialLocale) {
+      i18n.locale = next
+    }
+  },
+)
 
 // Brand asset URL — ingress-relative via Vite's BASE_URL so the path
 // resolves under HA Supervisor's `/api/hassio_ingress/<token>/` mount
@@ -104,6 +140,12 @@ const showMainView = computed(
 
 onMounted(() => {
   void invite.loadStatus()
+  // P2-9 — kick off settings load so the cross-device reconciliation
+  // watcher above has a serverState.uiLanguage to react to. Previously
+  // this fired only inside openSettings() (Settings modal open), so a
+  // fresh device with empty localStorage would never pick up the choice
+  // the user made on a different device until they opened Settings.
+  void settings.loadFromServer()
   // Onboarding status loads via the watch on `invite.accepted` below
   // (single source of truth) — firing it here would race the invite
   // load and 403 on a fresh install.
@@ -140,14 +182,14 @@ watch(
         <div>
           <h1 class="lovelacer-wordmark text-3xl leading-none">lovelace<i>r</i></h1>
           <p class="mt-1 text-sm text-stone-500">
-            Home Assistant dashboards that organize themselves
+            {{ t('app.tagline') }}
           </p>
         </div>
       </div>
       <button
         type="button"
         data-testid="settings-button"
-        aria-label="Settings"
+        :aria-label="t('common.settings')"
         class="rounded p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
         @click="openSettings"
       >
@@ -172,7 +214,7 @@ watch(
           class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
           @click="analyze.analyze()"
         >
-          Retry
+          {{ t('common.retry') }}
         </button>
       </div>
     </section>

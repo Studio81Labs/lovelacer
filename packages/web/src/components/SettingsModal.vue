@@ -1,10 +1,52 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settings.js'
-import type { SettingsLanguage, SettingsSections } from '../api/types.js'
+import { useI18nStore } from '../stores/i18n.js'
+import type { SettingsLanguage, SettingsSections, UiLanguage } from '../api/types.js'
 
 const emit = defineEmits<{ close: [] }>()
 
 const store = useSettingsStore()
+const { t } = useI18n()
+const i18nStore = useI18nStore()
+
+/**
+ * P2-9 — capture the active locale at modal open time so we can restore
+ * it on Discard without reading localStorage. `useI18nStore.locale`'s
+ * setter mirrors every in-modal selection to localStorage for instant
+ * feedback; that means by the time the user clicks Discard,
+ * `detectInitialLocale()` would read back whichever locale they just
+ * picked. The modal owns this session boundary because only it knows
+ * what was active before the user started editing.
+ */
+const preEditLocale = ref(i18nStore.locale)
+
+function onUiLanguageChange(event: Event): void {
+  const lang = (event.target as HTMLSelectElement).value as UiLanguage
+  store.setUiLanguage(lang)
+  i18nStore.locale = lang
+}
+
+function onDiscard(): void {
+  // Revert the active locale to the pre-edit snapshot, then clear the
+  // store's dirtyState. The store no longer reaches into i18n — that
+  // separation matters because the store doesn't have a clean session
+  // boundary, but the modal does (component setup runs once when the
+  // modal opens).
+  i18nStore.locale = preEditLocale.value
+  store.discardChanges()
+}
+
+/**
+ * P2-9 — `Settings.uiLanguage` is OPTIONAL on the wire: when the user has
+ * never explicitly chosen a UI language, the field is undefined. The
+ * <select> needs a defined value or the option dropdown shows nothing
+ * selected. Fall back to the active i18n locale (which `detectInitialLocale`
+ * picked from browser language / cache) so the picker reflects what the
+ * user is actually seeing right now.
+ */
+const displayUiLanguage = computed<UiLanguage>(() => store.effective.uiLanguage ?? i18nStore.locale)
 
 const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [
   'welcome',
@@ -16,15 +58,19 @@ const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [
   'cameras',
 ]
 
-const SECTION_LABELS: Record<keyof SettingsSections, string> = {
-  welcome: 'Welcome message',
-  quickStats: 'Quick stats',
-  people: 'People',
-  roomsByFloor: 'Rooms by floor',
-  activeRooms: 'Active rooms',
-  scenes: 'Scenes',
-  cameras: 'Cameras',
+const SECTION_LABEL_KEYS: Record<keyof SettingsSections, string> = {
+  welcome: 'settings.sections.welcome',
+  quickStats: 'settings.sections.quickStats',
+  people: 'settings.sections.people',
+  roomsByFloor: 'settings.sections.roomsByFloor',
+  activeRooms: 'settings.sections.activeRooms',
+  scenes: 'settings.sections.scenes',
+  cameras: 'settings.sections.cameras',
 }
+
+const closeTitle = computed(() =>
+  store.hasDirty ? t('settings.close.titleDirty') : t('settings.close.titleClean'),
+)
 
 function requestClose(): void {
   // Dirty guard: don't lose edits silently — applies to ALL close gestures
@@ -57,13 +103,13 @@ async function onSave(): Promise<void> {
       @click.stop
     >
       <header class="mb-4 flex items-center justify-between">
-        <h2 class="text-lg font-medium text-stone-900">Settings</h2>
+        <h2 class="text-lg font-medium text-stone-900">{{ t('settings.heading') }}</h2>
         <button
           data-testid="settings-close"
-          aria-label="Close"
+          :aria-label="t('settings.close.aria')"
           class="text-stone-500 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="store.hasDirty"
-          :title="store.hasDirty ? 'Discard or save changes first' : 'Close'"
+          :title="closeTitle"
           @click="requestClose"
         >
           ×
@@ -71,10 +117,28 @@ async function onSave(): Promise<void> {
       </header>
 
       <section class="space-y-5 text-sm">
+        <!-- UI display language -->
+        <div>
+          <label for="settings-ui-language" class="block text-sm font-medium text-stone-700">
+            {{ t('settings.uiLanguage.label') }}
+          </label>
+          <select
+            id="settings-ui-language"
+            data-testid="settings-ui-language"
+            class="mt-1 w-full rounded border border-stone-300 px-2 py-1.5"
+            :value="displayUiLanguage"
+            @change="onUiLanguageChange"
+          >
+            <option value="en">{{ t('settings.uiLanguage.option.en') }}</option>
+            <option value="cs">{{ t('settings.uiLanguage.option.cs') }}</option>
+            <option value="de">{{ t('settings.uiLanguage.option.de') }}</option>
+          </select>
+        </div>
+
         <!-- Language -->
         <div>
           <label for="settings-language" class="block font-medium text-stone-700">
-            Detection language
+            {{ t('detectionLanguage.label') }}
           </label>
           <select
             id="settings-language"
@@ -85,19 +149,19 @@ async function onSave(): Promise<void> {
               store.setLanguage(($event.target as HTMLSelectElement).value as SettingsLanguage)
             "
           >
-            <option value="auto">Auto (match all)</option>
-            <option value="en">English</option>
-            <option value="cs">Čeština</option>
+            <option value="auto">{{ t('detectionLanguage.option.auto') }}</option>
+            <option value="en">{{ t('detectionLanguage.option.en') }}</option>
+            <option value="cs">{{ t('detectionLanguage.option.cs') }}</option>
           </select>
           <p class="mt-1 text-xs text-stone-500">
-            Auto matches all keyword sets. Pick a specific language to narrow name-based detection.
+            {{ t('settings.detectionLanguage.help') }}
           </p>
         </div>
 
         <!-- Card pack -->
         <div>
           <label for="settings-card-pack" class="block font-medium text-stone-700">
-            Card pack
+            {{ t('settings.cardPack.label') }}
           </label>
           <select
             id="settings-card-pack"
@@ -106,14 +170,16 @@ async function onSave(): Promise<void> {
             :value="store.effective.cardPack"
             disabled
           >
-            <option value="default">Default</option>
+            <option value="default">{{ t('settings.cardPack.option.default') }}</option>
           </select>
-          <p class="mt-1 text-xs text-stone-500">More packs coming soon.</p>
+          <p class="mt-1 text-xs text-stone-500">
+            {{ t('settings.cardPack.morePacksComingSoon') }}
+          </p>
         </div>
 
         <!-- Sections -->
         <fieldset>
-          <legend class="font-medium text-stone-700">Home view sections</legend>
+          <legend class="font-medium text-stone-700">{{ t('settings.sections.label') }}</legend>
           <div class="mt-1 space-y-1.5">
             <label
               v-for="key in SECTION_KEYS"
@@ -126,7 +192,7 @@ async function onSave(): Promise<void> {
                 :checked="store.effective.sections[key]"
                 @change="store.setSection(key, ($event.target as HTMLInputElement).checked)"
               />
-              <span>{{ SECTION_LABELS[key] }}</span>
+              <span>{{ t(SECTION_LABEL_KEYS[key]) }}</span>
             </label>
           </div>
         </fieldset>
@@ -147,9 +213,9 @@ async function onSave(): Promise<void> {
           type="button"
           data-testid="settings-discard"
           class="rounded border border-stone-300 px-3 py-1.5 text-stone-700 hover:bg-stone-50"
-          @click="store.discardChanges"
+          @click="onDiscard"
         >
-          Discard changes
+          {{ t('settings.discardChanges') }}
         </button>
         <button
           type="button"
@@ -158,7 +224,7 @@ async function onSave(): Promise<void> {
           :disabled="!store.hasDirty || store.phase === 'saving'"
           @click="onSave"
         >
-          Save & re-analyze
+          {{ t('settings.saveAndReanalyze') }}
         </button>
       </footer>
     </div>

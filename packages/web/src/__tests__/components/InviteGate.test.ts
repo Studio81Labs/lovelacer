@@ -4,11 +4,12 @@ import { createTestingPinia } from '@pinia/testing'
 import InviteGate from '../../components/InviteGate.vue'
 import { useInviteStore } from '../../stores/invite.js'
 import type { ApiError } from '../../api/types.js'
+import { createTestI18n } from '../test-utils.js'
 
 function mountGate() {
   return mount(InviteGate, {
     global: {
-      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
   })
 }

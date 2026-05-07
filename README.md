@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-amber" alt="License: MIT">
-  <img src="https://img.shields.io/badge/add--on-0.2.0-amber" alt="Add-on version">
+  <img src="https://img.shields.io/badge/add--on-0.3.0-amber" alt="Add-on version">
   <a href="https://github.com/Studio81Labs/lovelacer/actions/workflows/ci.yml"><img src="https://github.com/Studio81Labs/lovelacer/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
 </p>
 
@@ -105,7 +105,8 @@ Full breakdown in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - **Distribution:** Home Assistant Add-on (Supervisor-managed) as primary channel, standalone Docker as secondary.
 - **Apply mode:** Lovelace **storage mode** by default (writes via WebSocket), with YAML export as a feature.
 - **Stack:** Node.js + Fastify backend, Vue 3 + Vite frontend, SQLite for local state.
-- **i18n:** Multi-language room detection from day one (EN, CS, DE, ES, FR, IT, PL, NL).
+- **Room detection i18n:** Multi-language room detection from day one (EN, CS, DE, ES, FR, IT, PL, NL).
+- **UI i18n:** UI ships in English, Czech, and German (independent of room-detection language). German is alpha-quality; translation PRs welcome.
 - **License:** MIT for OSS core. AI features are also MIT but require runtime configuration of an LLM provider.
 - **Monetization:** Three tiers — Free/OSS, AI/BYO key (still free, user pays LLM provider), Pro/managed cloud (subscription, future).
 - **Privacy:** Tier 2 with Ollama provider = zero external requests, full AI features. Tier 3 cloud handles only entity registry metadata, never sensor states.

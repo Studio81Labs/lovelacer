@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import WelcomeStep from '../../../components/onboarding/WelcomeStep.vue'
 import { useSettingsStore } from '../../../stores/settings.js'
 import type * as ApiTypes from '../../../api/types.js'
+import { createTestI18n } from '../../test-utils.js'
 
 vi.mock('../../../api/client.js', async () => {
   const { DEFAULT_SETTINGS } = await vi.importActual<typeof ApiTypes>('../../../api/types.js')
@@ -26,7 +27,7 @@ vi.mock('../../../api/client.js', async () => {
 function mountWelcome() {
   return mount(WelcomeStep, {
     global: {
-      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
   })
 }

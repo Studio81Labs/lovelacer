@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import EntityRow from '../../components/EntityRow.vue'
 import { useOverridesStore } from '../../stores/overrides.js'
+import { createTestI18n } from '../test-utils.js'
 
 interface RowProps {
   entityId: string
@@ -24,7 +25,7 @@ function mountRow(props: RowProps) {
   return mount(EntityRow, {
     props,
     global: {
-      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
   })
 }
@@ -149,7 +150,7 @@ describe('EntityRow', () => {
         readOnly: true,
       },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     expect(wrapper.find('[data-testid="room-select"]').exists()).toBe(false)
@@ -166,7 +167,7 @@ describe('EntityRow diff tag', () => {
         roomId: 'kitchen',
       },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     expect(wrapper.find('[data-testid="entity-diff-tag"]').exists()).toBe(false)
@@ -185,7 +186,7 @@ describe('EntityRow diff tag', () => {
         },
       },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const tag = wrapper.find('[data-testid="entity-diff-tag"]')
@@ -207,7 +208,7 @@ describe('EntityRow diff tag', () => {
         },
       },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const tag = wrapper.find('[data-testid="entity-diff-tag"]')
@@ -229,7 +230,7 @@ describe('EntityRow diff tag', () => {
         },
       },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     expect(wrapper.find('[data-testid="entity-diff-tag"]').text()).toContain('Misc')

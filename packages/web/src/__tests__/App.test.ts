@@ -1,12 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
+import { createI18n } from 'vue-i18n'
 import App from '../App.vue'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useOverridesStore } from '../stores/overrides.js'
 import { useInviteStore } from '../stores/invite.js'
 import { useOnboardingStore } from '../stores/onboarding.js'
-import type { PreviewOutput } from '../api/types.js'
+import { useSettingsStore } from '../stores/settings.js'
+import { useI18nStore } from '../stores/i18n.js'
+import type { PreviewOutput, Settings } from '../api/types.js'
+import { createTestI18n } from './test-utils.js'
+import enLocale from '../locales/en.json'
+import csLocale from '../locales/cs.json'
 
 vi.mock('../api/client.js', () => ({
   postPreview: vi.fn(),
@@ -17,10 +23,19 @@ vi.mock('../api/client.js', () => ({
   postInvite: vi.fn(),
   getOnboarding: vi.fn(),
   postOnboardingComplete: vi.fn(),
+  getSettings: vi.fn(),
+  putSettings: vi.fn(),
 }))
 
-const { postPreview, getOverrides, putOverrides, getInvite, postInvite, getOnboarding } =
-  await import('../api/client.js')
+const {
+  postPreview,
+  getOverrides,
+  putOverrides,
+  getInvite,
+  postInvite,
+  getOnboarding,
+  getSettings,
+} = await import('../api/client.js')
 
 const mockPreview: PreviewOutput = {
   rooms: [
@@ -42,6 +57,27 @@ const mockPreview: PreviewOutput = {
   suggestions: [],
 }
 
+// P2-9 — default Settings response for loadFromServer(). Tests that
+// don't care about uiLanguage reconciliation get a quiet pass-through.
+// `uiLanguage` is intentionally omitted (the field is OPTIONAL): a
+// fresh install has no explicit user choice, so the watcher's truthy
+// check on `next` filters out the load and the active i18n locale is
+// preserved. Tests that need an explicit value mock getSettings
+// individually to provide one.
+const defaultSettings: Settings = {
+  language: 'auto',
+  cardPack: 'default',
+  sections: {
+    welcome: true,
+    quickStats: true,
+    people: true,
+    roomsByFloor: true,
+    activeRooms: true,
+    scenes: true,
+    cameras: true,
+  },
+}
+
 describe('App integration', () => {
   beforeEach(() => {
     vi.mocked(postPreview).mockReset()
@@ -49,10 +85,12 @@ describe('App integration', () => {
     vi.mocked(putOverrides).mockReset()
     vi.mocked(getInvite).mockReset()
     vi.mocked(getOnboarding).mockReset()
+    vi.mocked(getSettings).mockReset()
     // Default: most existing tests assume the gate is already accepted
     // and onboarding already completed so the main view is visible.
     vi.mocked(getInvite).mockResolvedValue({ accepted: true })
     vi.mocked(getOnboarding).mockResolvedValue({ completedAt: 1700000000 })
+    vi.mocked(getSettings).mockResolvedValue({ settings: defaultSettings })
   })
 
   it('triggers loadFromServer when analyze.phase transitions to ready', async () => {
@@ -60,7 +98,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const analyze = useAnalyzeStore()
@@ -77,7 +115,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const analyze = useAnalyzeStore()
@@ -138,7 +176,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
@@ -168,7 +206,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
@@ -274,7 +312,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
@@ -336,6 +374,7 @@ describe('App integration', () => {
 describe('App invite gate', () => {
   beforeEach(() => {
     vi.mocked(getInvite).mockReset()
+    vi.mocked(getSettings).mockReset().mockResolvedValue({ settings: defaultSettings })
   })
 
   it('calls invite.loadStatus on mount', async () => {
@@ -343,7 +382,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await wrapper.vm.$nextTick()
@@ -356,7 +395,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await Promise.resolve()
@@ -370,7 +409,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await Promise.resolve()
@@ -385,7 +424,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
 
@@ -400,7 +439,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await Promise.resolve()
@@ -418,7 +457,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await Promise.resolve()
@@ -447,12 +486,13 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     // installed `mockReturnValueOnce` queues that would leak in.
     vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
     vi.mocked(getOnboarding).mockReset().mockResolvedValue({ completedAt: 1700000000 })
+    vi.mocked(getSettings).mockReset().mockResolvedValue({ settings: defaultSettings })
   })
 
   it('initial render (both invite and onboarding loading): all three views hidden', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     // No call to loadStatus has resolved yet — accepted is null, completedAt undefined.
@@ -464,7 +504,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
   it('invite accepted, onboarding pending → wizard visible, main hidden', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()
@@ -479,7 +519,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
   it('invite accepted, onboarding completed → main visible, wizard hidden', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()
@@ -494,7 +534,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
   it('invite not accepted → InviteGate visible, neither wizard nor main', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()
@@ -524,7 +564,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await flushPromises()
@@ -569,7 +609,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     })
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()
@@ -588,7 +628,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
   it('wizard stays mounted after onboarding.completedAt flips to a number (until close emit) — P2-7 Bug 2 regression', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()
@@ -614,5 +654,230 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     await flushPromises()
     expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
     expect(wrapper.find('main').exists()).toBe(true)
+  })
+})
+
+describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
+  beforeEach(() => {
+    vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
+    vi.mocked(getOnboarding).mockReset().mockResolvedValue({ completedAt: 1700000000 })
+    vi.mocked(getSettings).mockReset().mockResolvedValue({ settings: defaultSettings })
+    // Start each test with a clean localStorage. The new optional design
+    // means the watcher distinguishes "user has explicitly picked a UI
+    // language" (server returns uiLanguage as a string) from "no choice
+    // yet" (server returns the field absent) — no localStorage heuristic
+    // is involved. Tests opt back into a cached value where they need
+    // one.
+    localStorage.removeItem('lovelacer.uiLocale')
+  })
+
+  it('reconciles useI18nStore.locale to settings.serverState.uiLanguage after server load', async () => {
+    // Spec §4: when loadFromServer() resolves and the server's uiLanguage
+    // differs from the current locale (e.g. user opens Device B with
+    // a stale localStorage 'en' cache; server has 'cs' from Device A),
+    // the server value wins and the UI updates without manual re-pick.
+    mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    expect(i18n.locale).toBe('en')
+
+    // Simulate loadFromServer() resolving with cs.
+    const serverSettings: Settings = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      uiLanguage: 'cs',
+    }
+    settings.serverState = serverSettings
+    await flushPromises()
+
+    expect(i18n.locale).toBe('cs')
+  })
+
+  it('reconciliation watcher does NOT override an explicit user locale change during loadFromServer race', async () => {
+    // Spec §4: "if the user changes UI language before settings load
+    // completes, the user's choice is preserved." Race: app mounts
+    // (initialLocale = 'en') → user picks 'de' before server load
+    // resolves → server returns 'cs' → guard prevents override.
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    expect(i18n.locale).toBe('en') // initialLocale baseline
+
+    // User explicitly picks German before server load resolves.
+    i18n.locale = 'de'
+    await flushPromises()
+    expect(i18n.locale).toBe('de')
+
+    // Server load now resolves with 'cs' — the guard sees that the
+    // current locale ('de') no longer equals the captured initialLocale
+    // ('en'), so it must NOT override.
+    settings.serverState = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      uiLanguage: 'cs',
+    }
+    await flushPromises()
+
+    expect(i18n.locale).toBe('de') // user's explicit choice preserved
+    void wrapper
+  })
+
+  it('does not flip the locale when serverState.uiLanguage matches the active locale', async () => {
+    // Smoke test for the equality guard — without it, the watcher would
+    // re-write localStorage on every server-state load even when nothing
+    // changed.
+    mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    // Simulate a same-value reconcile: locale already 'en', server 'en'.
+    expect(i18n.locale).toBe('en')
+    settings.serverState = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      uiLanguage: 'en',
+    }
+    await flushPromises()
+
+    expect(i18n.locale).toBe('en')
+  })
+
+  it('reconciliation watcher does NOT override a browser-detected locale on a fresh install (regression: cursor[bot] medium)', async () => {
+    // Scenario: empty localStorage + cs-CZ browser language →
+    // detectInitialLocale returns 'cs' → vue-i18n bootstraps with
+    // locale 'cs'. Server has never had the user pick a UI language,
+    // so it returns Settings WITHOUT a `uiLanguage` field. The watcher
+    // sees `next === undefined`, the truthy check filters it out, and
+    // the browser-detected 'cs' is preserved.
+    //
+    // This is the proper P2-9 contract: the absence of `uiLanguage`
+    // means "no explicit user choice" — it does NOT mean "default to
+    // 'en'." Substituting a default would make every fresh install on
+    // a non-EN browser flash from the browser language to 'en' on first
+    // settings load.
+
+    // Build a vue-i18n instance pre-set to 'cs' (mirrors what
+    // detectInitialLocale + createI18n do in production when the
+    // browser language is cs-CZ and localStorage is empty).
+    const csI18n = createI18n({
+      legacy: false,
+      locale: 'cs',
+      fallbackLocale: 'en',
+      flatJson: true,
+      messages: { en: enLocale, cs: csLocale },
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), csI18n],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    expect(i18n.locale).toBe('cs') // browser-detected baseline
+
+    // Server load resolves WITHOUT uiLanguage — the user has never
+    // explicitly picked a UI language, so the field is absent. The
+    // watcher's truthy-check on `next` filters this out and the
+    // browser-detected 'cs' wins.
+    settings.serverState = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      // uiLanguage intentionally omitted (optional field)
+    }
+    await flushPromises()
+
+    expect(i18n.locale).toBe('cs') // browser-detected locale preserved
+    void wrapper
+  })
+
+  it('reconciles to server uiLanguage on a fresh device with empty localStorage (cross-device sync)', async () => {
+    // Scenario the previous `hadCachedLocale` guard broke: the user has
+    // explicitly picked 'cs' on Device A. They open the app on Device B
+    // where localStorage is empty and browser language is en-US, so
+    // detectInitialLocale returns 'en' and vue-i18n bootstraps with 'en'.
+    // The server returns `uiLanguage: 'cs'` (a real explicit choice).
+    // The watcher MUST sync to 'cs' so the user sees their saved choice
+    // without re-picking on every device.
+    //
+    // Per spec §4: cross-device sync is the whole point of persisting
+    // `uiLanguage` server-side.
+    expect(localStorage.getItem('lovelacer.uiLocale')).toBeNull()
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    expect(i18n.locale).toBe('en') // browser-detected baseline (en-US default)
+
+    // Server returns the user's explicit choice from another device.
+    settings.serverState = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      uiLanguage: 'cs',
+    }
+    await flushPromises()
+
+    expect(i18n.locale).toBe('cs') // synced to user's saved choice
+    void wrapper
   })
 })

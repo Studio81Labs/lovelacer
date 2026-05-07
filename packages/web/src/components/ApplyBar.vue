@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onUnmounted, watch } from 'vue'
+import { I18nT, useI18n } from 'vue-i18n'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useApplyStore } from '../stores/apply.js'
 import type { SnapshotAssignment } from '../api/types.js'
 
+const { t } = useI18n()
 const analyze = useAnalyzeStore()
 const apply = useApplyStore()
 
@@ -61,11 +63,14 @@ const errorMessage = computed(() => {
   if (apply.error === null) return ''
   switch (apply.error.error) {
     case 'ha_unavailable':
-      return 'Home Assistant is not connected. Check the connection bar at the top.'
+      return t('applyBar.error.haUnavailable')
     case 'invalid_config':
-      return 'Cached config is invalid. Click Start over to re-analyze.'
+      return t('applyBar.error.invalidConfig')
     case 'ha_apply_failed':
-      return `Apply failed at step ${apply.error.step ?? 'unknown'}: ${apply.error.message}`
+      return t('applyBar.error.haApplyFailed', {
+        step: apply.error.step ?? t('common.unknown'),
+        message: apply.error.message,
+      })
     default:
       return apply.error.message
   }
@@ -88,23 +93,27 @@ const showRetry = computed(
       :disabled="apply.phase === 'applying' || analyze.phase !== 'ready'"
       @click="applyClicked"
     >
-      {{ apply.phase === 'applying' ? 'Applying…' : 'Apply to Home Assistant' }}
+      {{ apply.phase === 'applying' ? t('applyBar.applying') : t('applyBar.apply') }}
     </button>
 
     <div
       v-else-if="apply.phase === 'success' && apply.result !== null"
       class="flex items-center justify-between rounded-lg bg-forest-50 px-5 py-3 text-sm text-forest-700"
     >
-      <span>
-        Dashboard <span class="font-mono">{{ apply.result.urlPath }}</span>
-        {{ apply.result.created ? 'created' : 'updated' }}.
-      </span>
+      <I18nT
+        :keypath="apply.result.created ? 'applyBar.success.created' : 'applyBar.success.updated'"
+        tag="span"
+      >
+        <template #urlPath>
+          <span class="font-mono">{{ apply.result.urlPath }}</span>
+        </template>
+      </I18nT>
       <button
         type="button"
         class="rounded bg-forest-700 px-3 py-1 text-xs font-medium text-white hover:bg-forest-900"
         @click="startOver"
       >
-        Done — start over
+        {{ t('applyBar.doneStartOver') }}
       </button>
     </div>
 
@@ -119,7 +128,7 @@ const showRetry = computed(
         class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
         @click="applyClicked"
       >
-        Retry
+        {{ t('common.retry') }}
       </button>
       <button
         v-else
@@ -127,7 +136,7 @@ const showRetry = computed(
         class="rounded bg-stone-600 px-3 py-1 text-xs font-medium text-white hover:bg-stone-700"
         @click="startOver"
       >
-        Start over
+        {{ t('applyBar.startOver') }}
       </button>
     </div>
   </section>

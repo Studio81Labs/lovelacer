@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../stores/settings.js'
 import type { SettingsLanguage } from '../../api/types.js'
 
 defineEmits<{ continue: []; skip: [] }>()
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 
 // Ingress-relative — see App.vue's markUrl for the full rationale.
@@ -17,14 +19,14 @@ const markUrl = `${import.meta.env.BASE_URL}brand/lovelacer-mark.svg`
       <div>
         <h1 class="lovelacer-wordmark text-3xl leading-none">lovelace<i>r</i></h1>
         <p class="mt-1 text-sm text-stone-500">
-          Home Assistant dashboards that organize themselves
+          {{ t('app.tagline') }}
         </p>
       </div>
     </header>
-    <p class="mt-6 text-stone-600">Pick your detection language, then we'll show you a preview.</p>
+    <p class="mt-6 text-stone-600">{{ t('welcomeStep.intro') }}</p>
 
     <label for="welcome-language" class="mt-6 block text-sm font-medium text-stone-700">
-      Detection language
+      {{ t('detectionLanguage.label') }}
     </label>
     <select
       id="welcome-language"
@@ -33,9 +35,9 @@ const markUrl = `${import.meta.env.BASE_URL}brand/lovelacer-mark.svg`
       :value="settings.effective.language"
       @change="settings.setLanguage(($event.target as HTMLSelectElement).value as SettingsLanguage)"
     >
-      <option value="auto">Auto (match all)</option>
-      <option value="en">English</option>
-      <option value="cs">Čeština</option>
+      <option value="auto">{{ t('detectionLanguage.option.auto') }}</option>
+      <option value="en">{{ t('detectionLanguage.option.en') }}</option>
+      <option value="cs">{{ t('detectionLanguage.option.cs') }}</option>
     </select>
 
     <button
@@ -44,7 +46,7 @@ const markUrl = `${import.meta.env.BASE_URL}brand/lovelacer-mark.svg`
       class="mt-6 w-full rounded bg-amber-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-amber-700"
       @click="$emit('continue')"
     >
-      Continue
+      {{ t('common.continue') }}
     </button>
 
     <button
@@ -53,7 +55,7 @@ const markUrl = `${import.meta.env.BASE_URL}brand/lovelacer-mark.svg`
       class="mt-3 w-full text-sm text-stone-500 hover:text-stone-700"
       @click="$emit('skip')"
     >
-      Skip onboarding
+      {{ t('common.skipOnboarding') }}
     </button>
   </div>
 </template>

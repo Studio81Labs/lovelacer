@@ -31,6 +31,7 @@ const SAMPLE: Settings = {
     scenes: true,
     cameras: true,
   },
+  uiLanguage: 'en',
 }
 
 describe('useSettingsStore', () => {
@@ -86,7 +87,11 @@ describe('useSettingsStore', () => {
     expect(store.dirtyState?.sections.welcome).toBe(true)
   })
 
-  it('discardChanges clears dirtyState', async () => {
+  it('discardChanges clears dirtyState only (locale revert lives in SettingsModal — P2-9)', async () => {
+    // The store's discardChanges() intentionally does NOT touch i18n.
+    // The active-locale revert is owned by SettingsModal because only
+    // the modal has a clean session boundary (component setup runs once
+    // when the modal opens). See SettingsModal.onDiscard.
     vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
     const store = useSettingsStore()
     await store.loadFromServer()

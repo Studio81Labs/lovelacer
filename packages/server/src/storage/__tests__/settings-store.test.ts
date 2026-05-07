@@ -1,5 +1,6 @@
 import { mkdtempSync, rmSync } from 'node:fs'
 import Database from 'better-sqlite3'
+import type { Database as DatabaseType } from 'better-sqlite3'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -34,6 +35,7 @@ describe('SettingsStore (in-memory)', () => {
         scenes: false,
         cameras: true,
       },
+      uiLanguage: 'en',
     }
     store.save(next)
     expect(store.get()).toEqual(next)
@@ -45,6 +47,45 @@ describe('SettingsStore (in-memory)', () => {
     store.save(a)
     store.save(b)
     expect(store.get()).toEqual(b)
+  })
+
+  it('leaves uiLanguage undefined for legacy P2-6/P2-7 rows that lack the field', () => {
+    // Manually insert a JSON row without `uiLanguage`, simulating a row
+    // persisted before P2-9. `Settings.uiLanguage` is OPTIONAL by design:
+    // when absent, the SPA preserves whatever locale `detectInitialLocale()`
+    // picked. The store must therefore leave the field undefined rather
+    // than substituting a default — substituting would falsely signal
+    // "user has explicitly chosen this language" to the reconciliation
+    // watcher and override browser-detected locales on every load.
+    const db = (store as unknown as { db: DatabaseType }).db
+    db.prepare('INSERT OR REPLACE INTO settings (id, payload) VALUES (1, ?)').run(
+      JSON.stringify({
+        language: 'en',
+        cardPack: 'default',
+        sections: {
+          welcome: true,
+          quickStats: true,
+          people: true,
+          roomsByFloor: true,
+          activeRooms: true,
+          scenes: true,
+          cameras: true,
+        },
+      }),
+    )
+    const settings = store.get()
+    expect(settings.uiLanguage).toBeUndefined()
+    // The other fields from the legacy payload are preserved verbatim.
+    expect(settings.language).toBe('en')
+  })
+
+  it('round-trips uiLanguage through save and get', () => {
+    const next: Settings = {
+      ...DEFAULT_SETTINGS,
+      uiLanguage: 'cs',
+    }
+    store.save(next)
+    expect(store.get().uiLanguage).toBe('cs')
   })
 })
 

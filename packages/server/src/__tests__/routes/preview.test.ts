@@ -392,6 +392,7 @@ describe('POST /api/preview — section toggles (P2-6)', () => {
             scenes: true,
             cameras: true,
           },
+          uiLanguage: 'en',
         },
       }
       const put = await app.inject({ method: 'PUT', url: '/api/settings', payload })
@@ -448,6 +449,7 @@ describe('POST /api/preview — language filter (P2-6)', () => {
               scenes: true,
               cameras: true,
             },
+            uiLanguage: 'en',
           },
         },
       })

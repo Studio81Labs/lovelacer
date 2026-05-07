@@ -2,9 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import RemovedEntitiesPanel from '../../components/RemovedEntitiesPanel.vue'
 import type { DiffResult } from '../../api/types.js'
+import { createTestI18n } from '../test-utils.js'
 
 function mountPanel(diff: DiffResult) {
-  return mount(RemovedEntitiesPanel, { props: { diff } })
+  return mount(RemovedEntitiesPanel, {
+    props: { diff },
+    global: { plugins: [createTestI18n()] },
+  })
 }
 
 describe('RemovedEntitiesPanel', () => {
