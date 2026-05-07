@@ -29,7 +29,7 @@ function onSave() {
     class="flex flex-col gap-3 rounded-lg border px-5 py-3 text-sm"
     :class="
       isError
-        ? 'border-red-200 bg-red-50 text-red-900'
+        ? 'border-danger-700/30 bg-danger-50 text-danger-700'
         : 'border-amber-200 bg-amber-50 text-amber-900'
     "
   >
@@ -52,7 +52,7 @@ function onSave() {
           v-if="!isError"
           data-testid="save-button"
           type="button"
-          class="rounded bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="isSaving"
           @click="onSave"
         >
@@ -66,7 +66,7 @@ function onSave() {
       <button
         data-testid="retry-button"
         type="button"
-        class="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+        class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
         @click="onSave"
       >
         Retry

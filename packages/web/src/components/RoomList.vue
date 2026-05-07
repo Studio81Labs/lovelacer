@@ -16,9 +16,9 @@ defineProps<{
 }>()
 
 function confidencePillClass(confidence: number): string {
-  if (confidence >= 0.8) return 'bg-green-100 text-green-800'
-  if (confidence >= 0.5) return 'bg-amber-100 text-amber-800'
-  return 'bg-red-100 text-red-800'
+  if (confidence >= 0.8) return 'bg-forest-50 text-forest-700'
+  if (confidence >= 0.5) return 'bg-amber-100 text-amber-700'
+  return 'bg-danger-50 text-danger-700'
 }
 
 function confidenceLabel(confidence: number): string {
@@ -68,13 +68,13 @@ function entityIdToFriendly(entityId: string): string {
               <span
                 v-if="(diffByRoom ?? {})[room.id]!.added > 0"
                 data-testid="room-diff-added"
-                class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+                class="rounded bg-forest-50 px-2 py-0.5 text-xs font-medium text-forest-700"
                 >+{{ (diffByRoom ?? {})[room.id]!.added }} new</span
               >
               <span
                 v-if="(diffByRoom ?? {})[room.id]!.movedOut > 0"
                 data-testid="room-diff-moved-out"
-                class="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800"
+                class="rounded bg-stone-200 px-2 py-0.5 text-xs font-medium text-stone-700"
                 >↻ {{ (diffByRoom ?? {})[room.id]!.movedOut }} left</span
               >
             </template>

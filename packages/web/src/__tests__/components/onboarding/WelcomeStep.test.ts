@@ -39,7 +39,8 @@ describe('WelcomeStep', () => {
   it('renders heading and a language dropdown with 3 options', () => {
     const wrapper = mountWelcome()
     expect(wrapper.find('[data-testid="welcome-step"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Welcome to Lovelacer')
+    expect(wrapper.text()).toContain('lovelacer')
+    expect(wrapper.text()).toContain('Home Assistant dashboards that organize themselves')
 
     const select = wrapper.find('[data-testid="welcome-language"]')
     expect(select.exists()).toBe(true)

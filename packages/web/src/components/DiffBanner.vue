@@ -49,19 +49,19 @@ function formatApplied(unixSeconds: number): string {
       <span
         v-if="diff.totals.added > 0"
         data-testid="diff-banner-added"
-        class="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+        class="rounded bg-forest-50 px-2 py-0.5 text-xs font-medium text-forest-700"
         >+{{ diff.totals.added }} added</span
       >
       <span
         v-if="diff.totals.moved > 0"
         data-testid="diff-banner-moved"
-        class="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800"
+        class="rounded bg-stone-200 px-2 py-0.5 text-xs font-medium text-stone-700"
         >↻ {{ diff.totals.moved }} moved</span
       >
       <span
         v-if="diff.totals.removed > 0"
         data-testid="diff-banner-removed"
-        class="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800"
+        class="rounded bg-danger-50 px-2 py-0.5 text-xs font-medium text-danger-700"
         >✗ {{ diff.totals.removed }} removed</span
       >
     </div>

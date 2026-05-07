@@ -32,7 +32,7 @@ onMounted(() => {
 
 <template>
   <section class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-    <div v-if="error" class="text-sm text-brand-800">Backend unreachable: {{ error }}</div>
+    <div v-if="error" class="text-sm text-amber-700">Backend unreachable: {{ error }}</div>
 
     <div v-else-if="!health" class="text-sm text-stone-500">Loading…</div>
 
@@ -42,7 +42,9 @@ onMounted(() => {
       </span>
       <span
         class="inline-block rounded px-2 py-0.5 text-xs font-medium"
-        :class="health.ha.connected ? 'bg-green-100 text-green-800' : 'bg-stone-200 text-stone-700'"
+        :class="
+          health.ha.connected ? 'bg-forest-50 text-forest-700' : 'bg-stone-200 text-stone-700'
+        "
       >
         HA {{ health.ha.connected ? 'connected' : 'disconnected' }}
       </span>

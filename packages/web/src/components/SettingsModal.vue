@@ -135,7 +135,7 @@ async function onSave(): Promise<void> {
         <p
           v-if="store.phase === 'error' && store.error !== null"
           data-testid="settings-error"
-          class="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-900"
+          class="rounded bg-danger-50 px-3 py-2 text-xs text-danger-700"
         >
           {{ store.error.message }}
         </p>
@@ -154,7 +154,7 @@ async function onSave(): Promise<void> {
         <button
           type="button"
           data-testid="settings-save"
-          class="rounded bg-brand-600 px-3 py-1.5 font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded bg-amber-500 px-3 py-1.5 font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="!store.hasDirty || store.phase === 'saving'"
           @click="onSave"
         >

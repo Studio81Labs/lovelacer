@@ -1,13 +1,25 @@
-# Changelog
+## 0.2.0 — 2026-05-07
 
-All notable changes to the Lovelacer add-on are documented here.
+### Phase 2 (Polish & Release)
 
-## [0.0.1] — Phase 1a alpha (unreleased)
+- Re-analyze diff view: see what changes when you re-run Analyze.
+- YAML export: save the generated dashboard as YAML alongside storage-mode apply.
+- Floor-aware grouping: rooms group by floor when areas have a floor assigned.
+- Bulk-assign for the Misc bucket: select multiple unscoped entities and assign in one click.
+- Suggestions panel: smart improvements with one-click accept.
+- Settings screen: configure language and which dashboard sections appear.
+- Onboarding wizard: first-run flow walks new users through analyze → preview → apply.
+- Brand identity: new logo, full visual identity, Inter + Instrument Serif typography, self-hosted fonts.
 
-Initial add-on packaging.
+### Phase 1b (already shipped, summarised)
 
-- Multi-arch images (aarch64, amd64, armv7) published to GitHub Container Registry.
-- HA Supervisor ingress so Lovelacer opens through the HA sidebar.
-- Two add-on options: `log_level` and `dashboard_url_path`.
-- Bundled SPA + Fastify backend wired through `SUPERVISOR_TOKEN`.
-- No persistence yet (`/data` is mounted but unused; placeholder for P1b).
+- Multi-language room detection: EN, CS, DE, ES, FR, IT, PL, NL.
+- Per-entity overrides: drag rooms manually, mark entities hidden.
+- Invite-code gate for closed alpha.
+- HA add-on packaging with multi-arch images (aarch64, amd64, armv7).
+
+### Phase 1a (already shipped, summarised)
+
+- Initial analyze + apply flow against a single HA instance.
+- HA storage-mode dashboard generation.
+- WebSocket connection with retry/backoff.

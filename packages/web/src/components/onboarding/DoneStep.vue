@@ -16,8 +16,8 @@ function openDashboard(): void {
 
 <template>
   <div data-testid="done-step" class="rounded-lg bg-white p-8 text-center shadow-sm">
-    <div class="mx-auto h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-      <span class="text-2xl text-green-600">✓</span>
+    <div class="mx-auto h-12 w-12 rounded-full bg-forest-50 flex items-center justify-center">
+      <span class="text-2xl text-forest-700">✓</span>
     </div>
     <h1 class="mt-4 text-2xl font-semibold text-stone-900">All set!</h1>
     <p class="mt-2 text-stone-600">
@@ -29,7 +29,7 @@ function openDashboard(): void {
       <button
         type="button"
         data-testid="done-open-dashboard"
-        class="w-full rounded bg-brand-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-700"
+        class="w-full rounded bg-amber-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-amber-700"
         @click="openDashboard"
       >
         Open dashboard

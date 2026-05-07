@@ -26,7 +26,7 @@ function clickAnalyze() {
 <template>
   <button
     type="button"
-    class="rounded bg-brand-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+    class="rounded bg-amber-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-stone-300"
     :disabled="disabled"
     @click="clickAnalyze"
   >

@@ -11,7 +11,7 @@ defineProps<{
       <div
         :data-testid="`progress-dot-${step}`"
         class="h-2 w-2 rounded-full"
-        :class="step === current ? 'bg-brand-600' : 'bg-stone-300'"
+        :class="step === current ? 'bg-amber-500' : 'bg-stone-300'"
       />
       <div v-if="idx < steps.length - 1" class="h-px w-8 bg-stone-200" aria-hidden="true" />
     </template>

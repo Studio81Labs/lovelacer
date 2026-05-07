@@ -51,8 +51,8 @@ describe('RoomList', () => {
       },
     })
     const pill = wrapper.find('[data-testid="confidence-pill"]')
-    expect(pill.classes()).toContain('bg-green-100')
-    expect(pill.classes()).toContain('text-green-800')
+    expect(pill.classes()).toContain('bg-forest-50')
+    expect(pill.classes()).toContain('text-forest-700')
   })
 
   it('uses amber pill for confidence between 0.5 and 0.8', () => {
@@ -64,7 +64,7 @@ describe('RoomList', () => {
     })
     const pill = wrapper.find('[data-testid="confidence-pill"]')
     expect(pill.classes()).toContain('bg-amber-100')
-    expect(pill.classes()).toContain('text-amber-800')
+    expect(pill.classes()).toContain('text-amber-700')
   })
 
   it('uses red pill for confidence < 0.5', () => {
@@ -75,8 +75,8 @@ describe('RoomList', () => {
       },
     })
     const pill = wrapper.find('[data-testid="confidence-pill"]')
-    expect(pill.classes()).toContain('bg-red-100')
-    expect(pill.classes()).toContain('text-red-800')
+    expect(pill.classes()).toContain('bg-danger-50')
+    expect(pill.classes()).toContain('text-danger-700')
   })
 
   it('renders empty-state placeholder when rooms array is empty', () => {

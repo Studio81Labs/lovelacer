@@ -82,7 +82,7 @@ function acceptLabel(s: Suggestion): string {
         <button
           type="button"
           data-testid="suggestion-accept"
-          class="rounded bg-brand-600 px-3 py-1 font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded bg-amber-500 px-3 py-1 font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="suggestionsStore.phase === 'dismissing'"
           @click="accept(s)"
         >

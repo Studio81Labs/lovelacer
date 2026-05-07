@@ -33,6 +33,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Brand-colour check
+        run: pnpm check:brand
+
       - name: Typecheck
         run: pnpm typecheck
 

@@ -4,15 +4,13 @@ Generate a Home Assistant Lovelace dashboard from your existing entities.
 
 ## What it does
 
-1. Click **Analyze** — Lovelacer reads your HA entity, device, and area registries.
-2. See a list of detected rooms with entity counts and confidence summaries.
-3. Click **Apply** — Lovelacer generates a `lovelacer-home` Lovelace dashboard and pushes it to HA via the storage-mode WebSocket.
+1. Click **Analyze** — Lovelacer reads your HA entity, device, and area registries and detects rooms across 8 languages.
+2. Review the preview. Re-run **Analyze** any time; the diff view shows what moved, what was added, and what was removed.
+3. Adjust per-entity overrides if needed, accept smart suggestions with one click, then click **Apply**.
 
-The dashboard is a regular HA dashboard you can edit, copy, or delete from HA's UI like any other.
+The dashboard is a regular HA dashboard — you can edit, copy, or delete it from HA's UI like any other.
 
 ## Configuration
-
-Two options:
 
 | Key                  | Default          | Notes                                                                                                                                                   |
 | -------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,15 +27,14 @@ Lovelacer reads your HA registries and writes a single Lovelace dashboard back. 
 
 - Send any data outside your HA instance.
 - Modify your existing automations, scripts, or other dashboards.
-- Persist anything to disk yet (Phase 1a). The `/data` volume is mounted but unused.
+
+All add-on state (overrides, applied snapshots, settings, onboarding completion) lives in the add-on's `/data` volume — nothing leaves the HA host.
 
 ## Status
 
-This is **Phase 1a alpha**. Things you should know:
+Phase 2 alpha. Multi-language room detection (EN / CS / DE / ES / FR / IT / PL / NL). Re-analyze diff view shows what changed since the last apply. Per-entity overrides + smart suggestions panel. Settings UI for language and dashboard sections. Onboarding wizard for first-run.
 
-- Only English + Czech room name patterns are supported. German lands in 1b.
-- Only light, switch, sensor (temperature/humidity), binary_sensor (motion/occupancy/door), and climate entities get proper card mapping. Everything else lands in a generic "Other" view.
-- No drag-and-drop. No per-entity overrides. No diff against existing dashboards.
+The single honest constraint: custom Lovelace cards (Mushroom, Tile-extras) are not generated — pure HA core cards only.
 
 ## Source + reporting bugs
 
