@@ -183,4 +183,33 @@ describe('PUT /api/settings', () => {
       await app.close()
     }
   })
+
+  it('accepts a body without uiLanguage (the field is optional)', async () => {
+    const app = await makeApp()
+    try {
+      // Bodies emitted by clients that have not yet had the user pick a
+      // UI language must round-trip without 400. The field is optional
+      // by design — see Settings.uiLanguage in @lovelacer/shared.
+      const body = {
+        settings: {
+          language: 'auto',
+          cardPack: 'default',
+          sections: {
+            welcome: true,
+            quickStats: true,
+            people: true,
+            roomsByFloor: true,
+            activeRooms: true,
+            scenes: true,
+            cameras: true,
+          },
+        },
+      }
+      const res = await app.inject({ method: 'PUT', url: '/api/settings', payload: body })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().settings.uiLanguage).toBeUndefined()
+    } finally {
+      await app.close()
+    }
+  })
 })

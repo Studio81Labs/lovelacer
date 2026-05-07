@@ -58,9 +58,12 @@ const mockPreview: PreviewOutput = {
 }
 
 // P2-9 — default Settings response for loadFromServer(). Tests that
-// don't care about uiLanguage reconciliation get a quiet pass-through;
-// the i18n reconciliation describe block overrides this where it
-// matters.
+// don't care about uiLanguage reconciliation get a quiet pass-through.
+// `uiLanguage` is intentionally omitted (the field is OPTIONAL): a
+// fresh install has no explicit user choice, so the watcher's truthy
+// check on `next` filters out the load and the active i18n locale is
+// preserved. Tests that need an explicit value mock getSettings
+// individually to provide one.
 const defaultSettings: Settings = {
   language: 'auto',
   cardPack: 'default',
@@ -73,7 +76,6 @@ const defaultSettings: Settings = {
     scenes: true,
     cameras: true,
   },
-  uiLanguage: 'en',
 }
 
 describe('App integration', () => {
@@ -660,12 +662,13 @@ describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
     vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
     vi.mocked(getOnboarding).mockReset().mockResolvedValue({ completedAt: 1700000000 })
     vi.mocked(getSettings).mockReset().mockResolvedValue({ settings: defaultSettings })
-    // Default for cross-device sync tests: this device has prior
-    // preference state (the user-picked value cached on first paint),
-    // so the reconciliation watcher's `hadCachedLocale` guard is
-    // satisfied. The fresh-install regression test below clears this
-    // explicitly to exercise the opposite branch.
-    localStorage.setItem('lovelacer.uiLocale', 'en')
+    // Start each test with a clean localStorage. The new optional design
+    // means the watcher distinguishes "user has explicitly picked a UI
+    // language" (server returns uiLanguage as a string) from "no choice
+    // yet" (server returns the field absent) — no localStorage heuristic
+    // is involved. Tests opt back into a cached value where they need
+    // one.
+    localStorage.removeItem('lovelacer.uiLocale')
   })
 
   it('reconciles useI18nStore.locale to settings.serverState.uiLanguage after server load', async () => {
@@ -780,15 +783,16 @@ describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
   it('reconciliation watcher does NOT override a browser-detected locale on a fresh install (regression: cursor[bot] medium)', async () => {
     // Scenario: empty localStorage + cs-CZ browser language →
     // detectInitialLocale returns 'cs' → vue-i18n bootstraps with
-    // locale 'cs' → App.vue's <script setup> captures
-    // initialLocale='cs', hadCachedLocale=false.
-    // loadFromServer resolves with the SERVER DEFAULT uiLanguage: 'en'
-    // (the field's default value, NOT a user choice). Without the
-    // hadCachedLocale guard, the race-guard's `current === initial`
-    // check would pass (both 'cs') and the watcher would override to
-    // 'en' — flashing CS to EN. The hadCachedLocale=false branch
-    // suppresses that.
-    localStorage.removeItem('lovelacer.uiLocale')
+    // locale 'cs'. Server has never had the user pick a UI language,
+    // so it returns Settings WITHOUT a `uiLanguage` field. The watcher
+    // sees `next === undefined`, the truthy check filters it out, and
+    // the browser-detected 'cs' is preserved.
+    //
+    // This is the proper P2-9 contract: the absence of `uiLanguage`
+    // means "no explicit user choice" — it does NOT mean "default to
+    // 'en'." Substituting a default would make every fresh install on
+    // a non-EN browser flash from the browser language to 'en' on first
+    // settings load.
 
     // Build a vue-i18n instance pre-set to 'cs' (mirrors what
     // detectInitialLocale + createI18n do in production when the
@@ -810,9 +814,10 @@ describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
     const i18n = useI18nStore()
     expect(i18n.locale).toBe('cs') // browser-detected baseline
 
-    // Server load resolves with the default 'en' — the hadCachedLocale
-    // guard must block the override so the browser-detected 'cs' is
-    // preserved.
+    // Server load resolves WITHOUT uiLanguage — the user has never
+    // explicitly picked a UI language, so the field is absent. The
+    // watcher's truthy-check on `next` filters this out and the
+    // browser-detected 'cs' wins.
     settings.serverState = {
       language: 'auto',
       cardPack: 'default',
@@ -825,11 +830,54 @@ describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
         scenes: true,
         cameras: true,
       },
-      uiLanguage: 'en',
+      // uiLanguage intentionally omitted (optional field)
     }
     await flushPromises()
 
     expect(i18n.locale).toBe('cs') // browser-detected locale preserved
+    void wrapper
+  })
+
+  it('reconciles to server uiLanguage on a fresh device with empty localStorage (cross-device sync)', async () => {
+    // Scenario the previous `hadCachedLocale` guard broke: the user has
+    // explicitly picked 'cs' on Device A. They open the app on Device B
+    // where localStorage is empty and browser language is en-US, so
+    // detectInitialLocale returns 'en' and vue-i18n bootstraps with 'en'.
+    // The server returns `uiLanguage: 'cs'` (a real explicit choice).
+    // The watcher MUST sync to 'cs' so the user sees their saved choice
+    // without re-picking on every device.
+    //
+    // Per spec §4: cross-device sync is the whole point of persisting
+    // `uiLanguage` server-side.
+    expect(localStorage.getItem('lovelacer.uiLocale')).toBeNull()
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    expect(i18n.locale).toBe('en') // browser-detected baseline (en-US default)
+
+    // Server returns the user's explicit choice from another device.
+    settings.serverState = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      uiLanguage: 'cs',
+    }
+    await flushPromises()
+
+    expect(i18n.locale).toBe('cs') // synced to user's saved choice
     void wrapper
   })
 })

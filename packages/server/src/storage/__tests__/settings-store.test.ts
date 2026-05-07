@@ -49,10 +49,14 @@ describe('SettingsStore (in-memory)', () => {
     expect(store.get()).toEqual(b)
   })
 
-  it('defaults uiLanguage to "en" for legacy P2-6/P2-7 rows that lack the field', () => {
+  it('leaves uiLanguage undefined for legacy P2-6/P2-7 rows that lack the field', () => {
     // Manually insert a JSON row without `uiLanguage`, simulating a row
-    // persisted before P2-9. The store's per-field default should fill
-    // it in on read rather than falling back to DEFAULT_SETTINGS.
+    // persisted before P2-9. `Settings.uiLanguage` is OPTIONAL by design:
+    // when absent, the SPA preserves whatever locale `detectInitialLocale()`
+    // picked. The store must therefore leave the field undefined rather
+    // than substituting a default — substituting would falsely signal
+    // "user has explicitly chosen this language" to the reconciliation
+    // watcher and override browser-detected locales on every load.
     const db = (store as unknown as { db: DatabaseType }).db
     db.prepare('INSERT OR REPLACE INTO settings (id, payload) VALUES (1, ?)').run(
       JSON.stringify({
@@ -70,7 +74,7 @@ describe('SettingsStore (in-memory)', () => {
       }),
     )
     const settings = store.get()
-    expect(settings.uiLanguage).toBe('en')
+    expect(settings.uiLanguage).toBeUndefined()
     // The other fields from the legacy payload are preserved verbatim.
     expect(settings.language).toBe('en')
   })

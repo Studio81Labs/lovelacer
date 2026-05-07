@@ -188,7 +188,13 @@ export interface Settings {
   language: SettingsLanguage
   cardPack: SettingsCardPack
   sections: SettingsSections
-  uiLanguage: UiLanguage
+  /**
+   * P2-9 — Optional. Absent when the user has never explicitly chosen a
+   * UI language. The SPA preserves whatever locale `detectInitialLocale`
+   * picked in that case. When set, it represents an explicit user choice
+   * and the reconciliation watcher syncs the active locale to it.
+   */
+  uiLanguage?: UiLanguage
 }
 
 /** Defaults preserve current behavior — mirror of @lovelacer/shared's value. */
@@ -204,7 +210,6 @@ export const DEFAULT_SETTINGS: Settings = {
     scenes: true,
     cameras: true,
   },
-  uiLanguage: 'en',
 }
 
 /**

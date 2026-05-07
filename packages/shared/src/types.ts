@@ -234,11 +234,14 @@ export interface Settings {
 
   /**
    * P2-9 — UI display language for the web interface. Orthogonal to
-   * `language` above (which controls room detection). Legacy rows
-   * persisted before P2-9 lack this field; the storage layer defaults
-   * it to `'en'` on read.
+   * `language` above (which controls room detection). OPTIONAL by
+   * design: when absent, the user has not explicitly chosen a UI
+   * language, and the SPA preserves whatever locale
+   * `detectInitialLocale()` picked (browser language → cached → 'en').
+   * When present, it represents an explicit user choice and the
+   * reconciliation watcher syncs the active locale to it.
    */
-  uiLanguage: UiLanguage
+  uiLanguage?: UiLanguage
 }
 
 /**
@@ -257,7 +260,6 @@ export const DEFAULT_SETTINGS: Settings = {
     scenes: true,
     cameras: true,
   },
-  uiLanguage: 'en',
 }
 
 /**

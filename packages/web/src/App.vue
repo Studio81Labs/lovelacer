@@ -34,44 +34,32 @@ const i18n = useI18nStore()
 const settingsOpen = ref(false)
 
 // P2-9 — post-load reconciliation watcher. When the settings store
-// resolves `loadFromServer()`, the server-saved `uiLanguage` becomes
-// the source of truth for cross-device sync (the local first paint may
-// have used a stale localStorage cache or the en-US browser default).
-// Mirror it into the active locale so opening the app on Device B with
-// an empty localStorage picks up the choice the user made on Device A.
+// resolves `loadFromServer()`, sync `settings.serverState.uiLanguage`
+// into the active i18n locale — but ONLY if the user has not explicitly
+// changed the locale during the load window (current === initialLocale).
 //
-// The setter on `useI18nStore.locale` mirrors to localStorage too, so
-// the next first paint will skip the round-trip.
+// `Settings.uiLanguage` is OPTIONAL on the wire: it's only set when the
+// user has explicitly picked a UI language via the Settings modal. On
+// fresh installs the field is undefined, so `next` is undefined and the
+// watcher skips — whatever locale `detectInitialLocale()` picked
+// (browser language → 'en' fallback) wins. When set, it represents a
+// real user choice from another device and gets synced (cross-device
+// sync via single device tap on Device A → Device B).
 //
-// Capture the locale that detectInitialLocale() picked. The
-// reconciliation watcher will only override this if the user has not
-// explicitly changed the locale during the loadFromServer() in-flight
-// window. Per spec §4: "if the user changes UI language before settings
-// load completes, the user's choice is preserved."
+// Per spec §4: "if the user changes UI language before settings load
+// completes, the user's choice is preserved." The `i18n.locale === initialLocale`
+// guard implements that contract — once the user clicks the picker
+// during the loadFromServer in-flight window, the watcher refuses to
+// overwrite their pick.
+//
+// The setter on `useI18nStore.locale` mirrors writes to localStorage
+// too, so the next first paint reads the synced value with no flash.
 const initialLocale = i18n.locale
-
-// Track whether localStorage had a cached locale at startup. If it did,
-// this device has prior preference state and the server's value is
-// meaningful for cross-device sync. If it didn't, the user is fresh on
-// this device and browser auto-detection picked the initial locale —
-// the server's default-or-stale value should NOT override that
-// browser-detected choice (otherwise: cs-CZ browser + empty
-// localStorage + server default 'en' would flash CS to EN).
-//
-// Per spec §4: cross-device sync wins when there's prior local context;
-// browser auto-detection wins on truly fresh installs.
-const hadCachedLocale = ((): boolean => {
-  try {
-    return localStorage.getItem('lovelacer.uiLocale') !== null
-  } catch {
-    return false
-  }
-})()
 
 watch(
   () => settings.serverState?.uiLanguage,
   (next) => {
-    if (next && next !== i18n.locale && i18n.locale === initialLocale && hadCachedLocale) {
+    if (next && next !== i18n.locale && i18n.locale === initialLocale) {
       i18n.locale = next
     }
   },

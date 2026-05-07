@@ -17,6 +17,16 @@ function onUiLanguageChange(event: Event): void {
   i18nStore.locale = lang
 }
 
+/**
+ * P2-9 — `Settings.uiLanguage` is OPTIONAL on the wire: when the user has
+ * never explicitly chosen a UI language, the field is undefined. The
+ * <select> needs a defined value or the option dropdown shows nothing
+ * selected. Fall back to the active i18n locale (which `detectInitialLocale`
+ * picked from browser language / cache) so the picker reflects what the
+ * user is actually seeing right now.
+ */
+const displayUiLanguage = computed<UiLanguage>(() => store.effective.uiLanguage ?? i18nStore.locale)
+
 const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [
   'welcome',
   'quickStats',
@@ -95,7 +105,7 @@ async function onSave(): Promise<void> {
             id="settings-ui-language"
             data-testid="settings-ui-language"
             class="mt-1 w-full rounded border border-stone-300 px-2 py-1.5"
-            :value="store.effective.uiLanguage"
+            :value="displayUiLanguage"
             @change="onUiLanguageChange"
           >
             <option value="en">{{ t('settings.uiLanguage.option.en') }}</option>

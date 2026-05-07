@@ -88,16 +88,6 @@ export class SettingsStore {
       return DEFAULT_SETTINGS
     }
 
-    // P2-9 — legacy rows persisted before `uiLanguage` was added lack the
-    // field. Fill it in with the default before shape validation so the
-    // pre-P2-9 row reads cleanly without falling back to DEFAULT_SETTINGS.
-    if (typeof parsed === 'object' && parsed !== null) {
-      const v = parsed as Record<string, unknown>
-      if (v.uiLanguage === undefined) {
-        v.uiLanguage = 'en'
-      }
-    }
-
     if (!isSettings(parsed)) {
       console.warn(
         '[SettingsStore] stored payload does not match Settings shape; falling back to defaults',
@@ -128,7 +118,11 @@ function isSettings(value: unknown): value is Settings {
   if (!isLanguage(v.language)) return false
   if (!isCardPack(v.cardPack)) return false
   if (!isSections(v.sections)) return false
-  if (!isUiLanguage(v.uiLanguage)) return false
+  // uiLanguage is optional: undefined means "user has not explicitly
+  // chosen a UI language yet" (legacy rows + fresh installs). Only
+  // reject the row if the field is present but holds an unsupported
+  // value.
+  if (v.uiLanguage !== undefined && !isUiLanguage(v.uiLanguage)) return false
   return true
 }
 

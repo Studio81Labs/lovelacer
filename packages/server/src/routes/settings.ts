@@ -27,7 +27,7 @@ const PutBodySchema = z.object({
     language: z.enum(SUPPORTED_LANGUAGES),
     cardPack: z.enum(SUPPORTED_CARD_PACKS),
     sections: SectionsSchema,
-    uiLanguage: z.enum(SUPPORTED_UI_LANGUAGES),
+    uiLanguage: z.enum(SUPPORTED_UI_LANGUAGES).optional(),
   }),
 })
 
@@ -58,7 +58,18 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (
       })
     }
     try {
-      const next: Settings = parsed.data.settings
+      // Zod's `.optional()` produces `T | undefined`, but our `Settings`
+      // type uses `?:` under `exactOptionalPropertyTypes: true`, which
+      // forbids the field from being present-with-value-undefined.
+      // Conditionally include `uiLanguage` only when the body actually
+      // carried a value so the persisted shape matches the type contract.
+      const data = parsed.data.settings
+      const next: Settings = {
+        language: data.language,
+        cardPack: data.cardPack,
+        sections: data.sections,
+        ...(data.uiLanguage !== undefined && { uiLanguage: data.uiLanguage }),
+      }
       opts.settings.save(next)
       return reply.code(200).send({ settings: opts.settings.get() })
     } catch (err) {

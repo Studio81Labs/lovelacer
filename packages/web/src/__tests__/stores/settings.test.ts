@@ -63,10 +63,16 @@ describe('useSettingsStore', () => {
     setActivePinia(createPinia())
     vi.mocked(getSettings).mockReset()
     vi.mocked(putSettings).mockReset()
+    // P2-9 — `useI18nStore.locale = X` mirrors X to localStorage. Clear
+    // it between tests so the optional-uiLanguage fallback path
+    // (`detectInitialLocale()`) doesn't read a value from a previous
+    // test and produce false-positive assertions.
+    localStorage.removeItem('lovelacer.uiLocale')
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+    localStorage.removeItem('lovelacer.uiLocale')
   })
 
   it('starts with phase=idle, serverState=null, dirtyState=null, effective=DEFAULT_SETTINGS', () => {
@@ -155,16 +161,24 @@ describe('useSettingsStore', () => {
     expect(i18n.locale).toBe('en')
   })
 
-  it('discardChanges reverts useI18nStore.locale to "en" when serverState is null (P2-9)', async () => {
+  it('discardChanges reverts useI18nStore.locale to detectInitialLocale when serverState is null (P2-9)', async () => {
     // Edge case: Cancel before loadFromServer ever resolved (serverState
-    // still null). Default to 'en' rather than leaving the abandoned
-    // choice active.
+    // still null). Falls back to `detectInitialLocale()` so the user
+    // lands on the locale they would have seen on first paint
+    // (browser-detected → 'en' fallback) rather than a hardcoded value
+    // that ignores their browser language.
     const { store, i18n } = withI18nContext(() => ({
       store: useSettingsStore(),
       i18n: useI18nStore(),
     }))
     store.setUiLanguage('cs')
     i18n.locale = 'cs'
+
+    // Clear the localStorage write from `i18n.locale = 'cs'` so the
+    // fallback path exercises the navigator-language branch, not the
+    // localStorage branch. jsdom's `navigator.language` defaults to
+    // 'en-US' so detectInitialLocale → 'en'.
+    localStorage.removeItem('lovelacer.uiLocale')
 
     store.discardChanges()
     expect(i18n.locale).toBe('en')

@@ -10,6 +10,7 @@ import type {
   UiLanguage,
 } from '../api/types.js'
 import { DEFAULT_SETTINGS } from '../api/types.js'
+import { detectInitialLocale } from '../i18n/locale-detect.js'
 import { useAnalyzeStore } from './analyze.js'
 import { useI18nStore } from './i18n.js'
 
@@ -45,12 +46,16 @@ export const useSettingsStore = defineStore('settings', () => {
   /** Returns a fresh deep-cloned copy of the effective settings. */
   function cloneEffective(): Settings {
     const e = effective.value
-    return {
+    const next: Settings = {
       language: e.language,
       cardPack: e.cardPack,
       sections: { ...e.sections },
-      uiLanguage: e.uiLanguage,
     }
+    // uiLanguage is optional; only carry it forward when explicitly set.
+    if (e.uiLanguage !== undefined) {
+      next.uiLanguage = e.uiLanguage
+    }
+    return next
   }
 
   function setLanguage(lang: SettingsLanguage): void {
@@ -91,8 +96,13 @@ export const useSettingsStore = defineStore('settings', () => {
     // the UI + localStorage — next reload would silently restore the
     // "discarded" choice. Resolve i18nStore at action-call time (Pinia's
     // recommended pattern for cross-store access) rather than module init.
+    //
+    // When the server has no explicit uiLanguage (fresh install / pre-P2-9
+    // legacy row), fall back to `detectInitialLocale()` so the user lands
+    // on whichever locale they would have seen on first paint rather than
+    // a hardcoded 'en'.
     const i18nStore = useI18nStore()
-    i18nStore.locale = serverState.value?.uiLanguage ?? 'en'
+    i18nStore.locale = serverState.value?.uiLanguage ?? detectInitialLocale()
   }
 
   async function loadFromServer(): Promise<void> {
