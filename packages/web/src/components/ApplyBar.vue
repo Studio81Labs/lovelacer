@@ -101,7 +101,7 @@ const showRetry = computed(
       </span>
       <button
         type="button"
-        class="rounded bg-forest-700 px-3 py-1 text-xs font-medium text-white hover:bg-forest-700"
+        class="rounded bg-forest-700 px-3 py-1 text-xs font-medium text-white hover:bg-forest-900"
         @click="startOver"
       >
         Done — start over

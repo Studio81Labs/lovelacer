@@ -28,7 +28,9 @@ function onSave() {
     aria-label="Pending overrides"
     class="flex flex-col gap-3 rounded-lg border px-5 py-3 text-sm"
     :class="
-      isError ? 'bg-danger-50 text-danger-700' : 'border-amber-200 bg-amber-50 text-amber-900'
+      isError
+        ? 'border-danger-700/30 bg-danger-50 text-danger-700'
+        : 'border-amber-200 bg-amber-50 text-amber-900'
     "
   >
     <div class="flex items-center justify-between gap-3">
