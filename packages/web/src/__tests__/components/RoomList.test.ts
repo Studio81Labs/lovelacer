@@ -64,7 +64,7 @@ describe('RoomList', () => {
     })
     const pill = wrapper.find('[data-testid="confidence-pill"]')
     expect(pill.classes()).toContain('bg-amber-100')
-    expect(pill.classes()).toContain('text-amber-800')
+    expect(pill.classes()).toContain('text-amber-700')
   })
 
   it('uses red pill for confidence < 0.5', () => {

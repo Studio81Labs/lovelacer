@@ -29,6 +29,12 @@ const settings = useSettingsStore()
 const onboarding = useOnboardingStore()
 const settingsOpen = ref(false)
 
+// Brand asset URL — ingress-relative via Vite's BASE_URL so the path
+// resolves under HA Supervisor's `/api/hassio_ingress/<token>/` mount
+// (an absolute `/brand/...` would resolve against the HA host root and
+// 404). Same pattern as the API client's document-relative endpoints.
+const markUrl = `${import.meta.env.BASE_URL}brand/lovelacer-mark.svg`
+
 // Local wizard-mount state, decoupled from onboarding.completedAt so
 // the wizard's DoneStep stays visible after apply success (which flips
 // completedAt to a number) until the user clicks Continue/Skip.
@@ -130,7 +136,7 @@ watch(
   <main v-if="showMainView" class="mx-auto max-w-3xl space-y-6 p-8">
     <header class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <img src="/brand/lovelacer-mark.svg" alt="" class="h-10 w-10" aria-hidden="true" />
+        <img :src="markUrl" alt="" class="h-10 w-10" aria-hidden="true" />
         <div>
           <h1 class="lovelacer-wordmark text-3xl leading-none">lovelace<i>r</i></h1>
           <p class="mt-1 text-sm text-stone-500">
@@ -163,7 +169,7 @@ watch(
         <span>{{ analyze.error.message }}</span>
         <button
           type="button"
-          class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-700"
+          class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
           @click="analyze.analyze()"
         >
           Retry

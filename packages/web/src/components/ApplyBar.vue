@@ -116,7 +116,7 @@ const showRetry = computed(
       <button
         v-if="showRetry"
         type="button"
-        class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-700"
+        class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
         @click="applyClicked"
       >
         Retry

@@ -55,7 +55,7 @@ function applyClicked(): void {
       <p>{{ analyze.error.message }}</p>
       <button
         type="button"
-        class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-700"
+        class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
         @click="analyze.analyze()"
       >
         Retry
@@ -91,7 +91,7 @@ function applyClicked(): void {
         <p>Apply failed: {{ apply.error.message }}</p>
         <button
           type="button"
-          class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-700"
+          class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
           @click="applyClicked"
         >
           Retry

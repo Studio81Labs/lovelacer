@@ -46,6 +46,7 @@
   /* ─── Semantic · Danger ─── */
   --color-danger-50: #fcebeb;
   --color-danger-700: #791f1f;
+  --color-danger-900: #3a0e0e;
 
   /* ─── Typography ─── */
   --font-display: 'Instrument Serif', 'Times New Roman', Georgia, serif;

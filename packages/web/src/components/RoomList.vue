@@ -17,7 +17,7 @@ defineProps<{
 
 function confidencePillClass(confidence: number): string {
   if (confidence >= 0.8) return 'bg-forest-50 text-forest-700'
-  if (confidence >= 0.5) return 'bg-amber-100 text-amber-800'
+  if (confidence >= 0.5) return 'bg-amber-100 text-amber-700'
   return 'bg-danger-50 text-danger-700'
 }
 

@@ -5,12 +5,15 @@ import type { SettingsLanguage } from '../../api/types.js'
 defineEmits<{ continue: []; skip: [] }>()
 
 const settings = useSettingsStore()
+
+// Ingress-relative — see App.vue's markUrl for the full rationale.
+const markUrl = `${import.meta.env.BASE_URL}brand/lovelacer-mark.svg`
 </script>
 
 <template>
   <div data-testid="welcome-step" class="rounded-lg bg-white p-8 shadow-sm">
     <header class="flex items-center gap-3">
-      <img src="/brand/lovelacer-mark.svg" alt="" class="h-10 w-10" aria-hidden="true" />
+      <img :src="markUrl" alt="" class="h-10 w-10" aria-hidden="true" />
       <div>
         <h1 class="lovelacer-wordmark text-3xl leading-none">lovelace<i>r</i></h1>
         <p class="mt-1 text-sm text-stone-500">

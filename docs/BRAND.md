@@ -79,7 +79,8 @@ For genuine errors and warnings — not for "ooh attention."
 | Token         | Hex       | Use                                         |
 | ------------- | --------- | ------------------------------------------- |
 | `danger-50`   | `#FCEBEB` | Error fill                                  |
-| `danger-700`  | `#791F1F` | Error text                                  |
+| `danger-700`  | `#791F1F` | Error text · destructive button base        |
+| `danger-900`  | `#3A0E0E` | Destructive button hover                    |
 | `warning-50`  | `#FFF4D9` | (Reuses amber-50 — no separate warning hue) |
 | `warning-700` | `#7A3D08` | (Reuses amber-700)                          |
 
