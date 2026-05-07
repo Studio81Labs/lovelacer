@@ -4,12 +4,13 @@ import { createTestingPinia } from '@pinia/testing'
 import MiscBucket from '../../components/MiscBucket.vue'
 import type { MiscEntity } from '../../api/types.js'
 import { useOverridesStore } from '../../stores/overrides.js'
+import { createTestI18n } from '../test-utils.js'
 
 function mountBucket(misc: MiscEntity[]) {
   return mount(MiscBucket, {
     props: { misc },
     global: {
-      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
   })
 }
@@ -239,7 +240,7 @@ describe('MiscBucket bulk select', () => {
         readOnly: true,
       },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     expect(wrapper.findAll('[data-testid="misc-row-checkbox"]')).toHaveLength(0)

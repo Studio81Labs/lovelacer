@@ -7,6 +7,7 @@ import { useOverridesStore } from '../stores/overrides.js'
 import { useInviteStore } from '../stores/invite.js'
 import { useOnboardingStore } from '../stores/onboarding.js'
 import type { PreviewOutput } from '../api/types.js'
+import { createTestI18n } from './test-utils.js'
 
 vi.mock('../api/client.js', () => ({
   postPreview: vi.fn(),
@@ -60,7 +61,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const analyze = useAnalyzeStore()
@@ -77,7 +78,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const analyze = useAnalyzeStore()
@@ -138,7 +139,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
@@ -168,7 +169,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
@@ -274,7 +275,7 @@ describe('App integration', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     // Allow getInvite + getOnboarding mocks to resolve so showMainView is true.
@@ -343,7 +344,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await wrapper.vm.$nextTick()
@@ -356,7 +357,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await Promise.resolve()
@@ -370,7 +371,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await Promise.resolve()
@@ -385,7 +386,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
 
@@ -400,7 +401,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await Promise.resolve()
@@ -418,7 +419,7 @@ describe('App invite gate', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await Promise.resolve()
@@ -452,7 +453,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
   it('initial render (both invite and onboarding loading): all three views hidden', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     // No call to loadStatus has resolved yet — accepted is null, completedAt undefined.
@@ -464,7 +465,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
   it('invite accepted, onboarding pending → wizard visible, main hidden', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()
@@ -479,7 +480,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
   it('invite accepted, onboarding completed → main visible, wizard hidden', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()
@@ -494,7 +495,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
   it('invite not accepted → InviteGate visible, neither wizard nor main', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()
@@ -524,7 +525,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     await flushPromises()
@@ -569,7 +570,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     })
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()
@@ -588,7 +589,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
   it('wizard stays mounted after onboarding.completedAt flips to a number (until close emit) — P2-7 Bug 2 regression', async () => {
     const wrapper = mount(App, {
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const invite = useInviteStore()

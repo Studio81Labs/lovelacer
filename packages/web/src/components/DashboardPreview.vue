@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
 import type { LovelaceConfig } from '../api/types.js'
 
+const { t } = useI18n()
 defineProps<{ config: LovelaceConfig }>()
 </script>
 
@@ -9,8 +11,7 @@ defineProps<{ config: LovelaceConfig }>()
   <section v-if="config.views.length > 0">
     <div class="mb-3 flex items-center justify-between">
       <h3 class="text-sm font-medium text-stone-700">
-        Will create {{ config.views.length }} dashboard
-        {{ config.views.length === 1 ? 'view' : 'views' }}
+        {{ t('dashboardPreview.willCreate', { count: config.views.length }, config.views.length) }}
       </h3>
       <!--
         Document-relative URL (no leading slash) so the link resolves
@@ -25,7 +26,7 @@ defineProps<{ config: LovelaceConfig }>()
         data-testid="export-yaml-link"
         class="rounded border border-stone-300 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50"
       >
-        Download YAML
+        {{ t('dashboardPreview.downloadYaml') }}
       </a>
     </div>
     <ul class="flex flex-wrap gap-2">

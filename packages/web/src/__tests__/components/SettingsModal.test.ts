@@ -1,15 +1,10 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
-import { createI18n } from 'vue-i18n'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SettingsModal from '../../components/SettingsModal.vue'
 import { useSettingsStore } from '../../stores/settings.js'
 import { DEFAULT_SETTINGS } from '../../api/types.js'
-import en from '../../locales/en.json'
-
-function createTestI18n() {
-  return createI18n({ legacy: false, locale: 'en', fallbackLocale: 'en', messages: { en } })
-}
+import { createTestI18n } from '../test-utils.js'
 
 vi.mock('../../api/client.js', () => ({
   getSettings: vi.fn(),

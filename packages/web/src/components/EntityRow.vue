@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useOverridesStore } from '../stores/overrides.js'
 import { ASSIGNABLE_ROOMS, roomIdToDisplay } from '../rooms.js'
 import type { EntityDiff } from '../api/types.js'
+
+const { t } = useI18n()
 
 interface Props {
   entityId: string
@@ -60,11 +63,11 @@ const rowClass = computed(() => {
 
 const diffTagText = computed<string | null>(() => {
   if (props.diff === undefined) return null
-  if (props.diff.kind === 'added') return 'New'
+  if (props.diff.kind === 'added') return t('entityRow.diffNew')
   if (props.diff.kind === 'moved') {
     const prev = props.diff.previousRoomId
-    const label = prev === null || prev === undefined ? 'Misc' : roomIdToDisplay(prev)
-    return `Moved from ${label}`
+    const label = prev === null || prev === undefined ? t('entityRow.misc') : roomIdToDisplay(prev)
+    return t('entityRow.diffMovedFrom', { room: label })
   }
   return null
 })
@@ -80,7 +83,7 @@ const diffTagClass = computed<string>(() => {
   <div :class="rowClass" data-testid="entity-row">
     <div class="flex min-w-0 flex-col">
       <span class="truncate font-mono text-xs text-stone-700">
-        {{ entityId }}<span v-if="isHidden"> (hidden)</span>
+        {{ entityId }}<span v-if="isHidden"> {{ t('entityRow.hiddenSuffix') }}</span>
       </span>
       <span class="flex items-center truncate text-xs text-stone-500">
         {{ friendlyName }}
@@ -97,13 +100,13 @@ const diffTagClass = computed<string>(() => {
     <div v-if="!readOnly" class="flex items-center gap-3">
       <select
         data-testid="room-select"
-        aria-label="Assign room"
+        :aria-label="t('entityRow.assignRoom')"
         class="rounded border border-stone-300 bg-white px-2 py-1 text-xs text-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
         :value="selectedRoom"
         :disabled="isSaving"
         @change="onRoomChange"
       >
-        <option value="">— let detector decide —</option>
+        <option value="">{{ t('entityRow.letDetectorDecide') }}</option>
         <option v-for="rid in ASSIGNABLE_ROOMS" :key="rid" :value="rid">
           {{ roomIdToDisplay(rid) }}
         </option>
@@ -118,7 +121,7 @@ const diffTagClass = computed<string>(() => {
           :disabled="isSaving"
           @change="onHideChange"
         />
-        Hide
+        {{ t('entityRow.hide') }}
       </label>
     </div>
   </div>

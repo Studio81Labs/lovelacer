@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
 import { roomIdToIcon } from '../icons.js'
 import EntityRow from './EntityRow.vue'
 import type { AnalyzedRoom, EntityDiff, RoomDiffSummary } from '../api/types.js'
+
+const { t } = useI18n()
 
 defineProps<{
   rooms: AnalyzedRoom[]
@@ -22,7 +25,7 @@ function confidencePillClass(confidence: number): string {
 }
 
 function confidenceLabel(confidence: number): string {
-  return `${Math.round(confidence * 100)}% avg confidence`
+  return t('roomList.avgConfidence', { percent: Math.round(confidence * 100) })
 }
 
 /**
@@ -47,8 +50,7 @@ function entityIdToFriendly(entityId: string): string {
     v-if="rooms.length === 0"
     class="rounded border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600"
   >
-    No rooms detected — check that your HA install has at least one area assigned to entities or
-    device names matching room patterns.
+    {{ t('roomList.empty') }}
   </div>
 
   <ul v-else class="divide-y divide-stone-100 rounded-lg border border-stone-200 bg-white">
@@ -63,19 +65,23 @@ function entityIdToFriendly(entityId: string): string {
           </div>
 
           <div class="flex items-center gap-3 text-xs text-stone-600">
-            <span>{{ room.entityCount }} entities</span>
+            <span>{{ t('roomList.entities', { count: room.entityCount }, room.entityCount) }}</span>
             <template v-if="(diffByRoom ?? {})[room.id]">
               <span
                 v-if="(diffByRoom ?? {})[room.id]!.added > 0"
                 data-testid="room-diff-added"
                 class="rounded bg-forest-50 px-2 py-0.5 text-xs font-medium text-forest-700"
-                >+{{ (diffByRoom ?? {})[room.id]!.added }} new</span
+                >{{ t('roomList.diffAdded', { count: (diffByRoom ?? {})[room.id]!.added }) }}</span
               >
               <span
                 v-if="(diffByRoom ?? {})[room.id]!.movedOut > 0"
                 data-testid="room-diff-moved-out"
                 class="rounded bg-stone-200 px-2 py-0.5 text-xs font-medium text-stone-700"
-                >↻ {{ (diffByRoom ?? {})[room.id]!.movedOut }} left</span
+                >{{
+                  t('roomList.diffMovedOut', {
+                    count: (diffByRoom ?? {})[room.id]!.movedOut,
+                  })
+                }}</span
               >
             </template>
             <span

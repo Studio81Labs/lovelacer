@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useOverridesStore } from '../stores/overrides.js'
 
+const { t } = useI18n()
 const overrides = useOverridesStore()
 
-const countLabel = computed(() => {
-  const n = overrides.dirtyCount
-  return `${n} pending change${n === 1 ? '' : 's'}`
-})
+const countLabel = computed(() =>
+  t('overridesBar.pendingChanges', { count: overrides.dirtyCount }, overrides.dirtyCount),
+)
 
 const isSaving = computed(() => overrides.phase === 'saving')
 const isError = computed(() => overrides.phase === 'error' && overrides.error !== null)
@@ -25,7 +26,7 @@ function onSave() {
   <section
     v-if="overrides.hasDirty"
     data-testid="overrides-bar"
-    aria-label="Pending overrides"
+    :aria-label="t('overridesBar.ariaLabel')"
     class="flex flex-col gap-3 rounded-lg border px-5 py-3 text-sm"
     :class="
       isError
@@ -35,7 +36,7 @@ function onSave() {
   >
     <div class="flex items-center justify-between gap-3">
       <span class="font-medium">
-        {{ isSaving ? 'Saving…' : countLabel }}
+        {{ isSaving ? t('overridesBar.saving') : countLabel }}
       </span>
 
       <div class="flex gap-2">
@@ -46,7 +47,7 @@ function onSave() {
           :disabled="isSaving"
           @click="onDiscard"
         >
-          Discard
+          {{ t('overridesBar.discard') }}
         </button>
         <button
           v-if="!isError"
@@ -56,7 +57,7 @@ function onSave() {
           :disabled="isSaving"
           @click="onSave"
         >
-          {{ isSaving ? 'Saving…' : 'Save & re-analyze' }}
+          {{ isSaving ? t('overridesBar.saving') : t('overridesBar.saveAndReanalyze') }}
         </button>
       </div>
     </div>
@@ -69,7 +70,7 @@ function onSave() {
         class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
         @click="onSave"
       >
-        Retry
+        {{ t('common.retry') }}
       </button>
     </div>
   </section>

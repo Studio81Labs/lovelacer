@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import RoomList from '../../components/RoomList.vue'
 import type { AnalyzedRoom } from '../../api/types.js'
+import { createTestI18n } from '../test-utils.js'
 
 function room(overrides: Partial<AnalyzedRoom> = {}): AnalyzedRoom {
   return {
@@ -26,7 +27,7 @@ describe('RoomList', () => {
     const wrapper = mount(RoomList, {
       props: { rooms },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const rows = wrapper.findAll('[data-testid="room-row"]')
@@ -37,7 +38,7 @@ describe('RoomList', () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [room({ entityCount: 22 })] },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     expect(wrapper.text()).toContain('22 entities')
@@ -47,7 +48,7 @@ describe('RoomList', () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [room({ averageConfidence: 0.92 })] },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const pill = wrapper.find('[data-testid="confidence-pill"]')
@@ -59,7 +60,7 @@ describe('RoomList', () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [room({ averageConfidence: 0.65 })] },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const pill = wrapper.find('[data-testid="confidence-pill"]')
@@ -71,7 +72,7 @@ describe('RoomList', () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [room({ averageConfidence: 0.3 })] },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     const pill = wrapper.find('[data-testid="confidence-pill"]')
@@ -83,7 +84,7 @@ describe('RoomList', () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [] },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     expect(wrapper.text()).toContain('No rooms detected')
@@ -104,7 +105,7 @@ describe('RoomList', () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [testRoom] },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
 
@@ -134,7 +135,7 @@ describe('RoomList diff badges', () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [baseRoom], diffByRoom: {} },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     expect(wrapper.find('[data-testid="room-diff-added"]').exists()).toBe(false)
@@ -148,7 +149,7 @@ describe('RoomList diff badges', () => {
         diffByRoom: { kitchen: { added: 3, movedIn: 1, movedOut: 0 } },
       },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     expect(wrapper.find('[data-testid="room-diff-added"]').text()).toContain('3')
@@ -161,7 +162,7 @@ describe('RoomList diff badges', () => {
         diffByRoom: { kitchen: { added: 0, movedIn: 0, movedOut: 2 } },
       },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     expect(wrapper.find('[data-testid="room-diff-moved-out"]').text()).toContain('2')
@@ -190,7 +191,7 @@ describe('RoomList diff badges', () => {
         readOnly: true,
       },
       global: {
-        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
     // Expand the room to render its EntityRow children.

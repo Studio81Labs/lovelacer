@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import HealthBar from './components/HealthBar.vue'
 import AnalyzeButton from './components/AnalyzeButton.vue'
 import RoomList from './components/RoomList.vue'
@@ -21,6 +22,7 @@ import { useSettingsStore } from './stores/settings.js'
 import { useOnboardingStore } from './stores/onboarding.js'
 import type { EntityDiff, RoomDiffSummary } from './api/types.js'
 
+const { t } = useI18n()
 const analyze = useAnalyzeStore()
 const overrides = useOverridesStore()
 const invite = useInviteStore()
@@ -140,14 +142,14 @@ watch(
         <div>
           <h1 class="lovelacer-wordmark text-3xl leading-none">lovelace<i>r</i></h1>
           <p class="mt-1 text-sm text-stone-500">
-            Home Assistant dashboards that organize themselves
+            {{ t('app.tagline') }}
           </p>
         </div>
       </div>
       <button
         type="button"
         data-testid="settings-button"
-        aria-label="Settings"
+        :aria-label="t('common.settings')"
         class="rounded p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
         @click="openSettings"
       >
@@ -172,7 +174,7 @@ watch(
           class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
           @click="analyze.analyze()"
         >
-          Retry
+          {{ t('common.retry') }}
         </button>
       </div>
     </section>

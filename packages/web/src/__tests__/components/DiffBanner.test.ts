@@ -2,9 +2,13 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import DiffBanner from '../../components/DiffBanner.vue'
 import type { DiffResult } from '../../api/types.js'
+import { createTestI18n } from '../test-utils.js'
 
 function mountBanner(diff: DiffResult | null) {
-  return mount(DiffBanner, { props: { diff } })
+  return mount(DiffBanner, {
+    props: { diff },
+    global: { plugins: [createTestI18n()] },
+  })
 }
 
 function makeZeroDiff(appliedAt: number): DiffResult {

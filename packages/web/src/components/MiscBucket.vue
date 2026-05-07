@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import EntityRow from './EntityRow.vue'
 import { useOverridesStore } from '../stores/overrides.js'
 import { ASSIGNABLE_ROOMS, roomIdToDisplay } from '../rooms.js'
 import type { MiscEntity } from '../api/types.js'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   misc: MiscEntity[]
@@ -73,7 +76,7 @@ watch(
 <template>
   <details v-if="misc.length > 0" class="rounded-lg border border-stone-200 bg-white">
     <summary class="cursor-pointer px-5 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50">
-      {{ misc.length }} entities not assigned to any room
+      {{ t('miscBucket.summary', { count: misc.length }, misc.length) }}
     </summary>
 
     <div
@@ -81,7 +84,9 @@ watch(
       data-testid="misc-bulk-bar"
       class="sticky top-0 z-10 flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs"
     >
-      <span class="font-medium text-amber-900">{{ selectedCount }} selected</span>
+      <span class="font-medium text-amber-900">{{
+        t('miscBucket.selected', { count: selectedCount })
+      }}</span>
       <button
         type="button"
         data-testid="misc-bulk-toggle-all"
@@ -89,7 +94,7 @@ watch(
         :disabled="isSaving"
         @click="toggleAll"
       >
-        {{ allSelected ? 'Select none' : 'Select all' }}
+        {{ allSelected ? t('miscBucket.selectNone') : t('miscBucket.selectAll') }}
       </button>
 
       <select
@@ -98,7 +103,7 @@ watch(
         :disabled="isSaving"
         class="rounded border border-stone-300 bg-white px-2 py-1 text-xs"
       >
-        <option value="">— pick room —</option>
+        <option value="">{{ t('miscBucket.pickRoom') }}</option>
         <option v-for="rid in ASSIGNABLE_ROOMS" :key="rid" :value="rid">
           {{ roomIdToDisplay(rid) }}
         </option>
@@ -110,7 +115,7 @@ watch(
         :disabled="bulkRoom === '' || isSaving"
         @click="applyAssign"
       >
-        Assign
+        {{ t('miscBucket.assign') }}
       </button>
       <button
         type="button"
@@ -119,7 +124,7 @@ watch(
         :disabled="isSaving"
         @click="applyHide"
       >
-        Hide
+        {{ t('miscBucket.hide') }}
       </button>
       <button
         type="button"
@@ -128,7 +133,7 @@ watch(
         :disabled="isSaving"
         @click="clearSelection"
       >
-        Clear
+        {{ t('miscBucket.clear') }}
       </button>
     </div>
 
@@ -140,7 +145,7 @@ watch(
           :checked="selected.has(entity.entityId)"
           :disabled="isSaving"
           data-testid="misc-row-checkbox"
-          :aria-label="`Select ${entity.entityId}`"
+          :aria-label="t('miscBucket.selectEntity', { entityId: entity.entityId })"
           class="h-4 w-4 rounded border-stone-300"
           @change="toggleOne(entity.entityId, ($event.target as HTMLInputElement).checked)"
         />

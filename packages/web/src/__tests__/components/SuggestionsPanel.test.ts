@@ -5,6 +5,7 @@ import SuggestionsPanel from '../../components/SuggestionsPanel.vue'
 import type { Suggestion } from '../../api/types.js'
 import { useOverridesStore } from '../../stores/overrides.js'
 import { useSuggestionsStore } from '../../stores/suggestions.js'
+import { createTestI18n } from '../test-utils.js'
 
 vi.mock('../../api/client.js', () => ({
   postDismissSuggestion: vi.fn().mockResolvedValue(undefined),
@@ -22,7 +23,7 @@ function mountPanel(suggestions: Suggestion[]) {
   return mount(SuggestionsPanel, {
     props: { suggestions },
     global: {
-      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn })],
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
   })
 }
