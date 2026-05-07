@@ -9,11 +9,16 @@ const settings = useSettingsStore()
 
 <template>
   <div data-testid="welcome-step" class="rounded-lg bg-white p-8 shadow-sm">
-    <h1 class="text-2xl font-semibold text-stone-900">Welcome to Lovelacer</h1>
-    <p class="mt-2 text-stone-600">
-      Lovelacer scans your Home Assistant entities and generates a Lovelace dashboard automatically.
-      Pick your detection language, then we'll show you a preview.
-    </p>
+    <header class="flex items-center gap-3">
+      <img src="/brand/lovelacer-mark.svg" alt="" class="h-10 w-10" aria-hidden="true" />
+      <div>
+        <h1 class="lovelacer-wordmark text-3xl leading-none">lovelace<i>r</i></h1>
+        <p class="mt-1 text-sm text-stone-500">
+          Home Assistant dashboards that organize themselves
+        </p>
+      </div>
+    </header>
+    <p class="mt-6 text-stone-600">Pick your detection language, then we'll show you a preview.</p>
 
     <label for="welcome-language" class="mt-6 block text-sm font-medium text-stone-700">
       Detection language

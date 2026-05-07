@@ -128,10 +128,15 @@ watch(
 
 <template>
   <main v-if="showMainView" class="mx-auto max-w-3xl space-y-6 p-8">
-    <header class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-semibold text-stone-900">Lovelacer</h1>
-        <p class="text-sm text-stone-600">Home Assistant dashboard generator · alpha</p>
+    <header class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <img src="/brand/lovelacer-mark.svg" alt="" class="h-10 w-10" aria-hidden="true" />
+        <div>
+          <h1 class="lovelacer-wordmark text-3xl leading-none">lovelace<i>r</i></h1>
+          <p class="mt-1 text-sm text-stone-500">
+            Home Assistant dashboards that organize themselves
+          </p>
+        </div>
       </div>
       <button
         type="button"
