@@ -20,10 +20,19 @@ vi.mock('../api/client.js', () => ({
   postInvite: vi.fn(),
   getOnboarding: vi.fn(),
   postOnboardingComplete: vi.fn(),
+  getSettings: vi.fn(),
+  putSettings: vi.fn(),
 }))
 
-const { postPreview, getOverrides, putOverrides, getInvite, postInvite, getOnboarding } =
-  await import('../api/client.js')
+const {
+  postPreview,
+  getOverrides,
+  putOverrides,
+  getInvite,
+  postInvite,
+  getOnboarding,
+  getSettings,
+} = await import('../api/client.js')
 
 const mockPreview: PreviewOutput = {
   rooms: [
@@ -45,6 +54,25 @@ const mockPreview: PreviewOutput = {
   suggestions: [],
 }
 
+// P2-9 — default Settings response for loadFromServer(). Tests that
+// don't care about uiLanguage reconciliation get a quiet pass-through;
+// the i18n reconciliation describe block overrides this where it
+// matters.
+const defaultSettings: Settings = {
+  language: 'auto',
+  cardPack: 'default',
+  sections: {
+    welcome: true,
+    quickStats: true,
+    people: true,
+    roomsByFloor: true,
+    activeRooms: true,
+    scenes: true,
+    cameras: true,
+  },
+  uiLanguage: 'en',
+}
+
 describe('App integration', () => {
   beforeEach(() => {
     vi.mocked(postPreview).mockReset()
@@ -52,10 +80,12 @@ describe('App integration', () => {
     vi.mocked(putOverrides).mockReset()
     vi.mocked(getInvite).mockReset()
     vi.mocked(getOnboarding).mockReset()
+    vi.mocked(getSettings).mockReset()
     // Default: most existing tests assume the gate is already accepted
     // and onboarding already completed so the main view is visible.
     vi.mocked(getInvite).mockResolvedValue({ accepted: true })
     vi.mocked(getOnboarding).mockResolvedValue({ completedAt: 1700000000 })
+    vi.mocked(getSettings).mockResolvedValue({ settings: defaultSettings })
   })
 
   it('triggers loadFromServer when analyze.phase transitions to ready', async () => {
@@ -339,6 +369,7 @@ describe('App integration', () => {
 describe('App invite gate', () => {
   beforeEach(() => {
     vi.mocked(getInvite).mockReset()
+    vi.mocked(getSettings).mockReset().mockResolvedValue({ settings: defaultSettings })
   })
 
   it('calls invite.loadStatus on mount', async () => {
@@ -450,6 +481,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     // installed `mockReturnValueOnce` queues that would leak in.
     vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
     vi.mocked(getOnboarding).mockReset().mockResolvedValue({ completedAt: 1700000000 })
+    vi.mocked(getSettings).mockReset().mockResolvedValue({ settings: defaultSettings })
   })
 
   it('initial render (both invite and onboarding loading): all three views hidden', async () => {
@@ -624,6 +656,7 @@ describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
   beforeEach(() => {
     vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
     vi.mocked(getOnboarding).mockReset().mockResolvedValue({ completedAt: 1700000000 })
+    vi.mocked(getSettings).mockReset().mockResolvedValue({ settings: defaultSettings })
   })
 
   it('reconciles useI18nStore.locale to settings.serverState.uiLanguage after server load', async () => {
@@ -660,6 +693,48 @@ describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
     await flushPromises()
 
     expect(i18n.locale).toBe('cs')
+  })
+
+  it('reconciliation watcher does NOT override an explicit user locale change during loadFromServer race', async () => {
+    // Spec §4: "if the user changes UI language before settings load
+    // completes, the user's choice is preserved." Race: app mounts
+    // (initialLocale = 'en') → user picks 'de' before server load
+    // resolves → server returns 'cs' → guard prevents override.
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    expect(i18n.locale).toBe('en') // initialLocale baseline
+
+    // User explicitly picks German before server load resolves.
+    i18n.locale = 'de'
+    await flushPromises()
+    expect(i18n.locale).toBe('de')
+
+    // Server load now resolves with 'cs' — the guard sees that the
+    // current locale ('de') no longer equals the captured initialLocale
+    // ('en'), so it must NOT override.
+    settings.serverState = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      uiLanguage: 'cs',
+    }
+    await flushPromises()
+
+    expect(i18n.locale).toBe('de') // user's explicit choice preserved
+    void wrapper
   })
 
   it('does not flip the locale when serverState.uiLanguage matches the active locale', async () => {

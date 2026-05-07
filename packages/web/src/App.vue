@@ -42,10 +42,18 @@ const settingsOpen = ref(false)
 //
 // The setter on `useI18nStore.locale` mirrors to localStorage too, so
 // the next first paint will skip the round-trip.
+//
+// Capture the locale that detectInitialLocale() picked. The
+// reconciliation watcher will only override this if the user has not
+// explicitly changed the locale during the loadFromServer() in-flight
+// window. Per spec §4: "if the user changes UI language before settings
+// load completes, the user's choice is preserved."
+const initialLocale = i18n.locale
+
 watch(
   () => settings.serverState?.uiLanguage,
   (next) => {
-    if (next && next !== i18n.locale) {
+    if (next && next !== i18n.locale && i18n.locale === initialLocale) {
       i18n.locale = next
     }
   },
@@ -126,6 +134,12 @@ const showMainView = computed(
 
 onMounted(() => {
   void invite.loadStatus()
+  // P2-9 — kick off settings load so the cross-device reconciliation
+  // watcher above has a serverState.uiLanguage to react to. Previously
+  // this fired only inside openSettings() (Settings modal open), so a
+  // fresh device with empty localStorage would never pick up the choice
+  // the user made on a different device until they opened Settings.
+  void settings.loadFromServer()
   // Onboarding status loads via the watch on `invite.accepted` below
   // (single source of truth) — firing it here would race the invite
   // load and 403 on a fresh install.

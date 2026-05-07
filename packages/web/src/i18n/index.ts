@@ -11,5 +11,6 @@ export const i18n = createI18n({
   legacy: false,
   locale: detectInitialLocale(),
   fallbackLocale: 'en',
+  flatJson: true,
   messages: { en, cs, de },
 })
