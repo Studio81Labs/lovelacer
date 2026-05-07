@@ -24,6 +24,7 @@
     "format": "prettier --write \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
     "typecheck": "pnpm -r typecheck && if find tests dev/scripts -name '*.ts' 2>/dev/null | grep -q .; then tsc -b tsconfig.tools.json; fi",
+    "check:brand": "bash scripts/check-brand-colors.sh",
     "clean": "pnpm -r exec rm -rf dist node_modules .turbo && rm -rf node_modules"
   },
   "devDependencies": {
