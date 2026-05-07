@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18nStore } from '../stores/i18n.js'
@@ -11,10 +11,31 @@ const store = useSettingsStore()
 const { t } = useI18n()
 const i18nStore = useI18nStore()
 
+/**
+ * P2-9 — capture the active locale at modal open time so we can restore
+ * it on Discard without reading localStorage. `useI18nStore.locale`'s
+ * setter mirrors every in-modal selection to localStorage for instant
+ * feedback; that means by the time the user clicks Discard,
+ * `detectInitialLocale()` would read back whichever locale they just
+ * picked. The modal owns this session boundary because only it knows
+ * what was active before the user started editing.
+ */
+const preEditLocale = ref(i18nStore.locale)
+
 function onUiLanguageChange(event: Event): void {
   const lang = (event.target as HTMLSelectElement).value as UiLanguage
   store.setUiLanguage(lang)
   i18nStore.locale = lang
+}
+
+function onDiscard(): void {
+  // Revert the active locale to the pre-edit snapshot, then clear the
+  // store's dirtyState. The store no longer reaches into i18n — that
+  // separation matters because the store doesn't have a clean session
+  // boundary, but the modal does (component setup runs once when the
+  // modal opens).
+  i18nStore.locale = preEditLocale.value
+  store.discardChanges()
 }
 
 /**
@@ -192,7 +213,7 @@ async function onSave(): Promise<void> {
           type="button"
           data-testid="settings-discard"
           class="rounded border border-stone-300 px-3 py-1.5 text-stone-700 hover:bg-stone-50"
-          @click="store.discardChanges"
+          @click="onDiscard"
         >
           {{ t('settings.discardChanges') }}
         </button>

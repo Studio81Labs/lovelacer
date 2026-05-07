@@ -10,9 +10,7 @@ import type {
   UiLanguage,
 } from '../api/types.js'
 import { DEFAULT_SETTINGS } from '../api/types.js'
-import { detectInitialLocale } from '../i18n/locale-detect.js'
 import { useAnalyzeStore } from './analyze.js'
-import { useI18nStore } from './i18n.js'
 
 type Phase = 'idle' | 'loading' | 'saving' | 'error'
 
@@ -83,26 +81,15 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   function discardChanges(): void {
+    // P2-9 — only clears the store's dirtyState. The active i18n locale
+    // is reverted by SettingsModal's onDiscard handler, which captures a
+    // pre-edit snapshot at component setup time. The store has no clean
+    // session boundary; the modal does, so locale ownership lives there.
     dirtyState.value = null
     if (phase.value === 'error') {
       phase.value = 'idle'
       error.value = null
     }
-    // P2-9 — revert the active UI locale to the server-side authoritative
-    // value. SettingsModal mirrors uiLanguage edits to `useI18nStore.locale`
-    // (and localStorage) on every change so the modal re-renders in the
-    // chosen language for instant feedback. Without this revert, clicking
-    // Cancel would clear `dirtyState` but leave the picked locale active in
-    // the UI + localStorage — next reload would silently restore the
-    // "discarded" choice. Resolve i18nStore at action-call time (Pinia's
-    // recommended pattern for cross-store access) rather than module init.
-    //
-    // When the server has no explicit uiLanguage (fresh install / pre-P2-9
-    // legacy row), fall back to `detectInitialLocale()` so the user lands
-    // on whichever locale they would have seen on first paint rather than
-    // a hardcoded 'en'.
-    const i18nStore = useI18nStore()
-    i18nStore.locale = serverState.value?.uiLanguage ?? detectInitialLocale()
   }
 
   async function loadFromServer(): Promise<void> {

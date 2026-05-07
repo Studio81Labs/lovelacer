@@ -3,6 +3,7 @@ import { createTestingPinia } from '@pinia/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SettingsModal from '../../components/SettingsModal.vue'
 import { useSettingsStore } from '../../stores/settings.js'
+import { useI18nStore } from '../../stores/i18n.js'
 import { DEFAULT_SETTINGS } from '../../api/types.js'
 import { createTestI18n } from '../test-utils.js'
 
@@ -173,5 +174,36 @@ describe('SettingsModal', () => {
     await select.setValue('de')
     const settings = useSettingsStore()
     expect(settings.effective.uiLanguage).toBe('de')
+  })
+
+  it('Discard reverts the active locale to the pre-edit snapshot (P2-9)', async () => {
+    // Codex P2 finding: on a fresh device with empty localStorage and
+    // no server-side uiLanguage, picking 'cs' then clicking Cancel
+    // used to leave the user on Czech because the store's discard
+    // fallback re-read localStorage (which had already been mirrored
+    // to the in-modal selection). Owning the revert in the modal —
+    // with a snapshot captured at setup time — fixes that.
+    const wrapper = mount(SettingsModal, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const i18n = useI18nStore()
+    // preEditLocale captured as 'en' at component setup time
+    // (createTestI18n defaults to 'en').
+    expect(i18n.locale).toBe('en')
+
+    // User picks German — onUiLanguageChange mirrors to the active
+    // locale and to localStorage for instant feedback.
+    const select = wrapper.find('[data-testid="settings-ui-language"]')
+    await select.setValue('de')
+    expect(i18n.locale).toBe('de')
+
+    // User clicks Discard.
+    await wrapper.find('[data-testid="settings-discard"]').trigger('click')
+
+    // Locale reverts to the pre-edit snapshot, NOT to whatever
+    // localStorage holds (which is now 'de').
+    expect(i18n.locale).toBe('en')
   })
 })
