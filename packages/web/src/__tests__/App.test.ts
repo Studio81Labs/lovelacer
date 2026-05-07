@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
+import { createI18n } from 'vue-i18n'
 import App from '../App.vue'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useOverridesStore } from '../stores/overrides.js'
@@ -10,6 +11,8 @@ import { useSettingsStore } from '../stores/settings.js'
 import { useI18nStore } from '../stores/i18n.js'
 import type { PreviewOutput, Settings } from '../api/types.js'
 import { createTestI18n } from './test-utils.js'
+import enLocale from '../locales/en.json'
+import csLocale from '../locales/cs.json'
 
 vi.mock('../api/client.js', () => ({
   postPreview: vi.fn(),
@@ -657,14 +660,19 @@ describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
     vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
     vi.mocked(getOnboarding).mockReset().mockResolvedValue({ completedAt: 1700000000 })
     vi.mocked(getSettings).mockReset().mockResolvedValue({ settings: defaultSettings })
+    // Default for cross-device sync tests: this device has prior
+    // preference state (the user-picked value cached on first paint),
+    // so the reconciliation watcher's `hadCachedLocale` guard is
+    // satisfied. The fresh-install regression test below clears this
+    // explicitly to exercise the opposite branch.
+    localStorage.setItem('lovelacer.uiLocale', 'en')
   })
 
   it('reconciles useI18nStore.locale to settings.serverState.uiLanguage after server load', async () => {
     // Spec §4: when loadFromServer() resolves and the server's uiLanguage
     // differs from the current locale (e.g. user opens Device B with
-    // empty localStorage and en-US browser; server has 'cs' from Device
-    // A), the server value wins and the UI updates without manual
-    // re-pick.
+    // a stale localStorage 'en' cache; server has 'cs' from Device A),
+    // the server value wins and the UI updates without manual re-pick.
     mount(App, {
       global: {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
@@ -767,5 +775,61 @@ describe('App.vue — i18n cross-device reconciliation (P2-9)', () => {
     await flushPromises()
 
     expect(i18n.locale).toBe('en')
+  })
+
+  it('reconciliation watcher does NOT override a browser-detected locale on a fresh install (regression: cursor[bot] medium)', async () => {
+    // Scenario: empty localStorage + cs-CZ browser language →
+    // detectInitialLocale returns 'cs' → vue-i18n bootstraps with
+    // locale 'cs' → App.vue's <script setup> captures
+    // initialLocale='cs', hadCachedLocale=false.
+    // loadFromServer resolves with the SERVER DEFAULT uiLanguage: 'en'
+    // (the field's default value, NOT a user choice). Without the
+    // hadCachedLocale guard, the race-guard's `current === initial`
+    // check would pass (both 'cs') and the watcher would override to
+    // 'en' — flashing CS to EN. The hadCachedLocale=false branch
+    // suppresses that.
+    localStorage.removeItem('lovelacer.uiLocale')
+
+    // Build a vue-i18n instance pre-set to 'cs' (mirrors what
+    // detectInitialLocale + createI18n do in production when the
+    // browser language is cs-CZ and localStorage is empty).
+    const csI18n = createI18n({
+      legacy: false,
+      locale: 'cs',
+      fallbackLocale: 'en',
+      flatJson: true,
+      messages: { en: enLocale, cs: csLocale },
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), csI18n],
+      },
+    })
+    const settings = useSettingsStore()
+    const i18n = useI18nStore()
+    expect(i18n.locale).toBe('cs') // browser-detected baseline
+
+    // Server load resolves with the default 'en' — the hadCachedLocale
+    // guard must block the override so the browser-detected 'cs' is
+    // preserved.
+    settings.serverState = {
+      language: 'auto',
+      cardPack: 'default',
+      sections: {
+        welcome: true,
+        quickStats: true,
+        people: true,
+        roomsByFloor: true,
+        activeRooms: true,
+        scenes: true,
+        cameras: true,
+      },
+      uiLanguage: 'en',
+    }
+    await flushPromises()
+
+    expect(i18n.locale).toBe('cs') // browser-detected locale preserved
+    void wrapper
   })
 })

@@ -50,10 +50,28 @@ const settingsOpen = ref(false)
 // load completes, the user's choice is preserved."
 const initialLocale = i18n.locale
 
+// Track whether localStorage had a cached locale at startup. If it did,
+// this device has prior preference state and the server's value is
+// meaningful for cross-device sync. If it didn't, the user is fresh on
+// this device and browser auto-detection picked the initial locale —
+// the server's default-or-stale value should NOT override that
+// browser-detected choice (otherwise: cs-CZ browser + empty
+// localStorage + server default 'en' would flash CS to EN).
+//
+// Per spec §4: cross-device sync wins when there's prior local context;
+// browser auto-detection wins on truly fresh installs.
+const hadCachedLocale = ((): boolean => {
+  try {
+    return localStorage.getItem('lovelacer.uiLocale') !== null
+  } catch {
+    return false
+  }
+})()
+
 watch(
   () => settings.serverState?.uiLanguage,
   (next) => {
-    if (next && next !== i18n.locale && i18n.locale === initialLocale) {
+    if (next && next !== i18n.locale && i18n.locale === initialLocale && hadCachedLocale) {
       i18n.locale = next
     }
   },

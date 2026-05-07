@@ -9,6 +9,7 @@ function makeI18n(locale: 'en' | 'cs' | 'de') {
     legacy: false,
     locale,
     fallbackLocale: 'en',
+    flatJson: true,
     messages: { en, cs, de },
   })
 }
