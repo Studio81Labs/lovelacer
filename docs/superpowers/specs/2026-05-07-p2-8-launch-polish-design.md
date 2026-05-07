@@ -138,19 +138,19 @@ Tailwind v4 generates `bg-stone-25` from a custom `--color-stone-25` token witho
 
 Sweep every file under `packages/web/src/` matching `**/*.vue`. Apply the table below verbatim:
 
-| Old class | New class | Notes |
-|---|---|---|
-| `bg-brand-600`, `bg-brand-700` | `bg-amber-500`, `bg-amber-700` | Legacy `brand-*` retired entirely. |
-| `text-brand-800` | `text-amber-700` | Brand has no `-800`. |
-| `bg-red-50`, `bg-red-100` | `bg-danger-50` | |
-| `bg-red-600`, `bg-red-700` | `bg-danger-700` | Brand has no `-600`. |
-| `text-red-700`, `text-red-800`, `text-red-900` | `text-danger-700` | |
-| `border-red-200`, `border-red-300` | `border-danger-700` (or remove) | Spec doesn't define danger border tokens; use 700 with low opacity if needed, or drop the explicit border. |
-| `bg-green-50`, `bg-green-100` | `bg-forest-50` | |
-| `bg-green-600`, `bg-green-700` | `bg-forest-700` | |
-| `text-green-600`, `text-green-800`, `text-green-900` | `text-forest-700` | |
-| `bg-blue-100` (diff "moved" badges) | `bg-stone-50` | Brand has no blue. Moved-in/moved-out is informational; neutral fits better than amber (warning) or forest (success). |
-| `text-blue-800` (diff "moved" badges) | `text-stone-700` | Same reasoning. |
+| Old class                                            | New class                       | Notes                                                                                                                 |
+| ---------------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `bg-brand-600`, `bg-brand-700`                       | `bg-amber-500`, `bg-amber-700`  | Legacy `brand-*` retired entirely.                                                                                    |
+| `text-brand-800`                                     | `text-amber-700`                | Brand has no `-800`.                                                                                                  |
+| `bg-red-50`, `bg-red-100`                            | `bg-danger-50`                  |                                                                                                                       |
+| `bg-red-600`, `bg-red-700`                           | `bg-danger-700`                 | Brand has no `-600`.                                                                                                  |
+| `text-red-700`, `text-red-800`, `text-red-900`       | `text-danger-700`               |                                                                                                                       |
+| `border-red-200`, `border-red-300`                   | `border-danger-700` (or remove) | Spec doesn't define danger border tokens; use 700 with low opacity if needed, or drop the explicit border.            |
+| `bg-green-50`, `bg-green-100`                        | `bg-forest-50`                  |                                                                                                                       |
+| `bg-green-600`, `bg-green-700`                       | `bg-forest-700`                 |                                                                                                                       |
+| `text-green-600`, `text-green-800`, `text-green-900` | `text-forest-700`               |                                                                                                                       |
+| `bg-blue-100` (diff "moved" badges)                  | `bg-stone-50`                   | Brand has no blue. Moved-in/moved-out is informational; neutral fits better than amber (warning) or forest (success). |
+| `text-blue-800` (diff "moved" badges)                | `text-stone-700`                | Same reasoning.                                                                                                       |
 
 **Hover variants migrate alongside their base** — `hover:bg-red-700` → `hover:bg-danger-700`, etc. Same for `focus:ring-*`.
 
@@ -220,12 +220,12 @@ packages/web/index.html
 
 `lovelacer-mark-dark.svg` uses the dark-bg colour ordering from BRAND.md:
 
-| Position | Light bg | Dark bg |
-|---|---|---|
-| Top | `#C76712` (amber-500) | `#F4B73D` (amber-300) |
-| Middle | `#F4B73D` | `#C76712` |
-| Bottom-left | `#C76712` | `#F4B73D` |
-| Bottom-mid | `#FBE2A6` (amber-100) | `#7A3D08` (amber-700) |
+| Position     | Light bg               | Dark bg               |
+| ------------ | ---------------------- | --------------------- |
+| Top          | `#C76712` (amber-500)  | `#F4B73D` (amber-300) |
+| Middle       | `#F4B73D`              | `#C76712`             |
+| Bottom-left  | `#C76712`              | `#F4B73D`             |
+| Bottom-mid   | `#FBE2A6` (amber-100)  | `#7A3D08` (amber-700) |
 | Bottom-right | `#7CA84A` (forest-300) | `#7CA84A` (unchanged) |
 
 The lockup-dark variant uses the dark-mark + the wordmark in `#FAF8F4` (stone-25) with the italic-`r` in `#F4B73D` (amber-300).
@@ -257,6 +257,7 @@ If `rsvg-convert` isn't available, the alternative is `npx @resvg/resvg-cli` —
 Replace the existing plain `<h1>Lovelacer</h1>` headers with the mark + wordmark lockup using the utility class.
 
 **App.vue** (current):
+
 ```vue
 <header class="flex items-center justify-between">
   <div>
@@ -268,6 +269,7 @@ Replace the existing plain `<h1>Lovelacer</h1>` headers with the mark + wordmark
 ```
 
 **App.vue** (new):
+
 ```vue
 <header class="flex items-center justify-between gap-3">
   <div class="flex items-center gap-3">
@@ -411,7 +413,7 @@ Refreshed to reflect what shipped. Same structure as today; refreshed content.
 ### `apps/addon/config.yaml` version bump
 
 ```yaml
-version: '0.2.0'  # was '0.0.1'
+version: '0.2.0' # was '0.0.1'
 ```
 
 ### `docs/screenshots/` directory
@@ -466,18 +468,18 @@ The capture step is performed manually by the implementer/operator; the plan pro
 
 ### Per-task
 
-| Task | Verification |
-|---|---|
-| Tokens / styles.css | `pnpm --filter web build` succeeds; output CSS contains `.bg-amber-500`, `.bg-forest-50`, `.bg-danger-50`, `.bg-stone-25`. No network requests to `fonts.googleapis.com` in DevTools Network panel during dev. |
-| Color sweep | `pnpm -r test`, `pnpm typecheck` (with `vue-tsc`), `pnpm exec eslint .`, `pnpm format:check`, `pnpm -r build` all pass. |
-| CI guardrail | `pnpm check:brand` exits 0 against the migrated code. Manually add `bg-red-50` to a `.vue` file, run `pnpm check:brand` → exits 1 with a usable error. Revert. |
-| Brand assets | Open generated PNGs in Preview / image viewer — render correctly. `apps/addon/icon.png` and `logo.png` are non-empty PNG files with the expected dimensions (`file` command shows `512 x 512` and `1024 x 400ish`). |
-| Favicon | Open `pnpm --filter web dev`, browser tab shows the L-mark favicon. |
-| App.vue lockup | Manual visual check: header shows the mark + wordmark with italic-`r` in amber. |
-| Screenshots / GIF | Files committed to `docs/screenshots/`, total size <5 MB. PNGs ≤500 KB each. demo.gif ≤2 MB. |
-| Repo README | GitHub renders correctly (push branch, open PR, scroll the README preview). All `<img>` tags resolve. |
-| Add-on README | Render preview via HA Supervisor: add the local repo branch as a custom add-on repo on a dev HA, confirm the listing card shows the new banner + the refreshed description. |
-| Config + CHANGELOG | `apps/addon/config.yaml` version is `0.2.0`. `CHANGELOG.md` has the new entry at the top. |
+| Task                | Verification                                                                                                                                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tokens / styles.css | `pnpm --filter web build` succeeds; output CSS contains `.bg-amber-500`, `.bg-forest-50`, `.bg-danger-50`, `.bg-stone-25`. No network requests to `fonts.googleapis.com` in DevTools Network panel during dev.      |
+| Color sweep         | `pnpm -r test`, `pnpm typecheck` (with `vue-tsc`), `pnpm exec eslint .`, `pnpm format:check`, `pnpm -r build` all pass.                                                                                             |
+| CI guardrail        | `pnpm check:brand` exits 0 against the migrated code. Manually add `bg-red-50` to a `.vue` file, run `pnpm check:brand` → exits 1 with a usable error. Revert.                                                      |
+| Brand assets        | Open generated PNGs in Preview / image viewer — render correctly. `apps/addon/icon.png` and `logo.png` are non-empty PNG files with the expected dimensions (`file` command shows `512 x 512` and `1024 x 400ish`). |
+| Favicon             | Open `pnpm --filter web dev`, browser tab shows the L-mark favicon.                                                                                                                                                 |
+| App.vue lockup      | Manual visual check: header shows the mark + wordmark with italic-`r` in amber.                                                                                                                                     |
+| Screenshots / GIF   | Files committed to `docs/screenshots/`, total size <5 MB. PNGs ≤500 KB each. demo.gif ≤2 MB.                                                                                                                        |
+| Repo README         | GitHub renders correctly (push branch, open PR, scroll the README preview). All `<img>` tags resolve.                                                                                                               |
+| Add-on README       | Render preview via HA Supervisor: add the local repo branch as a custom add-on repo on a dev HA, confirm the listing card shows the new banner + the refreshed description.                                         |
+| Config + CHANGELOG  | `apps/addon/config.yaml` version is `0.2.0`. `CHANGELOG.md` has the new entry at the top.                                                                                                                           |
 
 ### Cross-cutting
 
@@ -519,12 +521,12 @@ Old README/PR descriptions will reference paths that no longer exist (`apps/addo
 
 ### What changes
 
-| Area | Test files affected | Change |
-|---|---|---|
-| App.vue tagline | `packages/web/src/__tests__/App.test.ts` | Update assertion strings from "Home Assistant dashboard generator · alpha" → "Home Assistant dashboards that organize themselves" |
-| WelcomeStep header | `packages/web/src/__tests__/components/onboarding/WelcomeStep.test.ts` | Same tagline update if asserted |
-| Class assertions | Various component tests | Update any `expect(wrapper.classes()).toContain('bg-red-50')` to the migrated class |
-| Brand guardrail | New: `scripts/check-brand-colors.sh` | No unit test; smoke-tested manually in Task 3 verification |
+| Area               | Test files affected                                                    | Change                                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| App.vue tagline    | `packages/web/src/__tests__/App.test.ts`                               | Update assertion strings from "Home Assistant dashboard generator · alpha" → "Home Assistant dashboards that organize themselves" |
+| WelcomeStep header | `packages/web/src/__tests__/components/onboarding/WelcomeStep.test.ts` | Same tagline update if asserted                                                                                                   |
+| Class assertions   | Various component tests                                                | Update any `expect(wrapper.classes()).toContain('bg-red-50')` to the migrated class                                               |
+| Brand guardrail    | New: `scripts/check-brand-colors.sh`                                   | No unit test; smoke-tested manually in Task 3 verification                                                                        |
 
 ### What does not change
 

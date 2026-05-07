@@ -75,6 +75,7 @@
 ## Task 1: Brand tokens + self-hosted typography in `styles.css`
 
 **Files:**
+
 - Modify: `packages/web/src/styles.css` (full file replacement)
 - Modify: `packages/web/package.json` (add `@fontsource` deps)
 
@@ -97,9 +98,11 @@ Edit `packages/web/package.json` `dependencies` block. Add three packages keepin
 - [ ] **Step 2: Install the new deps**
 
 Run from repo root:
+
 ```bash
 pnpm install
 ```
+
 Expected: lockfile updates; three packages added; no errors.
 
 - [ ] **Step 3: Replace `packages/web/src/styles.css` entirely**
@@ -158,8 +161,7 @@ Overwrite the whole file:
 
   /* ─── Typography ─── */
   --font-display: 'Instrument Serif', 'Times New Roman', Georgia, serif;
-  --font-sans:
-    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
@@ -188,15 +190,19 @@ html {
 - [ ] **Step 4: Verify Tailwind picks up the new tokens**
 
 Run from repo root:
+
 ```bash
 pnpm --filter @lovelacer/web build
 ```
+
 Expected: build succeeds.
 
 Then verify the generated CSS contains the new color utility classes:
+
 ```bash
 grep -E "\.bg-(amber|forest|danger|stone)-(25|50|100|300|500|700|900)\b" packages/web/dist/assets/index-*.css | head
 ```
+
 Expected: at least these classes present in output: `.bg-amber-500`, `.bg-forest-50`, `.bg-danger-50`, `.bg-stone-25`, `.bg-stone-50`. (Tailwind v4 only emits classes that are referenced in source — running this BEFORE the color sweep means only currently-referenced classes appear. The sweep in Task 2 will add the rest.)
 
 If `bg-stone-25` does not appear in output: that's expected if no source references it yet. The `html { background: var(--color-stone-25); }` rule still works because it uses the CSS variable directly, not the utility class.
@@ -229,48 +235,52 @@ This task migrates every `.vue` file off the old palette. The migration table is
 
 **Migration table (apply consistently):**
 
-| Old class | New class |
-|---|---|
-| `bg-brand-600` | `bg-amber-500` |
-| `bg-brand-700` | `bg-amber-700` |
-| `hover:bg-brand-700` | `hover:bg-amber-700` |
-| `text-brand-800` | `text-amber-700` |
-| `focus:border-brand-500` | `focus:border-amber-500` |
-| `focus:ring-brand-500` | `focus:ring-amber-500` |
-| `bg-red-50` | `bg-danger-50` |
-| `bg-red-100` | `bg-danger-50` |
-| `bg-red-600` | `bg-danger-700` |
-| `hover:bg-red-700` | `hover:bg-danger-700` |
-| `text-red-700` | `text-danger-700` |
-| `text-red-800` | `text-danger-700` |
-| `text-red-900` | `text-danger-700` |
-| `border-red-200` | (drop the class — danger fill provides separation) |
-| `bg-green-50` | `bg-forest-50` |
-| `bg-green-100` | `bg-forest-50` |
-| `bg-green-600` | `bg-forest-700` |
-| `hover:bg-green-700` | `hover:bg-forest-700` |
-| `text-green-600` | `text-forest-700` |
-| `text-green-800` | `text-forest-700` |
-| `text-green-900` | `text-forest-700` |
-| `border-green-200` | (drop the class — forest fill provides separation) |
-| `bg-blue-100` | `bg-stone-50` |
-| `text-blue-800` | `text-stone-700` |
+| Old class                | New class                                          |
+| ------------------------ | -------------------------------------------------- |
+| `bg-brand-600`           | `bg-amber-500`                                     |
+| `bg-brand-700`           | `bg-amber-700`                                     |
+| `hover:bg-brand-700`     | `hover:bg-amber-700`                               |
+| `text-brand-800`         | `text-amber-700`                                   |
+| `focus:border-brand-500` | `focus:border-amber-500`                           |
+| `focus:ring-brand-500`   | `focus:ring-amber-500`                             |
+| `bg-red-50`              | `bg-danger-50`                                     |
+| `bg-red-100`             | `bg-danger-50`                                     |
+| `bg-red-600`             | `bg-danger-700`                                    |
+| `hover:bg-red-700`       | `hover:bg-danger-700`                              |
+| `text-red-700`           | `text-danger-700`                                  |
+| `text-red-800`           | `text-danger-700`                                  |
+| `text-red-900`           | `text-danger-700`                                  |
+| `border-red-200`         | (drop the class — danger fill provides separation) |
+| `bg-green-50`            | `bg-forest-50`                                     |
+| `bg-green-100`           | `bg-forest-50`                                     |
+| `bg-green-600`           | `bg-forest-700`                                    |
+| `hover:bg-green-700`     | `hover:bg-forest-700`                              |
+| `text-green-600`         | `text-forest-700`                                  |
+| `text-green-800`         | `text-forest-700`                                  |
+| `text-green-900`         | `text-forest-700`                                  |
+| `border-green-200`       | (drop the class — forest fill provides separation) |
+| `bg-blue-100`            | `bg-stone-50`                                      |
+| `text-blue-800`          | `text-stone-700`                                   |
 
 - [ ] **Step 1: Migrate `packages/web/src/components/AnalyzeButton.vue`**
 
 Apply two substitutions:
+
 - `bg-brand-600` → `bg-amber-500`
 - `hover:bg-brand-700` → `hover:bg-amber-700`
 
 Verify with grep:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/AnalyzeButton.vue
 ```
+
 Expected: no output.
 
 - [ ] **Step 2: Migrate `packages/web/src/components/ApplyBar.vue`**
 
 Substitutions for this file:
+
 - `bg-brand-600` → `bg-amber-500`
 - `hover:bg-brand-700` → `hover:bg-amber-700`
 - `bg-green-50` → `bg-forest-50`
@@ -285,9 +295,11 @@ Substitutions for this file:
 - `text-red-900` → `text-danger-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/ApplyBar.vue
 ```
+
 Expected: no output.
 
 - [ ] **Step 3: Migrate `packages/web/src/components/DiffBanner.vue`**
@@ -300,6 +312,7 @@ Expected: no output.
 - `text-blue-800` → `text-stone-700`
 
 Verify (no output expected):
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/DiffBanner.vue
 ```
@@ -312,6 +325,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/DiffBanner.vue
 - `text-blue-800` → `text-stone-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/EntityRow.vue
 ```
@@ -323,6 +337,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/EntityRow.vue
 - `text-brand-800` → `text-amber-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/HealthBar.vue
 ```
@@ -336,6 +351,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/HealthBar.vue
 - `text-red-700` → `text-danger-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/InviteGate.vue
 ```
@@ -346,6 +362,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/InviteGate.vue
 - `hover:bg-brand-700` → `hover:bg-amber-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/MiscBucket.vue
 ```
@@ -361,6 +378,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/MiscBucket.vue
 - `text-red-900` → `text-danger-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/OverridesBar.vue
 ```
@@ -375,6 +393,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/OverridesBar.vue
 - `text-blue-800` → `text-stone-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/RoomList.vue
 ```
@@ -388,6 +407,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/RoomList.vue
 - `text-red-900` → `text-danger-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/SettingsModal.vue
 ```
@@ -398,6 +418,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/SettingsModal.vue
 - `hover:bg-brand-700` → `hover:bg-amber-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/SuggestionsPanel.vue
 ```
@@ -410,6 +431,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/SuggestionsPanel.v
 - `text-green-600` → `text-forest-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/onboarding/DoneStep.vue
 ```
@@ -425,6 +447,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/onboarding/DoneSte
 - `text-red-900` → `text-danger-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/onboarding/PreviewStep.vue
 ```
@@ -434,6 +457,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/onboarding/Preview
 - `bg-brand-600` → `bg-amber-500`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/onboarding/ProgressDots.vue
 ```
@@ -444,6 +468,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/onboarding/Progres
 - `hover:bg-brand-700` → `hover:bg-amber-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/components/onboarding/WelcomeStep.vue
 ```
@@ -457,6 +482,7 @@ grep -E "(brand|red|blue|green)-" packages/web/src/components/onboarding/Welcome
 - `text-red-900` → `text-danger-700`
 
 Verify:
+
 ```bash
 grep -E "(brand|red|blue|green)-" packages/web/src/App.vue
 ```
@@ -466,33 +492,41 @@ grep -E "(brand|red|blue|green)-" packages/web/src/App.vue
 Find and replace at lines 54-55 and 78-79:
 
 Old:
+
 ```ts
-    expect(pill.classes()).toContain('bg-green-100')
-    expect(pill.classes()).toContain('text-green-800')
+expect(pill.classes()).toContain('bg-green-100')
+expect(pill.classes()).toContain('text-green-800')
 ```
+
 New:
+
 ```ts
-    expect(pill.classes()).toContain('bg-forest-50')
-    expect(pill.classes()).toContain('text-forest-700')
+expect(pill.classes()).toContain('bg-forest-50')
+expect(pill.classes()).toContain('text-forest-700')
 ```
 
 Old:
+
 ```ts
-    expect(pill.classes()).toContain('bg-red-100')
-    expect(pill.classes()).toContain('text-red-800')
+expect(pill.classes()).toContain('bg-red-100')
+expect(pill.classes()).toContain('text-red-800')
 ```
+
 New:
+
 ```ts
-    expect(pill.classes()).toContain('bg-danger-50')
-    expect(pill.classes()).toContain('text-danger-700')
+expect(pill.classes()).toContain('bg-danger-50')
+expect(pill.classes()).toContain('text-danger-700')
 ```
 
 - [ ] **Step 18: Verify nothing slipped through**
 
 Run from repo root:
+
 ```bash
 grep -rE "(bg|text|border|ring|focus|hover|from|to|via|fill|stroke):?-?(focus:|hover:)?(bg|text|border|ring|from|to|via|fill|stroke)?-(brand|red|blue|green|gray|yellow|orange|pink|purple|indigo|teal|cyan|sky|emerald|rose|fuchsia|violet|lime|neutral|slate|zinc)-" packages/web/src --include="*.vue" --include="*.ts"
 ```
+
 Expected: no output.
 
 - [ ] **Step 19: Run full test suite**
@@ -500,6 +534,7 @@ Expected: no output.
 ```bash
 pnpm -r test
 ```
+
 Expected: all packages green; previously 763 tests now 763 (no new tests added in this task).
 
 - [ ] **Step 20: Run typecheck + lint + format**
@@ -507,6 +542,7 @@ Expected: all packages green; previously 763 tests now 763 (no new tests added i
 ```bash
 pnpm typecheck && pnpm exec eslint . && pnpm format:check
 ```
+
 Expected: each command exits 0 with no output beyond progress lines.
 
 - [ ] **Step 21: Commit**
@@ -535,6 +571,7 @@ MSGEOF
 A grep-based pre-commit / CI check that fails when any future PR reintroduces an out-of-brand Tailwind color class. Without this, the brand sweep slowly drifts back to defaults as new components are added.
 
 **Files:**
+
 - Create: `scripts/check-brand-colors.sh`
 - Modify: `package.json` (add `check:brand` script)
 - Modify: `.github/workflows/ci.yml` (add a new step)
@@ -608,6 +645,7 @@ Edit the `scripts` block. Insert before `clean`:
 ```bash
 pnpm check:brand
 ```
+
 Expected output: `brand-color check passed.`
 
 - [ ] **Step 5: Verify the guardrail FAILS when a violation is introduced**
@@ -622,6 +660,7 @@ pnpm check:brand && echo "BUG: should have failed" || echo "GOOD: guardrail caug
 mv packages/web/src/App.vue.bak packages/web/src/App.vue
 pnpm check:brand
 ```
+
 Expected: First `pnpm check:brand` exits 1 and prints the offending line + ERROR message. After revert, exits 0 with `brand-color check passed.`
 
 - [ ] **Step 6: Wire into CI workflow**
@@ -629,27 +668,27 @@ Expected: First `pnpm check:brand` exits 1 and prints the offending line + ERROR
 Edit `.github/workflows/ci.yml`. Find the existing job that runs `pnpm typecheck` / `pnpm test` / `pnpm format:check` (named `Lint, typecheck, test, build`), and add a new step before the `Test` step:
 
 ```yaml
-      - name: Brand-colour check
-        run: pnpm check:brand
+- name: Brand-colour check
+  run: pnpm check:brand
 ```
 
 The full step block (locate by searching for `Format check` or similar):
 
 ```yaml
-      - name: Lint
-        run: pnpm lint
+- name: Lint
+  run: pnpm lint
 
-      - name: Brand-colour check
-        run: pnpm check:brand
+- name: Brand-colour check
+  run: pnpm check:brand
 
-      - name: Format check
-        run: pnpm format:check
+- name: Format check
+  run: pnpm format:check
 
-      - name: Typecheck
-        run: pnpm typecheck
+- name: Typecheck
+  run: pnpm typecheck
 
-      - name: Test
-        run: pnpm -r test
+- name: Test
+  run: pnpm -r test
 ```
 
 (The exact existing step ordering may differ — slot the new step adjacent to other static checks. CI is the same workflow that has been running on PRs through P2-1..P2-7.)
@@ -659,6 +698,7 @@ The full step block (locate by searching for `Format check` or similar):
 ```bash
 pnpm format:check .github/workflows/ci.yml
 ```
+
 Expected: passes.
 
 - [ ] **Step 8: Commit**
@@ -687,6 +727,7 @@ MSGEOF
 This task drops the designed SVGs into `packages/web/public/brand/`, authors the missing dark + favicon variants, generates PNG exports for the HA add-on Supervisor, replaces the legacy placeholder PNGs at `apps/addon/{icon,logo}.png`, and retires the `dev/scripts/generate-addon-assets.ts` placeholder generator (no longer needed now that we have designed assets).
 
 **Files:**
+
 - Create: `packages/web/public/brand/lovelacer-mark.svg`
 - Create: `packages/web/public/brand/lovelacer-lockup.svg`
 - Create: `packages/web/public/brand/lovelacer-mark-dark.svg`
@@ -706,6 +747,7 @@ This task drops the designed SVGs into `packages/web/public/brand/`, authors the
 which rsvg-convert || brew install librsvg
 rsvg-convert --version
 ```
+
 Expected: prints a version line. If `brew install` is unavailable (Linux dev), use `apt-get install librsvg2-bin` or fall back to `npx @resvg/resvg-cli` for the export commands later.
 
 - [ ] **Step 2: Create `packages/web/public/brand/lovelacer-mark.svg`**
@@ -748,13 +790,13 @@ Full lockup (mark + wordmark), light variant. The wordmark is provided as outlin
 
 Same geometry as the light mark, with tiles re-coloured per BRAND.md's dark-bg row of the §Logo table.
 
-| Position | Light fill | Dark fill |
-|---|---|---|
-| Top | `#C76712` | `#F4B73D` |
-| Middle | `#F4B73D` | `#C76712` |
-| Bottom-left | `#C76712` | `#F4B73D` |
-| Bottom-mid | `#FBE2A6` | `#7A3D08` |
-| Bottom-right | `#7CA84A` | `#7CA84A` |
+| Position     | Light fill | Dark fill |
+| ------------ | ---------- | --------- |
+| Top          | `#C76712`  | `#F4B73D` |
+| Middle       | `#F4B73D`  | `#C76712` |
+| Bottom-left  | `#C76712`  | `#F4B73D` |
+| Bottom-mid   | `#FBE2A6`  | `#7A3D08` |
+| Bottom-right | `#7CA84A`  | `#7CA84A` |
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -815,6 +857,7 @@ rsvg-convert -w 1024 -h 400 packages/web/public/brand/lovelacer-lockup.svg \
 ```
 
 If `rsvg-convert` is unavailable, fall back to:
+
 ```bash
 npx -y @resvg/resvg-cli -w 512 -h 512 packages/web/public/brand/lovelacer-mark.svg packages/web/public/brand/lovelacer-icon-512.png
 npx -y @resvg/resvg-cli -w 1024 -h 400 packages/web/public/brand/lovelacer-lockup.svg packages/web/public/brand/lovelacer-logo-1024.png
@@ -826,7 +869,9 @@ npx -y @resvg/resvg-cli -w 1024 -h 400 packages/web/public/brand/lovelacer-locku
 file packages/web/public/brand/lovelacer-icon-512.png
 file packages/web/public/brand/lovelacer-logo-1024.png
 ```
+
 Expected:
+
 ```
 packages/web/public/brand/lovelacer-icon-512.png:  PNG image data, 512 x 512, 8-bit/color RGBA, non-interlaced
 packages/web/public/brand/lovelacer-logo-1024.png: PNG image data, 1024 x 400, 8-bit/color RGBA, non-interlaced
@@ -843,6 +888,7 @@ cp packages/web/public/brand/lovelacer-logo-1024.png apps/addon/logo.png
 file apps/addon/icon.png
 file apps/addon/logo.png
 ```
+
 Expected: each shows `PNG image data, ...x..., 8-bit/color RGBA, non-interlaced`.
 
 - [ ] **Step 10: Delete the obsolete placeholder generator script + dependencies**
@@ -850,6 +896,7 @@ Expected: each shows `PNG image data, ...x..., 8-bit/color RGBA, non-interlaced`
 The repo previously used `dev/scripts/generate-addon-assets.ts` (driven by the `pngjs` package) to render placeholder add-on icons procedurally. Designed assets supersede it.
 
 Delete the script:
+
 ```bash
 rm dev/scripts/generate-addon-assets.ts
 ```
@@ -905,6 +952,7 @@ Remove `@types/pngjs` and `pngjs` from `devDependencies`. The cleaned-up `devDep
 ```bash
 pnpm install
 ```
+
 Expected: `pngjs` and `@types/pngjs` removed; `pnpm-lock.yaml` updates.
 
 - [ ] **Step 12: Run the full validation chain**
@@ -912,6 +960,7 @@ Expected: `pngjs` and `@types/pngjs` removed; `pnpm-lock.yaml` updates.
 ```bash
 pnpm typecheck && pnpm exec eslint . && pnpm format:check && pnpm -r test && pnpm -r build && pnpm check:brand
 ```
+
 Expected: all green. (No tests reference the deleted script; nothing else should break.)
 
 - [ ] **Step 13: Commit**
@@ -941,6 +990,7 @@ MSGEOF
 ## Task 5: Favicon wiring in `index.html`
 
 **Files:**
+
 - Modify: `packages/web/index.html`
 
 - [ ] **Step 1: Add the `<link rel="icon">` line**
@@ -971,6 +1021,7 @@ with:
 ```bash
 pnpm --filter @lovelacer/web dev
 ```
+
 Expected: dev server starts on http://localhost:5173. Open the page in a browser. Browser tab shows the 5-tile L favicon. Stop the dev server (Ctrl-C).
 
 - [ ] **Step 3: Verify build picks up the favicon**
@@ -979,6 +1030,7 @@ Expected: dev server starts on http://localhost:5173. Open the page in a browser
 pnpm --filter @lovelacer/web build
 ls packages/web/dist/brand/
 ```
+
 Expected: the 7 brand asset files are copied into `packages/web/dist/brand/` by Vite (it copies `public/` verbatim).
 
 - [ ] **Step 4: Commit**
@@ -998,6 +1050,7 @@ MSGEOF
 ## Task 6: App.vue + WelcomeStep header lockup
 
 **Files:**
+
 - Modify: `packages/web/src/App.vue` (lines 76-91 — header block)
 - Modify: `packages/web/src/components/onboarding/WelcomeStep.vue` (lines 12-16 — heading + description)
 - Modify: `packages/web/src/__tests__/components/onboarding/WelcomeStep.test.ts` (line 42 — heading assertion)
@@ -1007,14 +1060,14 @@ MSGEOF
 Find this line (around line 42):
 
 ```ts
-    expect(wrapper.text()).toContain('Welcome to Lovelacer')
+expect(wrapper.text()).toContain('Welcome to Lovelacer')
 ```
 
 Replace with:
 
 ```ts
-    expect(wrapper.text()).toContain('lovelacer')
-    expect(wrapper.text()).toContain('Home Assistant dashboards that organize themselves')
+expect(wrapper.text()).toContain('lovelacer')
+expect(wrapper.text()).toContain('Home Assistant dashboards that organize themselves')
 ```
 
 The wordmark renders the literal text "lovelacer" (with italic-r). The tagline assertion locks in that the lockup is wired correctly.
@@ -1024,6 +1077,7 @@ The wordmark renders the literal text "lovelacer" (with italic-r). The tagline a
 ```bash
 pnpm --filter @lovelacer/web exec vitest run src/__tests__/components/onboarding/WelcomeStep.test.ts -t "renders the welcome heading and language picker"
 ```
+
 Expected: test fails with `expected '...Welcome to Lovelacer...' to contain 'Home Assistant dashboards that organize themselves'`.
 
 - [ ] **Step 3: Replace the WelcomeStep heading block**
@@ -1064,6 +1118,7 @@ The first paragraph's "Lovelacer scans your Home Assistant entities..." sentence
 ```bash
 pnpm --filter @lovelacer/web exec vitest run src/__tests__/components/onboarding/WelcomeStep.test.ts
 ```
+
 Expected: all WelcomeStep tests pass.
 
 - [ ] **Step 5: Replace the App.vue header**
@@ -1071,7 +1126,7 @@ Expected: all WelcomeStep tests pass.
 Edit `packages/web/src/App.vue`. Replace the existing header block (currently around lines 76-91):
 
 ```vue
-    <header class="flex items-center justify-between">
+<header class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-semibold text-stone-900">Lovelacer</h1>
         <p class="text-sm text-stone-600">Home Assistant dashboard generator · alpha</p>
@@ -1091,7 +1146,7 @@ Edit `packages/web/src/App.vue`. Replace the existing header block (currently ar
 with:
 
 ```vue
-    <header class="flex items-center justify-between gap-3">
+<header class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <img src="/brand/lovelacer-mark.svg" alt="" class="h-10 w-10" aria-hidden="true" />
         <div>
@@ -1118,6 +1173,7 @@ with:
 ```bash
 pnpm -r test
 ```
+
 Expected: all green. The settings button still has its `data-testid="settings-button"` and `aria-label="Settings"`, so any test asserting button presence keeps working.
 
 - [ ] **Step 7: Run the full verification chain**
@@ -1125,6 +1181,7 @@ Expected: all green. The settings button still has its `data-testid="settings-bu
 ```bash
 pnpm typecheck && pnpm exec eslint . && pnpm format:check && pnpm check:brand && pnpm -r build
 ```
+
 Expected: all exit 0.
 
 - [ ] **Step 8: Commit**
@@ -1153,6 +1210,7 @@ MSGEOF
 This task is **performed manually by the operator** against a real (or fixture) HA instance. The plan provides the exact recipe; the implementer cannot automate the rendering without a running HA backend.
 
 **Files:**
+
 - Create: `docs/screenshots/README.md` (capture checklist)
 - Create: `docs/screenshots/01-hero.png` (binary)
 - Create: `docs/screenshots/02-onboarding-welcome.png` (binary)
@@ -1163,7 +1221,7 @@ This task is **performed manually by the operator** against a real (or fixture) 
 
 - [ ] **Step 1: Create the capture checklist `docs/screenshots/README.md`**
 
-```markdown
+````markdown
 # Lovelacer screenshots — capture checklist
 
 This directory holds the public-facing screenshots and demo GIF used in
@@ -1193,6 +1251,7 @@ real HA install if available.
 ## Per-shot recipe
 
 ### 01-hero.png — main view, ready state
+
 - Wizard already completed (onboarding row in SQLite has `completed_at`
   set), invite gate already accepted.
 - Click **Analyze**, wait for the preview to render.
@@ -1204,6 +1263,7 @@ real HA install if available.
 - Capture full page (Chrome DevTools → Capture full size screenshot).
 
 ### 02-onboarding-welcome.png — wizard welcome step
+
 - Fresh install state (clear the onboarding row in SQLite, or use a new
   data dir for the add-on).
 - Accept invite, then on the welcome step:
@@ -1213,6 +1273,7 @@ real HA install if available.
   div.
 
 ### 03-diff-view.png — re-analyze diff
+
 - After applying once, modify the HA fixture (move 2 entities to different
   rooms, add 2 new, remove 1).
 - Click **Analyze** again.
@@ -1220,14 +1281,16 @@ real HA install if available.
   one room expanded showing the per-row diff badges.
 
 ### 04-suggestions.png — suggestions panel close-up
+
 - Set up an HA fixture with a clearly suggestable pattern (e.g. 12
-  unscoped sensors all named "kitchen_*" but unassigned).
+  unscoped sensors all named "kitchen\_\*" but unassigned).
 - Click **Analyze**.
 - Capture the SuggestionsPanel close-up (element screenshot on
   `[data-testid="suggestions-panel"]` if present, or the visible region
   containing the panel).
 
 ### 05-applied-in-ha.png — generated dashboard inside HA
+
 - Click **Apply**, wait for success.
 - Open the HA Lovelace UI (sidebar → Lovelacer — Home).
 - Capture the HA browser tab (full page, including HA chrome — sidebar,
@@ -1245,6 +1308,7 @@ Recording script (≤45 seconds, ≤2 MB):
 6. Click "Open dashboard" → HA dashboard renders.
 
 Tooling:
+
 - macOS: QuickTime Player → File → New Screen Recording → record at
   1280×800. Trim to <=45s. Convert to GIF:
   ```bash
@@ -1252,6 +1316,8 @@ Tooling:
     -loop 0 demo.gif
   gifsicle -O3 --colors 128 demo.gif > demo-opt.gif && mv demo-opt.gif demo.gif
   ```
+````
+
 - Cross-platform: LICEcap (https://www.cockos.com/licecap/) records
   directly to .gif at 15fps at the chosen frame size.
 
@@ -1269,6 +1335,7 @@ oxipng -o 4 docs/screenshots/*.png
 ```
 
 Aim for ≤500 KB per PNG. demo.gif ≤2 MB.
+
 ```
 
 - [ ] **Step 2: Capture the 5 PNG screenshots**
@@ -1276,12 +1343,14 @@ Aim for ≤500 KB per PNG. demo.gif ≤2 MB.
 This is a **manual step**. Follow the recipe in `docs/screenshots/README.md`. Save the captured PNGs to:
 
 ```
+
 docs/screenshots/01-hero.png
 docs/screenshots/02-onboarding-welcome.png
 docs/screenshots/03-diff-view.png
 docs/screenshots/04-suggestions.png
 docs/screenshots/05-applied-in-ha.png
-```
+
+````
 
 - [ ] **Step 3: Optimise the PNGs**
 
@@ -1289,7 +1358,8 @@ docs/screenshots/05-applied-in-ha.png
 brew install oxipng  # or: cargo install oxipng
 oxipng -o 4 docs/screenshots/*.png
 ls -lh docs/screenshots/*.png
-```
+````
+
 Expected: each file ≤500 KB.
 
 - [ ] **Step 4: Record + convert the demo GIF**
@@ -1297,9 +1367,11 @@ Expected: each file ≤500 KB.
 This is a **manual step** following the recipe in `docs/screenshots/README.md`. Result file: `docs/screenshots/demo.gif`.
 
 Verify size:
+
 ```bash
 ls -lh docs/screenshots/demo.gif
 ```
+
 Expected: ≤2 MB.
 
 - [ ] **Step 5: Commit**
@@ -1324,6 +1396,7 @@ MSGEOF
 ## Task 8: Repo `README.md` rewrite
 
 **Files:**
+
 - Modify: `README.md` (full replacement)
 
 - [ ] **Step 1: Replace `README.md` entirely**
@@ -1365,12 +1438,12 @@ Lovelacer does that weekend's work in five minutes — read the entity registry,
 
 ## What you get
 
-| | |
-|:---:|:---:|
+|                                                                                                        |                                                                                                |
+| :----------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------: |
 | <img src="docs/screenshots/01-hero.png" alt="Main view: rooms detected, dashboard preview, apply bar"> | <img src="docs/screenshots/02-onboarding-welcome.png" alt="First-run wizard: pick a language"> |
-| The main view after Analyze. Confidence pills, dashboard preview, apply bar. | The first-run wizard. Pick a language; the rest auto-fills. |
-| <img src="docs/screenshots/03-diff-view.png" alt="Re-analyze diff banner with per-row badges"> | <img src="docs/screenshots/04-suggestions.png" alt="Suggestions panel"> |
-| Re-analyze after you add devices. The diff view shows what moved. | Smart suggestions. Accept improvements with one click. |
+|              The main view after Analyze. Confidence pills, dashboard preview, apply bar.              |                  The first-run wizard. Pick a language; the rest auto-fills.                   |
+|     <img src="docs/screenshots/03-diff-view.png" alt="Re-analyze diff banner with per-row badges">     |            <img src="docs/screenshots/04-suggestions.png" alt="Suggestions panel">             |
+|                   Re-analyze after you add devices. The diff view shows what moved.                    |                     Smart suggestions. Accept improvements with one click.                     |
 
 <p align="center">
   <img src="docs/screenshots/05-applied-in-ha.png" alt="The generated dashboard rendered inside HA's Lovelace UI" width="720">
@@ -1387,33 +1460,34 @@ Lovelacer does that weekend's work in five minutes — read the entity registry,
 Full instructions and troubleshooting: [`docs/ADDON_INSTALL.md`](./docs/ADDON_INSTALL.md).
 
 ## Architecture at a glance
-
 ```
+
 ┌─────────────────────────────────────────────────────────────┐
-│                    Home Assistant Core                       │
-│  ┌──────────┐  ┌────────────┐  ┌────────────────────────┐  │
-│  │ Entities │  │   Areas    │  │  Lovelace Storage API  │  │
-│  └────┬─────┘  └──────┬─────┘  └───────────┬────────────┘  │
+│ Home Assistant Core │
+│ ┌──────────┐ ┌────────────┐ ┌────────────────────────┐ │
+│ │ Entities │ │ Areas │ │ Lovelace Storage API │ │
+│ └────┬─────┘ └──────┬─────┘ └───────────┬────────────┘ │
 └───────┼───────────────┼────────────────────┼───────────────┘
-        │ WebSocket API │                    │ WS lovelace/*
-        ▼               ▼                    ▲
+│ WebSocket API │ │ WS lovelace/\*
+▼ ▼ ▲
 ┌─────────────────────────────────────────────────────────────┐
-│              Lovelacer Add-on (Docker)                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐   │
-│  │ HA Client    │→ │ Analyzer +   │→ │ Generator       │   │
-│  │ (ws + rest)  │  │ Heuristics   │  │ (storage/YAML)  │   │
-│  └──────────────┘  └──────┬───────┘  └────────┬────────┘   │
-│                           ▼                   ▼             │
-│                    ┌─────────────────────────────────┐      │
-│                    │  Fastify API + SQLite (state)   │      │
-│                    └────────────────┬────────────────┘      │
+│ Lovelacer Add-on (Docker) │
+│ ┌──────────────┐ ┌──────────────┐ ┌─────────────────┐ │
+│ │ HA Client │→ │ Analyzer + │→ │ Generator │ │
+│ │ (ws + rest) │ │ Heuristics │ │ (storage/YAML) │ │
+│ └──────────────┘ └──────┬───────┘ └────────┬────────┘ │
+│ ▼ ▼ │
+│ ┌─────────────────────────────────┐ │
+│ │ Fastify API + SQLite (state) │ │
+│ └────────────────┬────────────────┘ │
 └─────────────────────────────────────┼────────────────────────┘
-                                      │ HTTP
-                                      ▼
-                              ┌──────────────┐
-                              │ Vue 3 SPA    │
-                              │ (Preview UI) │
-                              └──────────────┘
+│ HTTP
+▼
+┌──────────────┐
+│ Vue 3 SPA │
+│ (Preview UI) │
+└──────────────┘
+
 ```
 
 Full breakdown in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
@@ -1477,6 +1551,7 @@ for f in packages/web/public/brand/lovelacer-lockup.svg \
   test -f "$f" && echo "OK: $f" || echo "MISSING: $f"
 done
 ```
+
 Expected: every line is `OK: ...`. If any are MISSING, the README will have broken links.
 
 - [ ] **Step 3: Run prettier on the README**
@@ -1484,6 +1559,7 @@ Expected: every line is `OK: ...`. If any are MISSING, the README will have brok
 ```bash
 pnpm exec prettier --write README.md
 ```
+
 Expected: file reformatted; idempotent on second run.
 
 - [ ] **Step 4: Verify format check**
@@ -1491,6 +1567,7 @@ Expected: file reformatted; idempotent on second run.
 ```bash
 pnpm format:check
 ```
+
 Expected: passes.
 
 - [ ] **Step 5: Commit**
@@ -1515,6 +1592,7 @@ MSGEOF
 ## Task 9: Add-on README + CHANGELOG + version bump
 
 **Files:**
+
 - Modify: `apps/addon/README.md`
 - Modify: `apps/addon/CHANGELOG.md`
 - Modify: `apps/addon/config.yaml` (version field)
@@ -1606,11 +1684,13 @@ Overwrite with:
 Edit `apps/addon/config.yaml` line 2:
 
 Old:
+
 ```yaml
 version: '0.0.1'
 ```
 
 New:
+
 ```yaml
 version: '0.2.0'
 ```
@@ -1621,6 +1701,7 @@ version: '0.2.0'
 pnpm exec prettier --write apps/addon/README.md apps/addon/CHANGELOG.md apps/addon/config.yaml
 pnpm format:check
 ```
+
 Expected: format-check passes.
 
 - [ ] **Step 5: Commit**
@@ -1708,6 +1789,7 @@ If no dev HA is available, this step is deferred until release ops re-render the
 ```bash
 pnpm typecheck && pnpm exec eslint . && pnpm format:check && pnpm check:brand && pnpm -r test && pnpm -r build
 ```
+
 Expected: every command exits 0.
 
 - [ ] **Step 7: No commit unless something needed fixing**
@@ -1748,23 +1830,23 @@ Then push the branch + open the PR. Bugbot may flag findings — handle per the 
 
 ## Spec coverage check
 
-| Spec section | Plan task |
-|---|---|
-| §1 Scope (in-scope items) | Tasks 1-10 cover every listed item |
-| §1 Scope (out-of-scope) | Plan does not include hassio-addons submission, automated SVG→PNG script, project rename, dark-mode UI |
-| §2 Brand tokens | Task 1 |
-| §3 Color migration table | Task 2 (per-file steps + final verification) |
-| §4 CI guardrail | Task 3 |
-| §5 File layout | Task 4 |
-| §5 Dark variants | Task 4 (steps 4-5) |
-| §5 Favicon optimisation | Task 4 (step 6) |
-| §5 PNG generation | Task 4 (steps 7-9) |
-| §5 App.vue + WelcomeStep lockup | Task 6 |
-| §6 Repo README | Task 8 |
-| §6 Add-on README + CHANGELOG | Task 9 |
-| §6 Version bump | Task 9 (step 3) |
-| §6 Screenshot directory | Task 7 |
-| §7 Build sequence (10 tasks) | Tasks 1-10 in same order |
-| §8 Verification | Each task's verify steps + Task 10 (visual pass) + final all-clear |
+| Spec section                                   | Plan task                                                                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| §1 Scope (in-scope items)                      | Tasks 1-10 cover every listed item                                                                       |
+| §1 Scope (out-of-scope)                        | Plan does not include hassio-addons submission, automated SVG→PNG script, project rename, dark-mode UI   |
+| §2 Brand tokens                                | Task 1                                                                                                   |
+| §3 Color migration table                       | Task 2 (per-file steps + final verification)                                                             |
+| §4 CI guardrail                                | Task 3                                                                                                   |
+| §5 File layout                                 | Task 4                                                                                                   |
+| §5 Dark variants                               | Task 4 (steps 4-5)                                                                                       |
+| §5 Favicon optimisation                        | Task 4 (step 6)                                                                                          |
+| §5 PNG generation                              | Task 4 (steps 7-9)                                                                                       |
+| §5 App.vue + WelcomeStep lockup                | Task 6                                                                                                   |
+| §6 Repo README                                 | Task 8                                                                                                   |
+| §6 Add-on README + CHANGELOG                   | Task 9                                                                                                   |
+| §6 Version bump                                | Task 9 (step 3)                                                                                          |
+| §6 Screenshot directory                        | Task 7                                                                                                   |
+| §7 Build sequence (10 tasks)                   | Tasks 1-10 in same order                                                                                 |
+| §8 Verification                                | Each task's verify steps + Task 10 (visual pass) + final all-clear                                       |
 | §9 Risks (stone-25, GIF size, border-red drop) | Addressed in Task 1 step 4 (stone-25 verify), Task 7 GIF fallback, Task 2 migration table (border drops) |
-| §10 Tests fallout | Task 2 step 17 (RoomList class assertions) + Task 6 step 1 (WelcomeStep heading assertion) |
+| §10 Tests fallout                              | Task 2 step 17 (RoomList class assertions) + Task 6 step 1 (WelcomeStep heading assertion)               |
