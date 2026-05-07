@@ -1,3 +1,16 @@
+## 0.3.0 — 2026-05-07
+
+### Phase 2 — final ticket
+
+- Multi-language UI: the SPA now ships in English, Czech, and German.
+  Switch via Settings → Display language. Czech is fully translated
+  and reviewed; German is AI-drafted alpha-quality — translation PRs
+  welcome at https://github.com/Studio81Labs/lovelacer.
+- UI display language is independent of room-detection language.
+  Both choices live in Settings.
+- Browser language auto-detection on first run (cs-CZ → Czech,
+  de-AT → German, anything else → English fallback).
+
 ## 0.2.0 — 2026-05-07
 
 ### Phase 2 (Polish & Release)
