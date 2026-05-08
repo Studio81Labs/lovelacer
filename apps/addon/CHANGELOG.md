@@ -1,3 +1,23 @@
+## 0.4.5
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+No add-on behavior changes. Fixes a Node startup failure surfaced
+once the shell shebang issues from 0.4.4 were out of the way:
+
+```
+fatal startup error: Error loading shared library
+.../better-sqlite3/build/Release/better_sqlite3.node:
+Permission denied (ERR_DLOPEN_FAILED)
+```
+
+`dlopen` of a native `.node` module needs AppArmor's `m` permission
+(mmap with `PROT_EXEC`) on the file in addition to `r`. Our profile
+had `/app/** r,` — fine for reading JS source but not for loading
+shared libraries. Promote it to `/app/** rm,` so Node can dlopen the
+native sqlite binding (and any other native deps that land in
+node_modules in the future). Same QA scope as 0.4.0–0.4.4.
+
 ## 0.4.4
 
 ### Phase 2 — pre-release for local QA (re-spin)

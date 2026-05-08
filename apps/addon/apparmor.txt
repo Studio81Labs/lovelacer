@@ -23,7 +23,11 @@ profile lovelacer flags=(attach_disconnected,mediate_deleted) {
   /usr/bin/jq ix,
 
   /run.sh r,
-  /app/** r,
+  # `m` (mmap with PROT_EXEC) is required for Node's dlopen of native
+  # `.node` modules such as better-sqlite3 — `r` alone fails with
+  # ERR_DLOPEN_FAILED ("Permission denied"). The whole tree under /app
+  # is our own application code, so granting mmap-execute is fine.
+  /app/** rm,
   /data/** rw,
   /tmp/** rwk,
   /proc/sys/kernel/random/uuid r,
