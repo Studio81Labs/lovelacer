@@ -1,3 +1,12 @@
+## 0.4.0 — 2026-05-08
+
+### Phase 2 — pre-release for local QA
+
+No new features. Version bump to cut a pre-release build for end-to-end
+smoke testing before the public 1.0 launch on r/homeassistant. Tracks the
+smoke-test checklist in `docs/RELEASE_CHECKLIST.md`. Promote to 1.0.0 once
+the checklist passes on the dev HA stack and on a real HA install.
+
 ## 0.3.0 — 2026-05-07
 
 ### Phase 2 — final ticket
