@@ -83,9 +83,9 @@ jobs:
       - name: Resolve build metadata
         id: meta
         env:
-          EVENT_NAME: ${{ github.event_name }}
           INPUT_VERSION: ${{ inputs.version }}
           INPUT_ADDITIONAL_TAGS: ${{ inputs.additional_tags }}
+          EVENT_NAME: ${{ github.event_name }}
           PR_NUMBER: ${{ github.event.number }}
         run: |
           # tag_args is forwarded into the HA builder action's `args` block
@@ -93,7 +93,12 @@ jobs:
           # preserved through the substitution (folding only applies to the
           # YAML source itself, not interpolated values), so we must emit
           # a single space-separated string here.
-          if [[ "$EVENT_NAME" == "workflow_call" ]]; then
+          #
+          # Reusable-workflow caveat: github.event_name in a workflow called
+          # via `uses:` is the caller's triggering event, NOT "workflow_call"
+          # — so we discriminate on `inputs.version` (required for
+          # workflow_call, empty on push/pull_request) instead.
+          if [[ -n "$INPUT_VERSION" ]]; then
             echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
             tag_args=""
             while IFS= read -r tag; do

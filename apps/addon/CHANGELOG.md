@@ -1,3 +1,14 @@
+## 0.4.1 — 2026-05-08
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+No add-on behavior changes. Fixes a release-pipeline bug that caused
+`v0.4.0` to publish without a `0.4.0` container tag on GHCR — HA
+Supervisor saw `403 denied` because the manifest didn't exist. The
+reusable build workflow now discriminates on `inputs.version` instead
+of `github.event_name`, since the latter propagates the caller's
+trigger and never equals `workflow_call`. Same QA scope as 0.4.0.
+
 ## 0.4.0 — 2026-05-08
 
 ### Phase 2 — pre-release for local QA
