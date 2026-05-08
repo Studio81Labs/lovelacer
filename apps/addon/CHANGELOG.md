@@ -1,3 +1,31 @@
+## 0.4.6
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+No add-on behavior changes. Fixes a native-module load failure
+surfaced once AppArmor stopped blocking dlopen in 0.4.5:
+
+```
+fatal startup error: Error relocating .../better_sqlite3.node:
+unsupported relocation type 7 (ERR_DLOPEN_FAILED)
+```
+
+CI runs `pnpm install` on `ubuntu-latest` (glibc-x64) and ships those
+prebuilt native binaries to the image via `staged/`. They never worked
+— they're built for the wrong libc (Alpine is musl, not glibc) and the
+wrong arch (CI x64 prebuilds on aarch64/armv7 hosts). The musl dynamic
+linker rejected them with an obvious relocation error.
+
+Fix: rebuild native modules inside the container during the Docker
+build, where the toolchain runs under the target arch and libc. The
+new Dockerfile step installs build tools (`python3 make g++ npm`) and
+pnpm as a virtual package, runs `pnpm rebuild` to refresh native
+bindings (downloading matching musl/arch prebuilds when available,
+compiling from source when not), then removes the build chain in the
+same RUN layer to keep the final image lean.
+
+Same QA scope as 0.4.0–0.4.5.
+
 ## 0.4.5
 
 ### Phase 2 — pre-release for local QA (re-spin)

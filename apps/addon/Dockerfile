@@ -24,6 +24,29 @@ COPY staged/ ./
 # run.sh.
 COPY web-dist/ /app/web-dist/
 
+# Native modules in staged/node_modules/ were pre-built on
+# ubuntu-x64-glibc by CI; they fail at runtime on Alpine (musl) and on
+# non-x64 archs (aarch64/armv7) with ERR_DLOPEN_FAILED or "unsupported
+# relocation type". Rebuild them against the container's actual
+# arch+libc.
+#
+# We use `npm rebuild` (not `pnpm rebuild`): pnpm deploy embeds the CI
+# runner's store path into the bundle's metadata, and a fresh pnpm in
+# the container then refuses with `ERR_PNPM_UNEXPECTED_STORE`.
+#
+# Scope to specific native packages — `npm rebuild` with no args runs
+# prepare/install scripts on every dep in node_modules, including
+# transitive packages whose `prepare` references devDeps that aren't
+# in this prod-only deploy (e.g. balanced-match's prepare calls tshy).
+# `better-sqlite3` is currently the only native module we ship; add
+# others here if and when they're introduced.
+#
+# Build toolchain is installed as a virtual package and removed in the
+# same RUN layer so the final image stays lean.
+RUN apk add --no-cache --virtual .build-deps python3 make g++ npm && \
+    cd /app && npm rebuild better-sqlite3 && \
+    apk del .build-deps
+
 # Entrypoint
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
