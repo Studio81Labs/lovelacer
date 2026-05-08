@@ -1,3 +1,37 @@
+## 0.4.8
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+Fixes startup `SqliteError: database is locked` (`SQLITE_BUSY`)
+surfaced once better-sqlite3 actually runs (0.4.6) on a supported
+arch (0.4.7).
+
+Each storage class shares the single `lovelacer.sqlite` file (with
+its own table) and runs `PRAGMA journal_mode = WAL` plus
+`CREATE TABLE IF NOT EXISTS` in its constructor. Stale
+`.db-wal`/`.db-shm` lock state from a crashed previous container can
+make any of those lock-acquiring init operations transiently
+SQLITE_BUSY — and SQLite's deadlock detection on the WAL exclusive
+upgrade short-circuits the busy timeout, so a longer per-DB timeout
+wouldn't help.
+
+Two-layer fix:
+
+1. **WAL pragma is best-effort** in all six stores (`override`,
+   `dismissed-suggestion`, `invite`, `applied-snapshot`, `settings`,
+   `onboarding`). WAL is a perf optimization for concurrent
+   reader/writer throughput; the default rollback-journal mode is
+   correct for our single-writer workload. On SQLITE_BUSY we stay in
+   the default mode and continue rather than failing startup. Real
+   errors still propagate.
+2. **Retry the whole store-construction path** in `main.ts` with
+   exponential backoff (500 ms → 1 s → 2 s → 4 s, 5 attempts ≈ 7.5 s
+   total). If `CREATE TABLE` or any other init op hits SQLITE_BUSY
+   from genuinely-held locks, we ride out short-lived contention
+   before failing.
+
+Same QA scope as 0.4.0–0.4.7.
+
 ## 0.4.7
 
 ### Phase 2 — pre-release for local QA (re-spin)

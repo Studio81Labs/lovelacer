@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
+import { setTimeout as sleep } from 'node:timers/promises'
 import { HaClient } from '@lovelacer/ha-client'
-import { pino } from 'pino'
+import { pino, type Logger } from 'pino'
 import { config } from './config.js'
 import { createApp } from './app.js'
 import { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
@@ -9,6 +10,32 @@ import { InviteStore } from './storage/invite-store.js'
 import { OverrideStore } from './storage/override-store.js'
 import { SettingsStore } from './storage/settings-store.js'
 import { OnboardingStore } from './storage/onboarding-store.js'
+
+/**
+ * Open a SQLite-backed store with retry on SQLITE_BUSY. All six stores share
+ * a single `lovelacer.sqlite` file; on first start after a crashed previous
+ * container, stale `.db-wal`/`.db-shm` lock state can make any of the
+ * lock-acquiring init operations (WAL pragma, CREATE TABLE, etc.) transiently
+ * busy. Retry with exponential backoff so we ride out short-lived contention
+ * before failing startup.
+ */
+async function openStoreWithRetry<T>(factory: () => T, name: string, logger: Logger): Promise<T> {
+  const delaysMs = [500, 1000, 2000, 4000]
+  for (let attempt = 0; attempt <= delaysMs.length; attempt++) {
+    try {
+      return factory()
+    } catch (err) {
+      const code = (err as { code?: string })?.code
+      if (code !== 'SQLITE_BUSY' || attempt === delaysMs.length) throw err
+      logger.warn(
+        { store: name, attempt: attempt + 1, code },
+        'sqlite busy during store init; backing off and retrying',
+      )
+      await sleep(delaysMs[attempt])
+    }
+  }
+  throw new Error('unreachable')
+}
 
 async function main() {
   // Require an explicit `NODE_ENV=development` to enable pino-pretty, since
@@ -32,27 +59,47 @@ async function main() {
   })
 
   const overridesPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const overrides = new OverrideStore(overridesPath)
+  const overrides = await openStoreWithRetry(
+    () => new OverrideStore(overridesPath),
+    'overrides',
+    logger,
+  )
   logger.info({ path: overridesPath }, 'override store opened')
 
   const invitePath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const invite = new InviteStore(invitePath)
+  const invite = await openStoreWithRetry(() => new InviteStore(invitePath), 'invite', logger)
   logger.info({ path: invitePath }, 'invite store opened')
 
   const appliedSnapshotPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const appliedSnapshot = new AppliedSnapshotStore(appliedSnapshotPath)
+  const appliedSnapshot = await openStoreWithRetry(
+    () => new AppliedSnapshotStore(appliedSnapshotPath),
+    'applied-snapshot',
+    logger,
+  )
   logger.info({ path: appliedSnapshotPath }, 'applied-snapshot store opened')
 
   const dismissedSuggestionsPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const dismissedSuggestions = new DismissedSuggestionStore(dismissedSuggestionsPath)
+  const dismissedSuggestions = await openStoreWithRetry(
+    () => new DismissedSuggestionStore(dismissedSuggestionsPath),
+    'dismissed-suggestion',
+    logger,
+  )
   logger.info({ path: dismissedSuggestionsPath }, 'dismissed-suggestion store opened')
 
   const settingsPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const settings = new SettingsStore(settingsPath)
+  const settings = await openStoreWithRetry(
+    () => new SettingsStore(settingsPath),
+    'settings',
+    logger,
+  )
   logger.info({ path: settingsPath }, 'settings store opened')
 
   const onboardingPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const onboarding = new OnboardingStore(onboardingPath)
+  const onboarding = await openStoreWithRetry(
+    () => new OnboardingStore(onboardingPath),
+    'onboarding',
+    logger,
+  )
   logger.info({ path: onboardingPath }, 'onboarding store opened')
 
   const app = await createApp({
