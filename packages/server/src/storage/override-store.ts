@@ -40,7 +40,7 @@ export class OverrideStore {
     if (filename !== ':memory:') {
       mkdirSync(dirname(filename), { recursive: true })
     }
-    this.db = new Database(filename)
+    this.db = new Database(filename, { timeout: 5000 })
     this.db.pragma('journal_mode = WAL')
     this.db.exec(SCHEMA)
 

@@ -39,7 +39,7 @@ export class DismissedSuggestionStore {
     if (filename !== ':memory:') {
       mkdirSync(dirname(filename), { recursive: true })
     }
-    this.db = new Database(filename)
+    this.db = new Database(filename, { timeout: 5000 })
     this.db.pragma('journal_mode = WAL')
     // SQLite DDL — better-sqlite3's exec(), not Node's child_process.exec.
     this.db.exec(SCHEMA)

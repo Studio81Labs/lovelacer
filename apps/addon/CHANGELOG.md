@@ -1,3 +1,22 @@
+## 0.4.8
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+Fixes startup `SqliteError: database is locked` (`SQLITE_BUSY`)
+surfaced once better-sqlite3 actually runs (0.4.6) on a supported
+arch (0.4.7).
+
+Each storage class opens its own SQLite DB and immediately runs
+`PRAGMA journal_mode = WAL`, which requires an exclusive lock.
+better-sqlite3 defaults to a 0 ms busy timeout — if anything holds
+the DB even briefly (e.g. a previous container shutdown overlapping
+with HA Supervisor's restart, or stale lock state from earlier
+failed 0.4.x runs), the call fails immediately. Pass
+`{ timeout: 5000 }` to every `new Database(...)` so SQLite retries
+for up to 5 seconds before giving up. Applies to all six stores
+(`override`, `dismissed-suggestion`, `invite`, `applied-snapshot`,
+`settings`, `onboarding`). Same QA scope as 0.4.0–0.4.7.
+
 ## 0.4.7
 
 ### Phase 2 — pre-release for local QA (re-spin)
