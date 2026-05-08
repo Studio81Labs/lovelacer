@@ -1,3 +1,17 @@
+## 0.4.3 — 2026-05-08
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+No add-on behavior changes. Fixes startup failure on freshly installed
+add-on: the HA base image inherits `ENTRYPOINT ["/init"]` from
+s6-overlay, so Docker was running `/init /run.sh` instead of
+`/run.sh` directly. With `init: false` we don't want s6-overlay,
+and the AppArmor profile deliberately doesn't whitelist `/init` —
+the result was `/bin/sh: can't open '/init': Permission denied`
+the moment Supervisor hit _Start_. Override the entrypoint to `[]`
+in the Dockerfile so only `CMD ["/run.sh"]` is exec'd. Same QA scope
+as 0.4.0/0.4.1/0.4.2.
+
 ## 0.4.2 — 2026-05-08
 
 ### Phase 2 — pre-release for local QA (re-spin)
