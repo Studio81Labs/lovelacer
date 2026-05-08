@@ -8,7 +8,7 @@ s6-overlay, so Docker was running `/init /run.sh` instead of
 `/run.sh` directly. With `init: false` we don't want s6-overlay,
 and the AppArmor profile deliberately doesn't whitelist `/init` —
 the result was `/bin/sh: can't open '/init': Permission denied`
-the moment Supervisor hit *Start*. Override the entrypoint to `[]`
+the moment Supervisor hit _Start_. Override the entrypoint to `[]`
 in the Dockerfile so only `CMD ["/run.sh"]` is exec'd. Same QA scope
 as 0.4.0/0.4.1/0.4.2.
 
