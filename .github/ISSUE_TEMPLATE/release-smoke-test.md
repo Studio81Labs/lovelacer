@@ -1,8 +1,8 @@
 ---
 name: Release smoke test
 about: Track a release-candidate end-to-end QA pass before promoting to a stable tag.
-title: "Release smoke test: vX.Y.Z"
-labels: ["release", "qa"]
+title: 'Release smoke test: vX.Y.Z'
+labels: ['release', 'qa']
 assignees: []
 ---
 
