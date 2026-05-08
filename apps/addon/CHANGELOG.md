@@ -1,3 +1,17 @@
+## 0.4.4 — 2026-05-08
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+No add-on behavior changes. Fixes a second startup failure: with
+`/init` no longer in the way (0.4.3), the kernel tried to resolve
+`run.sh`'s `#!/usr/bin/env bash` shebang and exec `bash`, which the
+HA base image ships at a path our AppArmor profile didn't whitelist
+— `env: can't execute 'bash': Permission denied`. Drop the bash
+dependency entirely: `run.sh` is now POSIX sh (`#!/bin/sh`), and
+the AppArmor profile whitelists Alpine's actual `/bin/sh` and
+`/bin/busybox` (the symlink target) instead of the wrong
+`/usr/bin/{bash,sh,env}` paths. Same QA scope as 0.4.0–0.4.3.
+
 ## 0.4.3 — 2026-05-08
 
 ### Phase 2 — pre-release for local QA (re-spin)

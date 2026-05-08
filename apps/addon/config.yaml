@@ -1,5 +1,5 @@
 name: Lovelacer
-version: '0.4.3'
+version: '0.4.4'
 slug: lovelacer
 description: Generate a Lovelace dashboard from your Home Assistant entities
 url: https://github.com/Studio81Labs/lovelacer
