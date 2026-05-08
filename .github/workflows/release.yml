@@ -46,8 +46,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Extract latest CHANGELOG section
+        run: |
+          # Take from the first `## ` heading up to (but not including) the
+          # second one, so the Release body matches the version we're tagging.
+          # If CHANGELOG is missing or empty the file is left empty and the
+          # action falls back to auto-generated notes alone.
+          if [ -f apps/addon/CHANGELOG.md ]; then
+            awk '/^## /{n++; if (n==2) exit} {print}' \
+              apps/addon/CHANGELOG.md > release-notes.md
+          else
+            : > release-notes.md
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: release-notes.md
           generate_release_notes: true
           tag_name: ${{ github.ref_name }}
