@@ -127,4 +127,4 @@ explicitly waived.
 ## Decision
 
 - [ ] **Promote** to stable `vX.Y.Z` and post to r/homeassistant
-- [ ] **Re-spin** as `vX.Y.Z-rc.N+1` after fixing the bugs above
+- [ ] **Re-spin** as the next rc tag (e.g. `vX.Y.Z-rc.2`) after fixing the bugs above
