@@ -1,12 +1,11 @@
 name: Lovelacer
-version: '0.4.6'
+version: '0.4.7'
 slug: lovelacer
 description: Generate a Lovelace dashboard from your Home Assistant entities
 url: https://github.com/Studio81Labs/lovelacer
 arch:
   - aarch64
   - amd64
-  - armv7
 init: false
 ingress: true
 ingress_port: 3000
