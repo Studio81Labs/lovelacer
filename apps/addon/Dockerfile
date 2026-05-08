@@ -24,6 +24,21 @@ COPY staged/ ./
 # run.sh.
 COPY web-dist/ /app/web-dist/
 
+# Native modules in staged/node_modules/ were pre-built on
+# ubuntu-x64-glibc by CI; they fail at runtime on Alpine (musl) and on
+# non-x64 archs (aarch64/armv7) with ERR_DLOPEN_FAILED or "unsupported
+# relocation type". Rebuild against the container's actual arch+libc —
+# pnpm understands the .pnpm/ layout and re-runs each package's install
+# script, which downloads matching prebuilt binaries when available and
+# falls back to compiling from source when not. Build toolchain is
+# installed as a virtual package and removed in the same RUN layer so
+# the final image stays lean.
+RUN apk add --no-cache --virtual .build-deps python3 make g++ npm && \
+    npm install -g pnpm@9.12.0 && \
+    cd /app && pnpm rebuild && \
+    npm uninstall -g pnpm && \
+    apk del .build-deps
+
 # Entrypoint
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
