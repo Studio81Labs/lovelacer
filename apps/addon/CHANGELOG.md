@@ -1,3 +1,19 @@
+## 0.4.7
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+Drops `armv7` from the supported-architecture list. The native-rebuild
+step from 0.4.6 hangs indefinitely on armv7 under QEMU emulation
+because `better-sqlite3` doesn't ship a `linux-armv7-musl` prebuild
+and compiling SQLite from source under emulation is impractically
+slow (multiple hours, often unfinishable). armv7 covers Raspberry
+Pi 2/3 and Pi Zero — increasingly legacy in the HA ecosystem and
+already dropped by many official add-ons. Current installs are
+overwhelmingly aarch64 (Pi 4/5, HA Yellow, ODROID, NUC) or amd64
+(PC/server), both of which now build cleanly. armv7 users will see
+"this add-on doesn't support your architecture" in HA Supervisor —
+clearer than a hung install. Same QA scope as 0.4.0–0.4.6.
+
 ## 0.4.6
 
 ### Phase 2 — pre-release for local QA (re-spin)
