@@ -1,4 +1,27 @@
-## 0.4.3 — 2026-05-08
+## 0.4.4
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+No add-on behavior changes. Two fixes:
+
+1. **Startup**: with `/init` no longer in the way (0.4.3), the kernel
+   tried to resolve `run.sh`'s `#!/usr/bin/env bash` shebang and exec
+   `bash`, which the HA base image ships at a path our AppArmor profile
+   didn't whitelist — `env: can't execute 'bash': Permission denied`.
+   Drop the bash dependency entirely: `run.sh` is now POSIX sh
+   (`#!/bin/sh`), and the AppArmor profile whitelists Alpine's actual
+   `/bin/sh` and `/bin/busybox` (the symlink target) instead of the
+   wrong `/usr/bin/{bash,sh,env}` paths.
+
+2. **CHANGELOG format**: HA Supervisor's CHANGELOG parser only
+   recognises `## VERSION` headings — appending ` — YYYY-MM-DD` (as
+   we'd been doing since 0.2.0) breaks the per-version split. Strip
+   the date suffix from every version heading; the `published_at`
+   metadata on each GitHub Release already carries the date.
+
+Same QA scope as 0.4.0–0.4.3.
+
+## 0.4.3
 
 ### Phase 2 — pre-release for local QA (re-spin)
 
@@ -12,7 +35,7 @@ the moment Supervisor hit _Start_. Override the entrypoint to `[]`
 in the Dockerfile so only `CMD ["/run.sh"]` is exec'd. Same QA scope
 as 0.4.0/0.4.1/0.4.2.
 
-## 0.4.2 — 2026-05-08
+## 0.4.2
 
 ### Phase 2 — pre-release for local QA (re-spin)
 
@@ -25,7 +48,7 @@ Supervisor reads from `config.yaml`, causing every install attempt to
 404 (surfaced as 403 by GHCR's auth layer). The build now passes only
 the bare image name to the builder. Same QA scope as 0.4.0/0.4.1.
 
-## 0.4.1 — 2026-05-08
+## 0.4.1
 
 ### Phase 2 — pre-release for local QA (re-spin)
 
@@ -36,7 +59,7 @@ reusable build workflow now discriminates on `inputs.version` instead
 of `github.event_name`, since the latter propagates the caller's
 trigger and never equals `workflow_call`. Same QA scope as 0.4.0.
 
-## 0.4.0 — 2026-05-08
+## 0.4.0
 
 ### Phase 2 — pre-release for local QA
 
@@ -45,7 +68,7 @@ smoke testing before the public 1.0 launch on r/homeassistant. Tracks the
 smoke-test checklist in `docs/RELEASE_CHECKLIST.md`. Promote to 1.0.0 once
 the checklist passes on the dev HA stack and on a real HA install.
 
-## 0.3.0 — 2026-05-07
+## 0.3.0
 
 ### Phase 2 — final ticket
 
@@ -58,7 +81,7 @@ the checklist passes on the dev HA stack and on a real HA install.
 - Browser language auto-detection on first run (cs-CZ → Czech,
   de-AT → German, anything else → English fallback).
 
-## 0.2.0 — 2026-05-07
+## 0.2.0
 
 ### Phase 2 (Polish & Release)
 

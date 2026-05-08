@@ -14,11 +14,13 @@ profile lovelacer flags=(attach_disconnected,mediate_deleted) {
   network inet6 stream,
   network unix stream,
 
+  # Alpine: /bin/sh is a symlink to /bin/busybox; the kernel resolves
+  # the symlink before AppArmor's exec check, so we must whitelist
+  # /bin/busybox as well as /bin/sh.
+  /bin/sh ix,
+  /bin/busybox ix,
   /usr/bin/node ix,
   /usr/bin/jq ix,
-  /usr/bin/bash ix,
-  /usr/bin/sh ix,
-  /usr/bin/env ix,
 
   /run.sh r,
   /app/** r,
