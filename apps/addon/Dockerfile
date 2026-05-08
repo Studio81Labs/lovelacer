@@ -27,16 +27,22 @@ COPY web-dist/ /app/web-dist/
 # Native modules in staged/node_modules/ were pre-built on
 # ubuntu-x64-glibc by CI; they fail at runtime on Alpine (musl) and on
 # non-x64 archs (aarch64/armv7) with ERR_DLOPEN_FAILED or "unsupported
-# relocation type". Rebuild against the container's actual arch+libc —
-# pnpm understands the .pnpm/ layout and re-runs each package's install
-# script, which downloads matching prebuilt binaries when available and
-# falls back to compiling from source when not. Build toolchain is
-# installed as a virtual package and removed in the same RUN layer so
-# the final image stays lean.
+# relocation type". Rebuild them against the container's actual
+# arch+libc.
+#
+# We use `npm rebuild`, not `pnpm rebuild`: pnpm deploy embeds the CI
+# runner's store path into the bundle's metadata, and a fresh pnpm in
+# the container then refuses with `ERR_PNPM_UNEXPECTED_STORE`. npm
+# rebuild doesn't care about pnpm metadata — it just walks
+# `node_modules/*`, follows pnpm's symlinks into `.pnpm/`, and re-runs
+# each package's install script (which downloads matching prebuilt
+# binaries when available, falls back to compiling from source when
+# not).
+#
+# Build toolchain is installed as a virtual package and removed in the
+# same RUN layer so the final image stays lean.
 RUN apk add --no-cache --virtual .build-deps python3 make g++ npm && \
-    npm install -g pnpm@9.12.0 && \
-    cd /app && pnpm rebuild && \
-    npm uninstall -g pnpm && \
+    cd /app && npm rebuild && \
     apk del .build-deps
 
 # Entrypoint
