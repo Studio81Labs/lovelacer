@@ -1,3 +1,16 @@
+## 0.4.2 — 2026-05-08
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+No add-on behavior changes. Fixes the GHCR push path for the add-on
+images: `home-assistant/builder` prepends the GHCR-login owner to
+`--image`, so passing the fully-qualified `ghcr.io/studio81labs/...`
+produced a doubled path (`ghcr.io/studio81labs/ghcr.io/studio81labs/
+lovelacer-{arch}`) — which didn't match the `image:` field HA
+Supervisor reads from `config.yaml`, causing every install attempt to
+404 (surfaced as 403 by GHCR's auth layer). The build now passes only
+the bare image name to the builder. Same QA scope as 0.4.0/0.4.1.
+
 ## 0.4.1 — 2026-05-08
 
 ### Phase 2 — pre-release for local QA (re-spin)

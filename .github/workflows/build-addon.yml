@@ -124,10 +124,18 @@ jobs:
           # reaches docker as its args; subsequent lines run as separate
           # failed shell commands. Folding produces one space-joined arg
           # string that the shell happily forwards.
+          # `--image` is the bare image name only — home-assistant/builder
+          # prepends the GHCR login owner (the org from the docker/login-action
+          # step above) to produce the final push path
+          # `ghcr.io/<owner>/lovelacer-{arch}`. Passing a fully-qualified
+          # `ghcr.io/<owner>/lovelacer-{arch}` here causes the prefix to be
+          # doubled (e.g. `ghcr.io/studio81labs/ghcr.io/studio81labs/...`),
+          # which mismatches the `image:` field HA Supervisor reads from
+          # config.yaml and breaks installs.
           args: >-
             --${{ matrix.arch }}
             --target /data/apps/addon
-            --image ghcr.io/studio81labs/lovelacer-{arch}
+            --image lovelacer-{arch}
             --version ${{ steps.meta.outputs.version }}
             ${{ steps.meta.outputs.tag_args }}
             ${{ github.event_name == 'pull_request' && '--test' || '' }}
