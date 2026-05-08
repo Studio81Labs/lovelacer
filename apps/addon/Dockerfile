@@ -30,4 +30,10 @@ RUN chmod +x /run.sh
 
 EXPOSE 3000
 
+# The HA base images inherit `ENTRYPOINT ["/init"]` from s6-overlay, so
+# Docker runs `/init /run.sh` rather than `/run.sh` directly. With
+# `init: false` in config.yaml we don't want s6-overlay; clearing the
+# entrypoint ensures only /run.sh runs (and avoids the AppArmor profile
+# refusing to open /init, which we deliberately don't whitelist).
+ENTRYPOINT []
 CMD ["/run.sh"]
