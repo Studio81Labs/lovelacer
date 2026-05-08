@@ -50,8 +50,17 @@ export class OnboardingStore {
     if (filename !== ':memory:') {
       mkdirSync(dirname(filename), { recursive: true })
     }
-    this.db = new Database(filename, { timeout: 5000 })
-    this.db.pragma('journal_mode = WAL')
+    this.db = new Database(filename)
+    // Best-effort WAL upgrade: SQLite's default is rollback-journal,
+    // which is correct (just lower-throughput) for a single-writer
+    // workload. WAL needs an exclusive lock — if a crashed previous
+    // container left stale .db-wal/.db-shm lock state we hit
+    // SQLITE_BUSY here. Don't crash startup over a perf optimization.
+    try {
+      this.db.pragma('journal_mode = WAL')
+    } catch (err) {
+      if ((err as { code?: string })?.code !== 'SQLITE_BUSY') throw err
+    }
     // SQLite DDL — better-sqlite3's exec(), not Node's child_process.exec.
     this.db.exec(SCHEMA)
 

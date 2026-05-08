@@ -7,15 +7,19 @@ surfaced once better-sqlite3 actually runs (0.4.6) on a supported
 arch (0.4.7).
 
 Each storage class opens its own SQLite DB and immediately runs
-`PRAGMA journal_mode = WAL`, which requires an exclusive lock.
-better-sqlite3 defaults to a 0 ms busy timeout — if anything holds
-the DB even briefly (e.g. a previous container shutdown overlapping
-with HA Supervisor's restart, or stale lock state from earlier
-failed 0.4.x runs), the call fails immediately. Pass
-`{ timeout: 5000 }` to every `new Database(...)` so SQLite retries
-for up to 5 seconds before giving up. Applies to all six stores
+`PRAGMA journal_mode = WAL`, which requires an exclusive lock. If a
+crashed previous container left stale `.db-wal`/`.db-shm` lock state
+in `/data/`, the WAL upgrade hits SQLITE_BUSY — and SQLite's
+deadlock detection short-circuits the busy timeout, so a longer
+timeout doesn't help.
+
+WAL is a perf optimization (better concurrent reader throughput);
+the default rollback-journal mode is correct for our single-writer
+workload. Wrap the WAL pragma in a try/catch in all six stores
 (`override`, `dismissed-suggestion`, `invite`, `applied-snapshot`,
-`settings`, `onboarding`). Same QA scope as 0.4.0–0.4.7.
+`settings`, `onboarding`): on `SQLITE_BUSY` we stay in the default
+journal mode rather than failing startup. Real errors still
+propagate. Same QA scope as 0.4.0–0.4.7.
 
 ## 0.4.7
 

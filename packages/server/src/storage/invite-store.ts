@@ -29,8 +29,17 @@ export class InviteStore {
     if (filename !== ':memory:') {
       mkdirSync(dirname(filename), { recursive: true })
     }
-    this.db = new Database(filename, { timeout: 5000 })
-    this.db.pragma('journal_mode = WAL')
+    this.db = new Database(filename)
+    // Best-effort WAL upgrade: SQLite's default is rollback-journal,
+    // which is correct (just lower-throughput) for a single-writer
+    // workload. WAL needs an exclusive lock — if a crashed previous
+    // container left stale .db-wal/.db-shm lock state we hit
+    // SQLITE_BUSY here. Don't crash startup over a perf optimization.
+    try {
+      this.db.pragma('journal_mode = WAL')
+    } catch (err) {
+      if ((err as { code?: string })?.code !== 'SQLITE_BUSY') throw err
+    }
     this.db.exec(SCHEMA)
     this.stmtIsAccepted = this.db.prepare('SELECT 1 FROM invite_acceptance WHERE id = 1')
     this.stmtAccept = this.db.prepare(
