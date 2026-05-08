@@ -30,19 +30,21 @@ COPY web-dist/ /app/web-dist/
 # relocation type". Rebuild them against the container's actual
 # arch+libc.
 #
-# We use `npm rebuild`, not `pnpm rebuild`: pnpm deploy embeds the CI
+# We use `npm rebuild` (not `pnpm rebuild`): pnpm deploy embeds the CI
 # runner's store path into the bundle's metadata, and a fresh pnpm in
-# the container then refuses with `ERR_PNPM_UNEXPECTED_STORE`. npm
-# rebuild doesn't care about pnpm metadata — it just walks
-# `node_modules/*`, follows pnpm's symlinks into `.pnpm/`, and re-runs
-# each package's install script (which downloads matching prebuilt
-# binaries when available, falls back to compiling from source when
-# not).
+# the container then refuses with `ERR_PNPM_UNEXPECTED_STORE`.
+#
+# Scope to specific native packages — `npm rebuild` with no args runs
+# prepare/install scripts on every dep in node_modules, including
+# transitive packages whose `prepare` references devDeps that aren't
+# in this prod-only deploy (e.g. balanced-match's prepare calls tshy).
+# `better-sqlite3` is currently the only native module we ship; add
+# others here if and when they're introduced.
 #
 # Build toolchain is installed as a virtual package and removed in the
 # same RUN layer so the final image stays lean.
 RUN apk add --no-cache --virtual .build-deps python3 make g++ npm && \
-    cd /app && npm rebuild && \
+    cd /app && npm rebuild better-sqlite3 && \
     apk del .build-deps
 
 # Entrypoint
