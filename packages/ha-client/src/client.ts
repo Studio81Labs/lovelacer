@@ -32,6 +32,7 @@ export interface HaClientOptions {
   url: string
   websocketUrl?: string
   token: string
+  requestTimeoutMs?: number
   logger?: Logger
 }
 
@@ -178,6 +179,33 @@ export class HaClient {
     if (!this.connection) {
       throw new Error('HaClient not connected — call connect() first')
     }
-    return this.connection.sendMessagePromise<T>(message)
+    const commandType =
+      typeof (message as { type?: unknown }).type === 'string'
+        ? (message as { type: string }).type
+        : 'unknown'
+    const timeoutMs = this.options.requestTimeoutMs ?? 15_000
+    const request = this.connection.sendMessagePromise<T>(message)
+
+    if (timeoutMs <= 0) return request
+
+    return new Promise<T>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        const err = new Error(`HA websocket command timed out after ${timeoutMs}ms: ${commandType}`)
+        this.logger.warn({ commandType, timeoutMs }, 'HA websocket command timed out')
+        this.connection?.reconnect(true)
+        reject(err)
+      }, timeoutMs)
+
+      request.then(
+        (value) => {
+          clearTimeout(timeout)
+          resolve(value)
+        },
+        (err: unknown) => {
+          clearTimeout(timeout)
+          reject(err)
+        },
+      )
+    })
   }
 }
