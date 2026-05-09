@@ -48,4 +48,13 @@ describe('normalizeForMatching', () => {
     expect(normalizeForMatching('Sensor 4')).toBe('sensor 4')
     expect(normalizeForMatching('0x158d_th')).toBe('0x158d th')
   })
+
+  it('bounds pathological registry names before Unicode normalization', () => {
+    const huge = `Kitchen ${'x'.repeat(10_000)} Bathroom`
+    const normalized = normalizeForMatching(huge)
+
+    expect(normalized).toContain('kitchen')
+    expect(normalized).not.toContain('bathroom')
+    expect(normalized.length).toBeLessThanOrEqual(512)
+  })
 })
