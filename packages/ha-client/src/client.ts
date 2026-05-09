@@ -1,7 +1,9 @@
 import {
+  Auth,
   createConnection,
   createLongLivedTokenAuth,
   type Connection,
+  type AuthData,
   type MessageBase,
 } from 'home-assistant-js-websocket'
 import { pino, type Logger } from 'pino'
@@ -28,8 +30,35 @@ import WebSocket from 'ws'
 
 export interface HaClientOptions {
   url: string
+  websocketUrl?: string
   token: string
   logger?: Logger
+}
+
+export interface BearerTokenAuthOptions {
+  url: string
+  websocketUrl?: string
+  token: string
+}
+
+class FixedWebSocketUrlAuth extends Auth {
+  constructor(
+    data: AuthData,
+    private readonly fixedWebSocketUrl: string,
+  ) {
+    super(data)
+  }
+
+  override get wsUrl(): string {
+    return this.fixedWebSocketUrl
+  }
+}
+
+export function createBearerTokenAuth(options: BearerTokenAuthOptions): Auth {
+  const auth = createLongLivedTokenAuth(options.url, options.token)
+  if (options.websocketUrl === undefined) return auth
+
+  return new FixedWebSocketUrlAuth(auth.data, options.websocketUrl)
 }
 
 export class HaClient {
@@ -45,7 +74,7 @@ export class HaClient {
   async connect(): Promise<void> {
     if (this.connection) return
 
-    const auth = createLongLivedTokenAuth(this.options.url, this.options.token)
+    const auth = createBearerTokenAuth(this.options)
     // setupRetry: -1 retries the initial connection forever with built-in
     // backoff. Important for the HA add-on case, where the supervisor may
     // start the add-on before HA Core is ready to accept WebSocket clients.

@@ -10,10 +10,11 @@ if [ -f "$OPTIONS_FILE" ]; then
   export DASHBOARD_URL_PATH="$(jq -r '.dashboard_url_path // "lovelacer-home"' "$OPTIONS_FILE")"
 fi
 
-# Supervisor injects SUPERVISOR_TOKEN automatically when the add-on
-# starts. HA_URL is the canonical hostname inside the add-on network;
-# home-assistant-js-websocket connects to /api/websocket on that host.
-export HA_URL="http://homeassistant:8123"
+# Supervisor injects SUPERVISOR_TOKEN automatically when the add-on starts.
+# With `homeassistant_api: true`, HA Core API and websocket traffic must use
+# the Supervisor proxy endpoints with SUPERVISOR_TOKEN as bearer/password.
+export HA_URL="http://supervisor/core/api"
+export HA_WEBSOCKET_URL="ws://supervisor/core/websocket"
 export DATA_DIR="/data"
 # Static SPA assets are baked into /app/web-dist/ by the Dockerfile so
 # Fastify's @fastify/static serves them at /. Server reads this from

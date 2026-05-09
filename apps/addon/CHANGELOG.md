@@ -1,3 +1,22 @@
+## 0.4.12
+
+### Phase 2 — pre-release for local QA (HA auth proxy fix)
+
+Fixes the add-on login alert from Home Assistant:
+
+```
+Login attempt or request with invalid authentication from <container>.local.hass.io
+```
+
+The add-on was sending `SUPERVISOR_TOKEN` to Home Assistant Core directly at
+`homeassistant:8123`, which Core treats as invalid authentication. Add-on
+Core access now uses the Supervisor proxy endpoints documented by Home
+Assistant: `http://supervisor/core/api` for API base URL and
+`ws://supervisor/core/websocket` for websocket auth, with
+`homeassistant_api: true` enabled in add-on metadata.
+
+Same QA scope as 0.4.0–0.4.11.
+
 ## 0.4.11
 
 ### Phase 2 — pre-release for local QA (AppArmor SQLite lock fix)
