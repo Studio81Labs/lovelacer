@@ -15,9 +15,17 @@
  *
  * Output is suitable for `String.prototype.indexOf` against patterns
  * stored pre-normalized in `ROOM_KEYWORDS` (lowercase ASCII, single-space).
+ *
+ * Room matching only needs a display-name-sized prefix. HA registries can
+ * contain user-supplied names, so bound the input before Unicode
+ * normalization to avoid one pathological value blocking or exhausting the
+ * add-on process during preview detection.
  */
+const MATCH_INPUT_LIMIT = 512
+
 export function normalizeForMatching(text: string): string {
   return text
+    .slice(0, MATCH_INPUT_LIMIT)
     .toLowerCase()
     .replace(/ß/g, 'ss')
     .normalize('NFKD')

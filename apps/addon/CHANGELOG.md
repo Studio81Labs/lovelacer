@@ -1,3 +1,17 @@
+## 0.4.17
+
+### Phase 2 — pre-release for local QA (bounded room detection input)
+
+Fixes the remaining `POST /api/preview` ingress 502 observed with 0.4.16.
+
+0.4.16 showed the process gets through registry fetch and normalization, then
+stops inside room detection. Detection now bounds each candidate string before
+Unicode normalization and keyword matching. Room matching only needs
+display-name-sized text, and this prevents a pathological HA registry name
+from blocking or exhausting the add-on process during onboarding preview.
+
+Same QA scope as 0.4.0–0.4.16.
+
 ## 0.4.16
 
 ### Phase 2 — pre-release for local QA (sync preview stage tracing)
