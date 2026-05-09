@@ -1,3 +1,18 @@
+## 0.4.11
+
+### Phase 2 — pre-release for local QA (AppArmor SQLite lock fix)
+
+Fixes the persistent HA add-on `SQLITE_BUSY` startup failure by granting
+AppArmor file-lock permission on `/data/**`.
+
+SQLite does not just need read/write access to `/data/lovelacer.sqlite`;
+it also uses advisory file locks on the database and journal sidecars.
+The profile previously allowed `/data/** rw,` but not `k`, so inside HA
+the process could access the files while SQLite could not complete its
+locking protocol. The profile now uses `/data/** rwk,`.
+
+Same QA scope as 0.4.0–0.4.10.
+
 ## 0.4.10
 
 ### Phase 2 — pre-release for local QA (re-spin)

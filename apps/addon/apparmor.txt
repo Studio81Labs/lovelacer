@@ -28,7 +28,8 @@ profile lovelacer flags=(attach_disconnected,mediate_deleted) {
   # ERR_DLOPEN_FAILED ("Permission denied"). The whole tree under /app
   # is our own application code, so granting mmap-execute is fine.
   /app/** rm,
-  /data/** rw,
+  # SQLite needs advisory file locks on its database and journal sidecars.
+  /data/** rwk,
   /tmp/** rwk,
   /proc/sys/kernel/random/uuid r,
   /proc/*/status r,
