@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+import { rename } from 'node:fs/promises'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { HaClient } from '@lovelacer/ha-client'
 import { pino, type Logger } from 'pino'
@@ -18,20 +19,64 @@ import { OnboardingStore } from './storage/onboarding-store.js'
  * lock-acquiring init operations (WAL pragma, CREATE TABLE, etc.) transiently
  * busy. Retry with exponential backoff so we ride out short-lived contention
  * before failing startup.
+ *
+ * If `recoveryFiles` is provided and all retries fail with SQLITE_BUSY, the
+ * named auxiliary files (typically `.db-wal` and `.db-shm`) are renamed to
+ * `.busy-<timestamp>` siblings — not deleted — and the factory is called
+ * once more.
+ *
+ * Trade-off: this assumes the HA add-on deployment model where /data/ is
+ * exclusive to this single Node process. WAL files can hold committed-but-
+ * unmerged transactions, so renaming them causes the DB to come up as if
+ * those transactions never happened. For our model that's a fair call after
+ * a wedged-startup failure; in any setup with concurrent writers to the
+ * same file this would cause data loss / inconsistency. Files are renamed
+ * rather than deleted so the committed-but-unmerged state is preserved on
+ * disk for manual recovery if a user ever does end up in that situation.
+ *
+ * Recovery is passed only on the first store opened so it runs once per
+ * process.
  */
-async function openStoreWithRetry<T>(factory: () => T, name: string, logger: Logger): Promise<T> {
+async function openStoreWithRetry<T>(
+  factory: () => T,
+  name: string,
+  logger: Logger,
+  recoveryFiles?: string[],
+): Promise<T> {
   const delaysMs = [500, 1000, 2000, 4000]
   for (let attempt = 0; attempt <= delaysMs.length; attempt++) {
     try {
       return factory()
     } catch (err) {
       const code = (err as { code?: string })?.code
-      if (code !== 'SQLITE_BUSY' || attempt === delaysMs.length) throw err
+      if (code !== 'SQLITE_BUSY') throw err
+      if (attempt < delaysMs.length) {
+        logger.warn(
+          { store: name, attempt: attempt + 1, code },
+          'sqlite busy during store init; backing off and retrying',
+        )
+        await sleep(delaysMs[attempt])
+        continue
+      }
+      // All normal retries exhausted.
+      if (!recoveryFiles?.length) throw err
+      const stamp = Date.now()
       logger.warn(
-        { store: name, attempt: attempt + 1, code },
-        'sqlite busy during store init; backing off and retrying',
+        { store: name, files: recoveryFiles, stamp },
+        'sqlite still busy after retries; renaming auxiliary files to .busy-<stamp> ' +
+          '(any committed-but-unmerged WAL state will not be visible to the new DB ' +
+          'connection but is preserved on disk) and retrying once more',
       )
-      await sleep(delaysMs[attempt])
+      for (const file of recoveryFiles) {
+        try {
+          await rename(file, `${file}.busy-${stamp}`)
+        } catch (e) {
+          if ((e as { code?: string })?.code !== 'ENOENT') {
+            logger.warn({ err: e, file }, 'could not rename sqlite auxiliary file')
+          }
+        }
+      }
+      return factory()
     }
   }
   throw new Error('unreachable')
@@ -59,10 +104,18 @@ async function main() {
   })
 
   const overridesPath = resolve(config.dataDir, 'lovelacer.sqlite')
+  // Pass recovery files to the FIRST store opened so any wedged WAL state
+  // from a crashed previous container is cleaned up before subsequent stores
+  // (which share the same .sqlite file) try to open. Only the WAL sidecars
+  // are recoverable: the `.db-journal` rollback journal (used in non-WAL
+  // mode) holds undo data for an in-progress transaction, and removing it
+  // would leave the main DB with half-applied pages — strictly worse than
+  // hitting SQLITE_BUSY at startup.
   const overrides = await openStoreWithRetry(
     () => new OverrideStore(overridesPath),
     'overrides',
     logger,
+    [`${overridesPath}-wal`, `${overridesPath}-shm`],
   )
   logger.info({ path: overridesPath }, 'override store opened')
 

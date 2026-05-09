@@ -1,3 +1,38 @@
+## 0.4.9
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+Fixes the persistent SQLITE_BUSY case from 0.4.8 where the lock
+state from a crashed previous container is permanently wedged —
+not transient — so retrying with backoff alone never clears it.
+User log on 0.4.8:
+
+```
+attempt=1 sqlite busy during store init; backing off and retrying
+attempt=2 ...
+attempt=3 ...
+attempt=4 ...
+fatal startup error: SqliteError: database is locked
+```
+
+Add a last-resort recovery to `openStoreWithRetry` in `main.ts`:
+when all normal retries (5 attempts ≈ 7.5s) are exhausted with
+SQLITE_BUSY, the auxiliary `.db-wal`/`.db-shm` sidecars are
+**renamed** (not deleted) to `.busy-<timestamp>` siblings, then
+the factory is called once more. The `.db-journal` rollback
+sidecar is deliberately NOT touched — it holds undo data for an
+in-progress transaction in non-WAL mode, and removing it would
+leave the main DB with half-applied pages. Renaming preserves the
+committed-but-unmerged WAL state on disk for forensics or manual
+recovery — so the worst case is "the new DB session doesn't see
+those transactions" rather than "data is gone". Per Codex review:
+this is only safe under the HA add-on single-process /data/
+contract; documented inline. Recovery is applied only on the first
+store opened (subsequent stores share the same `.sqlite` file, so
+cleanup runs once per process).
+
+Same QA scope as 0.4.0–0.4.8.
+
 ## 0.4.8
 
 ### Phase 2 — pre-release for local QA (re-spin)
