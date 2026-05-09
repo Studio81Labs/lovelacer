@@ -1,3 +1,20 @@
+## 0.4.13
+
+### Phase 2 — pre-release for local QA (empty JSON request fix)
+
+Fixes onboarding failing after the detection-language step with:
+
+```
+Body cannot be empty when content-type is set to 'application/json'
+```
+
+The frontend was calling no-body endpoints with
+`Content-Type: application/json`. Fastify rejects those requests before route
+handlers run. The affected no-body POSTs now omit the JSON content type:
+`/api/analyze`, `/api/preview`, and `/api/onboarding/complete`.
+
+Same QA scope as 0.4.0–0.4.12.
+
 ## 0.4.12
 
 ### Phase 2 — pre-release for local QA (HA auth proxy fix)
