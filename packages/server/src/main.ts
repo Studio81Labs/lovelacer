@@ -11,14 +11,15 @@ import { InviteStore } from './storage/invite-store.js'
 import { OverrideStore } from './storage/override-store.js'
 import { SettingsStore } from './storage/settings-store.js'
 import { OnboardingStore } from './storage/onboarding-store.js'
+import { openSqliteDatabase, type SqliteDatabase } from './storage/sqlite.js'
 
 /**
- * Open a SQLite-backed store with retry on SQLITE_BUSY. All six stores share
- * a single `lovelacer.sqlite` file; on first start after a crashed previous
- * container, stale `.db-wal`/`.db-shm` lock state can make any of the
- * lock-acquiring init operations (WAL pragma, CREATE TABLE, etc.) transiently
- * busy. Retry with exponential backoff so we ride out short-lived contention
- * before failing startup.
+ * Open SQLite-backed storage with retry on SQLITE_BUSY. All six stores share
+ * a single `lovelacer.sqlite` connection; on first start after a crashed
+ * previous container, stale `.db-wal`/`.db-shm` lock state can make any of
+ * the lock-acquiring init operations (WAL pragma, CREATE TABLE, etc.)
+ * transiently busy. Retry with exponential backoff so we ride out short-lived
+ * contention before failing startup.
  *
  * If `recoveryFiles` is provided and all retries fail with SQLITE_BUSY, the
  * named auxiliary files (typically `.db-wal` and `.db-shm`) are renamed to
@@ -82,6 +83,34 @@ async function openStoreWithRetry<T>(
   throw new Error('unreachable')
 }
 
+interface StorageHandles {
+  sqlite: SqliteDatabase
+  overrides: OverrideStore
+  invite: InviteStore
+  appliedSnapshot: AppliedSnapshotStore
+  dismissedSuggestions: DismissedSuggestionStore
+  settings: SettingsStore
+  onboarding: OnboardingStore
+}
+
+function openStorage(filename: string): StorageHandles {
+  const sqlite = openSqliteDatabase(filename)
+  try {
+    return {
+      sqlite,
+      overrides: new OverrideStore(sqlite),
+      invite: new InviteStore(sqlite),
+      appliedSnapshot: new AppliedSnapshotStore(sqlite),
+      dismissedSuggestions: new DismissedSuggestionStore(sqlite),
+      settings: new SettingsStore(sqlite),
+      onboarding: new OnboardingStore(sqlite),
+    }
+  } catch (err) {
+    sqlite.close()
+    throw err
+  }
+}
+
 async function main() {
   // Require an explicit `NODE_ENV=development` to enable pino-pretty, since
   // pino-pretty is a devDependency and would crash a production install
@@ -103,57 +132,20 @@ async function main() {
     logger,
   })
 
-  const overridesPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  // Pass recovery files to the FIRST store opened so any wedged WAL state
-  // from a crashed previous container is cleaned up before subsequent stores
-  // (which share the same .sqlite file) try to open. Only the WAL sidecars
-  // are recoverable: the `.db-journal` rollback journal (used in non-WAL
-  // mode) holds undo data for an in-progress transaction, and removing it
-  // would leave the main DB with half-applied pages — strictly worse than
-  // hitting SQLITE_BUSY at startup.
-  const overrides = await openStoreWithRetry(
-    () => new OverrideStore(overridesPath),
-    'overrides',
-    logger,
-    [`${overridesPath}-wal`, `${overridesPath}-shm`],
-  )
-  logger.info({ path: overridesPath }, 'override store opened')
-
-  const invitePath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const invite = await openStoreWithRetry(() => new InviteStore(invitePath), 'invite', logger)
-  logger.info({ path: invitePath }, 'invite store opened')
-
-  const appliedSnapshotPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const appliedSnapshot = await openStoreWithRetry(
-    () => new AppliedSnapshotStore(appliedSnapshotPath),
-    'applied-snapshot',
-    logger,
-  )
-  logger.info({ path: appliedSnapshotPath }, 'applied-snapshot store opened')
-
-  const dismissedSuggestionsPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const dismissedSuggestions = await openStoreWithRetry(
-    () => new DismissedSuggestionStore(dismissedSuggestionsPath),
-    'dismissed-suggestion',
-    logger,
-  )
-  logger.info({ path: dismissedSuggestionsPath }, 'dismissed-suggestion store opened')
-
-  const settingsPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const settings = await openStoreWithRetry(
-    () => new SettingsStore(settingsPath),
-    'settings',
-    logger,
-  )
-  logger.info({ path: settingsPath }, 'settings store opened')
-
-  const onboardingPath = resolve(config.dataDir, 'lovelacer.sqlite')
-  const onboarding = await openStoreWithRetry(
-    () => new OnboardingStore(onboardingPath),
-    'onboarding',
-    logger,
-  )
-  logger.info({ path: onboardingPath }, 'onboarding store opened')
+  const sqlitePath = resolve(config.dataDir, 'lovelacer.sqlite')
+  // Pass recovery files to the storage open so any wedged WAL state from a
+  // crashed previous container is cleaned up before schema initialization.
+  // Only the WAL sidecars are recoverable: the `.db-journal` rollback journal
+  // (used in non-WAL mode) holds undo data for an in-progress transaction, and
+  // removing it would leave the main DB with half-applied pages — strictly
+  // worse than hitting SQLITE_BUSY at startup.
+  const storage = await openStoreWithRetry(() => openStorage(sqlitePath), 'storage', logger, [
+    `${sqlitePath}-wal`,
+    `${sqlitePath}-shm`,
+  ])
+  const { sqlite, overrides, invite, appliedSnapshot, dismissedSuggestions, settings, onboarding } =
+    storage
+  logger.info({ path: sqlitePath }, 'sqlite storage opened')
 
   const app = await createApp({
     ha,
@@ -187,6 +179,7 @@ async function main() {
       dismissedSuggestions.close()
       settings.close()
       onboarding.close()
+      sqlite.close()
     }
     process.exit(0)
   }
