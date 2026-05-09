@@ -16,11 +16,10 @@ const ConfigSchema = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   DATA_DIR: z.string().default('./data'),
 
-  // HA connection — Add-on context uses SUPERVISOR_TOKEN against the in-network
-  // `homeassistant` hostname (which home-assistant-js-websocket can reach via
-  // its standard `/api/websocket` path). Standalone uses HA_TOKEN against
-  // whatever HA_URL the user sets.
-  HA_URL: z.string().url().default('http://homeassistant:8123'),
+  // HA connection — standalone uses HA_TOKEN against HA_URL. Add-on context
+  // uses SUPERVISOR_TOKEN against the Supervisor Core API proxy.
+  HA_URL: z.string().url().optional(),
+  HA_WEBSOCKET_URL: z.string().url().optional(),
   HA_TOKEN: z.string().optional(),
   SUPERVISOR_TOKEN: z.string().optional(),
 
@@ -43,19 +42,26 @@ const parsed = ConfigSchema.parse(process.env)
 
 // Use `||` rather than `??` so an empty-string SUPERVISOR_TOKEN (which Zod's
 // `.optional()` admits) falls through to HA_TOKEN instead of shadowing it.
-const haToken = parsed.SUPERVISOR_TOKEN || parsed.HA_TOKEN
+const supervisorToken = parsed.SUPERVISOR_TOKEN || undefined
+const haToken = supervisorToken || parsed.HA_TOKEN
 if (!haToken) {
   throw new Error(
     'No HA token configured. Set HA_TOKEN (standalone) or SUPERVISOR_TOKEN (Add-on context).',
   )
 }
 
+const haUrl =
+  parsed.HA_URL ?? (supervisorToken ? 'http://supervisor/core/api' : 'http://homeassistant:8123')
+const haWebsocketUrl =
+  parsed.HA_WEBSOCKET_URL ?? (supervisorToken ? 'ws://supervisor/core/websocket' : undefined)
+
 export const config = {
   port: parsed.PORT,
   logLevel: parsed.LOG_LEVEL,
   dataDir: parsed.DATA_DIR,
   ha: {
-    url: parsed.HA_URL,
+    url: haUrl,
+    websocketUrl: haWebsocketUrl,
     token: haToken,
   },
   dashboardUrlPath: parsed.DASHBOARD_URL_PATH,

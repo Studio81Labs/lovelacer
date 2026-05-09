@@ -130,6 +130,7 @@ async function main() {
     url: config.ha.url,
     token: config.ha.token,
     logger,
+    ...(config.ha.websocketUrl !== undefined && { websocketUrl: config.ha.websocketUrl }),
   })
 
   const sqlitePath = resolve(config.dataDir, 'lovelacer.sqlite')
