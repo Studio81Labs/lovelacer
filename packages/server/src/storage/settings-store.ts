@@ -1,6 +1,3 @@
-import { mkdirSync } from 'node:fs'
-import { dirname } from 'node:path'
-import Database from 'better-sqlite3'
 import type { Database as DatabaseType, Statement } from 'better-sqlite3'
 import {
   DEFAULT_SETTINGS,
@@ -13,6 +10,7 @@ import {
   type SettingsSections,
   type UiLanguage,
 } from '@lovelacer/shared'
+import { initSqliteStore, type SqliteSource } from './sqlite.js'
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS settings (
@@ -47,26 +45,14 @@ interface SettingsRow {
  */
 export class SettingsStore {
   private readonly db: DatabaseType
+  private readonly closeDb: () => void
   private readonly stmtGet: Statement
   private readonly stmtSave: Statement
 
-  constructor(filename: string) {
-    if (filename !== ':memory:') {
-      mkdirSync(dirname(filename), { recursive: true })
-    }
-    this.db = new Database(filename)
-    // Best-effort WAL upgrade: SQLite's default is rollback-journal,
-    // which is correct (just lower-throughput) for a single-writer
-    // workload. WAL needs an exclusive lock — if a crashed previous
-    // container left stale .db-wal/.db-shm lock state we hit
-    // SQLITE_BUSY here. Don't crash startup over a perf optimization.
-    try {
-      this.db.pragma('journal_mode = WAL')
-    } catch (err) {
-      if ((err as { code?: string })?.code !== 'SQLITE_BUSY') throw err
-    }
-    // SQLite DDL — better-sqlite3's exec(), not Node's child_process.exec.
-    this.db.exec(SCHEMA)
+  constructor(source: SqliteSource) {
+    const initialized = initSqliteStore(source, SCHEMA)
+    this.db = initialized.db
+    this.closeDb = initialized.close
 
     this.stmtGet = this.db.prepare('SELECT payload FROM settings WHERE id = 1')
     this.stmtSave = this.db.prepare(
@@ -112,7 +98,7 @@ export class SettingsStore {
 
   /** Closes the underlying DB. Used in tests to release ':memory:' handles. */
   close(): void {
-    this.db.close()
+    this.closeDb()
   }
 }
 

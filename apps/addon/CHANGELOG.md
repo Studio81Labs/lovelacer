@@ -1,3 +1,29 @@
+## 0.4.10
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+Fixes the remaining HA add-on startup lock failure seen on 0.4.9:
+
+```
+sqlite still busy after retries; renaming auxiliary files...
+fatal startup error: SqliteError: database is locked
+```
+
+The 0.4.9 recovery removed wedged WAL sidecars, but each retry still
+constructed a store by opening a new `better-sqlite3` connection before
+running schema setup. If schema initialization threw `SQLITE_BUSY`, that
+partially constructed store never reached `close()`, so the retry loop
+could leak SQLite handles during the same startup attempt.
+
+Storage initialization now opens one shared SQLite connection for all six
+tables, runs all store schema setup on that connection, and closes the
+connection immediately if any schema step fails. The individual stores
+still support filename-owned connections for tests and local use, but the
+HA boot path no longer opens the same `/data/lovelacer.sqlite` file six
+times during startup.
+
+Same QA scope as 0.4.0–0.4.9.
+
 ## 0.4.9
 
 ### Phase 2 — pre-release for local QA (re-spin)
