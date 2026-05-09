@@ -1,3 +1,18 @@
+## 0.4.14
+
+### Phase 2 — pre-release for local QA (HA websocket timeout fix)
+
+Hardens the preview/analyze path against Home Assistant websocket commands
+that never return through the Supervisor proxy.
+
+The observed failure was `POST /api/preview` logging an incoming request but
+never logging a completion line, followed by HA ingress returning `502 Bad
+Gateway` even for `/api/health`. HA registry calls now have a bounded timeout:
+if a command hangs, Lovelacer logs the command type, reconnects the websocket,
+and the route can fail cleanly instead of leaving ingress to time out.
+
+Same QA scope as 0.4.0–0.4.13.
+
 ## 0.4.13
 
 ### Phase 2 — pre-release for local QA (empty JSON request fix)

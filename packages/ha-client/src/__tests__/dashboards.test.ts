@@ -41,21 +41,45 @@ const otherDashboard: HaDashboardEntry = {
   mode: 'storage',
 }
 
-function makeClient(): { client: HaClient; send: ReturnType<typeof vi.fn> } {
+function makeClient(opts: { requestTimeoutMs?: number } = {}): {
+  client: HaClient
+  send: ReturnType<typeof vi.fn>
+} {
   const send = vi.fn()
   const fakeConnection = {
     sendMessagePromise: send,
     addEventListener: vi.fn(),
     connected: true,
     close: vi.fn(),
+    reconnect: vi.fn(),
   } as unknown as Connection
   const client = new HaClient({
     url: 'ws://test',
     token: 'fake',
+    ...(opts.requestTimeoutMs !== undefined && { requestTimeoutMs: opts.requestTimeoutMs }),
   })
   ;(client as unknown as { connection: Connection }).connection = fakeConnection
   return { client, send }
 }
+
+describe('request timeout', () => {
+  it('rejects registry calls that never receive a websocket result', async () => {
+    vi.useFakeTimers()
+    try {
+      const { client, send } = makeClient({ requestTimeoutMs: 25 })
+      send.mockReturnValueOnce(new Promise(() => {}))
+
+      const pending = client.getEntityRegistry()
+      const expectation = expect(pending).rejects.toThrow(/timed out/)
+      await vi.advanceTimersByTimeAsync(25)
+
+      await expectation
+      expect(send).toHaveBeenCalledWith({ type: 'config/entity_registry/list' })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
 
 describe('listDashboards', () => {
   it('forwards lovelace/dashboards/list and returns the array', async () => {
