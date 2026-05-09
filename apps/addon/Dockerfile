@@ -48,6 +48,7 @@ RUN apk add --no-cache --virtual .build-deps python3 make g++ npm && \
     apk del .build-deps
 
 # Entrypoint
+COPY config.yaml /app/addon-config.yaml
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 

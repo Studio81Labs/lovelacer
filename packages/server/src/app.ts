@@ -38,6 +38,8 @@ export interface CreateAppOptions {
   logger?: Logger
   /** Default url_path for the generated dashboard. Forwarded to the apply route. */
   dashboardUrlPath: string
+  /** Add-on/config version surfaced by /api/health for runtime diagnostics. */
+  appVersion?: string
   /**
    * Absolute path to the built SPA's static asset directory (the
    * `packages/web/dist/` produced by `pnpm --filter @lovelacer/web build`).
@@ -70,7 +72,7 @@ export async function createApp(opts: CreateAppOptions) {
   // healthchecks.
   app.get('/api/health', async () => ({
     ok: true,
-    version: '0.0.0',
+    version: opts.appVersion ?? 'dev',
     ha: { connected: opts.ha.isConnected() },
   }))
 

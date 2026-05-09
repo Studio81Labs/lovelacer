@@ -36,6 +36,10 @@ const ConfigSchema = z.object({
   // Add-on container so Fastify serves index.html + assets at /. Leave
   // unset in dev — Vite serves the SPA on :5173 with a proxy to :3000.
   WEB_DIST_DIR: z.string().optional(),
+
+  // Set by the Home Assistant add-on wrapper from config.yaml. Used only
+  // for health/startup diagnostics so we can confirm which image is running.
+  ADDON_VERSION: z.string().optional(),
 })
 
 const parsed = ConfigSchema.parse(process.env)
@@ -66,4 +70,5 @@ export const config = {
   },
   dashboardUrlPath: parsed.DASHBOARD_URL_PATH,
   webDistDir: parsed.WEB_DIST_DIR,
+  addonVersion: parsed.ADDON_VERSION ?? 'dev',
 } as const

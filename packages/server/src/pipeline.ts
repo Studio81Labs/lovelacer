@@ -1,3 +1,4 @@
+import { performance } from 'node:perf_hooks'
 import {
   assignFloors,
   computeDiff,
@@ -45,6 +46,69 @@ export interface PreviewOutput extends AnalyzeOutput {
   diff: DiffResult | null
   /** P2-5 — actionable hints. Always present (empty array when none). */
   suggestions: Suggestion[]
+}
+
+interface PipelineLogger {
+  info(obj: Record<string, unknown>, msg: string): void
+  error(obj: Record<string, unknown>, msg: string): void
+}
+
+export interface PipelineRunOptions {
+  logger?: PipelineLogger
+}
+
+function durationMs(start: number): number {
+  return Math.round((performance.now() - start) * 10) / 10
+}
+
+function countResult(value: unknown): Record<string, unknown> {
+  return Array.isArray(value) ? { count: value.length } : {}
+}
+
+async function timedStage<T>(
+  options: PipelineRunOptions | undefined,
+  stage: string,
+  task: () => Promise<T>,
+): Promise<T> {
+  const start = performance.now()
+  options?.logger?.info({ stage }, 'preview pipeline stage started')
+  try {
+    const result = await task()
+    options?.logger?.info(
+      { stage, durationMs: durationMs(start), ...countResult(result) },
+      'preview pipeline stage completed',
+    )
+    return result
+  } catch (err) {
+    options?.logger?.error(
+      { stage, durationMs: durationMs(start), err },
+      'preview pipeline stage failed',
+    )
+    throw err
+  }
+}
+
+function timedSyncStage<T>(
+  options: PipelineRunOptions | undefined,
+  stage: string,
+  task: () => T,
+): T {
+  const start = performance.now()
+  options?.logger?.info({ stage }, 'preview pipeline stage started')
+  try {
+    const result = task()
+    options?.logger?.info(
+      { stage, durationMs: durationMs(start), ...countResult(result) },
+      'preview pipeline stage completed',
+    )
+    return result
+  } catch (err) {
+    options?.logger?.error(
+      { stage, durationMs: durationMs(start), err },
+      'preview pipeline stage failed',
+    )
+    throw err
+  }
 }
 
 export interface ApplyInput {
@@ -201,6 +265,7 @@ async function runFullPipeline(
   ha: HaClient,
   overrides: OverrideStore,
   settings: SettingsStore,
+  options?: PipelineRunOptions,
 ): Promise<PipelineState> {
   // P2-6 — read settings at the top so language/sections threading is
   // consistent across the entire pipeline call.
@@ -211,58 +276,71 @@ async function runFullPipeline(
   // `config/floor_registry/list`. If it errors, we treat as empty and
   // proceed; the rest of analyze must not depend on floor data.
   const [entityRegistry, deviceRegistry, areaRegistry, floorRegistry] = await Promise.all([
-    ha.getEntityRegistry(),
-    ha.getDeviceRegistry(),
-    ha.getAreaRegistry(),
-    ha.getFloorRegistry().catch((err: unknown) => {
-      // Don't have access to a logger here; return empty list quietly.
-      // Route-layer logging picks up the absent section if needed.
-      void err
-      return [] as Awaited<ReturnType<typeof ha.getFloorRegistry>>
-    }),
+    timedStage(options, 'ha.entity_registry', () => ha.getEntityRegistry()),
+    timedStage(options, 'ha.device_registry', () => ha.getDeviceRegistry()),
+    timedStage(options, 'ha.area_registry', () => ha.getAreaRegistry()),
+    timedStage(options, 'ha.floor_registry', () =>
+      ha.getFloorRegistry().catch((err: unknown) => {
+        options?.logger?.info(
+          { stage: 'ha.floor_registry', err },
+          'preview pipeline optional floor registry unavailable',
+        )
+        return [] as Awaited<ReturnType<typeof ha.getFloorRegistry>>
+      }),
+    ),
   ])
 
-  const entities = normalize({
-    entities: entityRegistry,
-    devices: deviceRegistry,
-  })
-  const assignments = detect({
-    entities,
-    areas: areaRegistry,
-    ...(detectLanguage !== undefined ? { language: detectLanguage } : {}),
-  })
-  applyOverrides({ assignments, entities }, overrides.getAll())
-  const groupings = groupByDomain({ assignments, entities })
+  const entities = timedSyncStage(options, 'normalize', () =>
+    normalize({
+      entities: entityRegistry,
+      devices: deviceRegistry,
+    }),
+  )
+  const assignments = timedSyncStage(options, 'detect', () =>
+    detect({
+      entities,
+      areas: areaRegistry,
+      ...(detectLanguage !== undefined ? { language: detectLanguage } : {}),
+    }),
+  )
+  timedSyncStage(options, 'apply_overrides', () =>
+    applyOverrides({ assignments, entities }, overrides.getAll()),
+  )
+  const groupings = timedSyncStage(options, 'group_by_domain', () =>
+    groupByDomain({ assignments, entities }),
+  )
 
   const entityById = new Map(entities.map((e) => [e.entityId, e]))
 
   const rooms: AnalyzedRoom[] = []
   const misc: AnalyzeOutput['misc'] = []
 
-  for (const grouping of groupings) {
-    // Skip hidden/disabled entities everywhere — `groupByDomain` already
-    // filters them from views, so the analyze counts must match what users
-    // actually see in the dashboard.
-    const roomAssignments = assignments.filter((a) => {
-      if (a.roomId !== grouping.roomId) return false
-      const e = entityById.get(a.entityId)
-      return e !== undefined && !e.isHidden && !e.isDisabled
-    })
-    if (grouping.roomId === 'misc') {
-      for (const a of roomAssignments) {
+  timedSyncStage(options, 'build_analyze_output', () => {
+    for (const grouping of groupings) {
+      // Skip hidden/disabled entities everywhere — `groupByDomain` already
+      // filters them from views, so the analyze counts must match what users
+      // actually see in the dashboard.
+      const roomAssignments = assignments.filter((a) => {
+        if (a.roomId !== grouping.roomId) return false
         const e = entityById.get(a.entityId)
-        if (e === undefined) continue
-        misc.push({
-          entityId: e.entityId,
-          friendlyName: e.friendlyName,
-          domain: e.domain,
-        })
+        return e !== undefined && !e.isHidden && !e.isDisabled
+      })
+      if (grouping.roomId === 'misc') {
+        for (const a of roomAssignments) {
+          const e = entityById.get(a.entityId)
+          if (e === undefined) continue
+          misc.push({
+            entityId: e.entityId,
+            friendlyName: e.friendlyName,
+            domain: e.domain,
+          })
+        }
+        continue
       }
-      continue
-    }
 
-    rooms.push(buildAnalyzedRoom(grouping, roomAssignments, entityById, areaRegistry))
-  }
+      rooms.push(buildAnalyzedRoom(grouping, roomAssignments, entityById, areaRegistry))
+    }
+  })
 
   rooms.sort((a, b) => a.displayName.localeCompare(b.displayName, 'en'))
 
@@ -270,11 +348,24 @@ async function runFullPipeline(
   // hidden + disabled entities don't appear in any view, so don't count them.
   const visibleEntityCount = entities.filter((e) => !e.isHidden && !e.isDisabled).length
 
-  const floorAssignments = assignFloors({
-    rooms,
-    areas: areaRegistry,
-    floors: floorRegistry,
-  })
+  const floorAssignments = timedSyncStage(options, 'assign_floors', () =>
+    assignFloors({
+      rooms,
+      areas: areaRegistry,
+      floors: floorRegistry,
+    }),
+  )
+
+  options?.logger?.info(
+    {
+      stage: 'pipeline_summary',
+      entities: visibleEntityCount,
+      rooms: rooms.length,
+      misc: misc.length,
+      groupings: groupings.length,
+    },
+    'preview pipeline state ready',
+  )
 
   return {
     entities,
@@ -295,8 +386,9 @@ export async function runAnalyze(
   ha: HaClient,
   overrides: OverrideStore,
   settings: SettingsStore,
+  options?: PipelineRunOptions,
 ): Promise<AnalyzeOutput> {
-  const state = await runFullPipeline(ha, overrides, settings)
+  const state = await runFullPipeline(ha, overrides, settings, options)
   return { rooms: state.rooms, misc: state.misc, summary: state.summary }
 }
 
@@ -354,22 +446,29 @@ export async function runPreview(
   appliedSnapshot: AppliedSnapshotStore,
   dismissedSuggestions: DismissedSuggestionStore,
   settings: SettingsStore,
+  options?: PipelineRunOptions,
 ): Promise<PreviewOutput> {
-  const state = await runFullPipeline(ha, overrides, settings)
+  const state = await runFullPipeline(ha, overrides, settings, options)
 
   // Drop the misc grouping before view generation: misc entities surface
   // via the analyze response's `misc[]` field, not as a dashboard view.
   const dashboardGroupings = state.groupings.filter((g) => g.roomId !== 'misc')
 
-  const home = buildHomeView({
-    entities: state.entities,
-    groupings: dashboardGroupings,
-    rooms: state.rooms,
-    floorAssignments: state.floorAssignments,
-    sections: state.sectionFlags,
-  })
-  const rooms = buildRoomViews(dashboardGroupings)
-  const config = buildLovelaceConfig({ home, rooms })
+  const home = timedSyncStage(options, 'build_home_view', () =>
+    buildHomeView({
+      entities: state.entities,
+      groupings: dashboardGroupings,
+      rooms: state.rooms,
+      floorAssignments: state.floorAssignments,
+      sections: state.sectionFlags,
+    }),
+  )
+  const rooms = timedSyncStage(options, 'build_room_views', () =>
+    buildRoomViews(dashboardGroupings),
+  )
+  const config = timedSyncStage(options, 'build_lovelace_config', () =>
+    buildLovelaceConfig({ home, rooms }),
+  )
 
   // Build the flat assignments list the diff expects: every visible
   // entity → its assigned room (or null for misc). Mirrors what the
@@ -400,13 +499,27 @@ export async function runPreview(
   for (const e of state.entities) entitiesById.set(e.entityId, e)
   const miscEntityIds = new Set(state.misc.map((m) => m.entityId))
 
-  const suggestions = computeSuggestions({
-    rooms: state.rooms,
-    miscEntityIds,
-    entitiesById,
-    overridesById,
-    dismissed: dismissedSuggestions.getAllAsKeySet(),
-  })
+  const suggestions = timedSyncStage(options, 'compute_suggestions', () =>
+    computeSuggestions({
+      rooms: state.rooms,
+      miscEntityIds,
+      entitiesById,
+      overridesById,
+      dismissed: dismissedSuggestions.getAllAsKeySet(),
+    }),
+  )
+
+  options?.logger?.info(
+    {
+      stage: 'preview_summary',
+      entities: state.summary.entityCount,
+      rooms: state.rooms.length,
+      misc: state.misc.length,
+      views: config.views.length,
+      suggestions: suggestions.length,
+    },
+    'preview pipeline output ready',
+  )
 
   return {
     rooms: state.rooms,
