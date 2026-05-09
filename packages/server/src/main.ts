@@ -59,7 +59,7 @@ async function openStoreWithRetry<T>(
         try {
           await unlink(file)
         } catch (e) {
-          if ((e as NodeJS.ErrnoException).code !== 'ENOENT') {
+          if ((e as { code?: string })?.code !== 'ENOENT') {
             logger.warn({ err: e, file }, 'could not remove sqlite auxiliary file')
           }
         }
