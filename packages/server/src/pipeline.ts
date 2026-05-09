@@ -1,4 +1,5 @@
 import { performance } from 'node:perf_hooks'
+import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 import {
   assignFloors,
   computeDiff,
@@ -88,13 +89,14 @@ async function timedStage<T>(
   }
 }
 
-function timedSyncStage<T>(
+async function timedSyncStage<T>(
   options: PipelineRunOptions | undefined,
   stage: string,
   task: () => T,
-): T {
+): Promise<T> {
   const start = performance.now()
   options?.logger?.info({ stage }, 'preview pipeline stage started')
+  await yieldToEventLoop()
   try {
     const result = task()
     options?.logger?.info(
@@ -290,23 +292,23 @@ async function runFullPipeline(
     ),
   ])
 
-  const entities = timedSyncStage(options, 'normalize', () =>
+  const entities = await timedSyncStage(options, 'normalize', () =>
     normalize({
       entities: entityRegistry,
       devices: deviceRegistry,
     }),
   )
-  const assignments = timedSyncStage(options, 'detect', () =>
+  const assignments = await timedSyncStage(options, 'detect', () =>
     detect({
       entities,
       areas: areaRegistry,
       ...(detectLanguage !== undefined ? { language: detectLanguage } : {}),
     }),
   )
-  timedSyncStage(options, 'apply_overrides', () =>
+  await timedSyncStage(options, 'apply_overrides', () =>
     applyOverrides({ assignments, entities }, overrides.getAll()),
   )
-  const groupings = timedSyncStage(options, 'group_by_domain', () =>
+  const groupings = await timedSyncStage(options, 'group_by_domain', () =>
     groupByDomain({ assignments, entities }),
   )
 
@@ -315,7 +317,7 @@ async function runFullPipeline(
   const rooms: AnalyzedRoom[] = []
   const misc: AnalyzeOutput['misc'] = []
 
-  timedSyncStage(options, 'build_analyze_output', () => {
+  await timedSyncStage(options, 'build_analyze_output', () => {
     for (const grouping of groupings) {
       // Skip hidden/disabled entities everywhere — `groupByDomain` already
       // filters them from views, so the analyze counts must match what users
@@ -348,7 +350,7 @@ async function runFullPipeline(
   // hidden + disabled entities don't appear in any view, so don't count them.
   const visibleEntityCount = entities.filter((e) => !e.isHidden && !e.isDisabled).length
 
-  const floorAssignments = timedSyncStage(options, 'assign_floors', () =>
+  const floorAssignments = await timedSyncStage(options, 'assign_floors', () =>
     assignFloors({
       rooms,
       areas: areaRegistry,
@@ -454,7 +456,7 @@ export async function runPreview(
   // via the analyze response's `misc[]` field, not as a dashboard view.
   const dashboardGroupings = state.groupings.filter((g) => g.roomId !== 'misc')
 
-  const home = timedSyncStage(options, 'build_home_view', () =>
+  const home = await timedSyncStage(options, 'build_home_view', () =>
     buildHomeView({
       entities: state.entities,
       groupings: dashboardGroupings,
@@ -463,10 +465,10 @@ export async function runPreview(
       sections: state.sectionFlags,
     }),
   )
-  const rooms = timedSyncStage(options, 'build_room_views', () =>
+  const rooms = await timedSyncStage(options, 'build_room_views', () =>
     buildRoomViews(dashboardGroupings),
   )
-  const config = timedSyncStage(options, 'build_lovelace_config', () =>
+  const config = await timedSyncStage(options, 'build_lovelace_config', () =>
     buildLovelaceConfig({ home, rooms }),
   )
 
@@ -499,7 +501,7 @@ export async function runPreview(
   for (const e of state.entities) entitiesById.set(e.entityId, e)
   const miscEntityIds = new Set(state.misc.map((m) => m.entityId))
 
-  const suggestions = timedSyncStage(options, 'compute_suggestions', () =>
+  const suggestions = await timedSyncStage(options, 'compute_suggestions', () =>
     computeSuggestions({
       rooms: state.rooms,
       miscEntityIds,

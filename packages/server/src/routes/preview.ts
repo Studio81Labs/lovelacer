@@ -5,6 +5,8 @@ import type { DismissedSuggestionStore } from '../storage/dismissed-suggestion-s
 import type { OverrideStore } from '../storage/override-store.js'
 import type { SettingsStore } from '../storage/settings-store.js'
 import { runPreview } from '../pipeline.js'
+import { performance } from 'node:perf_hooks'
+import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 
 export interface PreviewRouteOptions {
   ha: HaClient
@@ -53,7 +55,19 @@ export const previewRoute: FastifyPluginAsync<PreviewRouteOptions> = async (
         },
         'preview request ready to send response',
       )
-      return reply.code(200).send(result)
+      const serializeStart = performance.now()
+      req.log.info({ stage: 'preview_json_serialize' }, 'preview pipeline stage started')
+      await yieldToEventLoop()
+      const body = JSON.stringify(result)
+      req.log.info(
+        {
+          stage: 'preview_json_serialize',
+          durationMs: Math.round((performance.now() - serializeStart) * 10) / 10,
+          bytes: Buffer.byteLength(body),
+        },
+        'preview pipeline stage completed',
+      )
+      return reply.code(200).type('application/json').send(body)
     } catch (err) {
       req.log.error({ err }, 'preview failed')
       return reply.code(500).send({ error: 'preview_failed', message: String(err) })

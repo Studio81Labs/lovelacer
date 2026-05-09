@@ -1,3 +1,19 @@
+## 0.4.16
+
+### Phase 2 — pre-release for local QA (sync preview stage tracing)
+
+Adds one more layer of diagnostics for the remaining `POST /api/preview`
+ingress 502.
+
+0.4.15 confirmed that Home Assistant registry websocket calls complete
+quickly, so the failure is after registry fetch. Synchronous preview stages
+now yield before doing CPU work so their "started" log reaches the add-on log
+before a possible event-loop block. The preview route also measures JSON
+serialization size/time before sending the response, so we can distinguish
+pipeline work from a too-large/slow preview response.
+
+Same QA scope as 0.4.0–0.4.15.
+
 ## 0.4.15
 
 ### Phase 2 — pre-release for local QA (preview 502 diagnostics)
