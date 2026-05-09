@@ -464,7 +464,7 @@ describe('postOnboardingComplete', () => {
     vi.restoreAllMocks()
   })
 
-  it('POSTs api/onboarding/complete with no body and returns the parsed payload', async () => {
+  it('POSTs api/onboarding/complete without JSON headers or a body', async () => {
     const ts = 1700000000
     globalThis.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
@@ -475,7 +475,6 @@ describe('postOnboardingComplete', () => {
     expect(result).toEqual({ completedAt: ts })
     expect(globalThis.fetch).toHaveBeenCalledWith('api/onboarding/complete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
     })
   })
 

@@ -143,6 +143,5 @@ export function getOnboarding(): Promise<OnboardingStatus> {
 export function postOnboardingComplete(): Promise<OnboardingStatus> {
   return fetchJson<OnboardingStatus>('api/onboarding/complete', {
     method: 'POST',
-    headers: JSON_HEADERS,
   })
 }
