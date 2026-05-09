@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+import { unlink } from 'node:fs/promises'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { HaClient } from '@lovelacer/ha-client'
 import { pino, type Logger } from 'pino'
@@ -18,20 +19,52 @@ import { OnboardingStore } from './storage/onboarding-store.js'
  * lock-acquiring init operations (WAL pragma, CREATE TABLE, etc.) transiently
  * busy. Retry with exponential backoff so we ride out short-lived contention
  * before failing startup.
+ *
+ * If `recoveryFiles` is provided and all retries fail with SQLITE_BUSY, the
+ * named auxiliary files (typically `.db-wal` and `.db-shm`) are deleted as a
+ * last-resort recovery for permanently-stuck WAL state from a crashed
+ * previous container, then the factory is called once more. This sacrifices
+ * any uncommitted WAL data — only meaningful when the DB is already wedged
+ * and unrecoverable, so a fair trade. Pass it only on the first store
+ * opened so cleanup runs once per process.
  */
-async function openStoreWithRetry<T>(factory: () => T, name: string, logger: Logger): Promise<T> {
+async function openStoreWithRetry<T>(
+  factory: () => T,
+  name: string,
+  logger: Logger,
+  recoveryFiles?: string[],
+): Promise<T> {
   const delaysMs = [500, 1000, 2000, 4000]
   for (let attempt = 0; attempt <= delaysMs.length; attempt++) {
     try {
       return factory()
     } catch (err) {
       const code = (err as { code?: string })?.code
-      if (code !== 'SQLITE_BUSY' || attempt === delaysMs.length) throw err
+      if (code !== 'SQLITE_BUSY') throw err
+      if (attempt < delaysMs.length) {
+        logger.warn(
+          { store: name, attempt: attempt + 1, code },
+          'sqlite busy during store init; backing off and retrying',
+        )
+        await sleep(delaysMs[attempt])
+        continue
+      }
+      // All normal retries exhausted.
+      if (!recoveryFiles?.length) throw err
       logger.warn(
-        { store: name, attempt: attempt + 1, code },
-        'sqlite busy during store init; backing off and retrying',
+        { store: name, files: recoveryFiles },
+        'sqlite still busy after retries; removing auxiliary files (any uncommitted WAL data will be lost) and retrying once more',
       )
-      await sleep(delaysMs[attempt])
+      for (const file of recoveryFiles) {
+        try {
+          await unlink(file)
+        } catch (e) {
+          if ((e as NodeJS.ErrnoException).code !== 'ENOENT') {
+            logger.warn({ err: e, file }, 'could not remove sqlite auxiliary file')
+          }
+        }
+      }
+      return factory()
     }
   }
   throw new Error('unreachable')
@@ -59,10 +92,14 @@ async function main() {
   })
 
   const overridesPath = resolve(config.dataDir, 'lovelacer.sqlite')
+  // Pass recovery files to the FIRST store opened so any wedged WAL state
+  // from a crashed previous container is cleaned up before subsequent stores
+  // (which share the same .sqlite file) try to open.
   const overrides = await openStoreWithRetry(
     () => new OverrideStore(overridesPath),
     'overrides',
     logger,
+    [`${overridesPath}-wal`, `${overridesPath}-shm`, `${overridesPath}-journal`],
   )
   logger.info({ path: overridesPath }, 'override store opened')
 

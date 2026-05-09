@@ -1,3 +1,31 @@
+## 0.4.9
+
+### Phase 2 — pre-release for local QA (re-spin)
+
+Fixes the persistent SQLITE_BUSY case from 0.4.8 where the lock
+state from a crashed previous container is permanently wedged —
+not transient — so retrying with backoff alone never clears it.
+User log on 0.4.8:
+
+```
+attempt=1 sqlite busy during store init; backing off and retrying
+attempt=2 ...
+attempt=3 ...
+attempt=4 ...
+fatal startup error: SqliteError: database is locked
+```
+
+Add a last-resort recovery to `openStoreWithRetry` in `main.ts`:
+when all normal retries (5 attempts ≈ 7.5s) are exhausted with
+SQLITE_BUSY, delete the auxiliary `.db-wal`/`.db-shm`/`.db-journal`
+files and call the factory once more. Sacrifices any uncommitted
+WAL data — only fires when the DB is already wedged and
+unrecoverable, so a fair trade. Recovery is applied only on the
+first store opened (subsequent stores share the same `.sqlite`
+file, so cleanup runs once per process).
+
+Same QA scope as 0.4.0–0.4.8.
+
 ## 0.4.8
 
 ### Phase 2 — pre-release for local QA (re-spin)
