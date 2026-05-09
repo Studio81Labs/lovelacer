@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
+  postAnalyze,
   postApply,
   postPreview,
   postDismissSuggestion,
@@ -36,12 +37,31 @@ const mockConfig: LovelaceConfig = {
   views: [],
 }
 
+describe('postAnalyze', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('POSTs api/analyze without JSON headers or a body', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockPreviewResponse),
+    } as unknown as Response)
+
+    const result = await postAnalyze()
+    expect(result).toEqual(mockPreviewResponse)
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/analyze', {
+      method: 'POST',
+    })
+  })
+})
+
 describe('postPreview', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('returns parsed body on 200', async () => {
+  it('POSTs api/preview without JSON headers or a body', async () => {
     globalThis.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockPreviewResponse),
@@ -51,7 +71,6 @@ describe('postPreview', () => {
     expect(result).toEqual(mockPreviewResponse)
     expect(globalThis.fetch).toHaveBeenCalledWith('api/preview', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
     })
   })
 
@@ -464,7 +483,7 @@ describe('postOnboardingComplete', () => {
     vi.restoreAllMocks()
   })
 
-  it('POSTs api/onboarding/complete with no body and returns the parsed payload', async () => {
+  it('POSTs api/onboarding/complete without JSON headers or a body', async () => {
     const ts = 1700000000
     globalThis.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
@@ -475,7 +494,6 @@ describe('postOnboardingComplete', () => {
     expect(result).toEqual({ completedAt: ts })
     expect(globalThis.fetch).toHaveBeenCalledWith('api/onboarding/complete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
     })
   })
 

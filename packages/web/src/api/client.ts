@@ -51,11 +51,11 @@ async function fetchJson<T>(path: string, init: RequestInit = {}): Promise<T> {
 const JSON_HEADERS = { 'Content-Type': 'application/json' } as const
 
 export function postAnalyze(): Promise<AnalyzeOutput> {
-  return fetchJson<AnalyzeOutput>('api/analyze', { method: 'POST', headers: JSON_HEADERS })
+  return fetchJson<AnalyzeOutput>('api/analyze', { method: 'POST' })
 }
 
 export function postPreview(): Promise<PreviewOutput> {
-  return fetchJson<PreviewOutput>('api/preview', { method: 'POST', headers: JSON_HEADERS })
+  return fetchJson<PreviewOutput>('api/preview', { method: 'POST' })
 }
 
 /**
@@ -143,6 +143,5 @@ export function getOnboarding(): Promise<OnboardingStatus> {
 export function postOnboardingComplete(): Promise<OnboardingStatus> {
   return fetchJson<OnboardingStatus>('api/onboarding/complete', {
     method: 'POST',
-    headers: JSON_HEADERS,
   })
 }
