@@ -13,6 +13,10 @@ import { SettingsStore } from './storage/settings-store.js'
 import { OnboardingStore } from './storage/onboarding-store.js'
 import { openSqliteDatabase, type SqliteDatabase } from './storage/sqlite.js'
 
+function logProcessError(logger: Logger, message: string, err: unknown): void {
+  logger.fatal({ err: err instanceof Error ? err : String(err) }, message)
+}
+
 /**
  * Open SQLite-backed storage with retry on SQLITE_BUSY. All six stores share
  * a single `lovelacer.sqlite` connection; on first start after a crashed
@@ -126,6 +130,30 @@ async function main() {
     }),
   })
 
+  process.on('uncaughtException', (err) => {
+    logProcessError(logger, 'uncaught exception; exiting', err)
+    process.exit(1)
+  })
+  process.on('unhandledRejection', (reason) => {
+    logProcessError(logger, 'unhandled promise rejection; exiting', reason)
+    process.exit(1)
+  })
+  process.on('warning', (warning) => {
+    logger.warn({ err: warning }, 'node process warning')
+  })
+
+  logger.info(
+    {
+      addonVersion: config.addonVersion,
+      nodeVersion: process.version,
+      dataDir: config.dataDir,
+      webDistDir: config.webDistDir ?? null,
+      haUrl: config.ha.url,
+      haWebsocketUrl: config.ha.websocketUrl ?? null,
+    },
+    'lovelacer server starting',
+  )
+
   const ha = new HaClient({
     url: config.ha.url,
     token: config.ha.token,
@@ -159,6 +187,7 @@ async function main() {
     isDev,
     logLevel: config.logLevel,
     logger,
+    appVersion: config.addonVersion,
     dashboardUrlPath: config.dashboardUrlPath,
     ...(config.webDistDir !== undefined && { webDistDir: config.webDistDir }),
   })

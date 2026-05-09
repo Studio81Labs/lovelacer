@@ -30,7 +30,7 @@ export const analyzeRoute: FastifyPluginAsync<AnalyzeRouteOptions> = async (
         .send({ error: 'ha_unavailable', message: 'Home Assistant connection not ready' })
     }
     try {
-      const result = await runAnalyze(opts.ha, opts.overrides, opts.settings)
+      const result = await runAnalyze(opts.ha, opts.overrides, opts.settings, { logger: req.log })
       return reply.code(200).send(result)
     } catch (err) {
       req.log.error({ err }, 'analyze failed')

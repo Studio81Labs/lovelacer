@@ -34,12 +34,24 @@ export const previewRoute: FastifyPluginAsync<PreviewRouteOptions> = async (
         .send({ error: 'ha_unavailable', message: 'Home Assistant connection not ready' })
     }
     try {
+      req.log.info('preview request accepted')
       const result = await runPreview(
         opts.ha,
         opts.overrides,
         opts.appliedSnapshot,
         opts.dismissedSuggestions,
         opts.settings,
+        { logger: req.log },
+      )
+      req.log.info(
+        {
+          entities: result.summary.entityCount,
+          rooms: result.rooms.length,
+          misc: result.misc.length,
+          views: result.config.views.length,
+          suggestions: result.suggestions.length,
+        },
+        'preview request ready to send response',
       )
       return reply.code(200).send(result)
     } catch (err) {

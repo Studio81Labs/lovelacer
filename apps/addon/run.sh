@@ -20,6 +20,10 @@ export DATA_DIR="/data"
 # Fastify's @fastify/static serves them at /. Server reads this from
 # WEB_DIST_DIR via packages/server/src/config.ts.
 export WEB_DIST_DIR="/app/web-dist"
+if [ -f /app/addon-config.yaml ]; then
+  export ADDON_VERSION="$(awk -F"'" '/^version:/ { print $2; exit }' /app/addon-config.yaml)"
+fi
+export ADDON_VERSION="${ADDON_VERSION:-unknown}"
 
 cd /app
 # `exec` replaces the shell so signals (SIGTERM from Supervisor on

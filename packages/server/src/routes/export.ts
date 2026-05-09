@@ -44,6 +44,7 @@ export const exportRoute: FastifyPluginAsync<ExportRouteOptions> = async (
         opts.appliedSnapshot,
         opts.dismissedSuggestions,
         opts.settings,
+        { logger: req.log },
       )
       const yaml = configToYaml(preview.config)
       const safeStem = SAFE_FILENAME.test(opts.dashboardUrlPath)

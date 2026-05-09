@@ -1,3 +1,18 @@
+## 0.4.15
+
+### Phase 2 — pre-release for local QA (preview 502 diagnostics)
+
+Adds runtime diagnostics for the remaining HA ingress `502 Bad Gateway`
+seen when onboarding starts `POST /api/preview`.
+
+The add-on now logs the actual running add-on version on startup, exposes it
+from `/api/health`, logs fatal Node process exits, and emits stage-by-stage
+preview pipeline timings/counts. This is intended to identify whether the
+container is running the expected image, whether the process is crashing, and
+which preview stage is last reached before ingress reports 502.
+
+Same QA scope as 0.4.0–0.4.14.
+
 ## 0.4.14
 
 ### Phase 2 — pre-release for local QA (HA websocket timeout fix)
