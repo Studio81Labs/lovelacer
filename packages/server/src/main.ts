@@ -106,12 +106,16 @@ async function main() {
   const overridesPath = resolve(config.dataDir, 'lovelacer.sqlite')
   // Pass recovery files to the FIRST store opened so any wedged WAL state
   // from a crashed previous container is cleaned up before subsequent stores
-  // (which share the same .sqlite file) try to open.
+  // (which share the same .sqlite file) try to open. Only the WAL sidecars
+  // are recoverable: the `.db-journal` rollback journal (used in non-WAL
+  // mode) holds undo data for an in-progress transaction, and removing it
+  // would leave the main DB with half-applied pages — strictly worse than
+  // hitting SQLITE_BUSY at startup.
   const overrides = await openStoreWithRetry(
     () => new OverrideStore(overridesPath),
     'overrides',
     logger,
-    [`${overridesPath}-wal`, `${overridesPath}-shm`, `${overridesPath}-journal`],
+    [`${overridesPath}-wal`, `${overridesPath}-shm`],
   )
   logger.info({ path: overridesPath }, 'override store opened')
 

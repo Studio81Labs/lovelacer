@@ -17,9 +17,12 @@ fatal startup error: SqliteError: database is locked
 
 Add a last-resort recovery to `openStoreWithRetry` in `main.ts`:
 when all normal retries (5 attempts ≈ 7.5s) are exhausted with
-SQLITE_BUSY, the auxiliary `.db-wal`/`.db-shm`/`.db-journal` files
-are **renamed** (not deleted) to `.busy-<timestamp>` siblings, then
-the factory is called once more. Renaming preserves the
+SQLITE_BUSY, the auxiliary `.db-wal`/`.db-shm` sidecars are
+**renamed** (not deleted) to `.busy-<timestamp>` siblings, then
+the factory is called once more. The `.db-journal` rollback
+sidecar is deliberately NOT touched — it holds undo data for an
+in-progress transaction in non-WAL mode, and removing it would
+leave the main DB with half-applied pages. Renaming preserves the
 committed-but-unmerged WAL state on disk for forensics or manual
 recovery — so the worst case is "the new DB session doesn't see
 those transactions" rather than "data is gone". Per Codex review:
