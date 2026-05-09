@@ -1,5 +1,5 @@
 import { resolve } from 'node:path'
-import { unlink } from 'node:fs/promises'
+import { rename } from 'node:fs/promises'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { HaClient } from '@lovelacer/ha-client'
 import { pino, type Logger } from 'pino'
@@ -21,12 +21,21 @@ import { OnboardingStore } from './storage/onboarding-store.js'
  * before failing startup.
  *
  * If `recoveryFiles` is provided and all retries fail with SQLITE_BUSY, the
- * named auxiliary files (typically `.db-wal` and `.db-shm`) are deleted as a
- * last-resort recovery for permanently-stuck WAL state from a crashed
- * previous container, then the factory is called once more. This sacrifices
- * any uncommitted WAL data — only meaningful when the DB is already wedged
- * and unrecoverable, so a fair trade. Pass it only on the first store
- * opened so cleanup runs once per process.
+ * named auxiliary files (typically `.db-wal` and `.db-shm`) are renamed to
+ * `.busy-<timestamp>` siblings — not deleted — and the factory is called
+ * once more.
+ *
+ * Trade-off: this assumes the HA add-on deployment model where /data/ is
+ * exclusive to this single Node process. WAL files can hold committed-but-
+ * unmerged transactions, so renaming them causes the DB to come up as if
+ * those transactions never happened. For our model that's a fair call after
+ * a wedged-startup failure; in any setup with concurrent writers to the
+ * same file this would cause data loss / inconsistency. Files are renamed
+ * rather than deleted so the committed-but-unmerged state is preserved on
+ * disk for manual recovery if a user ever does end up in that situation.
+ *
+ * Recovery is passed only on the first store opened so it runs once per
+ * process.
  */
 async function openStoreWithRetry<T>(
   factory: () => T,
@@ -51,16 +60,19 @@ async function openStoreWithRetry<T>(
       }
       // All normal retries exhausted.
       if (!recoveryFiles?.length) throw err
+      const stamp = Date.now()
       logger.warn(
-        { store: name, files: recoveryFiles },
-        'sqlite still busy after retries; removing auxiliary files (any uncommitted WAL data will be lost) and retrying once more',
+        { store: name, files: recoveryFiles, stamp },
+        'sqlite still busy after retries; renaming auxiliary files to .busy-<stamp> ' +
+          '(any committed-but-unmerged WAL state will not be visible to the new DB ' +
+          'connection but is preserved on disk) and retrying once more',
       )
       for (const file of recoveryFiles) {
         try {
-          await unlink(file)
+          await rename(file, `${file}.busy-${stamp}`)
         } catch (e) {
           if ((e as { code?: string })?.code !== 'ENOENT') {
-            logger.warn({ err: e, file }, 'could not remove sqlite auxiliary file')
+            logger.warn({ err: e, file }, 'could not rename sqlite auxiliary file')
           }
         }
       }
