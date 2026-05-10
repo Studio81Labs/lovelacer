@@ -1,5 +1,5 @@
 name: Lovelacer
-version: '0.4.19'
+version: '0.4.20'
 slug: lovelacer
 description: Generate a Lovelace dashboard from your Home Assistant entities
 url: https://github.com/Studio81Labs/lovelacer
@@ -9,6 +9,10 @@ arch:
 init: false
 ingress: true
 ingress_port: 3000
+ports:
+  3001/tcp: null
+ports_description:
+  3001/tcp: Optional token-protected direct backend access for local debugging; leave disabled for normal ingress use.
 panel_icon: mdi:home-variant
 panel_title: Lovelacer
 homeassistant_api: true
@@ -18,7 +22,9 @@ apparmor: true
 options:
   log_level: info
   dashboard_url_path: lovelacer-home
+  debug_backend_token: ''
 schema:
   log_level: list(trace|debug|info|warn|error|fatal)
   dashboard_url_path: match(^[a-z0-9][a-z0-9-]*$)
+  debug_backend_token: password?
 image: ghcr.io/studio81labs/lovelacer-{arch}

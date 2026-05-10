@@ -40,6 +40,12 @@ const ConfigSchema = z.object({
   // Set by the Home Assistant add-on wrapper from config.yaml. Used only
   // for health/startup diagnostics so we can confirm which image is running.
   ADDON_VERSION: z.string().optional(),
+
+  // Optional, debug-only direct backend listener. Ingress remains on PORT.
+  // When unset, the direct listener is not started even if the HA add-on
+  // network port is mapped.
+  DEBUG_BACKEND_TOKEN: z.string().optional(),
+  DEBUG_BACKEND_PORT: z.coerce.number().int().positive().default(3001),
 })
 
 const parsed = ConfigSchema.parse(process.env)
@@ -71,4 +77,8 @@ export const config = {
   dashboardUrlPath: parsed.DASHBOARD_URL_PATH,
   webDistDir: parsed.WEB_DIST_DIR,
   addonVersion: parsed.ADDON_VERSION ?? 'dev',
+  debugBackend:
+    parsed.DEBUG_BACKEND_TOKEN !== undefined && parsed.DEBUG_BACKEND_TOKEN.length > 0
+      ? { token: parsed.DEBUG_BACKEND_TOKEN, port: parsed.DEBUG_BACKEND_PORT }
+      : null,
 } as const

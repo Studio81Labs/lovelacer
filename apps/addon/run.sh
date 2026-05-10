@@ -8,6 +8,7 @@ OPTIONS_FILE="/data/options.json"
 if [ -f "$OPTIONS_FILE" ]; then
   export LOG_LEVEL="$(jq -r '.log_level // "info"' "$OPTIONS_FILE")"
   export DASHBOARD_URL_PATH="$(jq -r '.dashboard_url_path // "lovelacer-home"' "$OPTIONS_FILE")"
+  export DEBUG_BACKEND_TOKEN="$(jq -r '.debug_backend_token // ""' "$OPTIONS_FILE")"
 fi
 
 # Supervisor injects SUPERVISOR_TOKEN automatically when the add-on starts.

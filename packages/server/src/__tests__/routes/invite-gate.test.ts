@@ -41,7 +41,7 @@ function makeHa(): HaClient {
   } as unknown as HaClient
 }
 
-async function makeApp(opts: { accepted: boolean }) {
+async function makeApp(opts: { accepted: boolean; directAccessToken?: string }) {
   invite = new InviteStore(':memory:')
   dismissed = new DismissedSuggestionStore(':memory:')
   settings = new SettingsStore(':memory:')
@@ -57,10 +57,37 @@ async function makeApp(opts: { accepted: boolean }) {
     onboarding,
     logLevel: 'silent',
     dashboardUrlPath: 'lovelacer-home',
+    ...(opts.directAccessToken !== undefined && { directAccessToken: opts.directAccessToken }),
   })
 }
 
 describe('invite gate hook', () => {
+  it('requires the direct debug token before serving any route', async () => {
+    const app = await makeApp({ accepted: true, directAccessToken: 'secret' })
+    try {
+      const res = await app.inject({ method: 'GET', url: '/api/invite' })
+      expect(res.statusCode).toBe(401)
+      expect(res.json()).toMatchObject({ error: 'debug_auth_required' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('allows direct debug requests with the configured token', async () => {
+    const app = await makeApp({ accepted: true, directAccessToken: 'secret' })
+    try {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/invite',
+        headers: { 'x-lovelacer-debug-token': 'secret' },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json()).toMatchObject({ accepted: true })
+    } finally {
+      await app.close()
+    }
+  })
+
   it('blocks POST /api/analyze with 403 invite_required when not accepted', async () => {
     const app = await makeApp({ accepted: false })
     try {

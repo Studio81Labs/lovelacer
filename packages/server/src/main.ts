@@ -150,6 +150,8 @@ async function main() {
       webDistDir: config.webDistDir ?? null,
       haUrl: config.ha.url,
       haWebsocketUrl: config.ha.websocketUrl ?? null,
+      debugBackendEnabled: config.debugBackend !== null,
+      debugBackendPort: config.debugBackend?.port ?? null,
     },
     'lovelacer server starting',
   )
@@ -191,6 +193,25 @@ async function main() {
     dashboardUrlPath: config.dashboardUrlPath,
     ...(config.webDistDir !== undefined && { webDistDir: config.webDistDir }),
   })
+  const debugApp =
+    config.debugBackend === null
+      ? null
+      : await createApp({
+          ha,
+          overrides,
+          invite,
+          appliedSnapshot,
+          dismissedSuggestions,
+          settings,
+          onboarding,
+          isDev,
+          logLevel: config.logLevel,
+          logger,
+          appVersion: config.addonVersion,
+          dashboardUrlPath: config.dashboardUrlPath,
+          directAccessToken: config.debugBackend.token,
+          ...(config.webDistDir !== undefined && { webDistDir: config.webDistDir }),
+        })
 
   // Connect to HA in background — health endpoint returns status either way.
   ha.connect().catch((err) => {
@@ -202,6 +223,7 @@ async function main() {
     try {
       await ha.disconnect()
       await app.close()
+      if (debugApp !== null) await debugApp.close()
     } finally {
       overrides.close()
       invite.close()
@@ -217,6 +239,9 @@ async function main() {
   process.on('SIGTERM', () => void shutdown('SIGTERM'))
 
   await app.listen({ port: config.port, host: '0.0.0.0' })
+  if (debugApp !== null && config.debugBackend !== null) {
+    await debugApp.listen({ port: config.debugBackend.port, host: '0.0.0.0' })
+  }
 }
 
 main().catch((err) => {

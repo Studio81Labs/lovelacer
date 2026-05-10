@@ -1,3 +1,23 @@
+## 0.4.20
+
+### Phase 2 — pre-release for local QA (optional direct backend port)
+
+Adds an optional token-protected host port mapping for the Lovelacer backend.
+
+Standalone Lovelacer completes `/api/preview` against the same HA instance in
+~134ms, while the add-on still returns an ingress `502 Bad Gateway`. The add-on
+now exposes a separate direct-debug backend on container port `3001/tcp` as a
+disabled-by-default network option. The listener only starts when
+`debug_backend_token` is set and requires that token in the
+`X-Lovelacer-Debug-Token` header, so local QA can temporarily call the backend
+directly while avoiding an unauthenticated LAN API. This distinguishes an
+ingress/proxy failure from a backend/container failure without changing normal
+ingress behavior.
+
+Leave the port disabled and `debug_backend_token` empty for normal use.
+
+Same QA scope as 0.4.0–0.4.19.
+
 ## 0.4.19
 
 ### Phase 2 — pre-release for local QA (lower registry fetch memory peak)
