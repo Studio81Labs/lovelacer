@@ -40,6 +40,8 @@ export interface CreateAppOptions {
   dashboardUrlPath: string
   /** Add-on/config version surfaced by /api/health for runtime diagnostics. */
   appVersion?: string
+  /** Optional direct-debug bearer token. Not used for normal HA ingress app. */
+  directAccessToken?: string
   /**
    * Absolute path to the built SPA's static asset directory (the
    * `packages/web/dist/` produced by `pnpm --filter @lovelacer/web build`).
@@ -67,6 +69,17 @@ export async function createApp(opts: CreateAppOptions) {
 
   await app.register(cors, { origin: true })
   await app.register(sensible)
+
+  if (opts.directAccessToken !== undefined) {
+    app.addHook('onRequest', async (req, reply) => {
+      const token = req.headers['x-lovelacer-debug-token']
+      if (token === opts.directAccessToken) return
+      return reply.code(401).send({
+        error: 'debug_auth_required',
+        message: 'Direct debug access requires X-Lovelacer-Debug-Token.',
+      })
+    })
+  }
 
   // Health check — must be O(1). Polled by HA add-on supervisor and ingress
   // healthchecks.
