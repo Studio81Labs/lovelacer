@@ -1,3 +1,19 @@
+## 0.4.19
+
+### Phase 2 — pre-release for local QA (lower registry fetch memory peak)
+
+Reduces peak memory during `POST /api/preview` in the Home Assistant add-on.
+
+0.4.18 showed the add-on can stop immediately after all four HA registry
+websocket responses complete, before normalization starts. The preview pipeline
+now fetches HA registries sequentially instead of concurrently, trading a small
+latency cost for a lower peak while large registry responses are materialized
+inside the constrained add-on container. Stage logs now include RSS, heap, and
+external memory snapshots to confirm whether the add-on is running into a
+container memory limit.
+
+Same QA scope as 0.4.0–0.4.18.
+
 ## 0.4.18
 
 ### Phase 2 — pre-release for local QA (cooperative room detection)
