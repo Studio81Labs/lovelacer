@@ -4,7 +4,7 @@ import {
   assignFloors,
   computeDiff,
   computeSuggestions,
-  detect,
+  detectAsync,
   groupByDomain,
   normalize,
   type RoomGrouping,
@@ -298,12 +298,19 @@ async function runFullPipeline(
       devices: deviceRegistry,
     }),
   )
-  const assignments = await timedSyncStage(options, 'detect', () =>
-    detect({
-      entities,
-      areas: areaRegistry,
-      ...(detectLanguage !== undefined ? { language: detectLanguage } : {}),
-    }),
+  const assignments = await timedStage(options, 'detect', () =>
+    detectAsync(
+      {
+        entities,
+        areas: areaRegistry,
+        ...(detectLanguage !== undefined ? { language: detectLanguage } : {}),
+      },
+      {
+        authoritativeHaAreas: true,
+        batchSize: 100,
+        ...(options?.logger !== undefined && { logger: options.logger }),
+      },
+    ),
   )
   await timedSyncStage(options, 'apply_overrides', () =>
     applyOverrides({ assignments, entities }, overrides.getAll()),

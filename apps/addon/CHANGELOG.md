@@ -1,3 +1,18 @@
+## 0.4.18
+
+### Phase 2 — pre-release for local QA (cooperative room detection)
+
+Continues the `POST /api/preview` fix after 0.4.17 showed detection still
+stopping before completion.
+
+The preview pipeline now treats Home Assistant entity/device area matches as
+authoritative and skips slower name-based room heuristics for those entities.
+Room detection also yields and logs progress every 100 entities, so large
+installations cannot silently freeze at the top of the `detect` stage and the
+logs identify the last processed range if another pathological entity remains.
+
+Same QA scope as 0.4.0–0.4.17.
+
 ## 0.4.17
 
 ### Phase 2 — pre-release for local QA (bounded room detection input)

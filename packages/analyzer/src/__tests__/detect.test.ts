@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import type { HaAreaRegistryEntry, NormalizedEntity } from '@lovelacer/shared'
-import { buildDetectionContext, detect, detectEntity } from '../detect.js'
+import { buildDetectionContext, detect, detectAsync, detectEntity } from '../detect.js'
 
 describe('buildDetectionContext', () => {
   it('returns an empty index for empty input', () => {
@@ -343,6 +343,72 @@ describe('detect — bulk API', () => {
     expect(result[0]!.roomId).toBe('living_room')
     expect(result[1]!.roomId).toBe('kitchen')
     expect(result[2]!.roomId).toBe('misc')
+  })
+})
+
+describe('detect — authoritative HA area fast path', () => {
+  const ctx = buildDetectionContext([livingRoomArea])
+
+  it('skips slower name fallbacks after an entity_area match when requested', () => {
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        haAreaId: 'living_room',
+        friendlyName: 'Kitchen Light',
+        objectId: 'bedroom_lamp',
+      },
+      ctx,
+      { authoritativeHaAreas: true },
+    )
+
+    expect(result.roomId).toBe('living_room')
+    expect(result.signals).toEqual([
+      { source: 'entity_area', weight: 1.0, matchedValue: 'Living Room' },
+    ])
+    expect(result.alternatives).toBeUndefined()
+  })
+
+  it('keeps name fallback behavior when no HA area matches', () => {
+    const result = detectEntity(
+      {
+        ...baseEntity,
+        friendlyName: 'Kitchen Light',
+        objectId: 'bedroom_lamp',
+      },
+      ctx,
+      { authoritativeHaAreas: true },
+    )
+
+    expect(result.roomId).toBe('kitchen')
+    expect(result.signals.map((s) => s.source)).toContain('friendly_name')
+  })
+
+  it('detectAsync yields batched progress while preserving assignment order', async () => {
+    const logger = { info: vi.fn() }
+    const entities: NormalizedEntity[] = [
+      { ...baseEntity, entityId: 'sensor.a', haAreaId: 'living_room' },
+      { ...baseEntity, entityId: 'sensor.b', friendlyName: 'Kitchen Light' },
+      { ...baseEntity, entityId: 'sensor.c' },
+    ]
+
+    const result = await detectAsync(
+      { entities, areas: [livingRoomArea] },
+      { authoritativeHaAreas: true, logger, batchSize: 2 },
+    )
+
+    expect(result.map((r) => r.entityId)).toEqual(['sensor.a', 'sensor.b', 'sensor.c'])
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ stage: 'detect', index: 0, total: 3, entityId: 'sensor.a' }),
+      'detect progress',
+    )
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ stage: 'detect', index: 2, total: 3, entityId: 'sensor.c' }),
+      'detect progress',
+    )
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ stage: 'detect', index: 3, total: 3 }),
+      'detect progress',
+    )
   })
 })
 

@@ -16,11 +16,13 @@ export { normalize } from './normalize.js'
 export type { NormalizeInput } from './normalize.js'
 export { findRoom } from './match-room.js'
 export type { FindRoomOptions, RoomMatch } from './match-room.js'
-export { buildDetectionContext, detect, detectEntity } from './detect.js'
+export { buildDetectionContext, detect, detectAsync, detectEntity } from './detect.js'
 export type {
   AreaIndexEntry,
   BuildDetectionContextOptions,
+  DetectAsyncOptions,
   DetectInput,
+  DetectOptions,
   DetectionContext,
 } from './detect.js'
 export { domainGroup, groupByDomain } from './grouping.js'

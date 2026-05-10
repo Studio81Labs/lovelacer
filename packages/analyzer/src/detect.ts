@@ -7,6 +7,7 @@ import type {
   NormalizedEntity,
   RoomAssignment,
 } from '@lovelacer/shared'
+import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 import { findRoom } from './match-room.js'
 
 export interface AreaIndexEntry {
@@ -43,9 +44,34 @@ export interface DetectInput {
   language?: LanguageCode
 }
 
+export interface DetectOptions {
+  /**
+   * Treat HA entity/device area matches as authoritative and skip slower
+   * name-based fallbacks. Used by the preview pipeline where HA registry
+   * areas are better evidence than entity names, and where scanning every
+   * name on large installs can block the add-on.
+   */
+  authoritativeHaAreas?: boolean
+}
+
+interface DetectLogger {
+  info(obj: Record<string, unknown>, msg: string): void
+}
+
+export interface DetectAsyncOptions extends DetectOptions {
+  logger?: DetectLogger
+  batchSize?: number
+}
+
 export interface BuildDetectionContextOptions {
   /** P2-6 — forwarded to the returned `DetectionContext.language`. */
   language?: LanguageCode
+}
+
+const MATCHED_VALUE_LIMIT = 128
+
+function boundedMatchedValue(value: string): string {
+  return value.length <= MATCHED_VALUE_LIMIT ? value : `${value.slice(0, MATCHED_VALUE_LIMIT)}...`
 }
 
 export function buildDetectionContext(
@@ -73,7 +99,11 @@ interface FiredSignal extends DetectionSignal {
   target: Exclude<CanonicalRoomId, 'misc'>
 }
 
-export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): RoomAssignment {
+export function detectEntity(
+  entity: NormalizedEntity,
+  ctx: DetectionContext,
+  opts: DetectOptions = {},
+): RoomAssignment {
   const fired: FiredSignal[] = []
 
   // Priority 1 — entity_area
@@ -83,9 +113,10 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
       fired.push({
         source: 'entity_area',
         weight: 1.0,
-        matchedValue: entry.name,
+        matchedValue: boundedMatchedValue(entry.name),
         target: entry.canonical,
       })
+      if (opts.authoritativeHaAreas === true) return assemble(entity.entityId, fired)
     }
   }
 
@@ -96,9 +127,10 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
       fired.push({
         source: 'device_area',
         weight: 0.85,
-        matchedValue: entry.name,
+        matchedValue: boundedMatchedValue(entry.name),
         target: entry.canonical,
       })
+      if (opts.authoritativeHaAreas === true) return assemble(entity.entityId, fired)
     }
   }
 
@@ -152,11 +184,38 @@ export function detectEntity(entity: NormalizedEntity, ctx: DetectionContext): R
   return assemble(entity.entityId, fired)
 }
 
-export function detect(input: DetectInput): RoomAssignment[] {
+export function detect(input: DetectInput, opts: DetectOptions = {}): RoomAssignment[] {
   const ctx = buildDetectionContext(input.areas, {
     ...(input.language !== undefined ? { language: input.language } : {}),
   })
-  return input.entities.map((entity) => detectEntity(entity, ctx))
+  return input.entities.map((entity) => detectEntity(entity, ctx, opts))
+}
+
+export async function detectAsync(
+  input: DetectInput,
+  opts: DetectAsyncOptions = {},
+): Promise<RoomAssignment[]> {
+  const ctx = buildDetectionContext(input.areas, {
+    ...(input.language !== undefined ? { language: input.language } : {}),
+  })
+  const batchSize = opts.batchSize ?? 100
+  const assignments: RoomAssignment[] = []
+  for (let index = 0; index < input.entities.length; index++) {
+    if (index % batchSize === 0) {
+      const entity = input.entities[index]
+      opts.logger?.info(
+        { stage: 'detect', index, total: input.entities.length, entityId: entity?.entityId },
+        'detect progress',
+      )
+      await yieldToEventLoop()
+    }
+    assignments.push(detectEntity(input.entities[index]!, ctx, opts))
+  }
+  opts.logger?.info(
+    { stage: 'detect', index: input.entities.length, total: input.entities.length },
+    'detect progress',
+  )
+  return assignments
 }
 
 const ALTERNATIVE_THRESHOLD = 0.2
