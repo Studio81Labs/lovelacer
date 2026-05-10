@@ -66,17 +66,26 @@ function countResult(value: unknown): Record<string, unknown> {
   return Array.isArray(value) ? { count: value.length } : {}
 }
 
+function memorySnapshot(): Record<string, unknown> {
+  const memory = process.memoryUsage()
+  return {
+    memoryRssMb: Math.round(memory.rss / 1024 / 1024),
+    memoryHeapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
+    memoryExternalMb: Math.round(memory.external / 1024 / 1024),
+  }
+}
+
 async function timedStage<T>(
   options: PipelineRunOptions | undefined,
   stage: string,
   task: () => Promise<T>,
 ): Promise<T> {
   const start = performance.now()
-  options?.logger?.info({ stage }, 'preview pipeline stage started')
+  options?.logger?.info({ stage, ...memorySnapshot() }, 'preview pipeline stage started')
   try {
     const result = await task()
     options?.logger?.info(
-      { stage, durationMs: durationMs(start), ...countResult(result) },
+      { stage, durationMs: durationMs(start), ...countResult(result), ...memorySnapshot() },
       'preview pipeline stage completed',
     )
     return result
@@ -95,12 +104,12 @@ async function timedSyncStage<T>(
   task: () => T,
 ): Promise<T> {
   const start = performance.now()
-  options?.logger?.info({ stage }, 'preview pipeline stage started')
+  options?.logger?.info({ stage, ...memorySnapshot() }, 'preview pipeline stage started')
   await yieldToEventLoop()
   try {
     const result = task()
     options?.logger?.info(
-      { stage, durationMs: durationMs(start), ...countResult(result) },
+      { stage, durationMs: durationMs(start), ...countResult(result), ...memorySnapshot() },
       'preview pipeline stage completed',
     )
     return result
@@ -274,23 +283,29 @@ async function runFullPipeline(
   const cfg: Settings = settings.get()
   const detectLanguage = cfg.language === 'auto' ? undefined : cfg.language
 
+  // Pull registries sequentially instead of with Promise.all. The add-on
+  // container can be memory-constrained, and the entity registry alone may
+  // contain thousands of entries. Sequential reads trade a small latency cost
+  // for a lower peak while HA websocket responses are materialized.
+  const entityRegistry = await timedStage(options, 'ha.entity_registry', () =>
+    ha.getEntityRegistry(),
+  )
+  const deviceRegistry = await timedStage(options, 'ha.device_registry', () =>
+    ha.getDeviceRegistry(),
+  )
+  const areaRegistry = await timedStage(options, 'ha.area_registry', () => ha.getAreaRegistry())
   // Floor registry is opportunistic — older HA versions may not expose
   // `config/floor_registry/list`. If it errors, we treat as empty and
   // proceed; the rest of analyze must not depend on floor data.
-  const [entityRegistry, deviceRegistry, areaRegistry, floorRegistry] = await Promise.all([
-    timedStage(options, 'ha.entity_registry', () => ha.getEntityRegistry()),
-    timedStage(options, 'ha.device_registry', () => ha.getDeviceRegistry()),
-    timedStage(options, 'ha.area_registry', () => ha.getAreaRegistry()),
-    timedStage(options, 'ha.floor_registry', () =>
-      ha.getFloorRegistry().catch((err: unknown) => {
-        options?.logger?.info(
-          { stage: 'ha.floor_registry', err },
-          'preview pipeline optional floor registry unavailable',
-        )
-        return [] as Awaited<ReturnType<typeof ha.getFloorRegistry>>
-      }),
-    ),
-  ])
+  const floorRegistry = await timedStage(options, 'ha.floor_registry', () =>
+    ha.getFloorRegistry().catch((err: unknown) => {
+      options?.logger?.info(
+        { stage: 'ha.floor_registry', err, ...memorySnapshot() },
+        'preview pipeline optional floor registry unavailable',
+      )
+      return [] as Awaited<ReturnType<typeof ha.getFloorRegistry>>
+    }),
+  )
 
   const entities = await timedSyncStage(options, 'normalize', () =>
     normalize({
