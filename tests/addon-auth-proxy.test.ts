@@ -31,5 +31,6 @@ describe('Home Assistant add-on auth proxy wiring', () => {
     expect(runScript).toContain('export HA_URL="http://supervisor/core/api"')
     expect(runScript).toContain('export HA_WEBSOCKET_URL="ws://supervisor/core/websocket"')
     expect(runScript).toContain('export DEBUG_BACKEND_TOKEN=')
+    expect(runScript).toContain('exec node --expose-gc dist/main.js')
   })
 })

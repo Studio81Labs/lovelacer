@@ -100,6 +100,31 @@ describe('runAnalyze', () => {
 })
 
 describe('runPreview', () => {
+  it('trims unused HA registry fields before building normalized entities', async () => {
+    const fake = makeFakeHa()
+    const entities = await fake.getEntityRegistry()
+    const devices = await fake.getDeviceRegistry()
+    const entityWithExtraFields = entities[0]! as HaEntityRegistryEntry & Record<string, unknown>
+    const deviceWithExtraFields = devices[0]! as HaDeviceRegistryEntry & Record<string, unknown>
+    entityWithExtraFields.large_unused_payload = 'x'.repeat(1024)
+    entityWithExtraFields.aliases = ['one', 'two']
+    deviceWithExtraFields.large_unused_payload = 'x'.repeat(1024)
+    deviceWithExtraFields.config_entries = ['abc']
+
+    await runPreview(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+    )
+
+    expect(entityWithExtraFields.large_unused_payload).toBeUndefined()
+    expect(entityWithExtraFields.aliases).toBeUndefined()
+    expect(deviceWithExtraFields.large_unused_payload).toBeUndefined()
+    expect(deviceWithExtraFields.config_entries).toBeUndefined()
+  })
+
   it('returns analyze output plus a config', async () => {
     const fake = makeFakeHa()
     const result = await runPreview(

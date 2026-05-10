@@ -31,4 +31,4 @@ cd /app
 # stop) reach Node directly without the shell wrapper swallowing them.
 # The pre-staged bundle has dist/ at the root (pnpm deploy flattens
 # the workspace package), not packages/server/dist/.
-exec node dist/main.js
+exec node --expose-gc dist/main.js
