@@ -22,6 +22,9 @@ import type {
   DiffResult,
   FloorAssignment,
   HaAreaRegistryEntry,
+  HaDeviceRegistryEntry,
+  HaEntityRegistryEntry,
+  HaFloorRegistryEntry,
   NormalizedEntity,
   Override,
   RoomAssignment,
@@ -73,6 +76,57 @@ function memorySnapshot(): Record<string, unknown> {
     memoryHeapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
     memoryExternalMb: Math.round(memory.external / 1024 / 1024),
   }
+}
+
+const ENTITY_REGISTRY_FIELDS = new Set([
+  'entity_id',
+  'name',
+  'original_name',
+  'area_id',
+  'device_id',
+  'platform',
+  'hidden_by',
+  'disabled_by',
+  'entity_category',
+  'device_class',
+])
+
+const DEVICE_REGISTRY_FIELDS = new Set([
+  'id',
+  'name',
+  'name_by_user',
+  'manufacturer',
+  'model',
+  'area_id',
+])
+
+const AREA_REGISTRY_FIELDS = new Set(['area_id', 'name', 'floor_id', 'icon'])
+const FLOOR_REGISTRY_FIELDS = new Set(['floor_id', 'name', 'level', 'icon'])
+
+function keepOnlyFields(entries: unknown[], fields: ReadonlySet<string>): void {
+  for (const entry of entries) {
+    if (typeof entry !== 'object' || entry === null) continue
+    const record = entry as Record<string, unknown>
+    for (const key of Object.keys(record)) {
+      if (!fields.has(key)) delete record[key]
+    }
+  }
+}
+
+function requestGarbageCollection(): void {
+  ;(globalThis as { gc?: () => void }).gc?.()
+}
+
+export function compactHaRegistriesForPipeline(input: {
+  entities: HaEntityRegistryEntry[]
+  devices: HaDeviceRegistryEntry[]
+  areas: HaAreaRegistryEntry[]
+  floors: HaFloorRegistryEntry[]
+}): void {
+  keepOnlyFields(input.entities, ENTITY_REGISTRY_FIELDS)
+  keepOnlyFields(input.devices, DEVICE_REGISTRY_FIELDS)
+  keepOnlyFields(input.areas, AREA_REGISTRY_FIELDS)
+  keepOnlyFields(input.floors, FLOOR_REGISTRY_FIELDS)
 }
 
 async function timedStage<T>(
@@ -306,6 +360,16 @@ async function runFullPipeline(
       return [] as Awaited<ReturnType<typeof ha.getFloorRegistry>>
     }),
   )
+  await timedSyncStage(options, 'compact_ha_registries', () => {
+    compactHaRegistriesForPipeline({
+      entities: entityRegistry,
+      devices: deviceRegistry,
+      areas: areaRegistry,
+      floors: floorRegistry,
+    })
+    requestGarbageCollection()
+    return entityRegistry
+  })
 
   const entities = await timedSyncStage(options, 'normalize', () =>
     normalize({

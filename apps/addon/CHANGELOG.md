@@ -1,3 +1,20 @@
+## 0.4.21
+
+### Phase 2 — pre-release for local QA (compact preview registries)
+
+Reduces the memory peak before preview normalization inside the Home Assistant
+add-on.
+
+0.4.20 proved the failure is not HA ingress: the token-protected direct backend
+port also dies with an empty response, and the container is terminated
+immediately after `/api/preview`. The pipeline now trims raw HA registry
+objects in place to the fields Lovelacer actually uses before building
+normalized entities, then asks V8 for a garbage collection in the add-on
+runtime. This keeps wide registry payloads from being retained while the
+preview copies are built.
+
+Same QA scope as 0.4.0–0.4.20.
+
 ## 0.4.20
 
 ### Phase 2 — pre-release for local QA (optional direct backend port)
