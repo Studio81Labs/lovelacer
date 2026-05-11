@@ -229,7 +229,9 @@ watch(
       data-testid="idle-state"
       class="flex flex-1 items-center justify-center"
     >
-      <div class="mx-auto max-w-xl rounded-lg border border-stone-200 bg-white px-6 py-8 text-center shadow-sm">
+      <div
+        class="mx-auto max-w-xl rounded-lg border border-stone-200 bg-white px-6 py-8 text-center shadow-sm"
+      >
         <h2 class="text-xl font-medium text-stone-900">{{ t('idleState.heading') }}</h2>
         <p class="mt-3 text-sm leading-6 text-stone-600">{{ t('idleState.description') }}</p>
         <p class="mt-2 text-sm text-stone-500">{{ t('idleState.note') }}</p>

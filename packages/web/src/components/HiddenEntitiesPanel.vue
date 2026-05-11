@@ -13,7 +13,9 @@ const overrides = useOverridesStore()
 
 const hidden = computed(() =>
   overrides.hiddenOverrides.map((override) => {
-    const metadata = (props.hiddenEntities ?? []).find((entity) => entity.entityId === override.entityId)
+    const metadata = (props.hiddenEntities ?? []).find(
+      (entity) => entity.entityId === override.entityId,
+    )
     return {
       ...override,
       friendlyName: metadata?.friendlyName ?? override.entityId,
