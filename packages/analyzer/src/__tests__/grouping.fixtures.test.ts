@@ -214,7 +214,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "security",
             },
             {
-              "count": 10,
+              "count": 5,
               "key": "other",
             },
           ],
@@ -238,10 +238,6 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "count": 1,
               "key": "fans",
             },
-            {
-              "count": 1,
-              "key": "other",
-            },
           ],
           "roomId": "office",
         },
@@ -254,7 +250,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
       (sum, room) => sum + room.groups.reduce((s, g) => s + g.entities.length, 0),
       0,
     )
-    const expectedGrouped = entities.filter(isDashboardDisplayEntity).length
+    const expectedGrouped = entities.filter((entity) => isDashboardDisplayEntity(entity)).length
     expect(totalGrouped).toBe(expectedGrouped)
   })
 
@@ -448,7 +444,7 @@ describe('groupByDomain — czech-tidy fixture', () => {
       (sum, room) => sum + room.groups.reduce((s, g) => s + g.entities.length, 0),
       0,
     )
-    expect(totalGrouped).toBe(entities.filter(isDashboardDisplayEntity).length)
+    expect(totalGrouped).toBe(entities.filter((entity) => isDashboardDisplayEntity(entity)).length)
   })
 
   it('contains no empty groups', () => {

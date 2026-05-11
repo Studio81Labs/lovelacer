@@ -6,6 +6,7 @@ import {
   computeSuggestions,
   detectAsync,
   groupByDomain,
+  isAdministrativeEntity,
   isDashboardDisplayEntity,
   type RoomGrouping,
 } from '@lovelacer/analyzer'
@@ -13,6 +14,7 @@ import {
   buildHomeView,
   buildLovelaceConfig,
   buildRoomViews,
+  pickQuickStatsEntities,
   type LovelaceConfig,
 } from '@lovelacer/generator'
 import type { ApplyDashboardOptions, ApplyDashboardResult, HaClient } from '@lovelacer/ha-client'
@@ -42,6 +44,7 @@ import type { SettingsStore } from './storage/settings-store.js'
 export interface AnalyzeOutput {
   rooms: AnalyzedRoom[]
   misc: { entityId: string; friendlyName: string; domain: string }[]
+  administrative: { entityId: string; friendlyName: string; domain: string; roomId?: string }[]
   hidden: { entityId: string; friendlyName: string; domain: string; roomId?: string }[]
   summary: { entityCount: number; roomCount: number; miscCount: number }
 }
@@ -368,8 +371,10 @@ interface PipelineState {
   groupings: RoomGrouping[]
   rooms: AnalyzedRoom[]
   misc: AnalyzeOutput['misc']
+  administrative: AnalyzeOutput['administrative']
   hidden: AnalyzeOutput['hidden']
   summary: AnalyzeOutput['summary']
+  dashboardEntityIds: Set<string>
   floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
   /** P2-6 — per-section toggles read from SettingsStore at the top of runFullPipeline. */
   sectionFlags: SettingsSections
@@ -493,7 +498,9 @@ async function runFullPipeline(
 
   const rooms: AnalyzedRoom[] = []
   const misc: AnalyzeOutput['misc'] = []
+  const administrative: AnalyzeOutput['administrative'] = []
   const hidden: AnalyzeOutput['hidden'] = []
+  const dashboardEntityIds = collectDashboardEntityIds(assignments, entityById)
 
   await timedSyncStage(options, 'build_analyze_output', () => {
     for (const override of overrides.getAll()) {
@@ -508,14 +515,28 @@ async function runFullPipeline(
     }
     hidden.sort((a, b) => a.entityId.localeCompare(b.entityId, 'en'))
 
+    for (const assignment of assignments) {
+      const e = entityById.get(assignment.entityId)
+      if (e === undefined) continue
+      if (e.isHidden || e.isDisabled) continue
+      if (!isAdministrativeEntity(e)) continue
+      if (isDashboardDisplayEntity(e, assignment)) continue
+      administrative.push({
+        entityId: e.entityId,
+        friendlyName: e.friendlyName,
+        domain: e.domain,
+        ...(assignment.roomId !== 'misc' ? { roomId: assignment.roomId } : {}),
+      })
+    }
+    administrative.sort((a, b) => a.entityId.localeCompare(b.entityId, 'en'))
+
     for (const grouping of groupings) {
-      // Skip hidden/disabled entities everywhere — `groupByDomain` already
-      // filters them from views, so the analyze counts must match what users
-      // actually see in the dashboard.
+      // Match `groupByDomain`'s dashboard visibility rules so the analyze
+      // counts reflect what users actually see in generated dashboards.
       const roomAssignments = assignments.filter((a) => {
         if (a.roomId !== grouping.roomId) return false
         const e = entityById.get(a.entityId)
-        return e !== undefined && isDashboardDisplayEntity(e)
+        return e !== undefined && isDashboardDisplayEntity(e, a)
       })
       if (grouping.roomId === 'misc') {
         for (const a of roomAssignments) {
@@ -536,10 +557,10 @@ async function runFullPipeline(
 
   rooms.sort((a, b) => a.displayName.localeCompare(b.displayName, 'en'))
 
-  // Match `entityCount` to what the analyzer/generator actually surfaces:
-  // hidden, disabled, config, and diagnostic entities don't appear in any
-  // generated dashboard view, so don't count them.
-  const visibleEntityCount = entities.filter(isDashboardDisplayEntity).length
+  // Match `entityCount` to what the analyzer/generator actually surfaces.
+  // Administrative entities are soft-hidden unless the user opts them back
+  // in with a manual room override.
+  const visibleEntityCount = dashboardEntityIds.size
 
   const floorAssignments = await timedSyncStage(options, 'assign_floors', () =>
     assignFloors({
@@ -565,7 +586,9 @@ async function runFullPipeline(
     groupings,
     rooms,
     misc,
+    administrative,
     hidden,
+    dashboardEntityIds,
     summary: {
       entityCount: visibleEntityCount,
       roomCount: rooms.length,
@@ -583,7 +606,27 @@ export async function runAnalyze(
   options?: PipelineRunOptions,
 ): Promise<AnalyzeOutput> {
   const state = await runFullPipeline(ha, overrides, settings, options)
-  return { rooms: state.rooms, misc: state.misc, hidden: state.hidden, summary: state.summary }
+  return {
+    rooms: state.rooms,
+    misc: state.misc,
+    administrative: state.administrative,
+    hidden: state.hidden,
+    summary: state.summary,
+  }
+}
+
+function collectDashboardEntityIds(
+  assignments: RoomAssignment[],
+  entityById: ReadonlyMap<string, NormalizedEntity>,
+): Set<string> {
+  const ids = new Set<string>()
+  for (const assignment of assignments) {
+    const entity = entityById.get(assignment.entityId)
+    if (entity !== undefined && isDashboardDisplayEntity(entity, assignment)) {
+      ids.add(entity.entityId)
+    }
+  }
+  return ids
 }
 
 function buildAnalyzedRoom(
@@ -647,10 +690,20 @@ export async function runPreview(
   // Drop the misc grouping before view generation: misc entities surface
   // via the analyze response's `misc[]` field, not as a dashboard view.
   const dashboardGroupings = state.groupings.filter((g) => g.roomId !== 'misc')
+  const homeQuickStatsIds = new Set(
+    pickQuickStatsEntities(
+      state.entities.filter(
+        (e) => state.dashboardEntityIds.has(e.entityId) || isHomePowerQuickStatException(e),
+      ),
+    ).map((e) => e.entityId),
+  )
 
   const home = await timedSyncStage(options, 'build_home_view', () =>
     buildHomeView({
-      entities: state.entities.filter(isDashboardDisplayEntity),
+      entities: state.entities.filter(
+        (entity) =>
+          state.dashboardEntityIds.has(entity.entityId) || homeQuickStatsIds.has(entity.entityId),
+      ),
       groupings: dashboardGroupings,
       rooms: state.rooms,
       floorAssignments: state.floorAssignments,
@@ -718,12 +771,23 @@ export async function runPreview(
   return {
     rooms: state.rooms,
     misc: state.misc,
+    administrative: state.administrative,
     hidden: state.hidden,
     summary: state.summary,
     config,
     diff,
     suggestions,
   }
+}
+
+function isHomePowerQuickStatException(entity: NormalizedEntity): boolean {
+  return (
+    !entity.isHidden &&
+    !entity.isDisabled &&
+    entity.entityCategory === null &&
+    entity.domain === 'sensor' &&
+    entity.deviceClass === 'power'
+  )
 }
 
 export async function runApply(

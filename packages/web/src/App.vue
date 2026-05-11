@@ -5,6 +5,7 @@ import HealthBar from './components/HealthBar.vue'
 import AnalyzeButton from './components/AnalyzeButton.vue'
 import RoomList from './components/RoomList.vue'
 import MiscBucket from './components/MiscBucket.vue'
+import AdministrativeEntitiesPanel from './components/AdministrativeEntitiesPanel.vue'
 import HiddenEntitiesPanel from './components/HiddenEntitiesPanel.vue'
 import OverridesBar from './components/OverridesBar.vue'
 import DashboardPreview from './components/DashboardPreview.vue'
@@ -253,6 +254,7 @@ watch(
         :diff-by-entity-id="diffByEntityId"
       />
       <MiscBucket :misc="analyze.preview.misc" />
+      <AdministrativeEntitiesPanel :administrative="analyze.preview.administrative ?? []" />
       <HiddenEntitiesPanel :hidden-entities="analyze.preview.hidden ?? []" />
       <OverridesBar />
       <DashboardPreview :config="analyze.preview.config" />

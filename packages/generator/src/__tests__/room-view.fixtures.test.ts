@@ -355,12 +355,6 @@ describe('buildRoomViews — english-cluttered fixture', () => {
               },
               "heading": "Fans",
             },
-            {
-              "cards": {
-                "entities": 1,
-              },
-              "heading": "Other",
-            },
           ],
           "title": "Office",
         },
