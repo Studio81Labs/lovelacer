@@ -1,3 +1,21 @@
+## 0.4.23
+
+### Phase 2 — pre-release for local QA (Smart Panel runtime parity)
+
+Tests whether the remaining add-on crash is caused by the container runtime
+shape rather than Lovelacer's preview pipeline.
+
+The Smart Panel Home Assistant add-on runs successfully on the same host using
+`ghcr.io/hassio-addons/base:17.2.4` and an official Node runtime copied from a
+Node Alpine image. Lovelacer now matches the base-image/runtime shape while
+staying on Node 22 to match CI and the current `better-sqlite3` lockfile. Native
+modules are rebuilt in a Node Alpine builder stage before the final Home
+Assistant base image, avoiding compiler packages from repositories whose musl
+versions can drift from the add-on base. This isolates the base-image/runtime
+variable before considering a larger nginx/s6 service-manager migration.
+
+Same QA scope as 0.4.0–0.4.22.
+
 ## 0.4.22
 
 ### Phase 2 — pre-release for local QA (in-place preview normalization)
