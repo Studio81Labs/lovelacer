@@ -45,9 +45,8 @@ function onRoomChange(event: Event) {
   overrides.setRoomId(props.entityId, value === '' ? null : value)
 }
 
-function onHideChange(event: Event) {
-  const checked = (event.target as HTMLInputElement).checked
-  overrides.setHidden(props.entityId, checked)
+function toggleHidden() {
+  overrides.setHidden(props.entityId, !isHidden.value)
 }
 
 const rowClass = computed(() => {
@@ -59,6 +58,25 @@ const rowClass = computed(() => {
     classes.push('opacity-60')
   }
   return classes
+})
+
+const hideButtonClass = computed(() => {
+  const base = [
+    'rounded',
+    'border',
+    'px-2.5',
+    'py-1',
+    'text-xs',
+    'font-medium',
+    'disabled:cursor-not-allowed',
+    'disabled:opacity-50',
+  ]
+  if (isHidden.value) {
+    base.push('border-amber-300', 'bg-amber-100', 'text-amber-800')
+  } else {
+    base.push('border-stone-300', 'bg-white', 'text-stone-700', 'hover:bg-stone-50')
+  }
+  return base
 })
 
 const diffTagText = computed<string | null>(() => {
@@ -112,17 +130,16 @@ const diffTagClass = computed<string>(() => {
         </option>
       </select>
 
-      <label class="flex items-center gap-1 text-xs text-stone-700">
-        <input
-          data-testid="hide-toggle"
-          type="checkbox"
-          class="h-4 w-4 rounded border-stone-300 disabled:cursor-not-allowed disabled:opacity-50"
-          :checked="isHidden"
-          :disabled="isSaving"
-          @change="onHideChange"
-        />
+      <button
+        type="button"
+        data-testid="hide-toggle"
+        :class="hideButtonClass"
+        :aria-pressed="isHidden"
+        :disabled="isSaving"
+        @click="toggleHidden"
+      >
         {{ t('entityRow.hide') }}
-      </label>
+      </button>
     </div>
   </div>
 </template>

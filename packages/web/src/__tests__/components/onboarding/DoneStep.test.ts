@@ -67,9 +67,8 @@ describe('DoneStep', () => {
     expect(wrapper.emitted('finish')).toBeTruthy()
   })
 
-  it('Skip link emits "skip" (still works on this step for consistency)', async () => {
+  it('does not render a Skip onboarding link on the final step', async () => {
     const wrapper = mountDone()
-    await wrapper.find('[data-testid="done-skip"]').trigger('click')
-    expect(wrapper.emitted('skip')).toBeTruthy()
+    expect(wrapper.find('[data-testid="done-skip"]').exists()).toBe(false)
   })
 })

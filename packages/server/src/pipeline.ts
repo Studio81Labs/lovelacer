@@ -6,6 +6,7 @@ import {
   computeSuggestions,
   detectAsync,
   groupByDomain,
+  isDashboardDisplayEntity,
   type RoomGrouping,
 } from '@lovelacer/analyzer'
 import {
@@ -41,6 +42,7 @@ import type { SettingsStore } from './storage/settings-store.js'
 export interface AnalyzeOutput {
   rooms: AnalyzedRoom[]
   misc: { entityId: string; friendlyName: string; domain: string }[]
+  hidden: { entityId: string; friendlyName: string; domain: string; roomId?: string }[]
   summary: { entityCount: number; roomCount: number; miscCount: number }
 }
 
@@ -366,6 +368,7 @@ interface PipelineState {
   groupings: RoomGrouping[]
   rooms: AnalyzedRoom[]
   misc: AnalyzeOutput['misc']
+  hidden: AnalyzeOutput['hidden']
   summary: AnalyzeOutput['summary']
   floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
   /** P2-6 — per-section toggles read from SettingsStore at the top of runFullPipeline. */
@@ -490,8 +493,21 @@ async function runFullPipeline(
 
   const rooms: AnalyzedRoom[] = []
   const misc: AnalyzeOutput['misc'] = []
+  const hidden: AnalyzeOutput['hidden'] = []
 
   await timedSyncStage(options, 'build_analyze_output', () => {
+    for (const override of overrides.getAll()) {
+      if (override.hidden !== true) continue
+      const e = entityById.get(override.entityId)
+      hidden.push({
+        entityId: override.entityId,
+        friendlyName: e?.friendlyName ?? override.entityId,
+        domain: e?.domain ?? override.entityId.split('.')[0] ?? 'unknown',
+        ...(override.roomId !== undefined ? { roomId: override.roomId } : {}),
+      })
+    }
+    hidden.sort((a, b) => a.entityId.localeCompare(b.entityId, 'en'))
+
     for (const grouping of groupings) {
       // Skip hidden/disabled entities everywhere — `groupByDomain` already
       // filters them from views, so the analyze counts must match what users
@@ -499,7 +515,7 @@ async function runFullPipeline(
       const roomAssignments = assignments.filter((a) => {
         if (a.roomId !== grouping.roomId) return false
         const e = entityById.get(a.entityId)
-        return e !== undefined && !e.isHidden && !e.isDisabled
+        return e !== undefined && isDashboardDisplayEntity(e)
       })
       if (grouping.roomId === 'misc') {
         for (const a of roomAssignments) {
@@ -521,8 +537,9 @@ async function runFullPipeline(
   rooms.sort((a, b) => a.displayName.localeCompare(b.displayName, 'en'))
 
   // Match `entityCount` to what the analyzer/generator actually surfaces:
-  // hidden + disabled entities don't appear in any view, so don't count them.
-  const visibleEntityCount = entities.filter((e) => !e.isHidden && !e.isDisabled).length
+  // hidden, disabled, config, and diagnostic entities don't appear in any
+  // generated dashboard view, so don't count them.
+  const visibleEntityCount = entities.filter(isDashboardDisplayEntity).length
 
   const floorAssignments = await timedSyncStage(options, 'assign_floors', () =>
     assignFloors({
@@ -548,6 +565,7 @@ async function runFullPipeline(
     groupings,
     rooms,
     misc,
+    hidden,
     summary: {
       entityCount: visibleEntityCount,
       roomCount: rooms.length,
@@ -565,7 +583,7 @@ export async function runAnalyze(
   options?: PipelineRunOptions,
 ): Promise<AnalyzeOutput> {
   const state = await runFullPipeline(ha, overrides, settings, options)
-  return { rooms: state.rooms, misc: state.misc, summary: state.summary }
+  return { rooms: state.rooms, misc: state.misc, hidden: state.hidden, summary: state.summary }
 }
 
 function buildAnalyzedRoom(
@@ -632,7 +650,7 @@ export async function runPreview(
 
   const home = await timedSyncStage(options, 'build_home_view', () =>
     buildHomeView({
-      entities: state.entities,
+      entities: state.entities.filter(isDashboardDisplayEntity),
       groupings: dashboardGroupings,
       rooms: state.rooms,
       floorAssignments: state.floorAssignments,
@@ -700,6 +718,7 @@ export async function runPreview(
   return {
     rooms: state.rooms,
     misc: state.misc,
+    hidden: state.hidden,
     summary: state.summary,
     config,
     diff,

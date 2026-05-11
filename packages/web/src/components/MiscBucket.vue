@@ -19,9 +19,16 @@ const props = defineProps<{
 }>()
 const overrides = useOverridesStore()
 
+const READONLY_ROW_LIMIT = 50
 const selected = ref<Set<string>>(new Set())
 const bulkRoom = ref<string>('') // '' = no room picked yet (Assign disabled)
 
+const displayedMisc = computed(() =>
+  props.readOnly === true ? props.misc.slice(0, READONLY_ROW_LIMIT) : props.misc,
+)
+const isTruncated = computed(
+  () => props.readOnly === true && props.misc.length > displayedMisc.value.length,
+)
 const selectedCount = computed(() => selected.value.size)
 const allSelected = computed(
   () => props.misc.length > 0 && selected.value.size === props.misc.length,
@@ -138,7 +145,11 @@ watch(
     </div>
 
     <ul class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
-      <li v-for="entity in misc" :key="entity.entityId" class="flex items-center gap-3 pl-5">
+      <li
+        v-for="entity in displayedMisc"
+        :key="entity.entityId"
+        class="flex items-center gap-3 pl-5"
+      >
         <input
           v-if="!readOnly"
           type="checkbox"
@@ -159,5 +170,12 @@ watch(
         </div>
       </li>
     </ul>
+    <p
+      v-if="isTruncated"
+      data-testid="misc-truncated"
+      class="border-t border-stone-100 px-5 py-2 text-xs text-stone-500"
+    >
+      {{ t('miscBucket.showingSubset', { shown: displayedMisc.length, total: misc.length }) }}
+    </p>
   </details>
 </template>

@@ -90,7 +90,7 @@ function onFinishFromDone(): void {
 <template>
   <div
     data-testid="onboarding-wizard"
-    class="fixed inset-0 z-30 flex items-center justify-center overflow-y-auto bg-stone-50 p-8"
+    class="fixed inset-0 z-30 flex items-start justify-center overflow-y-auto bg-stone-50 p-8"
   >
     <div class="w-full max-w-2xl">
       <ProgressDots :current="currentStep" :steps="['welcome', 'preview', 'done']" />
@@ -105,7 +105,7 @@ function onFinishFromDone(): void {
         @back="currentStep = 'welcome'"
         @skip="onSkip"
       />
-      <DoneStep v-else @finish="onFinishFromDone" @skip="onSkip" />
+      <DoneStep v-else @finish="onFinishFromDone" />
     </div>
   </div>
 </template>

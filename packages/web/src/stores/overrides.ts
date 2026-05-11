@@ -27,6 +27,16 @@ export const useOverridesStore = defineStore('overrides', () => {
 
   const hasDirty = computed(() => dirtyState.value.size > 0)
   const dirtyCount = computed(() => dirtyState.value.size)
+  const hiddenOverrides = computed<Override[]>(() => {
+    const merged = new Map(serverState.value)
+    for (const [entityId, dirty] of dirtyState.value) {
+      if (dirty === null) merged.delete(entityId)
+      else merged.set(entityId, dirty)
+    }
+    return [...merged.values()]
+      .filter((override) => override.hidden === true)
+      .sort((a, b) => a.entityId.localeCompare(b.entityId, 'en'))
+  })
 
   function effective(entityId: string): Override | null {
     if (dirtyState.value.has(entityId)) {
@@ -153,6 +163,7 @@ export const useOverridesStore = defineStore('overrides', () => {
     error,
     hasDirty,
     dirtyCount,
+    hiddenOverrides,
     effective,
     setRoomId,
     setHidden,

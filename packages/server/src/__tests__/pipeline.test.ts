@@ -97,6 +97,22 @@ describe('runAnalyze', () => {
     const result = await runAnalyze(fake.client, makeStore(), makeSettings())
     expect(result.rooms.every((r) => r.id !== 'misc')).toBe(true)
   })
+
+  it('excludes config and diagnostic entities from room and misc output', async () => {
+    const fake = makeFakeHa()
+    const result = await runAnalyze(fake.client, makeStore(), makeSettings())
+    const fixture = fixtureToHaRegistries(englishCluttered)
+    const entityById = new Map(fixture.entities.map((entity) => [entity.entity_id, entity]))
+
+    for (const room of result.rooms) {
+      for (const assignment of room.assignments) {
+        expect(entityById.get(assignment.entityId)?.entity_category ?? null).toBeNull()
+      }
+    }
+    for (const entity of result.misc) {
+      expect(entityById.get(entity.entityId)?.entity_category ?? null).toBeNull()
+    }
+  })
 })
 
 describe('runPreview', () => {
@@ -444,6 +460,13 @@ describe('runAnalyze with overrides', () => {
 
     const filtered = await runAnalyze(fake.client, store, makeSettings())
     expect(filtered.summary.entityCount).toBe(baselineEntityCount - 1)
+    expect(filtered.hidden).toContainEqual(
+      expect.objectContaining({
+        entityId: targetEntityId,
+        friendlyName: expect.any(String),
+        domain: expect.any(String),
+      }),
+    )
 
     // The entity is in NO room and NOT in misc.
     const inAnyRoom = filtered.rooms.some((r) =>

@@ -250,4 +250,21 @@ describe('MiscBucket bulk select', () => {
     await summary.trigger('click')
     expect(wrapper.findAll('[data-testid="entity-row"]')).toHaveLength(2)
   })
+
+  it('with readOnly: true, caps very large misc lists and reports the hidden remainder', async () => {
+    const large = Array.from({ length: 75 }, (_, index) => ({
+      entityId: `sensor.unassigned_${index}`,
+      friendlyName: `Unassigned ${index}`,
+      domain: 'sensor',
+    }))
+    const wrapper = mount(MiscBucket, {
+      props: { misc: large, readOnly: true },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    expect(wrapper.findAll('[data-testid="entity-row"]')).toHaveLength(50)
+    expect(wrapper.find('[data-testid="misc-truncated"]').text()).toContain('Showing 50 of 75')
+  })
 })

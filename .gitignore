@@ -42,9 +42,11 @@ coverage/
 
 # Local SQLite
 *.sqlite
+*.sqlite-*
 *.sqlite-journal
 *.db
 *.db-journal
+packages/server/.local-ha-data/
 
 # HA dev container persistent state — mounted as HA's full /config, contains
 # secrets, tokens, devices, and SQLite history. Never commit anything from here.

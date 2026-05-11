@@ -33,20 +33,22 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-    <div v-if="error" class="text-sm text-amber-700">
+  <div data-testid="header-health" class="flex min-h-10 items-center">
+    <div v-if="error" class="rounded bg-amber-50 px-3 py-2 text-sm text-amber-700">
       {{ t('healthBar.backendUnreachable', { error }) }}
     </div>
 
-    <div v-else-if="!health" class="text-sm text-stone-500">{{ t('common.loading') }}</div>
+    <div v-else-if="!health" class="rounded bg-stone-100 px-3 py-2 text-sm text-stone-500">
+      {{ t('common.loading') }}
+    </div>
 
-    <div v-else class="flex items-center justify-between text-sm">
-      <span class="text-stone-600">
+    <div v-else class="flex flex-wrap items-center gap-2 text-sm">
+      <span class="rounded bg-stone-100 px-2.5 py-1 text-stone-600">
         {{ t('healthBar.version') }}
         <span class="font-mono text-stone-900">{{ health.version }}</span>
       </span>
       <span
-        class="inline-block rounded px-2 py-0.5 text-xs font-medium"
+        class="inline-block rounded px-2.5 py-1 text-xs font-medium"
         :class="
           health.ha.connected ? 'bg-forest-50 text-forest-700' : 'bg-stone-200 text-stone-700'
         "
@@ -54,5 +56,5 @@ onMounted(() => {
         {{ health.ha.connected ? t('healthBar.haConnected') : t('healthBar.haDisconnected') }}
       </span>
     </div>
-  </section>
+  </div>
 </template>

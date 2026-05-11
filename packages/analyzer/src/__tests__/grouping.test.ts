@@ -106,7 +106,7 @@ describe('domainGroup — routing', () => {
     expect(domainGroup({ ...baseEntity, domain: 'lawn_mower' })).toBe('other')
   })
 
-  it('routes diagnostic light → lights (entityCategory does not affect routing)', () => {
+  it('routes diagnostic light → lights (entityCategory filtering is separate)', () => {
     expect(domainGroup({ ...baseEntity, domain: 'light', entityCategory: 'diagnostic' })).toBe(
       'lights',
     )
@@ -165,7 +165,7 @@ describe('groupByDomain — orchestration', () => {
     expect(result).toEqual([])
   })
 
-  it('preserves diagnostic entities in their natural group', () => {
+  it('drops diagnostic entities', () => {
     const e = ent('sensor.aqara_battery', {
       friendlyName: 'Aqara Battery',
       deviceClass: 'battery',
@@ -175,9 +175,7 @@ describe('groupByDomain — orchestration', () => {
       assignments: [assignment('sensor.aqara_battery', 'kitchen')],
       entities: [e],
     })
-    expect(result).toHaveLength(1)
-    expect(result[0]!.groups[0]!.key).toBe('other') // battery deviceClass not in env filter
-    expect(result[0]!.groups[0]!.entities[0]!.entityCategory).toBe('diagnostic')
+    expect(result).toEqual([])
   })
 
   it('drops empty groups (room with only lights → output has only lights group)', () => {
@@ -274,5 +272,39 @@ describe('groupByDomain — orchestration', () => {
       entities: [],
     })
     expect(result).toEqual([])
+  })
+
+  it('drops diagnostic and config entities from dashboard groupings by default', () => {
+    const entities = [
+      ent('sensor.shelly_rssi', {
+        entityId: 'sensor.shelly_rssi',
+        friendlyName: 'Shelly RSSI',
+        entityCategory: 'diagnostic',
+      }),
+      ent('button.shelly_restart', {
+        entityId: 'button.shelly_restart',
+        domain: 'button',
+        friendlyName: 'Shelly Restart',
+        entityCategory: 'config',
+      }),
+      ent('light.kitchen_ceiling', {
+        entityId: 'light.kitchen_ceiling',
+        domain: 'light',
+        friendlyName: 'Kitchen Ceiling',
+      }),
+    ]
+    const result = groupByDomain({
+      entities,
+      assignments: entities.map((entity) => ({
+        entityId: entity.entityId,
+        roomId: 'kitchen',
+        confidence: 1,
+        signals: [],
+      })),
+    })
+
+    expect(
+      result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
+    ).toEqual(['light.kitchen_ceiling'])
   })
 })

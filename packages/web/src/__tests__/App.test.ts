@@ -91,6 +91,84 @@ describe('App integration', () => {
     vi.mocked(getInvite).mockResolvedValue({ accepted: true })
     vi.mocked(getOnboarding).mockResolvedValue({ completedAt: 1700000000 })
     vi.mocked(getSettings).mockResolvedValue({ settings: defaultSettings })
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, version: 'dev', ha: { connected: true } }),
+    })
+  })
+
+  it('places health status and analyze action in the header toolbar', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await flushPromises()
+
+    const header = wrapper.find('header')
+    expect(header.classes()).toContain('flex')
+    expect(header.classes()).toContain('justify-between')
+    expect(header.classes()).toContain('sticky')
+    expect(header.classes()).toContain('top-0')
+    expect(header.text()).toContain('Version')
+    expect(header.text()).toContain('dev')
+    expect(header.text()).toContain('HA connected')
+    expect(header.findComponent({ name: 'AnalyzeButton' }).exists()).toBe(true)
+
+    expect(wrapper.find('[data-testid="header-health"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="header-top-row"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="header-top-row"]').text()).toContain('lovelacer')
+    expect(wrapper.find('[data-testid="header-top-row"]').text()).toContain('HA connected')
+    expect(wrapper.find('[data-testid="header-status"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="header-status"]').classes()).toContain('ml-auto')
+    expect(wrapper.find('[data-testid="header-actions"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="header-actions"]').text()).toContain('Analyze')
+    expect(wrapper.find('[data-testid="standalone-analyze"]').exists()).toBe(false)
+  })
+
+  it('shows a first-run prompt before analysis starts', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await flushPromises()
+
+    const idleState = wrapper.find('[data-testid="idle-state"]')
+    expect(idleState.exists()).toBe(true)
+    expect(idleState.classes()).toContain('flex-1')
+    expect(idleState.classes()).toContain('items-center')
+    expect(idleState.text()).toContain('Ready to build your dashboard')
+    expect(idleState.text()).toContain('Nothing will be changed until you click Apply.')
+    expect(idleState.findComponent({ name: 'AnalyzeButton' }).exists()).toBe(true)
+
+    const analyze = useAnalyzeStore()
+    analyze.$patch({ phase: 'ready', preview: mockPreview })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="idle-state"]').exists()).toBe(false)
+  })
+
+  it('shows hidden entities near misc after analysis', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await flushPromises()
+
+    const analyze = useAnalyzeStore()
+    const overrides = useOverridesStore()
+    analyze.$patch({ phase: 'ready', preview: mockPreview })
+    overrides.setHidden('sensor.hidden_rssi', true)
+    await wrapper.vm.$nextTick()
+
+    const panel = wrapper.find('[data-testid="hidden-entities-panel"]')
+    expect(panel.exists()).toBe(true)
+    expect(panel.text()).toContain('sensor.hidden_rssi')
   })
 
   it('triggers loadFromServer when analyze.phase transitions to ready', async () => {
