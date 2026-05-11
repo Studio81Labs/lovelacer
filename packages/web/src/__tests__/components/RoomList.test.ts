@@ -117,6 +117,103 @@ describe('RoomList', () => {
     expect(rows[0]!.text()).toContain('light.a')
     expect(rows[1]!.text()).toContain('sensor.b')
   })
+
+  it('filters rooms by matching entity id', async () => {
+    const rooms = [
+      room({
+        id: 'kitchen',
+        displayName: 'Kitchen',
+        assignments: [
+          { entityId: 'light.kitchen_ceiling', roomId: 'kitchen', confidence: 0.9, signals: [] },
+        ],
+      }),
+      room({
+        id: 'bedroom',
+        displayName: 'Bedroom',
+        assignments: [
+          { entityId: 'sensor.bedroom_temp', roomId: 'bedroom', confidence: 0.8, signals: [] },
+        ],
+      }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="section-search"]').setValue('bedroom_temp')
+
+    expect(wrapper.findAll('[data-testid="room-row"]')).toHaveLength(1)
+    const rowText = wrapper.find('[data-testid="room-row"]').text()
+    expect(rowText).toContain('Bedroom')
+    expect(rowText).toContain('sensor.bedroom_temp')
+    expect(rowText).not.toContain('light.kitchen_ceiling')
+  })
+
+  it('filters rooms by fallback friendly name', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [
+          room({
+            id: 'kitchen',
+            displayName: 'Kitchen',
+            assignments: [
+              {
+                entityId: 'light.kitchen_ceiling',
+                roomId: 'kitchen',
+                confidence: 0.9,
+                signals: [],
+              },
+              {
+                entityId: 'sensor.kitchen_freezer_temperature',
+                roomId: 'kitchen',
+                confidence: 0.8,
+                signals: [],
+              },
+            ],
+          }),
+        ],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="section-search"]').setValue('Freezer Temperature')
+
+    const rows = wrapper.findAll('[data-testid="entity-row"]')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.text()).toContain('sensor.kitchen_freezer_temperature')
+    expect(rows[0]!.text()).not.toContain('light.kitchen_ceiling')
+  })
+
+  it('shows an empty search state when no room entity matches', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [
+          room({
+            assignments: [
+              {
+                entityId: 'light.kitchen_ceiling',
+                roomId: 'kitchen',
+                confidence: 0.9,
+                signals: [],
+              },
+            ],
+          }),
+        ],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="section-search"]').setValue('not-here')
+
+    expect(wrapper.findAll('[data-testid="room-row"]')).toHaveLength(0)
+    expect(wrapper.text()).toContain('No matching entities')
+  })
 })
 
 describe('RoomList diff badges', () => {

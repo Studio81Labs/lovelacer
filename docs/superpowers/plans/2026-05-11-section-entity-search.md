@@ -13,6 +13,7 @@
 ### Task 1: Add Search Tests
 
 **Files:**
+
 - Modify: `packages/web/src/__tests__/components/RoomList.test.ts`
 - Modify: `packages/web/src/__tests__/components/MiscBucket.test.ts`
 - Modify: `packages/web/src/__tests__/components/AdministrativeEntitiesPanel.test.ts`
@@ -28,15 +29,24 @@ it('filters rooms by matching entity id', async () => {
     room({
       id: 'kitchen',
       displayName: 'Kitchen',
-      assignments: [{ entityId: 'light.kitchen_ceiling', roomId: 'kitchen', confidence: 0.9, signals: [] }],
+      assignments: [
+        { entityId: 'light.kitchen_ceiling', roomId: 'kitchen', confidence: 0.9, signals: [] },
+      ],
     }),
     room({
       id: 'bedroom',
       displayName: 'Bedroom',
-      assignments: [{ entityId: 'sensor.bedroom_temp', roomId: 'bedroom', confidence: 0.8, signals: [] }],
+      assignments: [
+        { entityId: 'sensor.bedroom_temp', roomId: 'bedroom', confidence: 0.8, signals: [] },
+      ],
     }),
   ]
-  const wrapper = mount(RoomList, { props: { rooms }, global: { plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()] } })
+  const wrapper = mount(RoomList, {
+    props: { rooms },
+    global: {
+      plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+    },
+  })
   await wrapper.find('[data-testid="section-search"]').setValue('bedroom_temp')
   expect(wrapper.findAll('[data-testid="room-row"]')).toHaveLength(1)
   expect(wrapper.text()).toContain('sensor.bedroom_temp')
@@ -71,6 +81,7 @@ Expected: FAIL because `[data-testid="section-search"]` does not exist yet.
 ### Task 2: Add Shared Filter Helper
 
 **Files:**
+
 - Create: `packages/web/src/entity-search.ts`
 
 - [ ] **Step 1: Write helper**
@@ -80,7 +91,11 @@ export function normalizeEntitySearch(value: string): string {
   return value.trim().toLocaleLowerCase()
 }
 
-export function entityMatchesSearch(query: string, entityId: string, friendlyName: string): boolean {
+export function entityMatchesSearch(
+  query: string,
+  entityId: string,
+  friendlyName: string,
+): boolean {
   const normalized = normalizeEntitySearch(query)
   if (normalized === '') return true
   return (
@@ -97,6 +112,7 @@ Import `entityMatchesSearch` into each modified component. Do not introduce serv
 ### Task 3: Implement Room Filtering
 
 **Files:**
+
 - Modify: `packages/web/src/components/RoomList.vue`
 - Modify: `packages/web/src/locales/en.json`
 - Modify: `packages/web/src/locales/cs.json`
@@ -113,7 +129,11 @@ const filteredRooms = computed(() =>
       const assignments = room.assignments.filter((a) =>
         entityMatchesSearch(searchQuery.value, a.entityId, entityIdToFriendly(a.entityId)),
       )
-      return { ...room, assignments, entityCount: hasSearch.value ? assignments.length : room.entityCount }
+      return {
+        ...room,
+        assignments,
+        entityCount: hasSearch.value ? assignments.length : room.entityCount,
+      }
     })
     .filter((room) => !hasSearch.value || room.assignments.length > 0),
 )
@@ -138,6 +158,7 @@ Render `filteredRooms` in the existing `v-for`, and use an empty state when `has
 ### Task 4: Implement Misc Filtering
 
 **Files:**
+
 - Modify: `packages/web/src/components/MiscBucket.vue`
 
 - [ ] **Step 1: Filter before read-only truncation**
@@ -159,7 +180,9 @@ const displayedMisc = computed(() =>
 
 ```ts
 const allSelected = computed(
-  () => filteredMisc.value.length > 0 && filteredMisc.value.every((m) => selected.value.has(m.entityId)),
+  () =>
+    filteredMisc.value.length > 0 &&
+    filteredMisc.value.every((m) => selected.value.has(m.entityId)),
 )
 
 function toggleAll(): void {
@@ -174,6 +197,7 @@ function toggleAll(): void {
 ### Task 5: Implement Administrative and Hidden Filtering
 
 **Files:**
+
 - Modify: `packages/web/src/components/AdministrativeEntitiesPanel.vue`
 - Modify: `packages/web/src/components/HiddenEntitiesPanel.vue`
 
@@ -208,6 +232,7 @@ Use `filteredAdministrative` and `filteredHidden` for the row loops. Add the sam
 ### Task 6: Verify and Commit
 
 **Files:**
+
 - All files touched above
 
 - [ ] **Step 1: Run focused component tests**

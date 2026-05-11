@@ -57,4 +57,48 @@ describe('AdministrativeEntitiesPanel', () => {
       roomId: 'kitchen',
     })
   })
+
+  it('filters administrative entities by entity id and friendly name', async () => {
+    const wrapper = mountPanel([
+      {
+        entityId: 'sensor.kitchen_voltage',
+        friendlyName: 'Kitchen Voltage',
+        domain: 'sensor',
+        roomId: 'kitchen',
+      },
+      {
+        entityId: 'button.router_restart',
+        friendlyName: 'Router Restart',
+        domain: 'button',
+      },
+    ])
+
+    await wrapper.find('[data-testid="section-search"]').setValue('router')
+
+    expect(wrapper.findAll('[data-testid="entity-row"]')).toHaveLength(1)
+    expect(wrapper.text()).toContain('button.router_restart')
+    expect(wrapper.text()).toContain('Router Restart')
+    expect(wrapper.text()).not.toContain('sensor.kitchen_voltage')
+
+    await wrapper.find('[data-testid="section-search"]').setValue('voltage')
+
+    expect(wrapper.findAll('[data-testid="entity-row"]')).toHaveLength(1)
+    expect(wrapper.text()).toContain('sensor.kitchen_voltage')
+    expect(wrapper.text()).not.toContain('button.router_restart')
+  })
+
+  it('shows an empty search state when no administrative entity matches', async () => {
+    const wrapper = mountPanel([
+      {
+        entityId: 'sensor.kitchen_voltage',
+        friendlyName: 'Kitchen Voltage',
+        domain: 'sensor',
+      },
+    ])
+
+    await wrapper.find('[data-testid="section-search"]').setValue('missing')
+
+    expect(wrapper.findAll('[data-testid="entity-row"]')).toHaveLength(0)
+    expect(wrapper.text()).toContain('No matching entities')
+  })
 })
