@@ -1,4 +1,5 @@
 import type { CanonicalRoomId, NormalizedEntity, RoomAssignment } from '@lovelacer/shared'
+import { findAdminKeywords } from './admin-match.js'
 
 /**
  * Display categories for the generator. All 11 keys are active —
@@ -45,7 +46,7 @@ const BINARY_SENSOR_ACTIVITY_CLASSES = new Set(['motion', 'occupancy', 'door'])
  *
  * Routes light/switch → lights, climate → climate, filtered sensor →
  * environment, filtered binary_sensor → activity, everything else →
- * other. Category filtering happens in `isDashboardDisplayEntity`, not
+ * other. Dashboard filtering happens in `isDashboardDisplayEntity`, not
  * here, so tests can still assert the pure domain route independently.
  */
 export function domainGroup(entity: NormalizedEntity): DomainGroupKey {
@@ -66,15 +67,86 @@ export function domainGroup(entity: NormalizedEntity): DomainGroupKey {
   return 'other'
 }
 
+const ADMIN_DEVICE_CLASSES = new Set([
+  'battery',
+  'current',
+  'energy',
+  'frequency',
+  'power',
+  'power_factor',
+  'signal_strength',
+  'voltage',
+])
+
+const ADMIN_DOMAINS = new Set(['update'])
+const SENSOR_ONLY_ADMIN_KEYWORDS = new Set([
+  'voltage',
+  'voltmeter',
+  'current',
+  'power',
+  'energy',
+  'frequency',
+  'napeti',
+  'voltmetr',
+  'proud',
+  'vykon',
+  'energie',
+  'frekvence',
+  'napatie',
+  'voltmeter',
+  'prud',
+  'energia',
+  'frekvencia',
+  'spannung',
+  'strom',
+  'leistung',
+  'frequenz',
+])
+
 /**
- * Dashboard display filter shared by analyzer/server callers. HA marks
- * firmware, RSSI, restart buttons, update controls, and many device
- * health sensors as config/diagnostic entities. Those are useful in HA's
- * device page, but they make generated dashboards and suggestion lists
- * noisy on real installs.
+ * Soft dashboard filter for entities that are technically useful on a HA
+ * device page but noisy in a room dashboard. HA sometimes marks these
+ * with entity_category=config/diagnostic, but many integrations expose
+ * them as ordinary entities, so we also use conservative device-class and
+ * name/object-id heuristics.
  */
-export function isDashboardDisplayEntity(entity: NormalizedEntity): boolean {
-  return !entity.isHidden && !entity.isDisabled && entity.entityCategory === null
+export function isAdministrativeEntity(entity: NormalizedEntity): boolean {
+  if (entity.entityCategory !== null) return true
+  if (ADMIN_DOMAINS.has(entity.domain)) return true
+  if (entity.deviceClass !== null && ADMIN_DEVICE_CLASSES.has(entity.deviceClass)) return true
+
+  const matchText = `${entity.objectId} ${entity.friendlyName}`
+  const matches = findAdminKeywords(matchText)
+  if (matches.length === 0) return false
+
+  for (const match of matches) {
+    if (SENSOR_ONLY_ADMIN_KEYWORDS.has(match.pattern) && entity.domain !== 'sensor') continue
+    if (match.pattern === 'current') {
+      if (entity.deviceClass !== null) continue
+      if (/\bcurrent\s+temp(?:erature)?\b/.test(matchText.toLowerCase().replace(/[_-]+/g, ' '))) {
+        continue
+      }
+    }
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Dashboard display filter shared by analyzer/server callers.
+ *
+ * Hidden/disabled entities remain hard-hidden. Administrative entities
+ * are soft-hidden by default, but a manual room override opts them back
+ * into generated dashboards so users can recover false positives.
+ */
+export function isDashboardDisplayEntity(
+  entity: NormalizedEntity,
+  assignment?: Pick<RoomAssignment, 'manual'>,
+): boolean {
+  if (entity.isHidden || entity.isDisabled) return false
+  if (assignment?.manual === true) return true
+  return !isAdministrativeEntity(entity)
 }
 
 /**
@@ -119,7 +191,7 @@ export function groupByDomain(input: GroupByDomainInput): RoomGrouping[] {
   for (const assignment of input.assignments) {
     const entity = entityById.get(assignment.entityId)
     if (entity === undefined) continue
-    if (!isDashboardDisplayEntity(entity)) continue
+    if (!isDashboardDisplayEntity(entity, assignment)) continue
 
     const key = domainGroup(entity)
     let roomBucket = buckets.get(assignment.roomId)

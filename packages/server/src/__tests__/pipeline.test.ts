@@ -71,6 +71,121 @@ function makeSettings(): SettingsStore {
   return new SettingsStore(':memory:')
 }
 
+function makeAdministrativeHa(): HaClient {
+  const areas: HaAreaRegistryEntry[] = [
+    { area_id: 'kitchen', name: 'Kitchen', floor_id: null, icon: null },
+  ]
+  const entities: HaEntityRegistryEntry[] = [
+    {
+      entity_id: 'sensor.kitchen_temperature',
+      name: 'Kitchen Temperature',
+      original_name: null,
+      area_id: 'kitchen',
+      device_id: null,
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: null,
+      device_class: 'temperature',
+    },
+    {
+      entity_id: 'sensor.kitchen_voltage',
+      name: 'Kitchen Voltage',
+      original_name: null,
+      area_id: 'kitchen',
+      device_id: null,
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: null,
+      device_class: 'voltage',
+    },
+    {
+      entity_id: 'sensor.kitchen_rssi',
+      name: 'Kitchen RSSI',
+      original_name: null,
+      area_id: 'kitchen',
+      device_id: null,
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: null,
+      device_class: null,
+    },
+  ]
+
+  return {
+    isConnected: () => true,
+    getEntityRegistry: vi.fn(async () => entities),
+    getDeviceRegistry: vi.fn(async () => []),
+    getAreaRegistry: vi.fn(async () => areas),
+    getFloorRegistry: vi.fn(async () => []),
+  } as unknown as HaClient
+}
+
+function makePowerQuickStatsHa(): HaClient {
+  const areas: HaAreaRegistryEntry[] = [
+    { area_id: 'kitchen', name: 'Kitchen', floor_id: null, icon: null },
+  ]
+  const entities: HaEntityRegistryEntry[] = [
+    {
+      entity_id: 'weather.home',
+      name: 'Home Weather',
+      original_name: null,
+      area_id: null,
+      device_id: null,
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: null,
+    },
+    {
+      entity_id: 'sensor.house_power_now',
+      name: 'House Power Now',
+      original_name: null,
+      area_id: 'kitchen',
+      device_id: null,
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: null,
+      device_class: 'power',
+    },
+    {
+      entity_id: 'sensor.outdoor_temperature',
+      name: 'Outdoor Temperature',
+      original_name: null,
+      area_id: 'kitchen',
+      device_id: null,
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: 'diagnostic',
+      device_class: 'temperature',
+    },
+    {
+      entity_id: 'binary_sensor.home_presence',
+      name: 'Home Presence',
+      original_name: null,
+      area_id: 'kitchen',
+      device_id: null,
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: 'diagnostic',
+      device_class: 'presence',
+    },
+  ]
+
+  return {
+    isConnected: () => true,
+    getEntityRegistry: vi.fn(async () => entities),
+    getDeviceRegistry: vi.fn(async () => []),
+    getAreaRegistry: vi.fn(async () => areas),
+    getFloorRegistry: vi.fn(async () => []),
+  } as unknown as HaClient
+}
+
 describe('runAnalyze', () => {
   it('returns rooms, misc, summary with consistent counts', async () => {
     const fake = makeFakeHa()
@@ -112,6 +227,58 @@ describe('runAnalyze', () => {
     for (const entity of result.misc) {
       expect(entityById.get(entity.entityId)?.entity_category ?? null).toBeNull()
     }
+  })
+
+  it('soft-hides administrative entities but keeps them available for reassignment', async () => {
+    const result = (await runAnalyze(
+      makeAdministrativeHa(),
+      makeStore(),
+      makeSettings(),
+    )) as Awaited<ReturnType<typeof runAnalyze>> & {
+      administrative?: { entityId: string; roomId?: string }[]
+    }
+
+    const kitchen = result.rooms.find((room) => room.id === 'kitchen')
+    expect(kitchen?.assignments.map((assignment) => assignment.entityId)).toEqual([
+      'sensor.kitchen_temperature',
+    ])
+    expect(result.misc.map((entity) => entity.entityId)).toEqual([])
+    expect(result.administrative?.map((entity) => [entity.entityId, entity.roomId])).toEqual([
+      ['sensor.kitchen_rssi', 'kitchen'],
+      ['sensor.kitchen_voltage', 'kitchen'],
+    ])
+  })
+
+  it('shows a soft-hidden administrative entity when a room override exists', async () => {
+    const overrides = makeStore()
+    overrides.replaceAll([{ entityId: 'sensor.kitchen_voltage', roomId: 'kitchen' }])
+
+    const result = (await runAnalyze(makeAdministrativeHa(), overrides, makeSettings())) as Awaited<
+      ReturnType<typeof runAnalyze>
+    > & {
+      administrative?: { entityId: string }[]
+    }
+
+    const kitchen = result.rooms.find((room) => room.id === 'kitchen')
+    expect(kitchen?.assignments.map((assignment) => assignment.entityId)).toEqual([
+      'sensor.kitchen_temperature',
+      'sensor.kitchen_voltage',
+    ])
+    expect(result.administrative?.map((entity) => entity.entityId)).toEqual(['sensor.kitchen_rssi'])
+  })
+
+  it('keeps hard-hidden administrative entities out of the administrative recovery panel', async () => {
+    const overrides = makeStore()
+    overrides.replaceAll([{ entityId: 'sensor.kitchen_voltage', hidden: true }])
+
+    const result = (await runAnalyze(makeAdministrativeHa(), overrides, makeSettings())) as Awaited<
+      ReturnType<typeof runAnalyze>
+    > & {
+      administrative?: { entityId: string }[]
+    }
+
+    expect(result.hidden.map((entity) => entity.entityId)).toContain('sensor.kitchen_voltage')
+    expect(result.administrative?.map((entity) => entity.entityId)).toEqual(['sensor.kitchen_rssi'])
   })
 })
 
@@ -212,6 +379,35 @@ describe('runPreview', () => {
     await expect(
       runPreview(ha, overrides, appliedSnapshot, makeDismissed(), makeSettings()),
     ).resolves.toBeDefined()
+  })
+
+  it('keeps soft-hidden power sensors available for home quick stats without exposing diagnostic candidates', async () => {
+    const result = await runPreview(
+      makePowerQuickStatsHa(),
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+    )
+
+    const home = result.config.views[0]
+    const quickStats = home?.sections
+      ?.flatMap((section) => section.cards ?? [])
+      .find((card): card is { type: 'glance'; title?: string; entities: string[] } => {
+        return card.type === 'glance' && card.title === 'Quick stats'
+      })
+
+    expect(quickStats?.entities).toEqual(['weather.home', 'sensor.house_power_now'])
+    expect(quickStats?.entities).not.toContain('sensor.outdoor_temperature')
+    expect(quickStats?.entities).not.toContain('binary_sensor.home_presence')
+    expect(result.rooms.flatMap((room) => room.assignments.map((a) => a.entityId))).not.toContain(
+      'sensor.house_power_now',
+    )
+    expect(result.administrative?.map((entity) => entity.entityId)).toEqual([
+      'binary_sensor.home_presence',
+      'sensor.house_power_now',
+      'sensor.outdoor_temperature',
+    ])
   })
 })
 

@@ -307,4 +307,272 @@ describe('groupByDomain — orchestration', () => {
       result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
     ).toEqual(['light.kitchen_ceiling'])
   })
+
+  it('soft-hides unclassified administrative entities from dashboard groupings by default', () => {
+    const entities = [
+      ent('sensor.kitchen_temperature', {
+        friendlyName: 'Kitchen Temperature',
+        deviceClass: 'temperature',
+      }),
+      ent('sensor.kitchen_voltage', {
+        friendlyName: 'Kitchen Voltage',
+        deviceClass: 'voltage',
+      }),
+      ent('sensor.kitchen_current', {
+        friendlyName: 'Kitchen Current',
+        deviceClass: 'current',
+      }),
+      ent('sensor.kitchen_rssi', {
+        friendlyName: 'Kitchen RSSI',
+        deviceClass: null,
+      }),
+      ent('select.kitchen_temperature_unit', {
+        friendlyName: 'Kitchen Temperature Unit',
+        domain: 'select',
+      }),
+      ent('number.kitchen_calibration', {
+        friendlyName: 'Kitchen Calibration',
+        domain: 'number',
+      }),
+    ]
+
+    const result = groupByDomain({
+      entities,
+      assignments: entities.map((entity) => assignment(entity.entityId, 'kitchen')),
+    })
+
+    expect(
+      result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
+    ).toEqual(['sensor.kitchen_temperature'])
+  })
+
+  it('soft-hides radar tuning and electrical telemetry entities by name', () => {
+    const entities = [
+      ent('binary_sensor.bathroom_occupancy', {
+        friendlyName: 'Bathroom Occupancy',
+        domain: 'binary_sensor',
+        deviceClass: 'occupancy',
+      }),
+      ent('sensor.bathroom_heater_floor_temperature_voltmeter', {
+        friendlyName: 'Bathroom Heater Floor Temperature Voltmeter',
+      }),
+      ent('number.bathroom_occupancy_sensor_radar_sensitivity', {
+        friendlyName: 'Bathroom Occupancy Sensor Radar Sensitivity',
+        domain: 'number',
+      }),
+      ent('number.bathroom_occupancy_sensor_minimum_range', {
+        friendlyName: 'Bathroom Occupancy Sensor Minimum Range',
+        domain: 'number',
+      }),
+      ent('number.bathroom_occupancy_sensor_maximum_range', {
+        friendlyName: 'Bathroom Occupancy Sensor Maximum Range',
+        domain: 'number',
+      }),
+      ent('number.bathroom_occupancy_sensor_detection_delay', {
+        friendlyName: 'Bathroom Occupancy Sensor Detection Delay',
+        domain: 'number',
+      }),
+      ent('sensor.bathroom_occupancy_sensor_self_test', {
+        friendlyName: 'Bathroom Occupancy Sensor Self Test',
+      }),
+      ent('number.bathroom_occupancy_sensor_fading_time', {
+        friendlyName: 'Bathroom Occupancy Sensor Fading Time',
+        domain: 'number',
+      }),
+      ent('sensor.bathroom_main_light_power', {
+        friendlyName: 'Bathroom Main Light Power',
+      }),
+      ent('sensor.bathroom_main_light_current', {
+        friendlyName: 'Bathroom Main Light Current',
+      }),
+      ent('sensor.bathroom_main_light_energy', {
+        friendlyName: 'Bathroom Main Light Energy',
+      }),
+      ent('sensor.bathroom_mirror_light_frequency', {
+        friendlyName: 'Bathroom Mirror Light Frequency',
+      }),
+    ]
+
+    const result = groupByDomain({
+      entities,
+      assignments: entities.map((entity) => assignment(entity.entityId, 'bathroom')),
+    })
+
+    expect(
+      result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
+    ).toEqual(['binary_sensor.bathroom_occupancy'])
+  })
+
+  it('keeps user-facing current-state sensors visible when they are not electrical current', () => {
+    const currentTemperature = ent('sensor.weather_current_temperature', {
+      friendlyName: 'Weather Current Temperature',
+      deviceClass: 'temperature',
+    })
+    const currentHumidity = ent('sensor.weather_current_humidity', {
+      friendlyName: 'Weather Current Humidity',
+      deviceClass: 'humidity',
+    })
+
+    const result = groupByDomain({
+      entities: [currentTemperature, currentHumidity],
+      assignments: [
+        assignment(currentTemperature.entityId, 'kitchen'),
+        assignment(currentHumidity.entityId, 'kitchen'),
+      ],
+    })
+
+    expect(
+      result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
+    ).toEqual(['sensor.weather_current_humidity', 'sensor.weather_current_temperature'])
+  })
+
+  it('keeps controllable switches visible when their names contain electrical words', () => {
+    const entities = [
+      ent('switch.living_room_power_strip', {
+        friendlyName: 'Living Room Power Strip',
+        domain: 'switch',
+      }),
+      ent('sensor.living_room_power_strip_power', {
+        friendlyName: 'Living Room Power Strip Power',
+        domain: 'sensor',
+      }),
+    ]
+
+    const result = groupByDomain({
+      entities,
+      assignments: entities.map((entity) => assignment(entity.entityId, 'living_room')),
+    })
+
+    expect(
+      result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
+    ).toEqual(['switch.living_room_power_strip'])
+  })
+
+  it('continues past sensor-only keyword matches to later administrative keywords', () => {
+    const entities = [
+      ent('number.bathroom_power_calibration', {
+        friendlyName: 'Bathroom Power Calibration',
+        domain: 'number',
+      }),
+      ent('button.plug_power_restart', {
+        friendlyName: 'Plug Power Restart',
+        domain: 'button',
+      }),
+      ent('select.device_voltage_temperature_unit', {
+        friendlyName: 'Device Voltage Temperature Unit',
+        domain: 'select',
+      }),
+      ent('switch.living_room_power_strip', {
+        friendlyName: 'Living Room Power Strip',
+        domain: 'switch',
+      }),
+    ]
+
+    const result = groupByDomain({
+      entities,
+      assignments: entities.map((entity) => assignment(entity.entityId, 'living_room')),
+    })
+
+    expect(
+      result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
+    ).toEqual(['switch.living_room_power_strip'])
+  })
+
+  it('keeps user-facing duration sensors visible while hiding uptime duration sensors', () => {
+    const entities = [
+      ent('sensor.washer_remaining_time', {
+        friendlyName: 'Washer Remaining Time',
+        deviceClass: 'duration',
+      }),
+      ent('sensor.timer_duration', {
+        friendlyName: 'Timer Duration',
+        deviceClass: 'duration',
+      }),
+      ent('sensor.router_uptime', {
+        friendlyName: 'Router Uptime',
+        deviceClass: 'duration',
+      }),
+    ]
+
+    const result = groupByDomain({
+      entities,
+      assignments: entities.map((entity) => assignment(entity.entityId, 'utility')),
+    })
+
+    expect(
+      result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
+    ).toEqual(['sensor.timer_duration', 'sensor.washer_remaining_time'])
+  })
+
+  it('keeps user-facing timestamp sensors visible while hiding maintenance timestamp sensors', () => {
+    const entities = [
+      ent('sensor.bedroom_next_alarm', {
+        friendlyName: 'Bedroom Next Alarm',
+        deviceClass: 'timestamp',
+      }),
+      ent('sensor.washer_cycle_complete', {
+        friendlyName: 'Washer Cycle Complete',
+        deviceClass: 'timestamp',
+      }),
+      ent('sensor.router_firmware_timestamp', {
+        friendlyName: 'Router Firmware Timestamp',
+        deviceClass: 'timestamp',
+      }),
+    ]
+
+    const result = groupByDomain({
+      entities,
+      assignments: entities.map((entity) => assignment(entity.entityId, 'bedroom')),
+    })
+
+    expect(
+      result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
+    ).toEqual(['sensor.bedroom_next_alarm', 'sensor.washer_cycle_complete'])
+  })
+
+  it('soft-hides administrative entities with localized labels across languages', () => {
+    const entities = [
+      ent('binary_sensor.bathroom_occupancy', {
+        friendlyName: 'Koupelna obsazenost',
+        domain: 'binary_sensor',
+        deviceClass: 'occupancy',
+      }),
+      ent('number.bathroom_radar_sensitivity', {
+        friendlyName: 'Koupelna citlivost',
+        domain: 'number',
+      }),
+      ent('number.bathroom_detection_delay', {
+        friendlyName: 'Kúpeľňa oneskorenie detekcie',
+        domain: 'number',
+      }),
+      ent('sensor.bathroom_self_test', {
+        friendlyName: 'Bad Selbsttest',
+      }),
+    ]
+
+    const result = groupByDomain({
+      entities,
+      assignments: entities.map((entity) => assignment(entity.entityId, 'bathroom')),
+    })
+
+    expect(
+      result[0]?.groups.flatMap((group) => group.entities.map((entity) => entity.entityId)),
+    ).toEqual(['binary_sensor.bathroom_occupancy'])
+  })
+
+  it('includes a soft-hidden administrative entity when the user manually assigns it', () => {
+    const voltage = ent('sensor.kitchen_voltage', {
+      friendlyName: 'Kitchen Voltage',
+      deviceClass: 'voltage',
+    })
+
+    const result = groupByDomain({
+      entities: [voltage],
+      assignments: [{ ...assignment(voltage.entityId, 'kitchen'), manual: true }],
+    })
+
+    expect(result[0]?.groups[0]?.entities.map((entity) => entity.entityId)).toEqual([
+      'sensor.kitchen_voltage',
+    ])
+  })
 })

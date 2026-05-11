@@ -25,7 +25,14 @@ export type {
   DetectOptions,
   DetectionContext,
 } from './detect.js'
-export { domainGroup, groupByDomain, isDashboardDisplayEntity } from './grouping.js'
+export { findAdminKeyword } from './admin-match.js'
+export type { AdminKeywordMatch, FindAdminKeywordOptions } from './admin-match.js'
+export {
+  domainGroup,
+  groupByDomain,
+  isAdministrativeEntity,
+  isDashboardDisplayEntity,
+} from './grouping.js'
 export type { DomainGroupKey, DomainGroup, GroupByDomainInput, RoomGrouping } from './grouping.js'
 export { computeDiff } from './diff.js'
 export type { ComputeDiffInput } from './diff.js'
