@@ -19,6 +19,7 @@ profile lovelacer flags=(attach_disconnected,mediate_deleted) {
   # /bin/busybox as well as /bin/sh.
   /bin/sh ix,
   /bin/busybox ix,
+  /usr/local/bin/node ix,
   /usr/bin/node ix,
   /usr/bin/jq ix,
 
