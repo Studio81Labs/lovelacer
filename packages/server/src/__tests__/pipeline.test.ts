@@ -100,12 +100,13 @@ describe('runAnalyze', () => {
 })
 
 describe('runPreview', () => {
-  it('trims unused HA registry fields before building normalized entities', async () => {
+  it('trims unused HA registry fields and normalizes entities in place', async () => {
     const fake = makeFakeHa()
     const entities = await fake.getEntityRegistry()
     const devices = await fake.getDeviceRegistry()
     const entityWithExtraFields = entities[0]! as HaEntityRegistryEntry & Record<string, unknown>
     const deviceWithExtraFields = devices[0]! as HaDeviceRegistryEntry & Record<string, unknown>
+    const originalEntityId = entityWithExtraFields.entity_id
     entityWithExtraFields.large_unused_payload = 'x'.repeat(1024)
     entityWithExtraFields.aliases = ['one', 'two']
     deviceWithExtraFields.large_unused_payload = 'x'.repeat(1024)
@@ -121,8 +122,12 @@ describe('runPreview', () => {
 
     expect(entityWithExtraFields.large_unused_payload).toBeUndefined()
     expect(entityWithExtraFields.aliases).toBeUndefined()
+    expect(entityWithExtraFields.entity_id).toBeUndefined()
+    expect(entityWithExtraFields.entityId).toBe(originalEntityId)
     expect(deviceWithExtraFields.large_unused_payload).toBeUndefined()
     expect(deviceWithExtraFields.config_entries).toBeUndefined()
+    expect(deviceWithExtraFields.name_by_user).toBeUndefined()
+    expect(deviceWithExtraFields.nameByUser).toBeDefined()
   })
 
   it('returns analyze output plus a config', async () => {

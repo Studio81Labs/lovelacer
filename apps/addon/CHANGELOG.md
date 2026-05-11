@@ -1,3 +1,18 @@
+## 0.4.22
+
+### Phase 2 — pre-release for local QA (in-place preview normalization)
+
+Continues reducing the add-on memory peak during `POST /api/preview`.
+
+0.4.21 moved the crash point to the start of normalization, with RSS already
+around 83 MB before normalized entities were allocated. The pipeline now
+mutates compacted registry entries into Lovelacer's normalized preview shape
+instead of allocating a parallel entity graph. This keeps raw entity copies and
+normalized copies from existing at the same time inside the constrained add-on
+container.
+
+Same QA scope as 0.4.0–0.4.21.
+
 ## 0.4.21
 
 ### Phase 2 — pre-release for local QA (compact preview registries)
