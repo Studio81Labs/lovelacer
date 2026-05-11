@@ -5,6 +5,7 @@ import HealthBar from './components/HealthBar.vue'
 import AnalyzeButton from './components/AnalyzeButton.vue'
 import RoomList from './components/RoomList.vue'
 import MiscBucket from './components/MiscBucket.vue'
+import HiddenEntitiesPanel from './components/HiddenEntitiesPanel.vue'
 import OverridesBar from './components/OverridesBar.vue'
 import DashboardPreview from './components/DashboardPreview.vue'
 import ApplyBar from './components/ApplyBar.vue'
@@ -175,33 +176,37 @@ watch(
 </script>
 
 <template>
-  <main v-if="showMainView" class="mx-auto max-w-3xl space-y-6 p-8">
-    <header class="flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
+  <main v-if="showMainView" class="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-8">
+    <header
+      class="sticky top-0 z-20 flex items-start justify-between gap-4 border-b border-stone-200 bg-stone-50/95 py-3 backdrop-blur"
+    >
+      <div data-testid="header-top-row" class="flex min-w-0 flex-1 items-center gap-3">
         <img :src="markUrl" alt="" class="h-10 w-10" aria-hidden="true" />
-        <div>
-          <h1 class="lovelacer-wordmark text-3xl leading-none">lovelace<i>r</i></h1>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-4">
+            <h1 class="lovelacer-wordmark text-3xl leading-none">lovelace<i>r</i></h1>
+            <div data-testid="header-status" class="ml-auto flex flex-wrap items-center gap-2">
+              <HealthBar />
+            </div>
+          </div>
           <p class="mt-1 text-sm text-stone-500">
             {{ t('app.tagline') }}
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        data-testid="settings-button"
-        :aria-label="t('common.settings')"
-        class="rounded p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
-        @click="openSettings"
-      >
-        ⚙
-      </button>
+      <div data-testid="header-actions" class="flex shrink-0 items-center justify-end gap-2">
+        <AnalyzeButton />
+        <button
+          type="button"
+          data-testid="settings-button"
+          :aria-label="t('common.settings')"
+          class="rounded p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+          @click="openSettings"
+        >
+          ⚙
+        </button>
+      </div>
     </header>
-
-    <HealthBar />
-
-    <section class="flex justify-center">
-      <AnalyzeButton />
-    </section>
 
     <section
       v-if="analyze.phase === 'error' && analyze.error !== null"
@@ -219,22 +224,40 @@ watch(
       </div>
     </section>
 
+    <section
+      v-if="analyze.phase === 'idle'"
+      data-testid="idle-state"
+      class="flex flex-1 items-center justify-center"
+    >
+      <div
+        class="mx-auto max-w-xl rounded-lg border border-stone-200 bg-white px-6 py-8 text-center shadow-sm"
+      >
+        <h2 class="text-xl font-medium text-stone-900">{{ t('idleState.heading') }}</h2>
+        <p class="mt-3 text-sm leading-6 text-stone-600">{{ t('idleState.description') }}</p>
+        <p class="mt-2 text-sm text-stone-500">{{ t('idleState.note') }}</p>
+        <div class="mt-5 flex justify-center">
+          <AnalyzeButton />
+        </div>
+      </div>
+    </section>
+
     <section v-if="analyze.phase === 'ready' && analyze.preview !== null" class="space-y-4">
       <DiffBanner :diff="analyze.preview.diff" />
       <RemovedEntitiesPanel
         v-if="analyze.preview.diff !== null && analyze.preview.diff.totals.removed > 0"
         :diff="analyze.preview.diff"
       />
-      <SuggestionsPanel :suggestions="analyze.preview.suggestions" />
       <RoomList
         :rooms="analyze.preview.rooms"
         :diff-by-room="diffByRoom"
         :diff-by-entity-id="diffByEntityId"
       />
       <MiscBucket :misc="analyze.preview.misc" />
+      <HiddenEntitiesPanel :hidden-entities="analyze.preview.hidden ?? []" />
       <OverridesBar />
       <DashboardPreview :config="analyze.preview.config" />
       <ApplyBar />
+      <SuggestionsPanel :suggestions="analyze.preview.suggestions" />
     </section>
   </main>
 

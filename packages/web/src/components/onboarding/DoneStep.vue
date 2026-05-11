@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApplyStore } from '../../stores/apply.js'
 
-defineEmits<{ finish: []; skip: [] }>()
+defineEmits<{ finish: [] }>()
 
 const { t } = useI18n()
 const apply = useApplyStore()
@@ -48,14 +48,5 @@ function openDashboard(): void {
         {{ t('doneStep.finish') }}
       </button>
     </div>
-
-    <button
-      type="button"
-      data-testid="done-skip"
-      class="mt-3 text-sm text-stone-500 hover:text-stone-700"
-      @click="$emit('skip')"
-    >
-      {{ t('common.skipOnboarding') }}
-    </button>
   </div>
 </template>

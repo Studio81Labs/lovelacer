@@ -66,6 +66,13 @@ export interface MiscEntity {
   domain: string
 }
 
+export interface HiddenEntity {
+  entityId: string
+  friendlyName: string
+  domain: string
+  roomId?: string
+}
+
 export interface PreviewSummary {
   entityCount: number
   roomCount: number
@@ -88,6 +95,7 @@ export interface LovelaceConfig {
 export interface AnalyzeOutput {
   rooms: AnalyzedRoom[]
   misc: MiscEntity[]
+  hidden?: HiddenEntity[]
   summary: PreviewSummary
 }
 

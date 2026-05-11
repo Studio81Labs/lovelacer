@@ -89,12 +89,6 @@ describe('buildRoomViews — english-cluttered fixture', () => {
               },
               "heading": "Environment",
             },
-            {
-              "cards": {
-                "entities": 1,
-              },
-              "heading": "Other",
-            },
           ],
           "title": "Bathroom",
         },
@@ -138,12 +132,6 @@ describe('buildRoomViews — english-cluttered fixture', () => {
               },
               "heading": "Environment",
             },
-            {
-              "cards": {
-                "entities": 1,
-              },
-              "heading": "Other",
-            },
           ],
           "title": "Bedroom",
         },
@@ -180,12 +168,6 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "tile": 1,
               },
               "heading": "Security",
-            },
-            {
-              "cards": {
-                "entities": 1,
-              },
-              "heading": "Other",
             },
           ],
           "title": "Garage",
@@ -268,12 +250,6 @@ describe('buildRoomViews — english-cluttered fixture', () => {
               },
               "heading": "Environment",
             },
-            {
-              "cards": {
-                "entities": 1,
-              },
-              "heading": "Other",
-            },
           ],
           "title": "Kitchen",
         },
@@ -310,12 +286,6 @@ describe('buildRoomViews — english-cluttered fixture', () => {
                 "entities": 1,
               },
               "heading": "Environment",
-            },
-            {
-              "cards": {
-                "entities": 1,
-              },
-              "heading": "Other",
             },
           ],
           "title": "Living Room",
@@ -787,12 +757,6 @@ describe('buildRoomViews — czech-tidy fixture', () => {
                 "entities": 1,
               },
               "heading": "Environment",
-            },
-            {
-              "cards": {
-                "entities": 1,
-              },
-              "heading": "Other",
             },
           ],
           "title": "Bathroom",

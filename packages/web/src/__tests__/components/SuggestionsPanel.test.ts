@@ -94,6 +94,13 @@ describe('SuggestionsPanel', () => {
     expect(overrides.setHidden).toHaveBeenCalledWith('sensor.batt', true)
   })
 
+  it('Accept on hide_diagnostic removes the card immediately', async () => {
+    const wrapper = mountPanel([hideDiagSuggestion])
+    await wrapper.find('[data-testid="suggestion-accept"]').trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="suggestion-card"]').exists()).toBe(false)
+  })
+
   it('Dismiss calls suggestionsStore.dismiss(entityId, type)', async () => {
     const wrapper = mountPanel([setAreaSuggestion])
     const suggestions = useSuggestionsStore()
@@ -125,5 +132,21 @@ describe('SuggestionsPanel', () => {
 
     expect(wrapper.find('[data-testid="suggestion-accept"]').attributes('disabled')).toBeDefined()
     expect(wrapper.find('[data-testid="suggestion-dismiss"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('renders only the first page of a large suggestion list until Show all is clicked', async () => {
+    const many = Array.from({ length: 25 }, (_, index) => ({
+      ...hideDiagSuggestion,
+      entityId: `sensor.diag_${index}`,
+    }))
+    const wrapper = mountPanel(many)
+
+    expect(wrapper.findAll('[data-testid="suggestion-card"]')).toHaveLength(20)
+    expect(wrapper.find('[data-testid="suggestions-truncated"]').text()).toContain(
+      'Showing 20 of 25',
+    )
+
+    await wrapper.find('[data-testid="suggestions-show-all"]').trigger('click')
+    expect(wrapper.findAll('[data-testid="suggestion-card"]')).toHaveLength(25)
   })
 })

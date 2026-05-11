@@ -64,7 +64,8 @@ describe('EntityRow', () => {
 
     await wrapper.vm.$nextTick()
     const toggle = wrapper.find('[data-testid="hide-toggle"]')
-    expect((toggle.element as HTMLInputElement).checked).toBe(true)
+    expect(toggle.element.tagName).toBe('BUTTON')
+    expect(toggle.attributes('aria-pressed')).toBe('true')
   })
 
   it('applies override-row treatment when effective is non-null', async () => {
@@ -107,11 +108,11 @@ describe('EntityRow', () => {
     expect(store.effective('light.kitchen_ceiling')).toBeNull()
   })
 
-  it('hide toggle change calls setHidden', async () => {
+  it('hide toggle button click calls setHidden', async () => {
     const wrapper = mountRow(makeProps())
     const store = useOverridesStore()
 
-    await wrapper.find('[data-testid="hide-toggle"]').setValue(true)
+    await wrapper.find('[data-testid="hide-toggle"]').trigger('click')
 
     expect(store.effective('light.kitchen_ceiling')).toEqual({
       entityId: 'light.kitchen_ceiling',
@@ -128,7 +129,7 @@ describe('EntityRow', () => {
     const select = wrapper.find('[data-testid="room-select"]')
     const toggle = wrapper.find('[data-testid="hide-toggle"]')
     expect((select.element as HTMLSelectElement).disabled).toBe(true)
-    expect((toggle.element as HTMLInputElement).disabled).toBe(true)
+    expect((toggle.element as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('hidden entities show "(hidden)" suffix and reduced opacity', async () => {

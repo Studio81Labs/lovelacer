@@ -73,6 +73,26 @@ describe('useOverridesStore', () => {
     expect(store.hasDirty).toBe(true)
   })
 
+  it('hiddenOverrides lists effective hidden entries and omits pending unhidden entries', async () => {
+    vi.mocked(getOverrides).mockResolvedValueOnce({
+      overrides: [
+        { entityId: 'sensor.hidden', hidden: true },
+        { entityId: 'sensor.hidden_with_room', roomId: 'kitchen', hidden: true },
+        { entityId: 'light.visible_override', roomId: 'bedroom' },
+      ],
+    })
+    const store = useOverridesStore()
+    await store.loadFromServer()
+
+    store.setHidden('sensor.hidden', false)
+    store.setHidden('sensor.new_hidden', true)
+
+    expect(store.hiddenOverrides).toEqual([
+      { entityId: 'sensor.hidden_with_room', roomId: 'kitchen', hidden: true },
+      { entityId: 'sensor.new_hidden', hidden: true },
+    ])
+  })
+
   it('reverting an edit back to the server value collapses dirtyState', async () => {
     vi.mocked(getOverrides).mockResolvedValueOnce({
       overrides: [{ entityId: 'a.b', roomId: 'kitchen' }],

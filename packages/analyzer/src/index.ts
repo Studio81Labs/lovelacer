@@ -25,7 +25,7 @@ export type {
   DetectOptions,
   DetectionContext,
 } from './detect.js'
-export { domainGroup, groupByDomain } from './grouping.js'
+export { domainGroup, groupByDomain, isDashboardDisplayEntity } from './grouping.js'
 export type { DomainGroupKey, DomainGroup, GroupByDomainInput, RoomGrouping } from './grouping.js'
 export { computeDiff } from './diff.js'
 export type { ComputeDiffInput } from './diff.js'

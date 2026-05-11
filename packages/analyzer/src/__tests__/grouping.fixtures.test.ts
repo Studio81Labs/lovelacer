@@ -8,7 +8,7 @@ import { vacuumHeavy } from '../../../../tests/fixtures/vacuum-heavy.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { normalize } from '../normalize.js'
 import { detect } from '../detect.js'
-import { groupByDomain } from '../grouping.js'
+import { groupByDomain, isDashboardDisplayEntity } from '../grouping.js'
 
 function pipe(fixture: typeof englishCluttered) {
   const ha = fixtureToHaRegistries(fixture)
@@ -58,10 +58,6 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "count": 3,
               "key": "environment",
             },
-            {
-              "count": 1,
-              "key": "other",
-            },
           ],
           "roomId": "bathroom",
         },
@@ -91,10 +87,6 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "count": 5,
               "key": "environment",
             },
-            {
-              "count": 2,
-              "key": "other",
-            },
           ],
           "roomId": "bedroom",
         },
@@ -119,10 +111,6 @@ describe('groupByDomain — english-cluttered fixture', () => {
             {
               "count": 1,
               "key": "security",
-            },
-            {
-              "count": 2,
-              "key": "other",
             },
           ],
           "roomId": "garage",
@@ -179,10 +167,6 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "count": 7,
               "key": "environment",
             },
-            {
-              "count": 1,
-              "key": "other",
-            },
           ],
           "roomId": "kitchen",
         },
@@ -208,10 +192,6 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "count": 6,
               "key": "environment",
             },
-            {
-              "count": 2,
-              "key": "other",
-            },
           ],
           "roomId": "living_room",
         },
@@ -234,7 +214,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "security",
             },
             {
-              "count": 17,
+              "count": 10,
               "key": "other",
             },
           ],
@@ -259,7 +239,7 @@ describe('groupByDomain — english-cluttered fixture', () => {
               "key": "fans",
             },
             {
-              "count": 3,
+              "count": 1,
               "key": "other",
             },
           ],
@@ -269,12 +249,12 @@ describe('groupByDomain — english-cluttered fixture', () => {
     `)
   })
 
-  it('drops hidden + disabled entities from output', () => {
+  it('drops hidden, disabled, config, and diagnostic entities from output', () => {
     const totalGrouped = groupings.reduce(
       (sum, room) => sum + room.groups.reduce((s, g) => s + g.entities.length, 0),
       0,
     )
-    const expectedGrouped = entities.filter((e) => !e.isHidden && !e.isDisabled).length
+    const expectedGrouped = entities.filter(isDashboardDisplayEntity).length
     expect(totalGrouped).toBe(expectedGrouped)
   })
 
@@ -286,12 +266,11 @@ describe('groupByDomain — english-cluttered fixture', () => {
     }
   })
 
-  it('contains no hidden or disabled entities anywhere in output', () => {
+  it('contains only dashboard-display entities anywhere in output', () => {
     for (const room of groupings) {
       for (const group of room.groups) {
         for (const entity of group.entities) {
-          expect(entity.isHidden).toBe(false)
-          expect(entity.isDisabled).toBe(false)
+          expect(isDashboardDisplayEntity(entity)).toBe(true)
         }
       }
     }
@@ -365,10 +344,6 @@ describe('groupByDomain — czech-tidy fixture', () => {
               "count": 3,
               "key": "environment",
             },
-            {
-              "count": 1,
-              "key": "other",
-            },
           ],
           "roomId": "bathroom",
         },
@@ -391,7 +366,7 @@ describe('groupByDomain — czech-tidy fixture', () => {
               "key": "environment",
             },
             {
-              "count": 4,
+              "count": 2,
               "key": "other",
             },
           ],
@@ -412,7 +387,7 @@ describe('groupByDomain — czech-tidy fixture', () => {
               "key": "environment",
             },
             {
-              "count": 3,
+              "count": 2,
               "key": "other",
             },
           ],
@@ -437,7 +412,7 @@ describe('groupByDomain — czech-tidy fixture', () => {
               "key": "environment",
             },
             {
-              "count": 6,
+              "count": 2,
               "key": "other",
             },
           ],
@@ -468,12 +443,12 @@ describe('groupByDomain — czech-tidy fixture', () => {
     `)
   })
 
-  it('drops hidden + disabled entities (czech-tidy has none, so output count == input count)', () => {
+  it('drops hidden, disabled, config, and diagnostic entities', () => {
     const totalGrouped = groupings.reduce(
       (sum, room) => sum + room.groups.reduce((s, g) => s + g.entities.length, 0),
       0,
     )
-    expect(totalGrouped).toBe(entities.length)
+    expect(totalGrouped).toBe(entities.filter(isDashboardDisplayEntity).length)
   })
 
   it('contains no empty groups', () => {

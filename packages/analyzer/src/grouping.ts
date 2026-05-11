@@ -45,8 +45,8 @@ const BINARY_SENSOR_ACTIVITY_CLASSES = new Set(['motion', 'occupancy', 'door'])
  *
  * Routes light/switch → lights, climate → climate, filtered sensor →
  * environment, filtered binary_sensor → activity, everything else →
- * other. `entityCategory` does not affect routing — diagnostic entities
- * still go to their natural group.
+ * other. Category filtering happens in `isDashboardDisplayEntity`, not
+ * here, so tests can still assert the pure domain route independently.
  */
 export function domainGroup(entity: NormalizedEntity): DomainGroupKey {
   if (entity.domain === 'light' || entity.domain === 'switch') return 'lights'
@@ -64,6 +64,17 @@ export function domainGroup(entity: NormalizedEntity): DomainGroupKey {
     if (BINARY_SENSOR_ACTIVITY_CLASSES.has(entity.deviceClass)) return 'activity'
   }
   return 'other'
+}
+
+/**
+ * Dashboard display filter shared by analyzer/server callers. HA marks
+ * firmware, RSSI, restart buttons, update controls, and many device
+ * health sensors as config/diagnostic entities. Those are useful in HA's
+ * device page, but they make generated dashboards and suggestion lists
+ * noisy on real installs.
+ */
+export function isDashboardDisplayEntity(entity: NormalizedEntity): boolean {
+  return !entity.isHidden && !entity.isDisabled && entity.entityCategory === null
 }
 
 /**
@@ -91,8 +102,7 @@ const GROUP_ORDER: readonly DomainGroupKey[] = Object.freeze([
  * with the corresponding NormalizedEntity[], and produces a per-room
  * RoomGrouping[]:
  *
- *   - Hidden + disabled entities dropped before grouping.
- *   - Diagnostic entities preserved in their natural group.
+ *   - Hidden, disabled, config, and diagnostic entities dropped before grouping.
  *   - Within-group entities sorted by friendlyName (case-insensitive).
  *   - Groups within a room ordered by GROUP_ORDER; empty groups dropped.
  *   - Rooms ordered lexicographically by roomId for snapshot stability.
@@ -109,7 +119,7 @@ export function groupByDomain(input: GroupByDomainInput): RoomGrouping[] {
   for (const assignment of input.assignments) {
     const entity = entityById.get(assignment.entityId)
     if (entity === undefined) continue
-    if (entity.isHidden || entity.isDisabled) continue
+    if (!isDashboardDisplayEntity(entity)) continue
 
     const key = domainGroup(entity)
     let roomBucket = buckets.get(assignment.roomId)
