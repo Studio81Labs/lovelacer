@@ -6,7 +6,6 @@ import {
   computeSuggestions,
   detectAsync,
   groupByDomain,
-  normalize,
   type RoomGrouping,
 } from '@lovelacer/analyzer'
 import {
@@ -25,6 +24,7 @@ import type {
   HaDeviceRegistryEntry,
   HaEntityRegistryEntry,
   HaFloorRegistryEntry,
+  NormalizedDevice,
   NormalizedEntity,
   Override,
   RoomAssignment,
@@ -80,6 +80,7 @@ function memorySnapshot(): Record<string, unknown> {
 
 const ENTITY_REGISTRY_FIELDS = new Set([
   'entity_id',
+  'entityId',
   'name',
   'original_name',
   'area_id',
@@ -88,16 +89,27 @@ const ENTITY_REGISTRY_FIELDS = new Set([
   'hidden_by',
   'disabled_by',
   'entity_category',
+  'entityCategory',
   'device_class',
+  'deviceClass',
+  'domain',
+  'objectId',
+  'friendlyName',
+  'haAreaId',
+  'device',
+  'isHidden',
+  'isDisabled',
 ])
 
 const DEVICE_REGISTRY_FIELDS = new Set([
   'id',
   'name',
   'name_by_user',
+  'nameByUser',
   'manufacturer',
   'model',
   'area_id',
+  'haAreaId',
 ])
 
 const AREA_REGISTRY_FIELDS = new Set(['area_id', 'name', 'floor_id', 'icon'])
@@ -127,6 +139,82 @@ export function compactHaRegistriesForPipeline(input: {
   keepOnlyFields(input.devices, DEVICE_REGISTRY_FIELDS)
   keepOnlyFields(input.areas, AREA_REGISTRY_FIELDS)
   keepOnlyFields(input.floors, FLOOR_REGISTRY_FIELDS)
+}
+
+function normalizeHumanName(slug: string): string {
+  if (slug.length === 0) return ''
+  return slug
+    .split('_')
+    .filter((word) => word.length > 0)
+    .map((word) => word[0]!.toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
+function normalizeDeviceInPlace(device: HaDeviceRegistryEntry): NormalizedDevice {
+  const record = device as unknown as Record<string, unknown>
+  const normalized = record as unknown as NormalizedDevice
+  if (typeof normalized.nameByUser !== 'undefined') return normalized
+  normalized.nameByUser = device.name_by_user
+  normalized.haAreaId = device.area_id
+  delete record.name_by_user
+  delete record.area_id
+  return normalized
+}
+
+function normalizeEntityInPlace(
+  entity: HaEntityRegistryEntry,
+  devicesById: ReadonlyMap<string, NormalizedDevice>,
+): NormalizedEntity {
+  const record = entity as unknown as Record<string, unknown>
+  const normalized = record as unknown as NormalizedEntity
+  if (typeof normalized.entityId === 'string') return normalized
+  const dotIndex = entity.entity_id.indexOf('.')
+  if (dotIndex <= 0 || dotIndex === entity.entity_id.length - 1) {
+    throw new Error(
+      `malformed entity_id: ${JSON.stringify(entity.entity_id)} — expected '<domain>.<object_id>'`,
+    )
+  }
+  const domain = entity.entity_id.slice(0, dotIndex)
+  const objectId = entity.entity_id.slice(dotIndex + 1)
+  const device = entity.device_id !== null ? (devicesById.get(entity.device_id) ?? null) : null
+  normalized.entityId = entity.entity_id
+  normalized.domain = domain
+  normalized.objectId = objectId
+  normalized.friendlyName = entity.name ?? entity.original_name ?? normalizeHumanName(objectId)
+  normalized.deviceClass = entity.device_class
+  normalized.entityCategory = entity.entity_category
+  normalized.haAreaId = entity.area_id
+  normalized.device = device
+  normalized.isHidden = entity.hidden_by !== null
+  normalized.isDisabled = entity.disabled_by !== null
+  delete record.entity_id
+  delete record.name
+  delete record.original_name
+  delete record.area_id
+  delete record.device_id
+  delete record.platform
+  delete record.hidden_by
+  delete record.disabled_by
+  delete record.entity_category
+  delete record.device_class
+  return normalized
+}
+
+export function normalizeCompactedRegistriesInPlace(input: {
+  entities: HaEntityRegistryEntry[]
+  devices: HaDeviceRegistryEntry[]
+}): NormalizedEntity[] {
+  const devicesById = new Map<string, NormalizedDevice>()
+  for (const device of input.devices) {
+    devicesById.set(device.id, normalizeDeviceInPlace(device))
+  }
+  for (let index = 0; index < input.entities.length; index++) {
+    input.entities[index] = normalizeEntityInPlace(
+      input.entities[index]!,
+      devicesById,
+    ) as unknown as HaEntityRegistryEntry
+  }
+  return input.entities as unknown as NormalizedEntity[]
 }
 
 async function timedStage<T>(
@@ -372,7 +460,7 @@ async function runFullPipeline(
   })
 
   const entities = await timedSyncStage(options, 'normalize', () =>
-    normalize({
+    normalizeCompactedRegistriesInPlace({
       entities: entityRegistry,
       devices: deviceRegistry,
     }),
