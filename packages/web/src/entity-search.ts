@@ -1,5 +1,5 @@
 export function normalizeEntitySearch(value: string): string {
-  return value.trim().toLocaleLowerCase()
+  return value.trim().toLowerCase()
 }
 
 export function entityMatchesSearch(
@@ -11,7 +11,6 @@ export function entityMatchesSearch(
   if (normalized === '') return true
 
   return (
-    entityId.toLocaleLowerCase().includes(normalized) ||
-    friendlyName.toLocaleLowerCase().includes(normalized)
+    entityId.toLowerCase().includes(normalized) || friendlyName.toLowerCase().includes(normalized)
   )
 }
