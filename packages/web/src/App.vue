@@ -121,6 +121,17 @@ async function openSettings(): Promise<void> {
   settingsOpen.value = true
 }
 
+async function saveRoomOrder(roomIds: string[]): Promise<void> {
+  settings.setRoomOrder(roomIds)
+  try {
+    await settings.saveOnly()
+    await analyze.refreshPreview()
+  } catch {
+    // Settings store keeps phase/error for the UI; avoid an unhandled
+    // promise rejection from a background reorder save.
+  }
+}
+
 const diffByRoom = computed<Record<string, RoomDiffSummary>>(
   () => analyze.preview?.diff?.perRoom ?? {},
 )
@@ -250,8 +261,10 @@ watch(
       />
       <RoomList
         :rooms="analyze.preview.rooms"
+        :room-order="settings.effective.roomOrder"
         :diff-by-room="diffByRoom"
         :diff-by-entity-id="diffByEntityId"
+        @reorder="saveRoomOrder"
       />
       <MiscBucket :misc="analyze.preview.misc" />
       <AdministrativeEntitiesPanel :administrative="analyze.preview.administrative ?? []" />

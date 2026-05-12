@@ -34,6 +34,283 @@ describe('RoomList', () => {
     expect(rows).toHaveLength(3)
   })
 
+  it('orders rooms by the saved roomOrder preference', () => {
+    const rooms = [
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+      room({ id: 'living_room', displayName: 'Living Room' }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['living_room', 'kitchen'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    expect(wrapper.findAll('[data-testid="room-name"]').map((row) => row.text())).toEqual([
+      'Living Room',
+      'Kitchen',
+      'Bedroom',
+    ])
+  })
+
+  it('appends rooms missing from roomOrder alphabetically by display name', () => {
+    const rooms = [
+      room({ id: 'garage', displayName: 'Garage' }),
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['kitchen'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    expect(wrapper.findAll('[data-testid="room-name"]').map((row) => row.text())).toEqual([
+      'Kitchen',
+      'Bedroom',
+      'Garage',
+    ])
+  })
+
+  it('emits the reordered room ids when a room is dropped on another room', async () => {
+    const rooms = [
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+      room({ id: 'living_room', displayName: 'Living Room' }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['kitchen', 'bedroom', 'living_room'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const dragStore = new Map<string, string>()
+    const dataTransfer = {
+      effectAllowed: '',
+      dropEffect: '',
+      setData: (key: string, value: string) => dragStore.set(key, value),
+      getData: (key: string) => dragStore.get(key) ?? '',
+      setDragImage: vi.fn(),
+    }
+
+    await wrapper.findAll('[data-testid="room-drag-handle"]')[2]!.trigger('dragstart', {
+      dataTransfer,
+    })
+    await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('drop', { dataTransfer })
+
+    expect(wrapper.emitted('reorder')?.[0]).toEqual([['living_room', 'kitchen', 'bedroom']])
+  })
+
+  it('uses the full room row as the drag preview when the handle drag starts', async () => {
+    const rooms = [
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+    ]
+    const wrapper = mount(RoomList, {
+      attachTo: document.body,
+      props: { rooms },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const dataTransfer = {
+      effectAllowed: '',
+      setData: vi.fn(),
+      setDragImage: vi.fn(),
+    }
+    const row = wrapper.find('[data-testid="room-row"]').element as HTMLElement
+    row.getBoundingClientRect = () =>
+      ({
+        left: 10,
+        top: 4,
+        right: 310,
+        bottom: 44,
+        width: 300,
+        height: 40,
+        x: 10,
+        y: 4,
+        toJSON: () => ({}),
+      }) as DOMRect
+
+    await wrapper.find('[data-testid="room-drag-handle"]').trigger('dragstart', {
+      clientX: 34,
+      clientY: 18,
+      dataTransfer,
+    })
+
+    expect(dataTransfer.setDragImage).toHaveBeenCalledWith(
+      row,
+      24,
+      14,
+    )
+    wrapper.unmount()
+  })
+
+  it('moves the row while dragging over another row before drop', async () => {
+    const rooms = [
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+      room({ id: 'living_room', displayName: 'Living Room' }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['kitchen', 'bedroom', 'living_room'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const dragStore = new Map<string, string>()
+    const dataTransfer = {
+      effectAllowed: '',
+      dropEffect: '',
+      setData: (key: string, value: string) => dragStore.set(key, value),
+      getData: (key: string) => dragStore.get(key) ?? '',
+      setDragImage: vi.fn(),
+    }
+
+    await wrapper.findAll('[data-testid="room-drag-handle"]')[2]!.trigger('dragstart', {
+      dataTransfer,
+    })
+    await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('dragover', { dataTransfer })
+
+    expect(wrapper.findAll('[data-testid="room-name"]').map((row) => row.text())).toEqual([
+      'Living Room',
+      'Kitchen',
+      'Bedroom',
+    ])
+    expect(wrapper.emitted('reorder')).toBeUndefined()
+  })
+
+  it('emits the draft order when the dragged row has moved under the drop target', async () => {
+    const rooms = [
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+      room({ id: 'living_room', displayName: 'Living Room' }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['kitchen', 'bedroom', 'living_room'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const dragStore = new Map<string, string>()
+    const dataTransfer = {
+      effectAllowed: '',
+      dropEffect: '',
+      setData: (key: string, value: string) => dragStore.set(key, value),
+      getData: (key: string) => dragStore.get(key) ?? '',
+      setDragImage: vi.fn(),
+    }
+
+    await wrapper.findAll('[data-testid="room-drag-handle"]')[2]!.trigger('dragstart', {
+      dataTransfer,
+    })
+    await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('dragover', { dataTransfer })
+    await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('drop', { dataTransfer })
+
+    expect(wrapper.emitted('reorder')?.[0]).toEqual([['living_room', 'kitchen', 'bedroom']])
+  })
+
+  it('emits the draft order when dropping on the list after a live move', async () => {
+    const rooms = [
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+      room({ id: 'living_room', displayName: 'Living Room' }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['kitchen', 'bedroom', 'living_room'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const dragStore = new Map<string, string>()
+    const dataTransfer = {
+      effectAllowed: '',
+      dropEffect: '',
+      setData: (key: string, value: string) => dragStore.set(key, value),
+      getData: (key: string) => dragStore.get(key) ?? '',
+      setDragImage: vi.fn(),
+    }
+
+    await wrapper.findAll('[data-testid="room-drag-handle"]')[2]!.trigger('dragstart', {
+      dataTransfer,
+    })
+    await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('dragover', { dataTransfer })
+    await wrapper.find('[data-testid="room-list"]').trigger('drop', { dataTransfer })
+
+    expect(wrapper.emitted('reorder')?.[0]).toEqual([['living_room', 'kitchen', 'bedroom']])
+  })
+
+  it('prevents default browser handling for drops anywhere in the room list', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [
+          room({ id: 'kitchen', displayName: 'Kitchen' }),
+          room({ id: 'bedroom', displayName: 'Bedroom' }),
+        ],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    const drop = new Event('drop', { bubbles: true, cancelable: true })
+    wrapper.find('[data-testid="room-list"]').element.dispatchEvent(drop)
+
+    expect(drop.defaultPrevented).toBe(true)
+    expect(wrapper.emitted('reorder')).toBeUndefined()
+  })
+
+  it('disables drag ordering while room search is active', async () => {
+    const rooms = [
+      room({
+        id: 'kitchen',
+        displayName: 'Kitchen',
+        assignments: [
+          { entityId: 'light.kitchen_ceiling', roomId: 'kitchen', confidence: 0.9, signals: [] },
+        ],
+      }),
+      room({
+        id: 'bedroom',
+        displayName: 'Bedroom',
+        assignments: [
+          { entityId: 'sensor.bedroom_temp', roomId: 'bedroom', confidence: 0.8, signals: [] },
+        ],
+      }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['bedroom', 'kitchen'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="section-search"]').setValue('kitchen')
+
+    const handle = wrapper.find('[data-testid="room-drag-handle"]')
+    expect(handle.attributes('disabled')).toBeDefined()
+    await handle.trigger('dragstart')
+    expect(wrapper.emitted('reorder')).toBeUndefined()
+  })
+
+  it('disables drag ordering in read-only mode', () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [
+          room({ id: 'kitchen', displayName: 'Kitchen' }),
+          room({ id: 'bedroom', displayName: 'Bedroom' }),
+        ],
+        readOnly: true,
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    expect(wrapper.find('[data-testid="room-drag-handle"]').attributes('disabled')).toBeDefined()
+  })
+
   it('shows entityCount as "N entities"', () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [room({ entityCount: 22 })] },

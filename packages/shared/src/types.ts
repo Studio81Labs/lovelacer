@@ -242,6 +242,14 @@ export interface Settings {
    * reconciliation watcher syncs the active locale to it.
    */
   uiLanguage?: UiLanguage
+
+  /**
+   * Optional user-preferred room order. Values are room ids as surfaced
+   * by analysis output. Missing ids are appended by the UI/server in
+   * deterministic display-name order, so legacy rows and newly detected
+   * rooms keep working without migration.
+   */
+  roomOrder?: string[]
 }
 
 /**

@@ -71,6 +71,12 @@ function makeSettings(): SettingsStore {
   return new SettingsStore(':memory:')
 }
 
+function makeSettingsWithRoomOrder(roomOrder: string[]): SettingsStore {
+  const settings = makeSettings()
+  settings.save({ ...settings.get(), roomOrder })
+  return settings
+}
+
 function makeAdministrativeHa(): HaClient {
   const areas: HaAreaRegistryEntry[] = [
     { area_id: 'kitchen', name: 'Kitchen', floor_id: null, icon: null },
@@ -207,6 +213,18 @@ describe('runAnalyze', () => {
     expect(names).toEqual(sorted)
   })
 
+  it('places rooms from settings.roomOrder before the default alphabetical tail', async () => {
+    const fake = makeFakeHa()
+    const result = await runAnalyze(
+      fake.client,
+      makeStore(),
+      makeSettingsWithRoomOrder(['living_room', 'kitchen']),
+    )
+    const ids = result.rooms.map((r) => r.id)
+
+    expect(ids.indexOf('living_room')).toBeLessThan(ids.indexOf('kitchen'))
+  })
+
   it('rooms array does not contain the misc room', async () => {
     const fake = makeFakeHa()
     const result = await runAnalyze(fake.client, makeStore(), makeSettings())
@@ -283,6 +301,20 @@ describe('runAnalyze', () => {
 })
 
 describe('runPreview', () => {
+  it('orders generated room views by settings.roomOrder', async () => {
+    const fake = makeFakeHa()
+    const result = await runPreview(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettingsWithRoomOrder(['living_room', 'kitchen']),
+    )
+    const titles = result.config.views.map((view) => view.title)
+
+    expect(titles.indexOf('Living Room')).toBeLessThan(titles.indexOf('Kitchen'))
+  })
+
   it('trims unused HA registry fields and normalizes entities in place', async () => {
     const fake = makeFakeHa()
     const entities = await fake.getEntityRegistry()

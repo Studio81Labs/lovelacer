@@ -87,6 +87,20 @@ describe('useSettingsStore', () => {
     expect(store.dirtyState?.sections.welcome).toBe(true)
   })
 
+  it('setRoomOrder stages a copy of the preferred room order', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    const order = ['bedroom', 'kitchen']
+    store.setRoomOrder(order)
+    order.reverse()
+
+    expect(store.hasDirty).toBe(true)
+    expect(store.dirtyState?.roomOrder).toEqual(['bedroom', 'kitchen'])
+    expect(store.effective.roomOrder).toEqual(['bedroom', 'kitchen'])
+  })
+
   it('discardChanges clears dirtyState only (locale revert lives in SettingsModal — P2-9)', async () => {
     // The store's discardChanges() intentionally does NOT touch i18n.
     // The active-locale revert is owned by SettingsModal because only
@@ -112,6 +126,21 @@ describe('useSettingsStore', () => {
     store.setSection('welcome', false)
 
     await store.saveAndReanalyze()
+    expect(vi.mocked(putSettings)).toHaveBeenCalledOnce()
+    expect(store.serverState).toEqual(SAMPLE)
+    expect(store.dirtyState).toBeNull()
+    expect(store.phase).toBe('idle')
+  })
+
+  it('saveOnly happy path: PUT, replace serverState, clear dirty, does not trigger analyze', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    vi.mocked(putSettings).mockResolvedValueOnce({ settings: SAMPLE })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+    store.setRoomOrder(['bedroom', 'kitchen'])
+
+    await store.saveOnly()
+
     expect(vi.mocked(putSettings)).toHaveBeenCalledOnce()
     expect(store.serverState).toEqual(SAMPLE)
     expect(store.dirtyState).toBeNull()

@@ -422,6 +422,22 @@ export function applyOverrides(
   }
 }
 
+function sortAnalyzedRooms(rooms: AnalyzedRoom[], roomOrder: string[]): void {
+  const preferred = new Map<string, number>()
+  roomOrder.forEach((roomId, index) => {
+    if (!preferred.has(roomId)) preferred.set(roomId, index)
+  })
+
+  rooms.sort((a, b) => {
+    const aIndex = preferred.get(a.id)
+    const bIndex = preferred.get(b.id)
+    if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex
+    if (aIndex !== undefined) return -1
+    if (bIndex !== undefined) return 1
+    return a.displayName.localeCompare(b.displayName, 'en')
+  })
+}
+
 async function runFullPipeline(
   ha: HaClient,
   overrides: OverrideStore,
@@ -555,7 +571,7 @@ async function runFullPipeline(
     }
   })
 
-  rooms.sort((a, b) => a.displayName.localeCompare(b.displayName, 'en'))
+  sortAnalyzedRooms(rooms, cfg.roomOrder ?? [])
 
   // Match `entityCount` to what the analyzer/generator actually surfaces.
   // Administrative entities are soft-hidden unless the user opts them back
@@ -689,7 +705,17 @@ export async function runPreview(
 
   // Drop the misc grouping before view generation: misc entities surface
   // via the analyze response's `misc[]` field, not as a dashboard view.
-  const dashboardGroupings = state.groupings.filter((g) => g.roomId !== 'misc')
+  const roomPosition = new Map(state.rooms.map((room, index) => [room.id, index]))
+  const dashboardGroupings = state.groupings
+    .filter((g) => g.roomId !== 'misc')
+    .sort((a, b) => {
+      const aIndex = roomPosition.get(a.roomId)
+      const bIndex = roomPosition.get(b.roomId)
+      if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex
+      if (aIndex !== undefined) return -1
+      if (bIndex !== undefined) return 1
+      return a.roomId.localeCompare(b.roomId, 'en')
+    })
   const homeQuickStatsIds = new Set(
     pickQuickStatsEntities(
       state.entities.filter(
@@ -714,7 +740,7 @@ export async function runPreview(
     buildRoomViews(dashboardGroupings),
   )
   const config = await timedSyncStage(options, 'build_lovelace_config', () =>
-    buildLovelaceConfig({ home, rooms }),
+    buildLovelaceConfig({ home, rooms, sortRooms: false }),
   )
 
   // Build the flat assignments list the diff expects: every visible

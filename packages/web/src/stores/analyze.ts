@@ -23,11 +23,24 @@ export const useAnalyzeStore = defineStore('analyze', () => {
     }
   }
 
+  async function refreshPreview() {
+    error.value = null
+    try {
+      preview.value = await postPreview()
+      phase.value = 'ready'
+    } catch (err) {
+      error.value = err as ApiError
+      if (preview.value === null) {
+        phase.value = 'error'
+      }
+    }
+  }
+
   function reset() {
     phase.value = 'idle'
     preview.value = null
     error.value = null
   }
 
-  return { phase, preview, error, analyze, reset }
+  return { phase, preview, error, analyze, refreshPreview, reset }
 })

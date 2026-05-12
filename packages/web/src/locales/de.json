@@ -89,6 +89,7 @@
   "roomList.avgConfidence": "{percent} % durchschnittliche Konfidenz",
   "roomList.diffAdded": "+{count} neu",
   "roomList.diffMovedOut": "↻ {count} weg",
+  "roomList.dragHandle": "{room} ziehen",
   "roomList.empty": "Keine Räume erkannt — prüfe, ob deine HA-Installation mindestens einen Bereich an Entitäten oder Gerätenamen hat, die zu Raum-Mustern passen.",
   "roomList.entities": "{count} Entität | {count} Entitäten",
   "sectionSearch.administrativeLabel": "Administrative Entitäten suchen",

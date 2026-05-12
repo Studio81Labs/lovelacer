@@ -89,6 +89,7 @@
   "roomList.avgConfidence": "průměrná jistota {percent} %",
   "roomList.diffAdded": "+{count} nových",
   "roomList.diffMovedOut": "↻ {count} odešlo",
+  "roomList.dragHandle": "Přetáhnout {room}",
   "roomList.empty": "Nenalezena žádná místnost — zkontroluj, že má tvůj HA přiřazenou alespoň jednu oblast k entitám nebo názvy zařízení odpovídající vzorům místností.",
   "roomList.entities": "{count} entita | {count} entity | {count} entit",
   "sectionSearch.administrativeLabel": "Hledat administrativní entity",

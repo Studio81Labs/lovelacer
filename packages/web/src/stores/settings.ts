@@ -53,6 +53,9 @@ export const useSettingsStore = defineStore('settings', () => {
     if (e.uiLanguage !== undefined) {
       next.uiLanguage = e.uiLanguage
     }
+    if (e.roomOrder !== undefined) {
+      next.roomOrder = [...e.roomOrder]
+    }
     return next
   }
 
@@ -77,6 +80,12 @@ export const useSettingsStore = defineStore('settings', () => {
   function setUiLanguage(lang: UiLanguage): void {
     const next = cloneEffective()
     next.uiLanguage = lang
+    dirtyState.value = next
+  }
+
+  function setRoomOrder(roomIds: string[]): void {
+    const next = cloneEffective()
+    next.roomOrder = [...roomIds]
     dirtyState.value = next
   }
 
@@ -106,7 +115,7 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  async function saveAndReanalyze(): Promise<void> {
+  async function saveOnly(): Promise<void> {
     if (dirtyState.value === null) return
     phase.value = 'saving'
     error.value = null
@@ -122,7 +131,10 @@ export const useSettingsStore = defineStore('settings', () => {
       // Re-throw so the modal can keep itself open and the test can assert.
       throw err
     }
+  }
 
+  async function saveAndReanalyze(): Promise<void> {
+    await saveOnly()
     // Trigger a fresh analyze so the dashboard preview reflects the new
     // settings. Runs OUTSIDE the save try/catch — a failed re-analyze is
     // the analyze store's concern (surfaced via the existing error UI in
@@ -142,8 +154,10 @@ export const useSettingsStore = defineStore('settings', () => {
     setCardPack,
     setSection,
     setUiLanguage,
+    setRoomOrder,
     discardChanges,
     loadFromServer,
+    saveOnly,
     saveAndReanalyze,
   }
 })

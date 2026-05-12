@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import { roomIdToIcon } from '../icons.js'
@@ -11,6 +11,7 @@ const { t } = useI18n()
 
 const props = defineProps<{
   rooms: AnalyzedRoom[]
+  roomOrder?: string[] | undefined
   diffByRoom?: Record<string, RoomDiffSummary>
   diffByEntityId?: Map<string, EntityDiff>
   /**
@@ -20,10 +21,18 @@ const props = defineProps<{
   readOnly?: boolean
 }>()
 
+const emit = defineEmits<{
+  reorder: [roomIds: string[]]
+}>()
+
 const searchQuery = ref('')
 const hasSearch = computed(() => normalizeEntitySearch(searchQuery.value) !== '')
+const draggedRoomId = ref<string | null>(null)
+const draftRoomOrder = ref<string[] | null>(null)
+const activeRoomOrder = computed(() => draftRoomOrder.value ?? props.roomOrder ?? [])
+const orderedRooms = computed(() => orderRooms(props.rooms, activeRoomOrder.value))
 const filteredRooms = computed(() =>
-  props.rooms
+  orderedRooms.value
     .map((room) => {
       const assignments = room.assignments.filter((a) =>
         entityMatchesSearch(searchQuery.value, a.entityId, entityIdToFriendly(a.entityId)),
@@ -37,6 +46,111 @@ const filteredRooms = computed(() =>
     })
     .filter((room) => !hasSearch.value || room.assignments.length > 0),
 )
+const canReorder = computed(
+  () => !hasSearch.value && props.readOnly !== true && orderedRooms.value.length > 1,
+)
+
+watch(
+  () => props.roomOrder,
+  () => {
+    draftRoomOrder.value = null
+  },
+)
+
+function orderRooms(rooms: AnalyzedRoom[], roomOrder: string[]): AnalyzedRoom[] {
+  const preferred = new Map<string, number>()
+  roomOrder.forEach((roomId, index) => {
+    if (!preferred.has(roomId)) preferred.set(roomId, index)
+  })
+
+  return [...rooms].sort((a, b) => {
+    const aIndex = preferred.get(a.id)
+    const bIndex = preferred.get(b.id)
+
+    if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex
+    if (aIndex !== undefined) return -1
+    if (bIndex !== undefined) return 1
+    return a.displayName.localeCompare(b.displayName)
+  })
+}
+
+function onDragStart(roomId: string, event: DragEvent): void {
+  if (!canReorder.value) {
+    event.preventDefault()
+    return
+  }
+  draggedRoomId.value = roomId
+  event.dataTransfer?.setData('application/x-lovelacer-room-id', roomId)
+  event.dataTransfer?.setData('text/plain', roomId)
+  if (event.dataTransfer !== null) {
+    event.dataTransfer.effectAllowed = 'move'
+    const row = (event.currentTarget as HTMLElement | null)?.closest(
+      '[data-testid="room-row"]',
+    ) as HTMLElement | null
+    if (row !== null && typeof event.dataTransfer.setDragImage === 'function') {
+      const rect = row.getBoundingClientRect()
+      event.dataTransfer.setDragImage(row, event.clientX - rect.left, event.clientY - rect.top)
+    }
+  }
+}
+
+function onDragOver(targetRoomId: string, event: DragEvent): void {
+  if (!canReorder.value) return
+  event.preventDefault()
+  if (event.dataTransfer !== null) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+
+  const sourceRoomId = draggedRoomId.value ?? event.dataTransfer?.getData('text/plain') ?? ''
+  if (sourceRoomId === '' || sourceRoomId === targetRoomId) return
+  draftRoomOrder.value = moveRoomBefore(orderedRooms.value, sourceRoomId, targetRoomId)
+}
+
+function onDrop(targetRoomId: string, event: DragEvent): void {
+  if (!canReorder.value) return
+  event.preventDefault()
+  const sourceRoomId = draggedRoomId.value ?? event.dataTransfer?.getData('text/plain') ?? ''
+  draggedRoomId.value = null
+  if (draftRoomOrder.value !== null) {
+    emit('reorder', draftRoomOrder.value)
+    return
+  }
+  if (sourceRoomId === '' || sourceRoomId === targetRoomId) return
+
+  const next = moveRoomBefore(orderedRooms.value, sourceRoomId, targetRoomId)
+  if (next === null) return
+  emit('reorder', next)
+}
+
+function onListDrop(event: DragEvent): void {
+  event.preventDefault()
+  draggedRoomId.value = null
+  if (draftRoomOrder.value !== null) {
+    emit('reorder', draftRoomOrder.value)
+  }
+}
+
+function onDragEnd(): void {
+  draggedRoomId.value = null
+}
+
+function moveRoomBefore(
+  rooms: AnalyzedRoom[],
+  sourceRoomId: string,
+  targetRoomId: string,
+): string[] | null {
+  const roomIds = rooms.map((room) => room.id)
+  const sourceIndex = roomIds.indexOf(sourceRoomId)
+  const targetIndex = roomIds.indexOf(targetRoomId)
+  if (sourceIndex === -1 || targetIndex === -1) return null
+
+  const next = [...roomIds]
+  const [source] = next.splice(sourceIndex, 1)
+  if (source === undefined) return null
+  const adjustedTargetIndex = next.indexOf(targetRoomId)
+  next.splice(adjustedTargetIndex, 0, source)
+  return next
+}
 
 function confidencePillClass(confidence: number): string {
   if (confidence >= 0.8) return 'bg-forest-50 text-forest-700'
@@ -93,15 +207,47 @@ function entityIdToFriendly(entityId: string): string {
       {{ t('sectionSearch.empty') }}
     </div>
 
-    <ul v-else class="divide-y divide-stone-100 rounded-lg border border-stone-200 bg-white">
-      <li v-for="room in filteredRooms" :key="room.id" data-testid="room-row">
+    <ul
+      v-else
+      data-testid="room-list"
+      class="divide-y divide-stone-100 rounded-lg border border-stone-200 bg-white"
+      @dragover.prevent
+      @drop="onListDrop"
+    >
+      <li
+        v-for="room in filteredRooms"
+        :key="room.id"
+        data-testid="room-row"
+        :class="{
+          'bg-amber-50/50': draggedRoomId === room.id,
+          'transition-colors': draggedRoomId !== null,
+        }"
+        @dragover="onDragOver(room.id, $event)"
+        @drop.stop="onDrop(room.id, $event)"
+      >
         <details class="group">
           <summary
             class="flex cursor-pointer items-center justify-between gap-4 px-5 py-3 hover:bg-stone-50"
           >
             <div class="flex items-center gap-3">
+              <button
+                type="button"
+                data-testid="room-drag-handle"
+                :aria-label="t('roomList.dragHandle', { room: room.displayName })"
+                :title="t('roomList.dragHandle', { room: room.displayName })"
+                :disabled="!canReorder"
+                :draggable="canReorder"
+                class="cursor-grab rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
+                @click.prevent.stop
+                @dragstart.stop="onDragStart(room.id, $event)"
+                @dragend="onDragEnd"
+              >
+                <Icon icon="mdi:drag-vertical" class="h-4 w-4" />
+              </button>
               <Icon :icon="roomIdToIcon(room.id)" class="h-5 w-5 text-stone-700" />
-              <span class="text-sm font-medium text-stone-900">{{ room.displayName }}</span>
+              <span data-testid="room-name" class="text-sm font-medium text-stone-900">{{
+                room.displayName
+              }}</span>
             </div>
 
             <div class="flex items-center gap-3 text-xs text-stone-600">
