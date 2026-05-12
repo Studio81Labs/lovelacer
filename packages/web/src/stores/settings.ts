@@ -42,22 +42,33 @@ export const useSettingsStore = defineStore('settings', () => {
     () => dirtyState.value ?? serverState.value ?? DEFAULT_SETTINGS,
   )
 
-  /** Returns a fresh deep-cloned copy of the effective settings. */
-  function cloneEffective(): Settings {
-    const e = effective.value
+  function cloneSettings(settings: Settings): Settings {
     const next: Settings = {
-      language: e.language,
-      cardPack: e.cardPack,
-      sections: { ...e.sections },
+      language: settings.language,
+      cardPack: settings.cardPack,
+      sections: { ...settings.sections },
     }
     // uiLanguage is optional; only carry it forward when explicitly set.
-    if (e.uiLanguage !== undefined) {
-      next.uiLanguage = e.uiLanguage
+    if (settings.uiLanguage !== undefined) {
+      next.uiLanguage = settings.uiLanguage
     }
-    if (e.roomOrder !== undefined) {
-      next.roomOrder = [...e.roomOrder]
+    if (settings.roomOrder !== undefined) {
+      next.roomOrder = [...settings.roomOrder]
     }
     return next
+  }
+
+  /** Returns a fresh deep-cloned copy of the effective settings. */
+  function cloneEffective(): Settings {
+    return cloneSettings(effective.value)
+  }
+
+  function snapshotDirtyState(): Settings | null {
+    return dirtyState.value === null ? null : cloneSettings(dirtyState.value)
+  }
+
+  function restoreDirtyState(snapshot: Settings | null): void {
+    dirtyState.value = snapshot === null ? null : cloneSettings(snapshot)
   }
 
   function setLanguage(lang: SettingsLanguage): void {
@@ -162,6 +173,8 @@ export const useSettingsStore = defineStore('settings', () => {
     setSection,
     setUiLanguage,
     setRoomOrder,
+    snapshotDirtyState,
+    restoreDirtyState,
     discardChanges,
     loadFromServer,
     saveOnly,

@@ -122,13 +122,19 @@ async function openSettings(): Promise<void> {
 }
 
 async function saveRoomOrder(roomIds: string[]): Promise<void> {
+  const previousDirty = settings.snapshotDirtyState()
   try {
     if (settings.serverState === null) {
       await settings.loadFromServer()
     }
     if (settings.serverState === null) return
     settings.setRoomOrder(roomIds)
-    await settings.saveOnly()
+    try {
+      await settings.saveOnly()
+    } catch {
+      settings.restoreDirtyState(previousDirty)
+      return
+    }
     await analyze.refreshPreview()
   } catch {
     // Settings store keeps phase/error for the UI; avoid an unhandled

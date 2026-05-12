@@ -121,6 +121,25 @@ describe('useSettingsStore', () => {
     expect(store.effective.roomOrder).toEqual(['bedroom', 'kitchen'])
   })
 
+  it('snapshots and restores dirty settings without sharing references', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+    store.setLanguage('cs')
+
+    const snapshot = store.snapshotDirtyState()
+    store.setRoomOrder(['bedroom', 'kitchen'])
+    snapshot!.roomOrder = ['mutated']
+    snapshot!.sections.cameras = false
+
+    store.restoreDirtyState(snapshot)
+    snapshot!.roomOrder = ['changed-again']
+
+    expect(store.dirtyState?.language).toBe('cs')
+    expect(store.dirtyState?.roomOrder).toEqual(['mutated'])
+    expect(store.dirtyState?.sections.cameras).toBe(false)
+  })
+
   it('discardChanges clears dirtyState only (locale revert lives in SettingsModal — P2-9)', async () => {
     // The store's discardChanges() intentionally does NOT touch i18n.
     // The active-locale revert is owned by SettingsModal because only

@@ -442,6 +442,60 @@ describe('App integration', () => {
     expect(postPreview).toHaveBeenCalled()
   })
 
+  it('reverts optimistic room order when saving room order fails', async () => {
+    const orderedPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'bedroom',
+          haAreaId: 'bedroom',
+          displayName: 'Bedroom',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+    }
+    const serverSettings: Settings = {
+      ...defaultSettings,
+      roomOrder: ['kitchen', 'bedroom'],
+    }
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: serverSettings })
+    vi.mocked(putSettings).mockRejectedValueOnce({
+      error: 'storage_error',
+      message: 'disk full',
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    const settings = useSettingsStore()
+    analyze.$patch({ phase: 'ready', preview: orderedPreview })
+    await wrapper.vm.$nextTick()
+
+    wrapper.findComponent(RoomList).vm.$emit('reorder', ['bedroom', 'kitchen'])
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledWith({
+      settings: { ...serverSettings, roomOrder: ['bedroom', 'kitchen'] },
+    })
+    expect(settings.effective.roomOrder).toEqual(['kitchen', 'bedroom'])
+    expect(settings.dirtyState).toBeNull()
+    expect(postPreview).not.toHaveBeenCalled()
+  })
+
   it('keeps the ready room list visible while room-order preview refresh is in flight', async () => {
     const orderedPreview: PreviewOutput = {
       ...mockPreview,
