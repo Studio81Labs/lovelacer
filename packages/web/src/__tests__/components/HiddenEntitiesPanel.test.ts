@@ -50,4 +50,47 @@ describe('HiddenEntitiesPanel', () => {
     expect(overrides.effective('sensor.rssi')).toEqual({ entityId: 'sensor.rssi', hidden: true })
     expect(overrides.effective('button.restart')).toBeNull()
   })
+
+  it('filters hidden entities by metadata and fallback entity id', async () => {
+    const wrapper = mountPanel([
+      {
+        entityId: 'sensor.rssi',
+        friendlyName: 'Kitchen RSSI',
+        domain: 'sensor',
+      },
+    ])
+    const overrides = useOverridesStore()
+    overrides.setHidden('sensor.rssi', true)
+    overrides.setHidden('button.restart', true)
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('[data-testid="section-search"]').setValue('kitchen')
+
+    expect(wrapper.text()).toContain('Kitchen RSSI')
+    expect(wrapper.text()).toContain('sensor.rssi')
+    expect(wrapper.text()).not.toContain('button.restart')
+
+    await wrapper.find('[data-testid="section-search"]').setValue('button.restart')
+
+    expect(wrapper.text()).toContain('button.restart')
+    expect(wrapper.text()).not.toContain('Kitchen RSSI')
+  })
+
+  it('shows an empty search state when no hidden entity matches', async () => {
+    const wrapper = mountPanel([
+      {
+        entityId: 'sensor.rssi',
+        friendlyName: 'Kitchen RSSI',
+        domain: 'sensor',
+      },
+    ])
+    const overrides = useOverridesStore()
+    overrides.setHidden('sensor.rssi', true)
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('[data-testid="section-search"]').setValue('missing')
+
+    expect(wrapper.findAll('[data-testid="hidden-entity-unhide"]')).toHaveLength(0)
+    expect(wrapper.text()).toContain('No matching entities')
+  })
 })

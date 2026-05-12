@@ -41,6 +41,31 @@ describe('MiscBucket', () => {
     expect(rows[1]!.text()).toContain('c.d')
     expect(rows[1]!.text()).toContain('Entity B')
   })
+
+  it('filters misc entities by friendly name', async () => {
+    const wrapper = mountBucket([
+      { entityId: 'sensor.alpha', friendlyName: 'Alpha Sensor', domain: 'sensor' },
+      { entityId: 'sensor.beta', friendlyName: 'Beta Sensor', domain: 'sensor' },
+    ])
+
+    await wrapper.find('[data-testid="section-search"]').setValue('beta')
+
+    const rows = wrapper.findAll('[data-testid="entity-row"]')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.text()).toContain('sensor.beta')
+    expect(wrapper.text()).not.toContain('sensor.alpha')
+  })
+
+  it('shows an empty search state when no misc entity matches', async () => {
+    const wrapper = mountBucket([
+      { entityId: 'sensor.alpha', friendlyName: 'Alpha Sensor', domain: 'sensor' },
+    ])
+
+    await wrapper.find('[data-testid="section-search"]').setValue('missing')
+
+    expect(wrapper.findAll('[data-testid="entity-row"]')).toHaveLength(0)
+    expect(wrapper.text()).toContain('No matching entities')
+  })
 })
 
 describe('MiscBucket bulk select', () => {
@@ -91,6 +116,24 @@ describe('MiscBucket bulk select', () => {
     for (const cb of checkboxes) {
       expect((cb.element as HTMLInputElement).checked).toBe(true)
     }
+  })
+
+  it('bulk select only selects filtered misc rows', async () => {
+    const wrapper = mountBucket([
+      { entityId: 'sensor.kitchen_a', friendlyName: 'Kitchen Sensor A', domain: 'sensor' },
+      { entityId: 'sensor.kitchen_b', friendlyName: 'Kitchen Sensor B', domain: 'sensor' },
+      { entityId: 'sensor.garage', friendlyName: 'Garage Sensor', domain: 'sensor' },
+    ])
+    await wrapper.find('[data-testid="section-search"]').setValue('kitchen')
+
+    await wrapper.findAll('[data-testid="misc-row-checkbox"]')[0]!.setValue(true)
+    await wrapper.find('[data-testid="misc-bulk-toggle-all"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="misc-bulk-bar"]').text()).toContain('2 selected')
+    const checkboxes = wrapper.findAll('[data-testid="misc-row-checkbox"]')
+    expect(checkboxes).toHaveLength(2)
+    expect((checkboxes[0]!.element as HTMLInputElement).checked).toBe(true)
+    expect((checkboxes[1]!.element as HTMLInputElement).checked).toBe(true)
   })
 
   it('clears selection when "Select none" is clicked (after Select all)', async () => {
