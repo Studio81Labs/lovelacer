@@ -122,8 +122,12 @@ async function openSettings(): Promise<void> {
 }
 
 async function saveRoomOrder(roomIds: string[]): Promise<void> {
-  settings.setRoomOrder(roomIds)
   try {
+    if (settings.serverState === null) {
+      await settings.loadFromServer()
+    }
+    if (settings.serverState === null) return
+    settings.setRoomOrder(roomIds)
     await settings.saveOnly()
     await analyze.refreshPreview()
   } catch {

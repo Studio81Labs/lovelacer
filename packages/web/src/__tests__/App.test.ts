@@ -366,6 +366,82 @@ describe('App integration', () => {
     expect(postPreview).toHaveBeenCalled()
   })
 
+  it('waits for server settings before saving room order', async () => {
+    const orderedPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'bedroom',
+          haAreaId: 'bedroom',
+          displayName: 'Bedroom',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+    }
+    const serverSettings: Settings = {
+      language: 'cs',
+      cardPack: 'minimal',
+      sections: {
+        welcome: false,
+        quickStats: true,
+        people: false,
+        roomsByFloor: true,
+        activeRooms: false,
+        scenes: true,
+        cameras: false,
+      },
+      uiLanguage: 'de',
+    }
+    const savedSettings: Settings = {
+      ...serverSettings,
+      roomOrder: ['bedroom', 'kitchen'],
+    }
+    let resolveSettings: (value: { settings: Settings }) => void = () => {}
+    vi.mocked(getSettings)
+      .mockReset()
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveSettings = resolve
+        }),
+      )
+    vi.mocked(putSettings).mockResolvedValueOnce({ settings: savedSettings })
+    vi.mocked(postPreview).mockResolvedValueOnce(orderedPreview)
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    analyze.$patch({ phase: 'ready', preview: orderedPreview })
+    await wrapper.vm.$nextTick()
+    vi.mocked(getSettings).mockClear()
+    vi.mocked(putSettings).mockClear()
+
+    wrapper.findComponent(RoomList).vm.$emit('reorder', ['bedroom', 'kitchen'])
+    await Promise.resolve()
+
+    expect(getSettings).not.toHaveBeenCalled()
+    expect(putSettings).not.toHaveBeenCalled()
+
+    resolveSettings({ settings: serverSettings })
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledWith({ settings: savedSettings })
+    expect(postPreview).toHaveBeenCalled()
+  })
+
   it('keeps the ready room list visible while room-order preview refresh is in flight', async () => {
     const orderedPreview: PreviewOutput = {
       ...mockPreview,

@@ -35,6 +35,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const serverState = ref<Settings | null>(null)
   const dirtyState = ref<Settings | null>(null)
+  let loadPromise: Promise<void> | null = null
 
   const hasDirty = computed(() => dirtyState.value !== null)
   const effective = computed<Settings>(
@@ -102,17 +103,23 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   async function loadFromServer(): Promise<void> {
+    if (loadPromise !== null) return loadPromise
     phase.value = 'loading'
     error.value = null
-    try {
-      const result = await getSettings()
-      serverState.value = result.settings
-      dirtyState.value = null
-      phase.value = 'idle'
-    } catch (err) {
-      error.value = err as ApiError
-      phase.value = 'error'
-    }
+    loadPromise = (async () => {
+      try {
+        const result = await getSettings()
+        serverState.value = result.settings
+        dirtyState.value = null
+        phase.value = 'idle'
+      } catch (err) {
+        error.value = err as ApiError
+        phase.value = 'error'
+      } finally {
+        loadPromise = null
+      }
+    })()
+    return loadPromise
   }
 
   async function saveOnly(): Promise<void> {

@@ -63,6 +63,26 @@ describe('useSettingsStore', () => {
     expect(store.effective).toEqual(SAMPLE)
   })
 
+  it('loadFromServer reuses an in-flight settings request', async () => {
+    let resolveSettings: (value: { settings: Settings }) => void = () => {}
+    vi.mocked(getSettings).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSettings = resolve
+      }),
+    )
+    const store = useSettingsStore()
+
+    const first = store.loadFromServer()
+    const second = store.loadFromServer()
+    resolveSettings({ settings: SAMPLE })
+
+    await Promise.all([first, second])
+
+    expect(getSettings).toHaveBeenCalledOnce()
+    expect(store.serverState).toEqual(SAMPLE)
+    expect(store.phase).toBe('idle')
+  })
+
   it('setLanguage clones effective into dirtyState and sets the field', async () => {
     vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
     const store = useSettingsStore()
