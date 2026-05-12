@@ -34,6 +34,8 @@ const settings = useSettingsStore()
 const onboarding = useOnboardingStore()
 const i18n = useI18nStore()
 const settingsOpen = ref(false)
+let roomOrderSaveInFlight = false
+let pendingRoomOrder: string[] | null = null
 
 // P2-9 — post-load reconciliation watcher. When the settings store
 // resolves `loadFromServer()`, sync `settings.serverState.uiLanguage`
@@ -121,24 +123,40 @@ async function openSettings(): Promise<void> {
   settingsOpen.value = true
 }
 
-async function saveRoomOrder(roomIds: string[]): Promise<void> {
+async function persistRoomOrder(roomIds: string[]): Promise<boolean> {
   const previousDirty = settings.snapshotDirtyState()
+  if (settings.serverState === null) {
+    await settings.loadFromServer()
+  }
+  if (settings.serverState === null) return false
+  settings.setRoomOrder(roomIds)
   try {
-    if (settings.serverState === null) {
-      await settings.loadFromServer()
-    }
-    if (settings.serverState === null) return
-    settings.setRoomOrder(roomIds)
-    try {
-      await settings.saveOnly()
-    } catch {
-      settings.restoreDirtyState(previousDirty)
-      return
-    }
-    await analyze.refreshPreview()
+    await settings.saveOnly()
   } catch {
-    // Settings store keeps phase/error for the UI; avoid an unhandled
-    // promise rejection from a background reorder save.
+    settings.restoreDirtyState(previousDirty)
+    return false
+  }
+  return true
+}
+
+async function saveRoomOrder(roomIds: string[]): Promise<void> {
+  pendingRoomOrder = [...roomIds]
+  if (roomOrderSaveInFlight) return
+  roomOrderSaveInFlight = true
+  try {
+    while (pendingRoomOrder !== null) {
+      const nextRoomOrder = pendingRoomOrder
+      pendingRoomOrder = null
+      const saved = await persistRoomOrder(nextRoomOrder)
+      if (saved && pendingRoomOrder === null) {
+        await analyze.refreshPreview()
+      }
+    }
+  } catch {
+    // Stores keep phase/error for the UI; avoid an unhandled promise
+    // rejection from a background reorder save.
+  } finally {
+    roomOrderSaveInFlight = false
   }
 }
 
