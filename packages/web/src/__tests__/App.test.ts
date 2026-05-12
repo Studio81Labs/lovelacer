@@ -654,6 +654,86 @@ describe('App integration', () => {
     expect(postPreview).toHaveBeenCalledTimes(1)
   })
 
+  it('continues processing queued room order saves after preview refresh fails', async () => {
+    const orderedPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'bedroom',
+          haAreaId: 'bedroom',
+          displayName: 'Bedroom',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'living_room',
+          haAreaId: 'living_room',
+          displayName: 'Living Room',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+    }
+    const firstSettings: Settings = {
+      ...defaultSettings,
+      roomOrder: ['bedroom', 'kitchen', 'living_room'],
+    }
+    const latestSettings: Settings = {
+      ...defaultSettings,
+      roomOrder: ['living_room', 'bedroom', 'kitchen'],
+    }
+    let rejectFirstPreview: (reason: unknown) => void = () => {}
+    vi.mocked(putSettings)
+      .mockResolvedValueOnce({ settings: firstSettings })
+      .mockResolvedValueOnce({ settings: latestSettings })
+    vi.mocked(postPreview)
+      .mockReturnValueOnce(
+        new Promise((_, reject) => {
+          rejectFirstPreview = reject
+        }),
+      )
+      .mockResolvedValueOnce(orderedPreview)
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    const settings = useSettingsStore()
+    analyze.$patch({ phase: 'ready', preview: orderedPreview })
+    await wrapper.vm.$nextTick()
+    vi.mocked(putSettings).mockClear()
+    vi.mocked(postPreview).mockClear()
+
+    wrapper.findComponent(RoomList).vm.$emit('reorder', ['bedroom', 'kitchen', 'living_room'])
+    await flushPromises()
+    expect(postPreview).toHaveBeenCalledTimes(1)
+
+    wrapper.findComponent(RoomList).vm.$emit('reorder', ['living_room', 'bedroom', 'kitchen'])
+    await Promise.resolve()
+    rejectFirstPreview({ error: 'preview_failed', message: 'refresh failed' })
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledTimes(2)
+    expect(putSettings).toHaveBeenNthCalledWith(1, { settings: firstSettings })
+    expect(putSettings).toHaveBeenNthCalledWith(2, { settings: latestSettings })
+    expect(settings.serverState?.roomOrder).toEqual(['living_room', 'bedroom', 'kitchen'])
+    expect(postPreview).toHaveBeenCalledTimes(2)
+    expect(analyze.phase).toBe('ready')
+  })
+
   it('keeps the ready room list visible while room-order preview refresh is in flight', async () => {
     const orderedPreview: PreviewOutput = {
       ...mockPreview,

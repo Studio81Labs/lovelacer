@@ -150,8 +150,14 @@ async function saveRoomOrder(roomIds: string[]): Promise<void> {
         roomOrderNeedsPreviewRefresh = true
       }
       if (roomOrderNeedsPreviewRefresh && pendingRoomOrder === null) {
-        await analyze.refreshPreview()
-        roomOrderNeedsPreviewRefresh = false
+        try {
+          await analyze.refreshPreview()
+          roomOrderNeedsPreviewRefresh = false
+        } catch (err) {
+          if (pendingRoomOrder === null) {
+            throw err
+          }
+        }
       }
     }
   } catch {
