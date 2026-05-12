@@ -58,6 +58,28 @@ export const useSettingsStore = defineStore('settings', () => {
     return next
   }
 
+  function settingsEqual(a: Settings | null, b: Settings | null): boolean {
+    return JSON.stringify(a) === JSON.stringify(b)
+  }
+
+  function withRoomOrder(
+    settings: Settings | null,
+    roomOrder: string[] | undefined,
+  ): Settings | null {
+    if (settings === null) return null
+    const next = cloneSettings(settings)
+    if (roomOrder === undefined) {
+      delete next.roomOrder
+    } else {
+      next.roomOrder = [...roomOrder]
+    }
+    return next
+  }
+
+  function replaceDirtyRoomOrder(roomOrder: string[] | undefined): void {
+    dirtyState.value = withRoomOrder(dirtyState.value, roomOrder)
+  }
+
   /** Returns a fresh deep-cloned copy of the effective settings. */
   function cloneEffective(): Settings {
     return cloneSettings(effective.value)
@@ -151,6 +173,40 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  async function saveRoomOrder(roomIds: string[]): Promise<void> {
+    if (serverState.value === null) return
+
+    const previousDirty = snapshotDirtyState()
+    const previousRoomOrder = previousDirty?.roomOrder ?? serverState.value.roomOrder
+    setRoomOrder(roomIds)
+    const optimisticDirty = snapshotDirtyState()
+
+    phase.value = 'saving'
+    error.value = null
+    const next = cloneSettings(serverState.value)
+    next.roomOrder = [...roomIds]
+
+    try {
+      const result = await putSettings({ settings: next })
+      serverState.value = result.settings
+      if (settingsEqual(dirtyState.value, optimisticDirty)) {
+        dirtyState.value = withRoomOrder(previousDirty, result.settings.roomOrder)
+      } else {
+        replaceDirtyRoomOrder(result.settings.roomOrder)
+      }
+      phase.value = 'idle'
+    } catch (err) {
+      if (settingsEqual(dirtyState.value, optimisticDirty)) {
+        dirtyState.value = withRoomOrder(previousDirty, previousRoomOrder)
+      } else {
+        replaceDirtyRoomOrder(previousRoomOrder)
+      }
+      error.value = err as ApiError
+      phase.value = 'error'
+      throw err
+    }
+  }
+
   async function saveAndReanalyze(): Promise<void> {
     await saveOnly()
     // Trigger a fresh analyze so the dashboard preview reflects the new
@@ -178,6 +234,7 @@ export const useSettingsStore = defineStore('settings', () => {
     discardChanges,
     loadFromServer,
     saveOnly,
+    saveRoomOrder,
     saveAndReanalyze,
   }
 })

@@ -124,16 +124,13 @@ async function openSettings(): Promise<void> {
 }
 
 async function persistRoomOrder(roomIds: string[]): Promise<boolean> {
-  const previousDirty = settings.snapshotDirtyState()
   if (settings.serverState === null) {
     await settings.loadFromServer()
   }
   if (settings.serverState === null) return false
-  settings.setRoomOrder(roomIds)
   try {
-    await settings.saveOnly()
+    await settings.saveRoomOrder(roomIds)
   } catch {
-    settings.restoreDirtyState(previousDirty)
     return false
   }
   return true
