@@ -12,6 +12,7 @@ const { t } = useI18n()
 const props = defineProps<{
   rooms: AnalyzedRoom[]
   roomOrder?: string[] | undefined
+  draftResetKey?: number | string | undefined
   diffByRoom?: Record<string, RoomDiffSummary>
   diffByEntityId?: Map<string, EntityDiff>
   /**
@@ -53,7 +54,7 @@ const canReorder = computed(
 type DropPlacement = 'before' | 'after'
 
 watch(
-  () => props.roomOrder,
+  () => [props.roomOrder, props.draftResetKey] as const,
   () => {
     draftRoomOrder.value = null
   },

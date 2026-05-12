@@ -115,9 +115,11 @@ describe('useAnalyzeStore', () => {
 
     const promise = store.refreshPreview()
     expect(store.phase).toBe('ready')
+    expect(store.isRefreshingPreview).toBe(true)
     await promise
 
     expect(store.phase).toBe('ready')
+    expect(store.isRefreshingPreview).toBe(false)
     expect(store.preview).toEqual(refreshed)
   })
 
@@ -130,6 +132,7 @@ describe('useAnalyzeStore', () => {
     await store.refreshPreview()
 
     expect(store.phase).toBe('error')
+    expect(store.isRefreshingPreview).toBe(false)
     expect(store.preview).toEqual(mockPreview)
     expect(store.error).toEqual(apiErr)
   })

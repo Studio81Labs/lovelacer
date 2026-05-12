@@ -34,6 +34,7 @@ const settings = useSettingsStore()
 const onboarding = useOnboardingStore()
 const i18n = useI18nStore()
 const settingsOpen = ref(false)
+const roomOrderDraftResetKey = ref(0)
 let roomOrderSaveInFlight = false
 let pendingRoomOrder: string[] | null = null
 
@@ -148,6 +149,8 @@ async function saveRoomOrder(roomIds: string[]): Promise<void> {
       const saved = await persistRoomOrder(nextRoomOrder)
       if (saved) {
         roomOrderNeedsPreviewRefresh = true
+      } else {
+        roomOrderDraftResetKey.value += 1
       }
       if (roomOrderNeedsPreviewRefresh && pendingRoomOrder === null) {
         try {
@@ -298,6 +301,7 @@ watch(
       <RoomList
         :rooms="analyze.preview.rooms"
         :room-order="settings.effective.roomOrder"
+        :draft-reset-key="roomOrderDraftResetKey"
         :diff-by-room="diffByRoom"
         :diff-by-entity-id="diffByEntityId"
         @reorder="saveRoomOrder"
@@ -307,7 +311,7 @@ watch(
       <HiddenEntitiesPanel :hidden-entities="analyze.preview.hidden ?? []" />
       <OverridesBar />
       <DashboardPreview :config="analyze.preview.config" />
-      <ApplyBar />
+      <ApplyBar v-if="!analyze.isRefreshingPreview" />
       <SuggestionsPanel :suggestions="analyze.preview.suggestions" />
     </section>
   </main>

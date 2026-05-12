@@ -782,11 +782,95 @@ describe('App integration', () => {
     await flushPromises()
 
     expect(analyze.phase).toBe('ready')
+    expect(analyze.isRefreshingPreview).toBe(true)
     expect(wrapper.findComponent(RoomList).exists()).toBe(true)
+    expect(wrapper.findComponent(ApplyBar).exists()).toBe(false)
 
     resolvePreview(orderedPreview)
     await flushPromises()
     expect(postPreview).toHaveBeenCalled()
+    expect(analyze.isRefreshingPreview).toBe(false)
+    expect(wrapper.findComponent(ApplyBar).exists()).toBe(true)
+  })
+
+  it('reverts the visible room drag draft when settings cannot load before saving', async () => {
+    const orderedPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'bedroom',
+          haAreaId: 'bedroom',
+          displayName: 'Bedroom',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'living_room',
+          haAreaId: 'living_room',
+          displayName: 'Living Room',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+    }
+    vi.mocked(getSettings).mockRejectedValue({
+      error: 'settings_unavailable',
+      message: 'settings unavailable',
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    analyze.$patch({ phase: 'ready', preview: orderedPreview })
+    await wrapper.vm.$nextTick()
+    vi.mocked(putSettings).mockClear()
+    vi.mocked(postPreview).mockClear()
+
+    const roomList = wrapper.findComponent(RoomList)
+    const dragStore = new Map<string, string>()
+    const dataTransfer = {
+      effectAllowed: '',
+      dropEffect: '',
+      setData: (key: string, value: string) => dragStore.set(key, value),
+      getData: (key: string) => dragStore.get(key) ?? '',
+      setDragImage: vi.fn(),
+    }
+    const targetRow = roomList.findAll('[data-testid="room-row"]')[0]!
+
+    await roomList.findAll('[data-testid="room-drag-handle"]')[2]!.trigger('dragstart', {
+      dataTransfer,
+    })
+    await targetRow.trigger('dragover', { dataTransfer })
+    expect(roomList.findAll('[data-testid="room-name"]').map((row) => row.text())).toEqual([
+      'Living Room',
+      'Bedroom',
+      'Kitchen',
+    ])
+
+    await targetRow.trigger('drop', { dataTransfer })
+    await flushPromises()
+
+    expect(putSettings).not.toHaveBeenCalled()
+    expect(postPreview).not.toHaveBeenCalled()
+    expect(roomList.findAll('[data-testid="room-name"]').map((row) => row.text())).toEqual([
+      'Bedroom',
+      'Kitchen',
+      'Living Room',
+    ])
   })
 
   it('prevents applying a stale preview when room-order preview refresh fails', async () => {
