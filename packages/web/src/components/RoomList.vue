@@ -29,6 +29,7 @@ const searchQuery = ref('')
 const hasSearch = computed(() => normalizeEntitySearch(searchQuery.value) !== '')
 const draggedRoomId = ref<string | null>(null)
 const draftRoomOrder = ref<string[] | null>(null)
+const dropCommitted = ref(false)
 const activeRoomOrder = computed(() => draftRoomOrder.value ?? props.roomOrder ?? [])
 const orderedRooms = computed(() => orderRooms(props.rooms, activeRoomOrder.value))
 const filteredRooms = computed(() =>
@@ -80,6 +81,7 @@ function onDragStart(roomId: string, event: DragEvent): void {
     return
   }
   draggedRoomId.value = roomId
+  dropCommitted.value = false
   event.dataTransfer?.setData('application/x-lovelacer-room-id', roomId)
   event.dataTransfer?.setData('text/plain', roomId)
   if (event.dataTransfer !== null) {
@@ -112,6 +114,7 @@ function onDrop(targetRoomId: string, event: DragEvent): void {
   const sourceRoomId = draggedRoomId.value ?? event.dataTransfer?.getData('text/plain') ?? ''
   draggedRoomId.value = null
   if (draftRoomOrder.value !== null) {
+    dropCommitted.value = true
     emit('reorder', draftRoomOrder.value)
     return
   }
@@ -119,6 +122,7 @@ function onDrop(targetRoomId: string, event: DragEvent): void {
 
   const next = moveRoomBefore(orderedRooms.value, sourceRoomId, targetRoomId)
   if (next === null) return
+  dropCommitted.value = true
   emit('reorder', next)
 }
 
@@ -126,11 +130,16 @@ function onListDrop(event: DragEvent): void {
   event.preventDefault()
   draggedRoomId.value = null
   if (draftRoomOrder.value !== null) {
+    dropCommitted.value = true
     emit('reorder', draftRoomOrder.value)
   }
 }
 
 function onDragEnd(): void {
+  if (!dropCommitted.value) {
+    draftRoomOrder.value = null
+  }
+  dropCommitted.value = false
   draggedRoomId.value = null
 }
 

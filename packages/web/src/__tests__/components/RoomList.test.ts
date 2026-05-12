@@ -178,6 +178,40 @@ describe('RoomList', () => {
     expect(wrapper.emitted('reorder')).toBeUndefined()
   })
 
+  it('clears the draft order when dragging is cancelled before drop', async () => {
+    const rooms = [
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+      room({ id: 'living_room', displayName: 'Living Room' }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['kitchen', 'bedroom', 'living_room'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const dragStore = new Map<string, string>()
+    const dataTransfer = {
+      effectAllowed: '',
+      dropEffect: '',
+      setData: (key: string, value: string) => dragStore.set(key, value),
+      getData: (key: string) => dragStore.get(key) ?? '',
+      setDragImage: vi.fn(),
+    }
+    const handle = wrapper.findAll('[data-testid="room-drag-handle"]')[2]!
+
+    await handle.trigger('dragstart', { dataTransfer })
+    await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('dragover', { dataTransfer })
+    await handle.trigger('dragend')
+
+    expect(wrapper.findAll('[data-testid="room-name"]').map((row) => row.text())).toEqual([
+      'Kitchen',
+      'Bedroom',
+      'Living Room',
+    ])
+    expect(wrapper.emitted('reorder')).toBeUndefined()
+  })
+
   it('emits the draft order when the dragged row has moved under the drop target', async () => {
     const rooms = [
       room({ id: 'kitchen', displayName: 'Kitchen' }),
