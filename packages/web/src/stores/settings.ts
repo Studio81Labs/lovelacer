@@ -36,6 +36,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const serverState = ref<Settings | null>(null)
   const dirtyState = ref<Settings | null>(null)
   let loadPromise: Promise<void> | null = null
+  let writePromise: Promise<void> = Promise.resolve()
 
   const hasDirty = computed(() => dirtyState.value !== null)
   const effective = computed<Settings>(
@@ -78,6 +79,21 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function replaceDirtyRoomOrder(roomOrder: string[] | undefined): void {
     dirtyState.value = withRoomOrder(dirtyState.value, roomOrder)
+  }
+
+  function reconcileDirtyWithServer(): void {
+    if (serverState.value !== null && settingsEqual(dirtyState.value, serverState.value)) {
+      dirtyState.value = null
+    }
+  }
+
+  async function enqueueSettingsWrite<T>(task: () => Promise<T>): Promise<T> {
+    const run = writePromise.then(task, task)
+    writePromise = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
   }
 
   /** Returns a fresh deep-cloned copy of the effective settings. */
@@ -143,7 +159,7 @@ export const useSettingsStore = defineStore('settings', () => {
       try {
         const result = await getSettings()
         serverState.value = result.settings
-        dirtyState.value = null
+        reconcileDirtyWithServer()
         phase.value = 'idle'
       } catch (err) {
         error.value = err as ApiError
@@ -156,21 +172,27 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   async function saveOnly(): Promise<void> {
-    if (dirtyState.value === null) return
-    phase.value = 'saving'
-    error.value = null
-    const next = dirtyState.value
-    try {
-      const result = await putSettings({ settings: next })
-      serverState.value = result.settings
-      dirtyState.value = null
-      phase.value = 'idle'
-    } catch (err) {
-      error.value = err as ApiError
-      phase.value = 'error'
-      // Re-throw so the modal can keep itself open and the test can assert.
-      throw err
-    }
+    return enqueueSettingsWrite(async () => {
+      const savedDirty = snapshotDirtyState()
+      if (savedDirty === null) return
+      phase.value = 'saving'
+      error.value = null
+      try {
+        const result = await putSettings({ settings: savedDirty })
+        serverState.value = result.settings
+        if (settingsEqual(dirtyState.value, savedDirty)) {
+          dirtyState.value = null
+        } else {
+          reconcileDirtyWithServer()
+        }
+        phase.value = 'idle'
+      } catch (err) {
+        error.value = err as ApiError
+        phase.value = 'error'
+        // Re-throw so the modal can keep itself open and the test can assert.
+        throw err
+      }
+    })
   }
 
   async function saveRoomOrder(roomIds: string[]): Promise<void> {
@@ -181,30 +203,35 @@ export const useSettingsStore = defineStore('settings', () => {
     setRoomOrder(roomIds)
     const optimisticDirty = snapshotDirtyState()
 
-    phase.value = 'saving'
-    error.value = null
-    const next = cloneSettings(serverState.value)
-    next.roomOrder = [...roomIds]
+    return enqueueSettingsWrite(async () => {
+      if (serverState.value === null) return
+      phase.value = 'saving'
+      error.value = null
+      const next = cloneSettings(serverState.value)
+      next.roomOrder = [...roomIds]
 
-    try {
-      const result = await putSettings({ settings: next })
-      serverState.value = result.settings
-      if (settingsEqual(dirtyState.value, optimisticDirty)) {
-        dirtyState.value = withRoomOrder(previousDirty, result.settings.roomOrder)
-      } else {
-        replaceDirtyRoomOrder(result.settings.roomOrder)
+      try {
+        const result = await putSettings({ settings: next })
+        serverState.value = result.settings
+        if (settingsEqual(dirtyState.value, optimisticDirty)) {
+          dirtyState.value = withRoomOrder(previousDirty, result.settings.roomOrder)
+        } else {
+          replaceDirtyRoomOrder(result.settings.roomOrder)
+        }
+        reconcileDirtyWithServer()
+        phase.value = 'idle'
+      } catch (err) {
+        if (settingsEqual(dirtyState.value, optimisticDirty)) {
+          dirtyState.value = withRoomOrder(previousDirty, previousRoomOrder)
+        } else {
+          replaceDirtyRoomOrder(previousRoomOrder)
+        }
+        reconcileDirtyWithServer()
+        error.value = err as ApiError
+        phase.value = 'error'
+        throw err
       }
-      phase.value = 'idle'
-    } catch (err) {
-      if (settingsEqual(dirtyState.value, optimisticDirty)) {
-        dirtyState.value = withRoomOrder(previousDirty, previousRoomOrder)
-      } else {
-        replaceDirtyRoomOrder(previousRoomOrder)
-      }
-      error.value = err as ApiError
-      phase.value = 'error'
-      throw err
-    }
+    })
   }
 
   async function saveAndReanalyze(): Promise<void> {

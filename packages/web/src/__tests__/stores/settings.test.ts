@@ -233,6 +233,88 @@ describe('useSettingsStore', () => {
     expect(store.phase).toBe('idle')
   })
 
+  it('serializes modal saves after in-flight room order saves so neither full PUT wins stale', async () => {
+    const roomOrderSettings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOrder: ['bedroom', 'kitchen'],
+    }
+    const combinedSettings: Settings = {
+      ...roomOrderSettings,
+      language: 'cs',
+    }
+    let resolveRoomOrderSave: (value: { settings: Settings }) => void = () => {}
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    vi.mocked(putSettings)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveRoomOrderSave = resolve
+        }),
+      )
+      .mockResolvedValueOnce({ settings: combinedSettings })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    const roomOrderSave = store.saveRoomOrder(['bedroom', 'kitchen'])
+    await Promise.resolve()
+    store.setLanguage('cs')
+    const modalSave = store.saveOnly()
+    await Promise.resolve()
+
+    expect(vi.mocked(putSettings)).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(putSettings)).toHaveBeenNthCalledWith(1, { settings: roomOrderSettings })
+
+    resolveRoomOrderSave({ settings: roomOrderSettings })
+    await roomOrderSave
+    await modalSave
+
+    expect(vi.mocked(putSettings)).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(putSettings)).toHaveBeenNthCalledWith(2, { settings: combinedSettings })
+    expect(store.serverState).toEqual(combinedSettings)
+    expect(store.dirtyState).toBeNull()
+    expect(store.phase).toBe('idle')
+  })
+
+  it('serializes room order saves after in-flight modal saves so neither full PUT wins stale', async () => {
+    const modalSettings: Settings = {
+      ...DEFAULT_SETTINGS,
+      language: 'cs',
+    }
+    const combinedSettings: Settings = {
+      ...modalSettings,
+      roomOrder: ['bedroom', 'kitchen'],
+    }
+    let resolveModalSave: (value: { settings: Settings }) => void = () => {}
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    vi.mocked(putSettings)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveModalSave = resolve
+        }),
+      )
+      .mockResolvedValueOnce({ settings: combinedSettings })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+    store.setLanguage('cs')
+
+    const modalSave = store.saveOnly()
+    await Promise.resolve()
+    const roomOrderSave = store.saveRoomOrder(['bedroom', 'kitchen'])
+    await Promise.resolve()
+
+    expect(vi.mocked(putSettings)).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(putSettings)).toHaveBeenNthCalledWith(1, { settings: modalSettings })
+
+    resolveModalSave({ settings: modalSettings })
+    await modalSave
+    await roomOrderSave
+
+    expect(vi.mocked(putSettings)).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(putSettings)).toHaveBeenNthCalledWith(2, { settings: combinedSettings })
+    expect(store.serverState).toEqual(combinedSettings)
+    expect(store.dirtyState).toBeNull()
+    expect(store.phase).toBe('idle')
+  })
+
   it('saveRoomOrder keeps modal edits but reverts the room order when saving fails', async () => {
     const serverSettings: Settings = {
       ...DEFAULT_SETTINGS,
