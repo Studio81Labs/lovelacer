@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import EntityRow from './EntityRow.vue'
 import { useOverridesStore } from '../stores/overrides.js'
 import { ASSIGNABLE_ROOMS, roomIdToDisplay } from '../rooms.js'
+import { entityMatchesSearch, normalizeEntitySearch } from '../entity-search.js'
 import type { MiscEntity } from '../api/types.js'
 
 const { t } = useI18n()
@@ -22,16 +23,25 @@ const overrides = useOverridesStore()
 const READONLY_ROW_LIMIT = 50
 const selected = ref<Set<string>>(new Set())
 const bulkRoom = ref<string>('') // '' = no room picked yet (Assign disabled)
+const searchQuery = ref('')
 
+const hasSearch = computed(() => normalizeEntitySearch(searchQuery.value) !== '')
+const filteredMisc = computed(() =>
+  props.misc.filter((entity) =>
+    entityMatchesSearch(searchQuery.value, entity.entityId, entity.friendlyName),
+  ),
+)
 const displayedMisc = computed(() =>
-  props.readOnly === true ? props.misc.slice(0, READONLY_ROW_LIMIT) : props.misc,
+  props.readOnly === true ? filteredMisc.value.slice(0, READONLY_ROW_LIMIT) : filteredMisc.value,
 )
 const isTruncated = computed(
-  () => props.readOnly === true && props.misc.length > displayedMisc.value.length,
+  () => props.readOnly === true && filteredMisc.value.length > displayedMisc.value.length,
 )
 const selectedCount = computed(() => selected.value.size)
 const allSelected = computed(
-  () => props.misc.length > 0 && selected.value.size === props.misc.length,
+  () =>
+    filteredMisc.value.length > 0 &&
+    filteredMisc.value.every((entity) => selected.value.has(entity.entityId)),
 )
 const isSaving = computed(() => overrides.phase === 'saving')
 
@@ -43,7 +53,9 @@ function toggleOne(entityId: string, checked: boolean): void {
 }
 
 function toggleAll(): void {
-  selected.value = allSelected.value ? new Set() : new Set(props.misc.map((m) => m.entityId))
+  selected.value = allSelected.value
+    ? new Set()
+    : new Set(filteredMisc.value.map((m) => m.entityId))
 }
 
 function applyAssign(): void {
@@ -78,6 +90,11 @@ watch(
     selected.value = new Set()
   },
 )
+
+watch(filteredMisc, (entities) => {
+  const visibleIds = new Set(entities.map((entity) => entity.entityId))
+  selected.value = new Set([...selected.value].filter((entityId) => visibleIds.has(entityId)))
+})
 </script>
 
 <template>
@@ -85,6 +102,20 @@ watch(
     <summary class="cursor-pointer px-5 py-3 text-sm font-medium text-stone-700 hover:bg-stone-50">
       {{ t('miscBucket.summary', { count: misc.length }, misc.length) }}
     </summary>
+
+    <div class="border-t border-stone-100 px-5 py-3">
+      <label class="block">
+        <span class="sr-only">{{ t('sectionSearch.miscLabel') }}</span>
+        <input
+          v-model="searchQuery"
+          type="search"
+          data-testid="section-search"
+          :aria-label="t('sectionSearch.miscLabel')"
+          :placeholder="t('sectionSearch.miscPlaceholder')"
+          class="w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
+        />
+      </label>
+    </div>
 
     <div
       v-if="!readOnly && selectedCount > 0"
@@ -144,7 +175,14 @@ watch(
       </button>
     </div>
 
-    <ul class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
+    <div
+      v-if="hasSearch && displayedMisc.length === 0"
+      class="border-t border-stone-100 bg-stone-50/30 px-5 py-4 text-sm text-stone-600"
+    >
+      {{ t('sectionSearch.empty') }}
+    </div>
+
+    <ul v-else class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
       <li
         v-for="entity in displayedMisc"
         :key="entity.entityId"

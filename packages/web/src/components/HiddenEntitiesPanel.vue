@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useOverridesStore } from '../stores/overrides.js'
 import { roomIdToDisplay } from '../rooms.js'
+import { entityMatchesSearch, normalizeEntitySearch } from '../entity-search.js'
 import type { HiddenEntity } from '../api/types.js'
 
 const { t } = useI18n()
@@ -10,6 +11,7 @@ const props = defineProps<{
   hiddenEntities?: HiddenEntity[]
 }>()
 const overrides = useOverridesStore()
+const searchQuery = ref('')
 
 const hidden = computed(() =>
   overrides.hiddenOverrides.map((override) => {
@@ -23,6 +25,12 @@ const hidden = computed(() =>
       roomId: override.roomId ?? metadata?.roomId,
     }
   }),
+)
+const hasSearch = computed(() => normalizeEntitySearch(searchQuery.value) !== '')
+const filteredHidden = computed(() =>
+  hidden.value.filter((entry) =>
+    entityMatchesSearch(searchQuery.value, entry.entityId, entry.friendlyName),
+  ),
 )
 const isSaving = computed(() => overrides.phase === 'saving')
 
@@ -43,11 +51,29 @@ function unhide(entityId: string): void {
 
     <div class="border-t border-stone-100 px-5 py-3">
       <p class="mt-1 text-xs text-stone-500">{{ t('hiddenEntitiesPanel.description') }}</p>
+      <label class="mt-3 block">
+        <span class="sr-only">{{ t('sectionSearch.hiddenLabel') }}</span>
+        <input
+          v-model="searchQuery"
+          type="search"
+          data-testid="section-search"
+          :aria-label="t('sectionSearch.hiddenLabel')"
+          :placeholder="t('sectionSearch.hiddenPlaceholder')"
+          class="w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
+        />
+      </label>
     </div>
 
-    <ul class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
+    <div
+      v-if="hasSearch && filteredHidden.length === 0"
+      class="border-t border-stone-100 bg-stone-50/30 px-5 py-4 text-sm text-stone-600"
+    >
+      {{ t('sectionSearch.empty') }}
+    </div>
+
+    <ul v-else class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
       <li
-        v-for="entry in hidden"
+        v-for="entry in filteredHidden"
         :key="entry.entityId"
         class="flex items-center justify-between gap-3 px-5 py-2"
       >
