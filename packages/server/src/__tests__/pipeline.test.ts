@@ -9,6 +9,7 @@ import type {
   HaFloorRegistryEntry,
 } from '@lovelacer/shared'
 import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
+import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { runAnalyze, runApply, runPreview } from '../pipeline.js'
 import { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
@@ -55,6 +56,17 @@ function makeHa(connected = true): HaClient {
   } as unknown as HaClient
 }
 
+function makeCzechHa(): HaClient {
+  const ha = fixtureToHaRegistries(czechTidy)
+  return {
+    isConnected: () => true,
+    getEntityRegistry: vi.fn(async () => ha.entities),
+    getDeviceRegistry: vi.fn(async () => ha.devices),
+    getAreaRegistry: vi.fn(async () => ha.areas),
+    getFloorRegistry: vi.fn(async () => ha.floors),
+  } as unknown as HaClient
+}
+
 function makeStore(): OverrideStore {
   return new OverrideStore(':memory:')
 }
@@ -69,6 +81,12 @@ function makeDismissed(): DismissedSuggestionStore {
 
 function makeSettings(): SettingsStore {
   return new SettingsStore(':memory:')
+}
+
+function makeSettingsWithRoomOrder(roomOrder: string[]): SettingsStore {
+  const settings = makeSettings()
+  settings.save({ ...settings.get(), roomOrder })
+  return settings
 }
 
 function makeAdministrativeHa(): HaClient {
@@ -207,6 +225,18 @@ describe('runAnalyze', () => {
     expect(names).toEqual(sorted)
   })
 
+  it('places rooms from settings.roomOrder before the default alphabetical tail', async () => {
+    const fake = makeFakeHa()
+    const result = await runAnalyze(
+      fake.client,
+      makeStore(),
+      makeSettingsWithRoomOrder(['living_room', 'kitchen']),
+    )
+    const ids = result.rooms.map((r) => r.id)
+
+    expect(ids.indexOf('living_room')).toBeLessThan(ids.indexOf('kitchen'))
+  })
+
   it('rooms array does not contain the misc room', async () => {
     const fake = makeFakeHa()
     const result = await runAnalyze(fake.client, makeStore(), makeSettings())
@@ -283,6 +313,34 @@ describe('runAnalyze', () => {
 })
 
 describe('runPreview', () => {
+  it('keeps default generated room views sorted by English title when roomOrder is unset', async () => {
+    const result = await runPreview(
+      makeCzechHa(),
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+    )
+    const roomTitles = result.config.views.slice(1).map((view) => view.title)
+
+    expect(roomTitles).toEqual([...roomTitles].sort((a, b) => a.localeCompare(b, 'en')))
+    expect(roomTitles.indexOf('Bedroom')).toBeLessThan(roomTitles.indexOf('Kitchen'))
+  })
+
+  it('orders generated room views by settings.roomOrder', async () => {
+    const fake = makeFakeHa()
+    const result = await runPreview(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettingsWithRoomOrder(['living_room', 'kitchen']),
+    )
+    const titles = result.config.views.map((view) => view.title)
+
+    expect(titles.indexOf('Living Room')).toBeLessThan(titles.indexOf('Kitchen'))
+  })
+
   it('trims unused HA registry fields and normalizes entities in place', async () => {
     const fake = makeFakeHa()
     const entities = await fake.getEntityRegistry()

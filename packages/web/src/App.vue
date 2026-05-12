@@ -34,6 +34,9 @@ const settings = useSettingsStore()
 const onboarding = useOnboardingStore()
 const i18n = useI18nStore()
 const settingsOpen = ref(false)
+const roomOrderDraftResetKey = ref(0)
+const roomOrderSaveInFlight = ref(false)
+let pendingRoomOrder: string[] | null = null
 
 // P2-9 — post-load reconciliation watcher. When the settings store
 // resolves `loadFromServer()`, sync `settings.serverState.uiLanguage`
@@ -119,6 +122,53 @@ async function openSettings(): Promise<void> {
   // line resolves. The GET is sub-second; the brief delay is acceptable UX.
   await settings.loadFromServer()
   settingsOpen.value = true
+}
+
+async function persistRoomOrder(roomIds: string[]): Promise<boolean> {
+  if (settings.serverState === null) {
+    await settings.loadFromServer()
+  }
+  if (settings.serverState === null) return false
+  try {
+    await settings.saveRoomOrder(roomIds)
+  } catch {
+    return false
+  }
+  return true
+}
+
+async function saveRoomOrder(roomIds: string[]): Promise<void> {
+  pendingRoomOrder = [...roomIds]
+  if (roomOrderSaveInFlight.value) return
+  roomOrderSaveInFlight.value = true
+  let roomOrderNeedsPreviewRefresh = false
+  try {
+    while (pendingRoomOrder !== null) {
+      const nextRoomOrder = pendingRoomOrder
+      pendingRoomOrder = null
+      const saved = await persistRoomOrder(nextRoomOrder)
+      if (saved) {
+        roomOrderNeedsPreviewRefresh = true
+      } else {
+        roomOrderDraftResetKey.value += 1
+      }
+      if (roomOrderNeedsPreviewRefresh && pendingRoomOrder === null) {
+        try {
+          await analyze.refreshPreview()
+          roomOrderNeedsPreviewRefresh = false
+        } catch (err) {
+          if (pendingRoomOrder === null) {
+            throw err
+          }
+        }
+      }
+    }
+  } catch {
+    // Stores keep phase/error for the UI; avoid an unhandled promise
+    // rejection from a background reorder save.
+  } finally {
+    roomOrderSaveInFlight.value = false
+  }
 }
 
 const diffByRoom = computed<Record<string, RoomDiffSummary>>(
@@ -250,15 +300,18 @@ watch(
       />
       <RoomList
         :rooms="analyze.preview.rooms"
+        :room-order="settings.effective.roomOrder"
+        :draft-reset-key="roomOrderDraftResetKey"
         :diff-by-room="diffByRoom"
         :diff-by-entity-id="diffByEntityId"
+        @reorder="saveRoomOrder"
       />
       <MiscBucket :misc="analyze.preview.misc" />
       <AdministrativeEntitiesPanel :administrative="analyze.preview.administrative ?? []" />
       <HiddenEntitiesPanel :hidden-entities="analyze.preview.hidden ?? []" />
       <OverridesBar />
       <DashboardPreview :config="analyze.preview.config" />
-      <ApplyBar />
+      <ApplyBar v-if="!roomOrderSaveInFlight && !analyze.isRefreshingPreview" />
       <SuggestionsPanel :suggestions="analyze.preview.suggestions" />
     </section>
   </main>

@@ -118,6 +118,7 @@ function isSettings(value: unknown): value is Settings {
   // reject the row if the field is present but holds an unsupported
   // value.
   if (v.uiLanguage !== undefined && !isUiLanguage(v.uiLanguage)) return false
+  if (v.roomOrder !== undefined && !isStringArray(v.roomOrder)) return false
   return true
 }
 
@@ -131,6 +132,10 @@ function isCardPack(value: unknown): value is SettingsCardPack {
 
 function isUiLanguage(value: unknown): value is UiLanguage {
   return typeof value === 'string' && (SUPPORTED_UI_LANGUAGES as readonly string[]).includes(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
 }
 
 const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [

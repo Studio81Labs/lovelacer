@@ -41,6 +41,7 @@ The search uses clear placeholder text and accessible labels through existing i1
 Add a small local filtering helper in the web package for normalizing query text and testing entity rows. Components can call it with `entityId` plus friendly-name text.
 
 `RoomList.vue`:
+
 - Keep `searchQuery` as local state.
 - Build `filteredRooms` from `props.rooms`.
 - For each room, filter `assignments` by `entityId` and the fallback friendly name derived from `entityId`.
@@ -48,16 +49,19 @@ Add a small local filtering helper in the web package for normalizing query text
 - Keep diff and row override props unchanged.
 
 `MiscBucket.vue`:
+
 - Keep `searchQuery` as local state.
 - Compute `filteredMisc` before the read-only cap.
 - Bulk select operates on the filtered list so "Select all" means all currently visible matches.
 - Reset selection when the source `misc` prop changes as today.
 
 `AdministrativeEntitiesPanel.vue`:
+
 - Keep `searchQuery` as local state.
 - Render only filtered administrative entities.
 
 `HiddenEntitiesPanel.vue`:
+
 - Keep `searchQuery` as local state.
 - Filter the computed hidden entries before rendering.
 

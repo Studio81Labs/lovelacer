@@ -34,6 +34,7 @@ const VALID_BODY: { settings: Settings } = {
       cameras: true,
     },
     uiLanguage: 'en',
+    roomOrder: ['bedroom', 'kitchen'],
   },
 }
 
@@ -175,6 +176,50 @@ describe('PUT /api/settings', () => {
     try {
       const bad = {
         settings: { ...VALID_BODY.settings, uiLanguage: 'klingon' },
+      }
+      const res = await app.inject({ method: 'PUT', url: '/api/settings', payload: bad })
+      expect(res.statusCode).toBe(400)
+      expect(res.json()).toMatchObject({ error: 'invalid_body' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('round-trips roomOrder through PUT/GET', async () => {
+    const app = await makeApp()
+    try {
+      await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: {
+          settings: {
+            language: 'auto',
+            cardPack: 'default',
+            sections: {
+              welcome: true,
+              quickStats: true,
+              people: true,
+              roomsByFloor: true,
+              activeRooms: true,
+              scenes: true,
+              cameras: true,
+            },
+            roomOrder: ['bedroom', 'kitchen'],
+          },
+        },
+      })
+      const res = await app.inject({ method: 'GET', url: '/api/settings' })
+      expect(res.json().settings.roomOrder).toEqual(['bedroom', 'kitchen'])
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns 400 invalid_body when roomOrder contains a non-string value', async () => {
+    const app = await makeApp()
+    try {
+      const bad = {
+        settings: { ...VALID_BODY.settings, roomOrder: ['kitchen', 123] },
       }
       const res = await app.inject({ method: 'PUT', url: '/api/settings', payload: bad })
       expect(res.statusCode).toBe(400)

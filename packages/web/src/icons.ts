@@ -20,6 +20,7 @@ import bathroom from '@iconify-icons/mdi/shower-head'
 import bedroom from '@iconify-icons/mdi/bed'
 import diningRoom from '@iconify-icons/mdi/silverware'
 import dotsHorizontal from '@iconify-icons/mdi/dots-horizontal'
+import dragVertical from '@iconify-icons/mdi/drag-vertical'
 import garage from '@iconify-icons/mdi/garage-variant'
 import garden from '@iconify-icons/mdi/flower-tulip'
 import guestRoom from '@iconify-icons/mdi/bed-empty'
@@ -38,6 +39,7 @@ const REGISTRY: Record<string, Parameters<typeof addIcon>[1]> = {
   'mdi:desk': office,
   'mdi:door': hallway,
   'mdi:dots-horizontal': dotsHorizontal,
+  'mdi:drag-vertical': dragVertical,
   'mdi:flower-tulip': garden,
   'mdi:garage-variant': garage,
   'mdi:home-outline': homeOutline,

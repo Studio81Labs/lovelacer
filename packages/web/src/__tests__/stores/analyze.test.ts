@@ -103,4 +103,37 @@ describe('useAnalyzeStore', () => {
     expect(store.phase).toBe('ready')
     expect(store.preview).toEqual(mockPreview)
   })
+
+  it('refreshPreview updates preview without switching ready state to loading', async () => {
+    const refreshed: PreviewOutput = {
+      ...mockPreview,
+      summary: { entityCount: 12, roomCount: 2, miscCount: 0 },
+    }
+    vi.mocked(postPreview).mockResolvedValueOnce(refreshed)
+    const store = useAnalyzeStore()
+    store.$patch({ phase: 'ready', preview: mockPreview })
+
+    const promise = store.refreshPreview()
+    expect(store.phase).toBe('ready')
+    expect(store.isRefreshingPreview).toBe(true)
+    await promise
+
+    expect(store.phase).toBe('ready')
+    expect(store.isRefreshingPreview).toBe(false)
+    expect(store.preview).toEqual(refreshed)
+  })
+
+  it('refreshPreview keeps the existing preview but marks it stale on failure', async () => {
+    const apiErr: ApiError = { error: 'preview_failed', message: 'nope' }
+    vi.mocked(postPreview).mockRejectedValueOnce(apiErr)
+    const store = useAnalyzeStore()
+    store.$patch({ phase: 'ready', preview: mockPreview })
+
+    await store.refreshPreview()
+
+    expect(store.phase).toBe('error')
+    expect(store.isRefreshingPreview).toBe(false)
+    expect(store.preview).toEqual(mockPreview)
+    expect(store.error).toEqual(apiErr)
+  })
 })

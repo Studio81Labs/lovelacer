@@ -89,6 +89,7 @@
   "roomList.avgConfidence": "{percent}% avg confidence",
   "roomList.diffAdded": "+{count} new",
   "roomList.diffMovedOut": "↻ {count} left",
+  "roomList.dragHandle": "Drag {room}",
   "roomList.empty": "No rooms detected — check that your HA install has at least one area assigned to entities or device names matching room patterns.",
   "roomList.entities": "{count} entity | {count} entities",
   "sectionSearch.administrativeLabel": "Search administrative entities",

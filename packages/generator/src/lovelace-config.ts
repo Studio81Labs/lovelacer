@@ -13,6 +13,7 @@ export interface LovelaceConfig {
 export interface BuildLovelaceConfigInput {
   home: HomeView
   rooms: RoomView[]
+  sortRooms?: boolean
 }
 
 const DASHBOARD_TITLE = 'Lovelacer — Home'
@@ -22,13 +23,16 @@ const DASHBOARD_TITLE = 'Lovelacer — Home'
  * HA's `lovelace/config/save` expects.
  *
  * Rooms are sorted alphabetically by view title using `localeCompare(_, 'en')`
- * — the same comparator P1a-5 uses for domain-group ordering. The home view
- * is always at index 0; rooms follow.
+ * unless `sortRooms: false` is passed by a caller that already applied a
+ * user-defined order. The home view is always at index 0; rooms follow.
  *
  * Pure function. Doesn't mutate input.
  */
 export function buildLovelaceConfig(input: BuildLovelaceConfigInput): LovelaceConfig {
-  const sortedRooms = [...input.rooms].sort((a, b) => a.title.localeCompare(b.title, 'en'))
+  const sortedRooms =
+    input.sortRooms === false
+      ? [...input.rooms]
+      : [...input.rooms].sort((a, b) => a.title.localeCompare(b.title, 'en'))
   return {
     title: DASHBOARD_TITLE,
     views: [input.home, ...sortedRooms],

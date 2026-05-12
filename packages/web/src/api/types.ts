@@ -211,6 +211,11 @@ export interface Settings {
    * and the reconciliation watcher syncs the active locale to it.
    */
   uiLanguage?: UiLanguage
+  /**
+   * Optional preferred ordering for analyzed rooms. Unknown/new rooms
+   * are appended by display name when rendering.
+   */
+  roomOrder?: string[]
 }
 
 /** Defaults preserve current behavior — mirror of @lovelacer/shared's value. */

@@ -35,25 +35,84 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const serverState = ref<Settings | null>(null)
   const dirtyState = ref<Settings | null>(null)
+  let loadPromise: Promise<void> | null = null
+  let writePromise: Promise<void> = Promise.resolve()
+  let serverStateRevision = 0
 
   const hasDirty = computed(() => dirtyState.value !== null)
   const effective = computed<Settings>(
     () => dirtyState.value ?? serverState.value ?? DEFAULT_SETTINGS,
   )
 
-  /** Returns a fresh deep-cloned copy of the effective settings. */
-  function cloneEffective(): Settings {
-    const e = effective.value
+  function cloneSettings(settings: Settings): Settings {
     const next: Settings = {
-      language: e.language,
-      cardPack: e.cardPack,
-      sections: { ...e.sections },
+      language: settings.language,
+      cardPack: settings.cardPack,
+      sections: { ...settings.sections },
     }
     // uiLanguage is optional; only carry it forward when explicitly set.
-    if (e.uiLanguage !== undefined) {
-      next.uiLanguage = e.uiLanguage
+    if (settings.uiLanguage !== undefined) {
+      next.uiLanguage = settings.uiLanguage
+    }
+    if (settings.roomOrder !== undefined) {
+      next.roomOrder = [...settings.roomOrder]
     }
     return next
+  }
+
+  function settingsEqual(a: Settings | null, b: Settings | null): boolean {
+    return JSON.stringify(a) === JSON.stringify(b)
+  }
+
+  function withRoomOrder(
+    settings: Settings | null,
+    roomOrder: string[] | undefined,
+  ): Settings | null {
+    if (settings === null) return null
+    const next = cloneSettings(settings)
+    if (roomOrder === undefined) {
+      delete next.roomOrder
+    } else {
+      next.roomOrder = [...roomOrder]
+    }
+    return next
+  }
+
+  function replaceDirtyRoomOrder(roomOrder: string[] | undefined): void {
+    dirtyState.value = withRoomOrder(dirtyState.value, roomOrder)
+  }
+
+  function reconcileDirtyWithServer(): void {
+    if (serverState.value !== null && settingsEqual(dirtyState.value, serverState.value)) {
+      dirtyState.value = null
+    }
+  }
+
+  function replaceServerState(settings: Settings): void {
+    serverState.value = settings
+    serverStateRevision += 1
+  }
+
+  async function enqueueSettingsWrite<T>(task: () => Promise<T>): Promise<T> {
+    const run = writePromise.then(task, task)
+    writePromise = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
+  }
+
+  /** Returns a fresh deep-cloned copy of the effective settings. */
+  function cloneEffective(): Settings {
+    return cloneSettings(effective.value)
+  }
+
+  function snapshotDirtyState(): Settings | null {
+    return dirtyState.value === null ? null : cloneSettings(dirtyState.value)
+  }
+
+  function restoreDirtyState(snapshot: Settings | null): void {
+    dirtyState.value = snapshot === null ? null : cloneSettings(snapshot)
   }
 
   function setLanguage(lang: SettingsLanguage): void {
@@ -80,6 +139,12 @@ export const useSettingsStore = defineStore('settings', () => {
     dirtyState.value = next
   }
 
+  function setRoomOrder(roomIds: string[]): void {
+    const next = cloneEffective()
+    next.roomOrder = [...roomIds]
+    dirtyState.value = next
+  }
+
   function discardChanges(): void {
     // P2-9 — only clears the store's dirtyState. The active i18n locale
     // is reverted by SettingsModal's onDiscard handler, which captures a
@@ -93,36 +158,101 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   async function loadFromServer(): Promise<void> {
-    phase.value = 'loading'
-    error.value = null
-    try {
-      const result = await getSettings()
-      serverState.value = result.settings
-      dirtyState.value = null
-      phase.value = 'idle'
-    } catch (err) {
-      error.value = err as ApiError
-      phase.value = 'error'
+    if (loadPromise !== null) return loadPromise
+    const loadStartedAtRevision = serverStateRevision
+    if (phase.value !== 'saving') {
+      phase.value = 'loading'
     }
+    error.value = null
+    loadPromise = (async () => {
+      try {
+        const result = await getSettings()
+        if (serverStateRevision === loadStartedAtRevision) {
+          replaceServerState(result.settings)
+          reconcileDirtyWithServer()
+        }
+        if (phase.value === 'loading') {
+          phase.value = 'idle'
+        }
+      } catch (err) {
+        if (serverStateRevision === loadStartedAtRevision) {
+          error.value = err as ApiError
+          if (phase.value === 'loading') {
+            phase.value = 'error'
+          }
+        }
+      } finally {
+        loadPromise = null
+      }
+    })()
+    return loadPromise
+  }
+
+  async function saveOnly(): Promise<void> {
+    return enqueueSettingsWrite(async () => {
+      const savedDirty = snapshotDirtyState()
+      if (savedDirty === null) return
+      phase.value = 'saving'
+      error.value = null
+      try {
+        const result = await putSettings({ settings: savedDirty })
+        replaceServerState(result.settings)
+        if (settingsEqual(dirtyState.value, savedDirty)) {
+          dirtyState.value = null
+        } else {
+          reconcileDirtyWithServer()
+        }
+        phase.value = 'idle'
+      } catch (err) {
+        error.value = err as ApiError
+        phase.value = 'error'
+        // Re-throw so the modal can keep itself open and the test can assert.
+        throw err
+      }
+    })
+  }
+
+  async function saveRoomOrder(roomIds: string[]): Promise<void> {
+    if (serverState.value === null) return
+
+    const previousDirty = snapshotDirtyState()
+    const previousRoomOrder = previousDirty?.roomOrder ?? serverState.value.roomOrder
+    setRoomOrder(roomIds)
+    const optimisticDirty = snapshotDirtyState()
+
+    return enqueueSettingsWrite(async () => {
+      if (serverState.value === null) return
+      phase.value = 'saving'
+      error.value = null
+      const next = cloneSettings(serverState.value)
+      next.roomOrder = [...roomIds]
+
+      try {
+        const result = await putSettings({ settings: next })
+        replaceServerState(result.settings)
+        if (settingsEqual(dirtyState.value, optimisticDirty)) {
+          dirtyState.value = withRoomOrder(previousDirty, result.settings.roomOrder)
+        } else {
+          replaceDirtyRoomOrder(result.settings.roomOrder)
+        }
+        reconcileDirtyWithServer()
+        phase.value = 'idle'
+      } catch (err) {
+        if (settingsEqual(dirtyState.value, optimisticDirty)) {
+          dirtyState.value = withRoomOrder(previousDirty, previousRoomOrder)
+        } else {
+          replaceDirtyRoomOrder(previousRoomOrder)
+        }
+        reconcileDirtyWithServer()
+        error.value = err as ApiError
+        phase.value = 'error'
+        throw err
+      }
+    })
   }
 
   async function saveAndReanalyze(): Promise<void> {
-    if (dirtyState.value === null) return
-    phase.value = 'saving'
-    error.value = null
-    const next = dirtyState.value
-    try {
-      const result = await putSettings({ settings: next })
-      serverState.value = result.settings
-      dirtyState.value = null
-      phase.value = 'idle'
-    } catch (err) {
-      error.value = err as ApiError
-      phase.value = 'error'
-      // Re-throw so the modal can keep itself open and the test can assert.
-      throw err
-    }
-
+    await saveOnly()
     // Trigger a fresh analyze so the dashboard preview reflects the new
     // settings. Runs OUTSIDE the save try/catch — a failed re-analyze is
     // the analyze store's concern (surfaced via the existing error UI in
@@ -142,8 +272,13 @@ export const useSettingsStore = defineStore('settings', () => {
     setCardPack,
     setSection,
     setUiLanguage,
+    setRoomOrder,
+    snapshotDirtyState,
+    restoreDirtyState,
     discardChanges,
     loadFromServer,
+    saveOnly,
+    saveRoomOrder,
     saveAndReanalyze,
   }
 })

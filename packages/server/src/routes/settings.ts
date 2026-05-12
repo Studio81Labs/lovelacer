@@ -28,6 +28,7 @@ const PutBodySchema = z.object({
     cardPack: z.enum(SUPPORTED_CARD_PACKS),
     sections: SectionsSchema,
     uiLanguage: z.enum(SUPPORTED_UI_LANGUAGES).optional(),
+    roomOrder: z.array(z.string()).optional(),
   }),
 })
 
@@ -69,6 +70,7 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (
         cardPack: data.cardPack,
         sections: data.sections,
         ...(data.uiLanguage !== undefined && { uiLanguage: data.uiLanguage }),
+        ...(data.roomOrder !== undefined && { roomOrder: data.roomOrder }),
       }
       opts.settings.save(next)
       return reply.code(200).send({ settings: opts.settings.get() })
