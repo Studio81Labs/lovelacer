@@ -221,6 +221,47 @@ describe('RoomList', () => {
     expect(wrapper.emitted('reorder')?.[0]).toEqual([['bedroom', 'living_room', 'kitchen']])
   })
 
+  it('clears the draft order when dropping back on the source row', async () => {
+    const rooms = [
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+      room({ id: 'living_room', displayName: 'Living Room' }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['kitchen', 'bedroom', 'living_room'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const dragStore = new Map<string, string>()
+    const dataTransfer = {
+      effectAllowed: '',
+      dropEffect: '',
+      setData: (key: string, value: string) => dragStore.set(key, value),
+      getData: (key: string) => dragStore.get(key) ?? '',
+      setDragImage: vi.fn(),
+    }
+    const sourceHandle = wrapper.findAll('[data-testid="room-drag-handle"]')[2]!
+
+    await sourceHandle.trigger('dragstart', { dataTransfer })
+    await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('dragover', { dataTransfer })
+
+    expect(wrapper.findAll('[data-testid="room-name"]').map((row) => row.text())).toEqual([
+      'Living Room',
+      'Kitchen',
+      'Bedroom',
+    ])
+
+    await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('drop', { dataTransfer })
+
+    expect(wrapper.emitted('reorder')).toBeUndefined()
+    expect(wrapper.findAll('[data-testid="room-name"]').map((row) => row.text())).toEqual([
+      'Kitchen',
+      'Bedroom',
+      'Living Room',
+    ])
+  })
+
   it('clears the draft order when dragging is cancelled before drop', async () => {
     const rooms = [
       room({ id: 'kitchen', displayName: 'Kitchen' }),
@@ -280,7 +321,7 @@ describe('RoomList', () => {
       dataTransfer,
     })
     await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('dragover', { dataTransfer })
-    await wrapper.findAll('[data-testid="room-row"]')[0]!.trigger('drop', { dataTransfer })
+    await wrapper.findAll('[data-testid="room-row"]')[1]!.trigger('drop', { dataTransfer })
 
     expect(wrapper.emitted('reorder')?.[0]).toEqual([['living_room', 'kitchen', 'bedroom']])
   })

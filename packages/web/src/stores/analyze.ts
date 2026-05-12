@@ -30,9 +30,7 @@ export const useAnalyzeStore = defineStore('analyze', () => {
       phase.value = 'ready'
     } catch (err) {
       error.value = err as ApiError
-      if (preview.value === null) {
-        phase.value = 'error'
-      }
+      phase.value = 'error'
     }
   }
 

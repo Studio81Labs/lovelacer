@@ -121,7 +121,7 @@ describe('useAnalyzeStore', () => {
     expect(store.preview).toEqual(refreshed)
   })
 
-  it('refreshPreview keeps the existing ready preview visible on failure', async () => {
+  it('refreshPreview keeps the existing preview but marks it stale on failure', async () => {
     const apiErr: ApiError = { error: 'preview_failed', message: 'nope' }
     vi.mocked(postPreview).mockRejectedValueOnce(apiErr)
     const store = useAnalyzeStore()
@@ -129,7 +129,7 @@ describe('useAnalyzeStore', () => {
 
     await store.refreshPreview()
 
-    expect(store.phase).toBe('ready')
+    expect(store.phase).toBe('error')
     expect(store.preview).toEqual(mockPreview)
     expect(store.error).toEqual(apiErr)
   })

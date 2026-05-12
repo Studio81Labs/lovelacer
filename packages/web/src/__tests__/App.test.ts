@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { createI18n } from 'vue-i18n'
 import App from '../App.vue'
+import ApplyBar from '../components/ApplyBar.vue'
 import RoomList from '../components/RoomList.vue'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useOverridesStore } from '../stores/overrides.js'
@@ -549,6 +550,56 @@ describe('App integration', () => {
     resolvePreview(orderedPreview)
     await flushPromises()
     expect(postPreview).toHaveBeenCalled()
+  })
+
+  it('prevents applying a stale preview when room-order preview refresh fails', async () => {
+    const orderedPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'bedroom',
+          haAreaId: 'bedroom',
+          displayName: 'Bedroom',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+    }
+    const savedSettings: Settings = {
+      ...defaultSettings,
+      roomOrder: ['bedroom', 'kitchen'],
+    }
+    vi.mocked(putSettings).mockResolvedValueOnce({ settings: savedSettings })
+    vi.mocked(postPreview).mockRejectedValueOnce({
+      error: 'preview_failed',
+      message: 'refresh failed',
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    analyze.$patch({ phase: 'ready', preview: orderedPreview })
+    await wrapper.vm.$nextTick()
+
+    wrapper.findComponent(RoomList).vm.$emit('reorder', ['bedroom', 'kitchen'])
+    await flushPromises()
+
+    expect(analyze.phase).toBe('error')
+    expect(analyze.preview).toEqual(orderedPreview)
+    expect(wrapper.findComponent(ApplyBar).exists()).toBe(false)
   })
 
   it('bulk-assigns 3 misc entities and saves through OverridesBar', async () => {

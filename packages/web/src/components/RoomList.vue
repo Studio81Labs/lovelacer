@@ -119,12 +119,16 @@ function onDrop(targetRoomId: string, event: DragEvent): void {
   event.preventDefault()
   const sourceRoomId = draggedRoomId.value ?? event.dataTransfer?.getData('text/plain') ?? ''
   draggedRoomId.value = null
+  if (sourceRoomId === targetRoomId) {
+    draftRoomOrder.value = null
+    return
+  }
   if (draftRoomOrder.value !== null) {
     dropCommitted.value = true
     emit('reorder', draftRoomOrder.value)
     return
   }
-  if (sourceRoomId === '' || sourceRoomId === targetRoomId) return
+  if (sourceRoomId === '') return
 
   const next = moveRoom(orderedRooms.value, sourceRoomId, targetRoomId, getDropPlacement(event))
   if (next === null) return
