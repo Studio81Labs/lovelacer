@@ -13,6 +13,7 @@
 ### Task 1: Persist Settings Shape
 
 **Files:**
+
 - Modify: `packages/shared/src/types.ts`
 - Modify: `packages/web/src/api/types.ts`
 - Modify: `packages/server/src/storage/settings-store.ts`
@@ -43,6 +44,7 @@ Expected: PASS.
 ### Task 2: Render Ordered, Draggable Rooms
 
 **Files:**
+
 - Modify: `packages/web/src/components/RoomList.vue`
 - Test: `packages/web/src/__tests__/components/RoomList.test.ts`
 - Modify: `packages/web/src/locales/en.json`
@@ -72,6 +74,7 @@ Expected: PASS.
 ### Task 3: Wire App Persistence
 
 **Files:**
+
 - Modify: `packages/web/src/stores/settings.ts`
 - Test: `packages/web/src/__tests__/stores/settings.test.ts`
 - Modify: `packages/web/src/App.vue`
@@ -100,6 +103,7 @@ Expected: PASS.
 ### Task 4: Final Verification
 
 **Files:**
+
 - All changed files.
 
 - [ ] **Step 1: Typecheck**

@@ -140,11 +140,7 @@ describe('RoomList', () => {
       dataTransfer,
     })
 
-    expect(dataTransfer.setDragImage).toHaveBeenCalledWith(
-      row,
-      24,
-      14,
-    )
+    expect(dataTransfer.setDragImage).toHaveBeenCalledWith(row, 24, 14)
     wrapper.unmount()
   })
 
