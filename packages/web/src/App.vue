@@ -140,13 +140,18 @@ async function saveRoomOrder(roomIds: string[]): Promise<void> {
   pendingRoomOrder = [...roomIds]
   if (roomOrderSaveInFlight) return
   roomOrderSaveInFlight = true
+  let roomOrderNeedsPreviewRefresh = false
   try {
     while (pendingRoomOrder !== null) {
       const nextRoomOrder = pendingRoomOrder
       pendingRoomOrder = null
       const saved = await persistRoomOrder(nextRoomOrder)
-      if (saved && pendingRoomOrder === null) {
+      if (saved) {
+        roomOrderNeedsPreviewRefresh = true
+      }
+      if (roomOrderNeedsPreviewRefresh && pendingRoomOrder === null) {
         await analyze.refreshPreview()
+        roomOrderNeedsPreviewRefresh = false
       }
     }
   } catch {

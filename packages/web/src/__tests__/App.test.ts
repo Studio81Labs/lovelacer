@@ -575,6 +575,85 @@ describe('App integration', () => {
     expect(postPreview).toHaveBeenCalledTimes(1)
   })
 
+  it('refreshes the saved room order when a later queued save fails', async () => {
+    const orderedPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'bedroom',
+          haAreaId: 'bedroom',
+          displayName: 'Bedroom',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'living_room',
+          haAreaId: 'living_room',
+          displayName: 'Living Room',
+          entityCount: 0,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+    }
+    const firstSettings: Settings = {
+      ...defaultSettings,
+      roomOrder: ['bedroom', 'kitchen', 'living_room'],
+    }
+    const latestSettings: Settings = {
+      ...defaultSettings,
+      roomOrder: ['living_room', 'bedroom', 'kitchen'],
+    }
+    let resolveFirstSave: (value: { settings: Settings }) => void = () => {}
+    vi.mocked(putSettings)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirstSave = resolve
+        }),
+      )
+      .mockRejectedValueOnce({
+        error: 'storage_error',
+        message: 'disk full',
+      })
+    vi.mocked(postPreview).mockResolvedValueOnce(orderedPreview)
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    const settings = useSettingsStore()
+    analyze.$patch({ phase: 'ready', preview: orderedPreview })
+    await wrapper.vm.$nextTick()
+    vi.mocked(putSettings).mockClear()
+    vi.mocked(postPreview).mockClear()
+
+    wrapper.findComponent(RoomList).vm.$emit('reorder', ['bedroom', 'kitchen', 'living_room'])
+    await Promise.resolve()
+    wrapper.findComponent(RoomList).vm.$emit('reorder', ['living_room', 'bedroom', 'kitchen'])
+    await Promise.resolve()
+
+    resolveFirstSave({ settings: firstSettings })
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledTimes(2)
+    expect(putSettings).toHaveBeenNthCalledWith(1, { settings: firstSettings })
+    expect(putSettings).toHaveBeenNthCalledWith(2, { settings: latestSettings })
+    expect(settings.effective.roomOrder).toEqual(['bedroom', 'kitchen', 'living_room'])
+    expect(postPreview).toHaveBeenCalledTimes(1)
+  })
+
   it('keeps the ready room list visible while room-order preview refresh is in flight', async () => {
     const orderedPreview: PreviewOutput = {
       ...mockPreview,
