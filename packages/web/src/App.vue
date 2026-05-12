@@ -35,7 +35,7 @@ const onboarding = useOnboardingStore()
 const i18n = useI18nStore()
 const settingsOpen = ref(false)
 const roomOrderDraftResetKey = ref(0)
-let roomOrderSaveInFlight = false
+const roomOrderSaveInFlight = ref(false)
 let pendingRoomOrder: string[] | null = null
 
 // P2-9 — post-load reconciliation watcher. When the settings store
@@ -139,8 +139,8 @@ async function persistRoomOrder(roomIds: string[]): Promise<boolean> {
 
 async function saveRoomOrder(roomIds: string[]): Promise<void> {
   pendingRoomOrder = [...roomIds]
-  if (roomOrderSaveInFlight) return
-  roomOrderSaveInFlight = true
+  if (roomOrderSaveInFlight.value) return
+  roomOrderSaveInFlight.value = true
   let roomOrderNeedsPreviewRefresh = false
   try {
     while (pendingRoomOrder !== null) {
@@ -167,7 +167,7 @@ async function saveRoomOrder(roomIds: string[]): Promise<void> {
     // Stores keep phase/error for the UI; avoid an unhandled promise
     // rejection from a background reorder save.
   } finally {
-    roomOrderSaveInFlight = false
+    roomOrderSaveInFlight.value = false
   }
 }
 
@@ -311,7 +311,7 @@ watch(
       <HiddenEntitiesPanel :hidden-entities="analyze.preview.hidden ?? []" />
       <OverridesBar />
       <DashboardPreview :config="analyze.preview.config" />
-      <ApplyBar v-if="!analyze.isRefreshingPreview" />
+      <ApplyBar v-if="!roomOrderSaveInFlight && !analyze.isRefreshingPreview" />
       <SuggestionsPanel :suggestions="analyze.preview.suggestions" />
     </section>
   </main>

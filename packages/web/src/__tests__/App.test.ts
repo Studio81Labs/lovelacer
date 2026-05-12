@@ -760,8 +760,13 @@ describe('App integration', () => {
       ...defaultSettings,
       roomOrder: ['bedroom', 'kitchen'],
     }
+    let resolveSave: (value: { settings: Settings }) => void = () => {}
     let resolvePreview: (preview: PreviewOutput) => void = () => {}
-    vi.mocked(putSettings).mockResolvedValueOnce({ settings: savedSettings })
+    vi.mocked(putSettings).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSave = resolve
+      }),
+    )
     vi.mocked(postPreview).mockReturnValueOnce(
       new Promise((resolve) => {
         resolvePreview = resolve
@@ -779,6 +784,15 @@ describe('App integration', () => {
     await wrapper.vm.$nextTick()
 
     wrapper.findComponent(RoomList).vm.$emit('reorder', ['bedroom', 'kitchen'])
+    await Promise.resolve()
+
+    expect(analyze.phase).toBe('ready')
+    expect(analyze.isRefreshingPreview).toBe(false)
+    expect(wrapper.findComponent(RoomList).exists()).toBe(true)
+    expect(wrapper.findComponent(ApplyBar).exists()).toBe(false)
+    expect(postPreview).not.toHaveBeenCalled()
+
+    resolveSave({ settings: savedSettings })
     await flushPromises()
 
     expect(analyze.phase).toBe('ready')
