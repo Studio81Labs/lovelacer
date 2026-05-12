@@ -112,6 +112,30 @@ describe('SettingsModal', () => {
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
+  it('keeps the modal open when edits are made while save is in flight', async () => {
+    let resolveSave: (value: { settings: typeof DEFAULT_SETTINGS }) => void = () => {}
+    vi.mocked(putSettings).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSave = resolve
+      }),
+    )
+    const wrapper = mountModal()
+    const store = useSettingsStore()
+    store.setLanguage('cs')
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('[data-testid="settings-save"]').trigger('click')
+    await Promise.resolve()
+    await wrapper.find('[data-testid="settings-language"]').setValue('en')
+    resolveSave({ settings: { ...DEFAULT_SETTINGS, language: 'cs' } })
+    await flushPromises()
+
+    expect(vi.mocked(store.saveAndReanalyze)).toHaveBeenCalled()
+    expect(wrapper.emitted('close')).toBeFalsy()
+    expect(store.hasDirty).toBe(true)
+    expect(store.effective.language).toBe('en')
+  })
+
   it('Discard button click clears dirty state', async () => {
     const wrapper = mountModal()
     const store = useSettingsStore()

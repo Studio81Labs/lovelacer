@@ -83,7 +83,9 @@ function requestClose(): void {
 async function onSave(): Promise<void> {
   try {
     await store.saveAndReanalyze()
-    emit('close')
+    if (!store.hasDirty) {
+      emit('close')
+    }
   } catch {
     // Store already set phase=error and stashed the ApiError. Modal
     // stays open with dirty state preserved for retry.
