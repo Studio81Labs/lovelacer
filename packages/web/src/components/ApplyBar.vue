@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, watch } from 'vue'
+import { computed } from 'vue'
 import { I18nT, useI18n } from 'vue-i18n'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useApplyStore } from '../stores/apply.js'
@@ -9,35 +9,10 @@ const { t } = useI18n()
 const analyze = useAnalyzeStore()
 const apply = useApplyStore()
 
-let resetTimer: ReturnType<typeof setTimeout> | null = null
-
-function clearTimer() {
-  if (resetTimer !== null) {
-    clearTimeout(resetTimer)
-    resetTimer = null
-  }
-}
-
 function startOver() {
-  clearTimer()
   apply.reset()
   analyze.reset()
 }
-
-// 5s auto-dismiss after success, per spec. Clearing the timer on
-// unmount avoids `apply.reset()` firing against a stale store if the
-// component is destroyed while the timer is pending.
-watch(
-  () => apply.phase,
-  (phase) => {
-    clearTimer()
-    if (phase === 'success') {
-      resetTimer = setTimeout(startOver, 5000)
-    }
-  },
-)
-
-onUnmounted(clearTimer)
 
 function applyClicked() {
   if (analyze.preview === null) return

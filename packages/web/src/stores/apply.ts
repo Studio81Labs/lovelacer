@@ -17,16 +17,21 @@ export const useApplyStore = defineStore('apply', () => {
   const phase = ref<Phase>('idle')
   const result = ref<ApplyResult | null>(null)
   const error = ref<ApiError | null>(null)
+  let requestVersion = 0
 
   async function apply(input: ApplyInput) {
+    const version = ++requestVersion
     phase.value = 'applying'
     error.value = null
     try {
       const fetchInput: PostApplyInput = { config: input.config }
       if (input.snapshot !== undefined) fetchInput.snapshot = input.snapshot
-      result.value = await postApply(fetchInput)
+      const applyResult = await postApply(fetchInput)
+      if (version !== requestVersion) return
+      result.value = applyResult
       phase.value = 'success'
     } catch (err) {
+      if (version !== requestVersion) return
       error.value = err as ApiError
       result.value = null
       phase.value = 'error'
@@ -34,6 +39,7 @@ export const useApplyStore = defineStore('apply', () => {
   }
 
   function reset() {
+    requestVersion += 1
     phase.value = 'idle'
     result.value = null
     error.value = null

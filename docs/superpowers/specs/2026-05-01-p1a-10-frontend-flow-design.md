@@ -108,14 +108,14 @@ If `config.views` is empty (degenerate — never happens in production since hom
 
 Bound to `applyStore.phase` + `applyStore.error` + `applyStore.result`. Four states:
 
-| Phase      | Render                                                                                                                                                                                                                                 |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `idle`     | Big "Apply to Home Assistant" button. Click dispatches `applyStore.apply(analyzeStore.preview.config)`.                                                                                                                                |
-| `applying` | Same button, disabled, "Applying…" label.                                                                                                                                                                                              |
-| `success`  | Green banner: "Dashboard `lovelacer-home` created" (or "updated" if `result.created === false`). "Done — start over" button → calls `analyzeStore.reset()` + `applyStore.reset()`. Auto-dismisses after 5s with the same reset effect. |
-| `error`    | Red banner with structured error message (see Error handling). "Retry" button re-dispatches `apply(config)` with the same cached config.                                                                                               |
+| Phase      | Render                                                                                                                                                                                                                                                         |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `idle`     | Big "Apply to Home Assistant" button. Click dispatches `applyStore.apply(analyzeStore.preview.config)`.                                                                                                                                                        |
+| `applying` | Same button, disabled, "Applying…" label.                                                                                                                                                                                                                      |
+| `success`  | Green banner: "Dashboard `lovelacer-home` created" (or "updated" if `result.created === false`). "Done — start over" button → calls `analyzeStore.reset()` + `applyStore.reset()`. The analyzed preview remains visible until the user explicitly starts over. |
+| `error`    | Red banner with structured error message (see Error handling). "Retry" button re-dispatches `apply(config)` with the same cached config.                                                                                                                       |
 
-When the success auto-dismiss fires, the page returns to the initial "click Analyze" state since both stores reset. The user can re-analyze immediately.
+When the user clicks "Done — start over", the page returns to the initial "click Analyze" state since both stores reset. The user can re-analyze immediately.
 
 ### 7. `App.vue`
 
@@ -492,21 +492,21 @@ No backend changes. The server's `/api/analyze`, `/api/preview`, `/api/apply` al
 - **Page flow shape (Q1):** Single page with sections appearing as state advances. No router, no wizard, no tabs.
 - **API call count (Q2):** Two calls — `/api/preview` (returns analyze output + config) then `/api/apply` with cached config. Stateless apply mode.
 - **Preview UI shape (Q3):** Pill cards with Iconify icons rendering each view's `title` + `icon`.
-- **Apply success UX (Q4):** Banner + auto-reset after 5s. User can re-analyze freely.
+- **Apply success UX (Q4):** Banner stays with the analyzed preview. User can explicitly start over or click Analyze again.
 - **Pinia store structure (Q5):** Two stores (`analyzeStore`, `applyStore`), decoupled at the import level, wired together by the component layer.
 
 ## Risks
 
 - **Iconify CDN at runtime.** `@iconify/vue` fetches MDI icons lazily from `api.iconify.design` by default. In an offline HA install this would fail to render icons. Mitigation: bundle the MDI icon set statically (`@iconify-json/mdi` package + `addCollection` at startup). Adds ~50 KB gzip but eliminates the CDN dependency. Decided in implementation; default to bundled.
 - **API type drift.** The locally-defined `api/types.ts` can fall out of sync with the server's pipeline output. Mitigation: P1b extracts a shared `@lovelacer/api-types` package. For P1a, the snapshot tests on the server side catch shape changes; the frontend type errors caught during `pnpm typecheck` flag any drift in fields the components use.
-- **Reset timing.** The 5-second auto-dismiss timer could surprise a user who's reading the success banner. Mitigation: the "Done — start over" button is always visible during success; if the user dismisses manually, the timer is cleared. Acceptable for P1a alpha.
+- **Reset timing.** Reset is explicit-only. The "Done — start over" button is always visible during success, and no timer clears the analyzed preview.
 - **Re-analyze while applying.** If the user clicks Analyze while `applyStore.phase === 'applying'`, the store resets analyze state but apply is still in flight. Mitigation: AnalyzeButton disables itself when `applyStore.phase === 'applying'` (component reads both stores).
 
 ## Acceptance
 
 P1a-10 closes when:
 
-- [ ] `npm run dev` against a running server (P1a-8) renders the full flow: Analyze → Review → Apply → success banner → auto-reset.
+- [ ] `npm run dev` against a running server (P1a-8) renders the full flow: Analyze → Review → Apply → success banner → explicit start-over.
 - [ ] All ~23 unit tests passing.
 - [ ] `pnpm typecheck`, `pnpm test`, `pnpm format:check`, `pnpm lint` clean across the whole workspace.
 - [ ] No real-HA integration test (P1a-11 owns that).

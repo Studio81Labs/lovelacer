@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAnalyzeStore } from '../../stores/analyze.js'
+import { useApplyStore } from '../../stores/apply.js'
 import type { ApiError, PreviewOutput } from '../../api/types.js'
 
 vi.mock('../../api/client.js', () => ({
@@ -63,6 +64,22 @@ describe('useAnalyzeStore', () => {
     expect(store.error).toBeNull()
   })
 
+  it('clears stale apply success when analyze() produces a fresh preview', async () => {
+    vi.mocked(postPreview).mockResolvedValueOnce(mockPreview)
+    const store = useAnalyzeStore()
+    const apply = useApplyStore()
+    apply.$patch({
+      phase: 'success',
+      result: { ok: true, urlPath: 'lovelacer-home', created: false },
+    })
+
+    await store.analyze()
+
+    expect(store.preview).toEqual(mockPreview)
+    expect(apply.phase).toBe('idle')
+    expect(apply.result).toBeNull()
+  })
+
   it('error path: loading → error, leaves preview null', async () => {
     const apiErr: ApiError = { error: 'ha_unavailable', message: 'down' }
     vi.mocked(postPreview).mockRejectedValueOnce(apiErr)
@@ -121,6 +138,27 @@ describe('useAnalyzeStore', () => {
     expect(store.phase).toBe('ready')
     expect(store.isRefreshingPreview).toBe(false)
     expect(store.preview).toEqual(refreshed)
+  })
+
+  it('clears stale apply success when refreshPreview() produces a fresh preview', async () => {
+    const refreshed: PreviewOutput = {
+      ...mockPreview,
+      summary: { entityCount: 12, roomCount: 2, miscCount: 0 },
+    }
+    vi.mocked(postPreview).mockResolvedValueOnce(refreshed)
+    const store = useAnalyzeStore()
+    const apply = useApplyStore()
+    store.$patch({ phase: 'ready', preview: mockPreview })
+    apply.$patch({
+      phase: 'success',
+      result: { ok: true, urlPath: 'lovelacer-home', created: false },
+    })
+
+    await store.refreshPreview()
+
+    expect(store.preview).toEqual(refreshed)
+    expect(apply.phase).toBe('idle')
+    expect(apply.result).toBeNull()
   })
 
   it('refreshPreview keeps the existing preview but marks it stale on failure', async () => {
