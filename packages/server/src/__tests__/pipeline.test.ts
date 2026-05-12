@@ -9,6 +9,7 @@ import type {
   HaFloorRegistryEntry,
 } from '@lovelacer/shared'
 import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
+import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
 import { fixtureToHaRegistries } from '../../../../tests/fixtures/_builder/index.js'
 import { runAnalyze, runApply, runPreview } from '../pipeline.js'
 import { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
@@ -48,6 +49,17 @@ function makeHa(connected = true): HaClient {
   const ha = fixtureToHaRegistries(englishCluttered)
   return {
     isConnected: () => connected,
+    getEntityRegistry: vi.fn(async () => ha.entities),
+    getDeviceRegistry: vi.fn(async () => ha.devices),
+    getAreaRegistry: vi.fn(async () => ha.areas),
+    getFloorRegistry: vi.fn(async () => ha.floors),
+  } as unknown as HaClient
+}
+
+function makeCzechHa(): HaClient {
+  const ha = fixtureToHaRegistries(czechTidy)
+  return {
+    isConnected: () => true,
     getEntityRegistry: vi.fn(async () => ha.entities),
     getDeviceRegistry: vi.fn(async () => ha.devices),
     getAreaRegistry: vi.fn(async () => ha.areas),
@@ -301,6 +313,20 @@ describe('runAnalyze', () => {
 })
 
 describe('runPreview', () => {
+  it('keeps default generated room views sorted by English title when roomOrder is unset', async () => {
+    const result = await runPreview(
+      makeCzechHa(),
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+    )
+    const roomTitles = result.config.views.slice(1).map((view) => view.title)
+
+    expect(roomTitles).toEqual([...roomTitles].sort((a, b) => a.localeCompare(b, 'en')))
+    expect(roomTitles.indexOf('Bedroom')).toBeLessThan(roomTitles.indexOf('Kitchen'))
+  })
+
   it('orders generated room views by settings.roomOrder', async () => {
     const fake = makeFakeHa()
     const result = await runPreview(

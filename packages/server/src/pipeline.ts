@@ -378,6 +378,7 @@ interface PipelineState {
   floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
   /** P2-6 — per-section toggles read from SettingsStore at the top of runFullPipeline. */
   sectionFlags: SettingsSections
+  hasRoomOrder: boolean
 }
 
 /**
@@ -612,6 +613,7 @@ async function runFullPipeline(
     },
     floorAssignments,
     sectionFlags: cfg.sections,
+    hasRoomOrder: (cfg.roomOrder?.length ?? 0) > 0,
   }
 }
 
@@ -740,7 +742,7 @@ export async function runPreview(
     buildRoomViews(dashboardGroupings),
   )
   const config = await timedSyncStage(options, 'build_lovelace_config', () =>
-    buildLovelaceConfig({ home, rooms, sortRooms: false }),
+    buildLovelaceConfig({ home, rooms, ...(state.hasRoomOrder ? { sortRooms: false } : {}) }),
   )
 
   // Build the flat assignments list the diff expects: every visible
