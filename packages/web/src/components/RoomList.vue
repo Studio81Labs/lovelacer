@@ -50,6 +50,7 @@ const filteredRooms = computed(() =>
 const canReorder = computed(
   () => !hasSearch.value && props.readOnly !== true && orderedRooms.value.length > 1,
 )
+type DropPlacement = 'before' | 'after'
 
 watch(
   () => props.roomOrder,
@@ -105,7 +106,12 @@ function onDragOver(targetRoomId: string, event: DragEvent): void {
 
   const sourceRoomId = draggedRoomId.value ?? event.dataTransfer?.getData('text/plain') ?? ''
   if (sourceRoomId === '' || sourceRoomId === targetRoomId) return
-  draftRoomOrder.value = moveRoomBefore(orderedRooms.value, sourceRoomId, targetRoomId)
+  draftRoomOrder.value = moveRoom(
+    orderedRooms.value,
+    sourceRoomId,
+    targetRoomId,
+    getDropPlacement(event),
+  )
 }
 
 function onDrop(targetRoomId: string, event: DragEvent): void {
@@ -120,7 +126,7 @@ function onDrop(targetRoomId: string, event: DragEvent): void {
   }
   if (sourceRoomId === '' || sourceRoomId === targetRoomId) return
 
-  const next = moveRoomBefore(orderedRooms.value, sourceRoomId, targetRoomId)
+  const next = moveRoom(orderedRooms.value, sourceRoomId, targetRoomId, getDropPlacement(event))
   if (next === null) return
   dropCommitted.value = true
   emit('reorder', next)
@@ -143,10 +149,20 @@ function onDragEnd(): void {
   draggedRoomId.value = null
 }
 
-function moveRoomBefore(
+function getDropPlacement(event: DragEvent): DropPlacement {
+  const row = (event.currentTarget as HTMLElement | null)?.closest(
+    '[data-testid="room-row"]',
+  ) as HTMLElement | null
+  const rect = row?.getBoundingClientRect()
+  if (rect === undefined || rect.height <= 0) return 'before'
+  return event.clientY > rect.top + rect.height / 2 ? 'after' : 'before'
+}
+
+function moveRoom(
   rooms: AnalyzedRoom[],
   sourceRoomId: string,
   targetRoomId: string,
+  placement: DropPlacement,
 ): string[] | null {
   const roomIds = rooms.map((room) => room.id)
   const sourceIndex = roomIds.indexOf(sourceRoomId)
@@ -157,7 +173,8 @@ function moveRoomBefore(
   const [source] = next.splice(sourceIndex, 1)
   if (source === undefined) return null
   const adjustedTargetIndex = next.indexOf(targetRoomId)
-  next.splice(adjustedTargetIndex, 0, source)
+  const insertIndex = placement === 'after' ? adjustedTargetIndex + 1 : adjustedTargetIndex
+  next.splice(insertIndex, 0, source)
   return next
 }
 

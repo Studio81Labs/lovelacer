@@ -178,6 +178,49 @@ describe('RoomList', () => {
     expect(wrapper.emitted('reorder')).toBeUndefined()
   })
 
+  it('moves a room to the end when dragging over the lower half of the last row', async () => {
+    const rooms = [
+      room({ id: 'kitchen', displayName: 'Kitchen' }),
+      room({ id: 'bedroom', displayName: 'Bedroom' }),
+      room({ id: 'living_room', displayName: 'Living Room' }),
+    ]
+    const wrapper = mount(RoomList, {
+      props: { rooms, roomOrder: ['kitchen', 'bedroom', 'living_room'] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const dragStore = new Map<string, string>()
+    const dataTransfer = {
+      effectAllowed: '',
+      dropEffect: '',
+      setData: (key: string, value: string) => dragStore.set(key, value),
+      getData: (key: string) => dragStore.get(key) ?? '',
+      setDragImage: vi.fn(),
+    }
+    const lastRow = wrapper.findAll('[data-testid="room-row"]')[2]!
+    ;(lastRow.element as HTMLElement).getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        right: 300,
+        bottom: 40,
+        width: 300,
+        height: 40,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect
+
+    await wrapper.findAll('[data-testid="room-drag-handle"]')[0]!.trigger('dragstart', {
+      dataTransfer,
+    })
+    await lastRow.trigger('dragover', { clientY: 30, dataTransfer })
+    await lastRow.trigger('drop', { clientY: 30, dataTransfer })
+
+    expect(wrapper.emitted('reorder')?.[0]).toEqual([['bedroom', 'living_room', 'kitchen']])
+  })
+
   it('clears the draft order when dragging is cancelled before drop', async () => {
     const rooms = [
       room({ id: 'kitchen', displayName: 'Kitchen' }),
