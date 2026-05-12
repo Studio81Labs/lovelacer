@@ -274,6 +274,44 @@ describe('useSettingsStore', () => {
     expect(store.phase).toBe('idle')
   })
 
+  it('ignores stale settings reloads that resolve after an in-flight room order save', async () => {
+    const roomOrderSettings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOrder: ['bedroom', 'kitchen'],
+    }
+    let resolveRoomOrderSave: (value: { settings: Settings }) => void = () => {}
+    let resolveReload: (value: { settings: Settings }) => void = () => {}
+    vi.mocked(getSettings)
+      .mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveReload = resolve
+        }),
+      )
+    vi.mocked(putSettings).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRoomOrderSave = resolve
+      }),
+    )
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    const roomOrderSave = store.saveRoomOrder(['bedroom', 'kitchen'])
+    await Promise.resolve()
+    const reload = store.loadFromServer()
+    await Promise.resolve()
+
+    resolveRoomOrderSave({ settings: roomOrderSettings })
+    await roomOrderSave
+    resolveReload({ settings: DEFAULT_SETTINGS })
+    await reload
+
+    expect(vi.mocked(getSettings)).toHaveBeenCalledTimes(2)
+    expect(store.serverState).toEqual(roomOrderSettings)
+    expect(store.effective.roomOrder).toEqual(['bedroom', 'kitchen'])
+    expect(store.phase).toBe('idle')
+  })
+
   it('serializes room order saves after in-flight modal saves so neither full PUT wins stale', async () => {
     const modalSettings: Settings = {
       ...DEFAULT_SETTINGS,

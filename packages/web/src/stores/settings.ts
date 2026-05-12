@@ -37,6 +37,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const dirtyState = ref<Settings | null>(null)
   let loadPromise: Promise<void> | null = null
   let writePromise: Promise<void> = Promise.resolve()
+  let serverStateRevision = 0
 
   const hasDirty = computed(() => dirtyState.value !== null)
   const effective = computed<Settings>(
@@ -85,6 +86,11 @@ export const useSettingsStore = defineStore('settings', () => {
     if (serverState.value !== null && settingsEqual(dirtyState.value, serverState.value)) {
       dirtyState.value = null
     }
+  }
+
+  function replaceServerState(settings: Settings): void {
+    serverState.value = settings
+    serverStateRevision += 1
   }
 
   async function enqueueSettingsWrite<T>(task: () => Promise<T>): Promise<T> {
@@ -153,17 +159,28 @@ export const useSettingsStore = defineStore('settings', () => {
 
   async function loadFromServer(): Promise<void> {
     if (loadPromise !== null) return loadPromise
-    phase.value = 'loading'
+    const loadStartedAtRevision = serverStateRevision
+    if (phase.value !== 'saving') {
+      phase.value = 'loading'
+    }
     error.value = null
     loadPromise = (async () => {
       try {
         const result = await getSettings()
-        serverState.value = result.settings
-        reconcileDirtyWithServer()
-        phase.value = 'idle'
+        if (serverStateRevision === loadStartedAtRevision) {
+          replaceServerState(result.settings)
+          reconcileDirtyWithServer()
+        }
+        if (phase.value === 'loading') {
+          phase.value = 'idle'
+        }
       } catch (err) {
-        error.value = err as ApiError
-        phase.value = 'error'
+        if (serverStateRevision === loadStartedAtRevision) {
+          error.value = err as ApiError
+          if (phase.value === 'loading') {
+            phase.value = 'error'
+          }
+        }
       } finally {
         loadPromise = null
       }
@@ -179,7 +196,7 @@ export const useSettingsStore = defineStore('settings', () => {
       error.value = null
       try {
         const result = await putSettings({ settings: savedDirty })
-        serverState.value = result.settings
+        replaceServerState(result.settings)
         if (settingsEqual(dirtyState.value, savedDirty)) {
           dirtyState.value = null
         } else {
@@ -212,7 +229,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       try {
         const result = await putSettings({ settings: next })
-        serverState.value = result.settings
+        replaceServerState(result.settings)
         if (settingsEqual(dirtyState.value, optimisticDirty)) {
           dirtyState.value = withRoomOrder(previousDirty, result.settings.roomOrder)
         } else {
