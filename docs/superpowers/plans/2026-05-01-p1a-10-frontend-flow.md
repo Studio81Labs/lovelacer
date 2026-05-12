@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship the single-page Vue 3 + Pinia + Tailwind 4 flow inside `@lovelacer/web` that drives the Phase 1a alpha demo: Analyze → see rooms with confidence summaries → Apply → dashboard appears in HA. Two-call flow (`/api/preview` + `/api/apply` with cached config), two Pinia stores, Iconify pill preview, auto-reset 5s after success.
+**Goal:** Ship the single-page Vue 3 + Pinia + Tailwind 4 flow inside `@lovelacer/web` that drives the Phase 1a alpha demo: Analyze → see rooms with confidence summaries → Apply → dashboard appears in HA. Two-call flow (`/api/preview` + `/api/apply` with cached config), two Pinia stores, Iconify pill preview, and an explicit start-over action after success.
 
 **Architecture:** API layer (`api/client.ts` + `api/types.ts`) is the only place `fetch()` is called; stores and components stay testable without mocking `fetch`. Two decoupled Pinia stores (`analyzeStore` for the preview call, `applyStore` for the apply call) — components wire them together at click time. Six new components (HealthBar, AnalyzeButton, RoomList, MiscBucket, DashboardPreview, ApplyBar) compose in `App.vue` with `v-if` sections that fill in as state advances. Bundled MDI icon set via `@iconify-json/mdi` so the SPA works offline without an Iconify CDN dependency.
 
@@ -1359,42 +1359,17 @@ Create `packages/web/src/components/ApplyBar.vue`:
 
 ```vue
 <script setup lang="ts">
-import { computed, onUnmounted, watch } from 'vue'
+import { computed } from 'vue'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useApplyStore } from '../stores/apply.js'
 
 const analyze = useAnalyzeStore()
 const apply = useApplyStore()
 
-let resetTimer: ReturnType<typeof setTimeout> | null = null
-
-function clearTimer() {
-  if (resetTimer !== null) {
-    clearTimeout(resetTimer)
-    resetTimer = null
-  }
-}
-
 function startOver() {
-  clearTimer()
   apply.reset()
   analyze.reset()
 }
-
-// 5s auto-dismiss after success, per spec. Clearing the timer on
-// unmount avoids `apply.reset()` firing against a stale store if the
-// component is destroyed while the timer is pending.
-watch(
-  () => apply.phase,
-  (phase) => {
-    clearTimer()
-    if (phase === 'success') {
-      resetTimer = setTimeout(startOver, 5000)
-    }
-  },
-)
-
-onUnmounted(clearTimer)
 
 function applyClicked() {
   if (analyze.preview === null) return
@@ -1502,8 +1477,8 @@ feat(web): glue components — HealthBar, AnalyzeButton, MiscBucket, ApplyBar
   either store is in-flight.
 - MiscBucket: collapsible <details> listing the analyze response's
   misc entities. Renders nothing when the array is empty.
-- ApplyBar: idle/applying/success/error states. 5s auto-dismiss timer
-  after success, cleared on unmount or manual Start over. Maps the
+- ApplyBar: idle/applying/success/error states. The analyzed preview
+  remains visible after success until manual Start over. Maps the
   ApiError discriminator to user-facing messages and decides whether
   to surface a Retry button (skipped for ha_unavailable + invalid_config
   per spec — user fixes the underlying condition first).
@@ -1644,7 +1619,7 @@ appears once analyzeStore.phase === 'ready'. Closes P1a-10.
 
 P1a-10 final layer (composition). Phase 1a alpha demo flow now wired
 end-to-end: click Analyze → see rooms with confidence summaries +
-dashboard preview → click Apply → success banner with auto-reset.
+dashboard preview → click Apply → success banner with explicit start-over.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 EOF

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { postPreview } from '../api/client.js'
 import type { ApiError, PreviewOutput } from '../api/types.js'
+import { useApplyStore } from './apply.js'
 
 type Phase = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -11,11 +12,16 @@ export const useAnalyzeStore = defineStore('analyze', () => {
   const error = ref<ApiError | null>(null)
   const isRefreshingPreview = ref(false)
 
+  function setFreshPreview(next: PreviewOutput): void {
+    preview.value = next
+    useApplyStore().reset()
+  }
+
   async function analyze() {
     phase.value = 'loading'
     error.value = null
     try {
-      preview.value = await postPreview()
+      setFreshPreview(await postPreview())
       phase.value = 'ready'
     } catch (err) {
       error.value = err as ApiError
@@ -28,7 +34,7 @@ export const useAnalyzeStore = defineStore('analyze', () => {
     error.value = null
     isRefreshingPreview.value = true
     try {
-      preview.value = await postPreview()
+      setFreshPreview(await postPreview())
       phase.value = 'ready'
     } catch (err) {
       error.value = err as ApiError

@@ -93,6 +93,57 @@ describe('useApplyStore', () => {
     expect(store.error).toBeNull()
   })
 
+  it('reset() ignores a later successful response from an in-flight apply', async () => {
+    let resolveApply!: (value: ApplyResult) => void
+    vi.mocked(postApply).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveApply = resolve
+      }),
+    )
+    const store = useApplyStore()
+
+    const promise = store.apply({ config })
+    expect(store.phase).toBe('applying')
+
+    store.reset()
+    expect(store.phase).toBe('idle')
+
+    resolveApply(mockResult)
+    await promise
+
+    expect(store.phase).toBe('idle')
+    expect(store.result).toBeNull()
+    expect(store.error).toBeNull()
+  })
+
+  it('reset() ignores a later failed response from an in-flight apply', async () => {
+    const apiErr: ApiError = {
+      error: 'ha_apply_failed',
+      step: 'save',
+      message: 'failed at save',
+    }
+    let rejectApply!: (reason: ApiError) => void
+    vi.mocked(postApply).mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectApply = reject
+      }),
+    )
+    const store = useApplyStore()
+
+    const promise = store.apply({ config })
+    expect(store.phase).toBe('applying')
+
+    store.reset()
+    expect(store.phase).toBe('idle')
+
+    rejectApply(apiErr)
+    await promise
+
+    expect(store.phase).toBe('idle')
+    expect(store.result).toBeNull()
+    expect(store.error).toBeNull()
+  })
+
   it('passes snapshot through to postApply when provided', async () => {
     const snapshot = {
       assignments: [{ entityId: 'light.k', roomId: 'kitchen' }],

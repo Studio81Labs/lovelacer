@@ -19,9 +19,7 @@ const label = computed(() =>
 function clickAnalyze() {
   // Reset applyStore before kicking off a new analyze so a stale
   // success banner or error from a prior apply doesn't persist into
-  // the new flow. Without this, ApplyBar's `watch(() => apply.phase)`
-  // doesn't fire on remount (no change), the auto-reset timer never
-  // restarts, and the user is stuck staring at last-time's banner.
+  // the new flow.
   apply.reset()
   void analyze.analyze()
 }
