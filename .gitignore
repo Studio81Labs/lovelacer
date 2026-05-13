@@ -63,3 +63,4 @@ apps/addon/web-dist/
 # OS
 .DS_Store
 .claude/
+.superpowers/
