@@ -70,6 +70,22 @@ describe('RoomList', () => {
     ).toBe(true)
   })
 
+  it('opens the room details row when inline room metadata editing starts', async () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room()] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const details = wrapper.find('details')
+    expect((details.element as HTMLDetailsElement).open).toBe(false)
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect((details.element as HTMLDetailsElement).open).toBe(true)
+    expect(wrapper.find('[data-testid="room-name-input"]').exists()).toBe(true)
+  })
+
   it('emits save-room when inline room metadata is saved', async () => {
     const wrapper = mount(RoomList, {
       props: {
@@ -89,6 +105,31 @@ describe('RoomList', () => {
     expect(wrapper.emitted('save-room')?.[0]).toEqual([
       'kitchen',
       { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+    ])
+  })
+
+  it('prefills and preserves a false show-name-on-card room override', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })],
+        roomOverrides: { kitchen: { showNameOnCard: false } },
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect(
+      (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
+    ).toBe(false)
+
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+
+    expect(wrapper.emitted('save-room')?.[0]).toEqual([
+      'kitchen',
+      { name: 'Kitchen', icon: 'mdi:silverware-fork-knife', showNameOnCard: false },
     ])
   })
 

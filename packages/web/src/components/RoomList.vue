@@ -19,6 +19,7 @@ const props = defineProps<{
   draftResetKey?: number | string | undefined
   diffByRoom?: Record<string, RoomDiffSummary>
   diffByEntityId?: Map<string, EntityDiff>
+  roomOverrides?: Record<string, RoomDisplayOverride>
   /**
    * P2-7 — when true, EntityRow children render in read-only mode
    * (no override dropdowns, no hide toggles). Forwarded as-is.
@@ -28,12 +29,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   reorder: [roomIds: string[]]
-  saveRoom: [roomId: string, override: RoomDisplayOverride]
   'save-room': [roomId: string, override: RoomDisplayOverride]
 }>()
 
 const searchQuery = ref('')
 const editingRoomId = ref<string | null>(null)
+const openRoomIds = ref(new Set<string>())
 const editName = ref('')
 const editIcon = ref('')
 const editShowNameOnCard = ref(true)
@@ -89,9 +90,10 @@ function orderRooms(rooms: AnalyzedRoom[], roomOrder: string[]): AnalyzedRoom[] 
 
 function openRoomEdit(room: AnalyzedRoom): void {
   editingRoomId.value = room.id
+  openRoomIds.value = new Set([...openRoomIds.value, room.id])
   editName.value = room.displayName
   editIcon.value = room.icon
-  editShowNameOnCard.value = true
+  editShowNameOnCard.value = props.roomOverrides?.[room.id]?.showNameOnCard !== false
 }
 
 function saveRoomEdit(roomId: string): void {
@@ -106,6 +108,16 @@ function saveRoomEdit(roomId: string): void {
 function resetRoomEdit(roomId: string): void {
   emit('save-room', roomId, { name: '', icon: '', showNameOnCard: true })
   editingRoomId.value = null
+}
+
+function setRoomOpen(roomId: string, isOpen: boolean): void {
+  const next = new Set(openRoomIds.value)
+  if (isOpen) {
+    next.add(roomId)
+  } else {
+    next.delete(roomId)
+  }
+  openRoomIds.value = next
 }
 
 function onDragStart(roomId: string, event: DragEvent): void {
@@ -287,7 +299,11 @@ function entityIdToFriendly(entityId: string): string {
         @dragover="onDragOver(room.id, $event)"
         @drop.stop="onDrop(room.id, $event)"
       >
-        <details class="group">
+        <details
+          class="group"
+          :open="openRoomIds.has(room.id)"
+          @toggle="setRoomOpen(room.id, ($event.currentTarget as HTMLDetailsElement).open)"
+        >
           <summary
             class="flex cursor-pointer items-center justify-between gap-4 px-5 py-3 hover:bg-stone-50"
           >
