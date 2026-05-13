@@ -59,6 +59,25 @@ describe('buildRoomView — per-room metadata', () => {
     expect(view.path).toBe('other')
     expect(view.title).toBe('Other')
   })
+
+  it('uses room display overrides for title and icon while keeping canonical path', () => {
+    const view = buildRoomView(grouping('kitchen', []), {
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
+    })
+
+    expect(view.title).toBe('Breakfast nook')
+    expect(view.icon).toBe('mdi:coffee')
+    expect(view.path).toBe('kitchen')
+  })
+
+  it('falls back field-by-field when a room display override is partial', () => {
+    const view = buildRoomView(grouping('kitchen', []), {
+      kitchen: { icon: 'mdi:coffee' },
+    })
+
+    expect(view.title).toBe('Kitchen')
+    expect(view.icon).toBe('mdi:coffee')
+  })
 })
 
 describe('buildRoomView — empty groups', () => {

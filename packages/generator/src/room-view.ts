@@ -11,7 +11,7 @@ import type {
   ThermostatCard,
   TileCard,
 } from './lovelace-types.js'
-import { roomIdToDisplay } from './rooms.js'
+import { resolveRoomDisplay, type RoomDisplayOverrides } from './rooms.js'
 
 const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
   lights: 'Lights & Outlets',
@@ -36,8 +36,11 @@ const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
  * Pure function. Preserves the input's entity order within groups and
  * the input's group order within the room (P1a-5 already sorted both).
  */
-export function buildRoomView(grouping: RoomGrouping): RoomView {
-  const display = roomIdToDisplay(grouping.roomId)
+export function buildRoomView(
+  grouping: RoomGrouping,
+  roomOverrides: RoomDisplayOverrides = {},
+): RoomView {
+  const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
   return {
     type: 'sections',
     title: display.title,
@@ -52,8 +55,11 @@ export function buildRoomView(grouping: RoomGrouping): RoomView {
  * (no point producing an empty-sections view that HA renders as a
  * blank page). Preserves input order for non-empty groupings.
  */
-export function buildRoomViews(groupings: RoomGrouping[]): RoomView[] {
-  return groupings.filter((g) => g.groups.length > 0).map((g) => buildRoomView(g))
+export function buildRoomViews(
+  groupings: RoomGrouping[],
+  roomOverrides: RoomDisplayOverrides = {},
+): RoomView[] {
+  return groupings.filter((g) => g.groups.length > 0).map((g) => buildRoomView(g, roomOverrides))
 }
 
 function buildSection(group: DomainGroup): GridSection {

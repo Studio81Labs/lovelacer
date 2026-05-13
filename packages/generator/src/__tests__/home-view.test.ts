@@ -521,6 +521,78 @@ describe('buildActiveRoomsSection', () => {
     expect(cond.card.entity).toBe('binary_sensor.kitchen_motion')
   })
 
+  it('uses room display overrides for active room card names', () => {
+    const view = buildHomeView({
+      entities: [ent('light.kitchen_ceiling')],
+      groupings: [
+        {
+          roomId: 'kitchen',
+          groups: [{ key: 'lights', entities: [ent('light.kitchen_ceiling')] }],
+        },
+      ],
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: null,
+          displayName: 'Kitchen',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      floorAssignments: new Map(),
+      sections: {
+        ...ALL_SECTIONS_ON,
+        welcome: false,
+        quickStats: false,
+        people: false,
+        roomsByFloor: false,
+        scenes: false,
+        cameras: false,
+      },
+      roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+    })
+
+    const card = view.sections[0]!.cards[0] as { card: { name?: string } }
+    expect(card.card.name).toBe('Breakfast nook')
+  })
+
+  it('omits active room card name when showNameOnCard is false', () => {
+    const view = buildHomeView({
+      entities: [ent('light.kitchen_ceiling')],
+      groupings: [
+        {
+          roomId: 'kitchen',
+          groups: [{ key: 'lights', entities: [ent('light.kitchen_ceiling')] }],
+        },
+      ],
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: null,
+          displayName: 'Kitchen',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      floorAssignments: new Map(),
+      sections: {
+        ...ALL_SECTIONS_ON,
+        welcome: false,
+        quickStats: false,
+        people: false,
+        roomsByFloor: false,
+        scenes: false,
+        cameras: false,
+      },
+      roomOverrides: { kitchen: { name: 'Breakfast nook', showNameOnCard: false } },
+    })
+
+    const card = view.sections[0]!.cards[0] as { card: { name?: string } }
+    expect(card.card.name).toBeUndefined()
+  })
+
   it('filters out hidden + disabled candidates', () => {
     // Construct a room with one hidden light and one visible motion sensor.
     // Expected: hidden light excluded from condition; tile uses the motion sensor.

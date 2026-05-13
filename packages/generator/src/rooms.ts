@@ -1,4 +1,4 @@
-import type { CanonicalRoomId } from '@lovelacer/shared'
+import type { CanonicalRoomId, RoomDisplayOverride } from '@lovelacer/shared'
 
 /**
  * Per-canonical-room display metadata used by both home-view and
@@ -12,6 +12,8 @@ export interface RoomDisplay {
   path: string
   icon: string
 }
+
+export type RoomDisplayOverrides = Partial<Record<CanonicalRoomId, RoomDisplayOverride>>
 
 const ROOM_DISPLAY: Record<CanonicalRoomId, RoomDisplay> = {
   kitchen: { title: 'Kitchen', path: 'kitchen', icon: 'mdi:silverware-fork-knife' },
@@ -33,4 +35,24 @@ const ROOM_DISPLAY: Record<CanonicalRoomId, RoomDisplay> = {
 
 export function roomIdToDisplay(roomId: CanonicalRoomId): RoomDisplay {
   return ROOM_DISPLAY[roomId]
+}
+
+export function resolveRoomDisplay(
+  roomId: CanonicalRoomId,
+  overrides: RoomDisplayOverrides = {},
+): RoomDisplay {
+  const base = roomIdToDisplay(roomId)
+  const override = overrides[roomId]
+  return {
+    title: override?.name?.trim() ? override.name.trim() : base.title,
+    path: base.path,
+    icon: override?.icon?.trim() ? override.icon.trim() : base.icon,
+  }
+}
+
+export function shouldShowRoomNameOnCard(
+  roomId: CanonicalRoomId,
+  overrides: RoomDisplayOverrides = {},
+): boolean {
+  return overrides[roomId]?.showNameOnCard !== false
 }
