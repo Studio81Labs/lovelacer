@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 import EntityRow from './EntityRow.vue'
+import RoomIconPicker from './RoomIconPicker.vue'
 import { entityMatchesSearch, normalizeEntitySearch } from '../entity-search.js'
 import type {
   AnalyzedRoom,
@@ -392,11 +393,7 @@ function entityIdToFriendly(entityId: string): string {
               <span class="mb-1 block text-xs font-medium text-stone-600">{{
                 t('roomList.iconLabel')
               }}</span>
-              <input
-                v-model="editIcon"
-                data-testid="room-icon-input"
-                class="w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
-              />
+              <RoomIconPicker v-model="editIcon" />
             </label>
             <label class="flex items-center gap-2 self-end pb-2 text-sm text-stone-700">
               <input

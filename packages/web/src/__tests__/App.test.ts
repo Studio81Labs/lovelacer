@@ -427,7 +427,19 @@ describe('App integration', () => {
 
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
     await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
-    await wrapper.find('[data-testid="room-icon-input"]').setValue('mdi:coffee')
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    await flushPromises()
+    await wrapper.find('[data-testid="room-icon-search"]').setValue('coffee')
+    let coffee = wrapper
+      .findAll('[data-testid="room-icon-option"]')
+      .find((option) => option.text().includes('mdi:coffee'))
+    await vi.waitFor(() => {
+      coffee = wrapper
+        .findAll('[data-testid="room-icon-option"]')
+        .find((option) => option.text().includes('mdi:coffee'))
+      expect(coffee).toBeDefined()
+    })
+    await coffee!.trigger('click')
     await wrapper.find('[data-testid="room-save-button"]').trigger('click')
     await flushPromises()
 

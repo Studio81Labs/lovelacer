@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { Icon } from '@iconify/vue'
 import RoomList from '../../components/RoomList.vue'
@@ -62,9 +62,9 @@ describe('RoomList', () => {
     expect(
       (wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value,
     ).toBe('Kitchen')
-    expect(
-      (wrapper.find('[data-testid="room-icon-input"]').element as HTMLInputElement).value,
-    ).toBe('mdi:silverware-fork-knife')
+    expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain(
+      'mdi:silverware-fork-knife',
+    )
     expect(
       (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
     ).toBe(true)
@@ -98,7 +98,19 @@ describe('RoomList', () => {
 
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
     await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
-    await wrapper.find('[data-testid="room-icon-input"]').setValue('mdi:coffee')
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    await flushPromises()
+    await wrapper.find('[data-testid="room-icon-search"]').setValue('coffee')
+    let coffee = wrapper
+      .findAll('[data-testid="room-icon-option"]')
+      .find((option) => option.text().includes('mdi:coffee'))
+    await vi.waitFor(() => {
+      coffee = wrapper
+        .findAll('[data-testid="room-icon-option"]')
+        .find((option) => option.text().includes('mdi:coffee'))
+      expect(coffee).toBeDefined()
+    })
+    await coffee!.trigger('click')
     await wrapper.find('[data-testid="room-show-name-toggle"]').setValue(false)
     await wrapper.find('[data-testid="room-save-button"]').trigger('click')
 
@@ -151,9 +163,7 @@ describe('RoomList', () => {
     expect(
       (wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value,
     ).toBe('Breakfast nook')
-    expect(
-      (wrapper.find('[data-testid="room-icon-input"]').element as HTMLInputElement).value,
-    ).toBe('mdi:coffee')
+    expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:coffee')
     expect(
       (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
     ).toBe(false)

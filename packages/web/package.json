@@ -13,9 +13,10 @@
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.1.0",
-    "@fontsource/inter": "^5.1.0",
     "@fontsource/instrument-serif": "^5.1.0",
+    "@fontsource/inter": "^5.1.0",
     "@iconify-icons/mdi": "^1.2.48",
+    "@iconify-json/mdi": "^1.2.3",
     "@iconify/vue": "^4.1.2",
     "pinia": "^2.2.4",
     "vue": "^3.5.10",
