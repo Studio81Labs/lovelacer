@@ -75,11 +75,12 @@ describe('RoomList', () => {
     ).toBe(true)
   })
 
-  it('falls back to a default room edit icon when the API omits one', async () => {
+  it('falls back to the canonical room icon when the API omits one', async () => {
     const wrapper = mount(RoomList, {
       props: {
         rooms: [
           room({
+            id: 'living_room',
             displayName: 'Living Room',
             icon: undefined as unknown as string,
           }),
@@ -93,7 +94,37 @@ describe('RoomList', () => {
     await expandFirstRoom(wrapper)
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
 
-    expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:home-outline')
+    expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:sofa')
+  })
+
+  it('opens the icon picker with the canonical fallback room icon selected', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [
+          room({
+            id: 'living_room',
+            displayName: 'Living Room',
+            icon: undefined as unknown as string,
+          }),
+        ],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    await flushPromises()
+
+    let firstOption = wrapper.find('[data-testid="room-icon-option"]')
+    await vi.waitFor(() => {
+      firstOption = wrapper.find('[data-testid="room-icon-option"]')
+      expect(firstOption.exists()).toBe(true)
+    })
+    expect(firstOption.text()).toContain('mdi:sofa')
+    expect(firstOption.attributes('aria-selected')).toBe('true')
   })
 
   it('does not nest the icon picker trigger inside a label', async () => {

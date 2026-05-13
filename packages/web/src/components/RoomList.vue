@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import EntityRow from './EntityRow.vue'
 import RoomIconPicker from './RoomIconPicker.vue'
 import { entityMatchesSearch, normalizeEntitySearch } from '../entity-search.js'
+import { roomIdToIcon } from '../icons.js'
 import type {
   AnalyzedRoom,
   EntityDiff,
@@ -94,7 +95,7 @@ function openRoomEdit(room: AnalyzedRoom): void {
   editingRoomId.value = room.id
   openRoomIds.value = new Set([...openRoomIds.value, room.id])
   editName.value = override?.name ?? room.displayName
-  editIcon.value = normalizeRoomIcon(override?.icon ?? room.icon)
+  editIcon.value = normalizeRoomIcon(override?.icon ?? room.icon, room.id)
   editShowNameOnCard.value = override?.showNameOnCard !== false
 }
 
@@ -245,8 +246,8 @@ function roomIconLabelId(roomId: string): string {
   return `room-icon-label-${roomId}`
 }
 
-function normalizeRoomIcon(icon: string | undefined): string {
-  return icon?.trim() || 'mdi:home-outline'
+function normalizeRoomIcon(icon: string | undefined, roomId: string): string {
+  return icon?.trim() || roomIdToIcon(roomId)
 }
 
 /**
@@ -335,7 +336,7 @@ function entityIdToFriendly(entityId: string): string {
               >
                 <Icon icon="mdi:drag-vertical" class="h-4 w-4" />
               </button>
-              <Icon :icon="room.icon" class="h-5 w-5 text-stone-700" />
+              <Icon :icon="normalizeRoomIcon(room.icon, room.id)" class="h-5 w-5 text-stone-700" />
               <span data-testid="room-name" class="truncate text-sm font-medium text-stone-900">{{
                 room.displayName
               }}</span>
