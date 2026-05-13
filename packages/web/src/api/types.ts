@@ -55,6 +55,7 @@ export interface AnalyzedRoom {
   id: string
   haAreaId: string | null
   displayName: string
+  icon: string
   entityCount: number
   averageConfidence: number
   assignments: RoomAssignment[]

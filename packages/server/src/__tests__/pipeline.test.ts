@@ -7,6 +7,7 @@ import type {
   HaDeviceRegistryEntry,
   HaEntityRegistryEntry,
   HaFloorRegistryEntry,
+  Settings,
 } from '@lovelacer/shared'
 import { englishCluttered } from '../../../../tests/fixtures/english-cluttered.js'
 import { czechTidy } from '../../../../tests/fixtures/czech-tidy.js'
@@ -86,6 +87,12 @@ function makeSettings(): SettingsStore {
 function makeSettingsWithRoomOrder(roomOrder: string[]): SettingsStore {
   const settings = makeSettings()
   settings.save({ ...settings.get(), roomOrder })
+  return settings
+}
+
+function makeSettingsWithRoomOverrides(roomOverrides: Settings['roomOverrides']): SettingsStore {
+  const settings = makeSettings()
+  settings.save({ ...settings.get(), roomOverrides })
   return settings
 }
 
@@ -237,6 +244,21 @@ describe('runAnalyze', () => {
     expect(ids.indexOf('living_room')).toBeLessThan(ids.indexOf('kitchen'))
   })
 
+  it('applies room display overrides to analyze output', async () => {
+    const fake = makeFakeHa()
+    const settings = makeSettingsWithRoomOverrides({
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
+    })
+    try {
+      const result = await runAnalyze(fake.client, makeStore(), settings)
+      const kitchen = result.rooms.find((room) => room.id === 'kitchen')
+      expect(kitchen?.displayName).toBe('Breakfast nook')
+      expect(kitchen?.icon).toBe('mdi:coffee')
+    } finally {
+      settings.close()
+    }
+  })
+
   it('rooms array does not contain the misc room', async () => {
     const fake = makeFakeHa()
     const result = await runAnalyze(fake.client, makeStore(), makeSettings())
@@ -339,6 +361,29 @@ describe('runPreview', () => {
     const titles = result.config.views.map((view) => view.title)
 
     expect(titles.indexOf('Living Room')).toBeLessThan(titles.indexOf('Kitchen'))
+  })
+
+  it('applies room display overrides to generated preview views', async () => {
+    const fake = makeFakeHa()
+    const appliedSnapshot = makeAppliedSnapshot()
+    const dismissed = makeDismissed()
+    const settings = makeSettingsWithRoomOverrides({
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
+    })
+    try {
+      const result = await runPreview(
+        fake.client,
+        makeStore(),
+        appliedSnapshot,
+        dismissed,
+        settings,
+      )
+      const view = result.config.views.find((candidate) => candidate.path === 'kitchen')
+      expect(view?.title).toBe('Breakfast nook')
+      expect(view?.icon).toBe('mdi:coffee')
+    } finally {
+      settings.close()
+    }
   })
 
   it('trims unused HA registry fields and normalizes entities in place', async () => {

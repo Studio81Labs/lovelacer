@@ -296,6 +296,7 @@ export interface AnalyzedRoom {
   id: CanonicalRoomId
   haAreaId: string | null
   displayName: string
+  icon: string
   entityCount: number
   averageConfidence: number
   assignments: RoomAssignment[]

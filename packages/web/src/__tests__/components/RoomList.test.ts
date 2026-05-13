@@ -10,6 +10,7 @@ function room(overrides: Partial<AnalyzedRoom> = {}): AnalyzedRoom {
     id: 'kitchen',
     haAreaId: 'kitchen',
     displayName: 'Kitchen',
+    icon: 'mdi:silverware-fork-knife',
     entityCount: 12,
     averageConfidence: 0.92,
     assignments: [],
@@ -381,6 +382,7 @@ describe('RoomList', () => {
       room({
         id: 'kitchen',
         displayName: 'Kitchen',
+        icon: 'mdi:silverware-fork-knife',
         assignments: [
           { entityId: 'light.kitchen_ceiling', roomId: 'kitchen', confidence: 0.9, signals: [] },
         ],
@@ -486,6 +488,7 @@ describe('RoomList', () => {
       id: 'kitchen',
       haAreaId: 'kitchen',
       displayName: 'Kitchen',
+      icon: 'mdi:silverware-fork-knife',
       entityCount: 2,
       averageConfidence: 0.9,
       assignments: [
@@ -514,6 +517,7 @@ describe('RoomList', () => {
       room({
         id: 'kitchen',
         displayName: 'Kitchen',
+        icon: 'mdi:silverware-fork-knife',
         assignments: [
           { entityId: 'light.kitchen_ceiling', roomId: 'kitchen', confidence: 0.9, signals: [] },
         ],
@@ -549,6 +553,7 @@ describe('RoomList', () => {
           room({
             id: 'kitchen',
             displayName: 'Kitchen',
+            icon: 'mdi:silverware-fork-knife',
             assignments: [
               {
                 entityId: 'light.kitchen_ceiling',
@@ -612,6 +617,7 @@ describe('RoomList diff badges', () => {
     id: 'kitchen',
     haAreaId: 'kitchen',
     displayName: 'Kitchen',
+    icon: 'mdi:silverware-fork-knife',
     entityCount: 1,
     averageConfidence: 0.9,
     assignments: [
@@ -664,6 +670,7 @@ describe('RoomList diff badges', () => {
             id: 'kitchen',
             haAreaId: null,
             displayName: 'Kitchen',
+            icon: 'mdi:silverware-fork-knife',
             entityCount: 1,
             averageConfidence: 0.8,
             assignments: [

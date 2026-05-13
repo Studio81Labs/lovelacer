@@ -16,6 +16,7 @@ const mockPreview: PreviewOutput = {
       id: 'kitchen',
       haAreaId: 'kitchen',
       displayName: 'Kitchen',
+      icon: 'mdi:silverware-fork-knife',
       entityCount: 12,
       averageConfidence: 0.92,
       assignments: [],
