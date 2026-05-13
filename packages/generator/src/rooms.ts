@@ -54,5 +54,5 @@ export function shouldShowRoomNameOnCard(
   roomId: CanonicalRoomId,
   overrides: RoomDisplayOverrides = {},
 ): boolean {
-  return overrides[roomId]?.showNameOnCard !== false
+  return overrides[roomId]?.showNameOnCard === true
 }

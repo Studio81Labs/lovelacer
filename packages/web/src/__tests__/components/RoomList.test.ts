@@ -72,7 +72,7 @@ describe('RoomList', () => {
     )
     expect(
       (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
-    ).toBe(true)
+    ).toBe(false)
   })
 
   it('falls back to the canonical room icon when the API omits one', async () => {
@@ -208,11 +208,11 @@ describe('RoomList', () => {
     ])
   })
 
-  it('prefills and preserves a false show-name-on-card room override', async () => {
+  it('prefills and preserves a true show-name-on-card room override', async () => {
     const wrapper = mount(RoomList, {
       props: {
         rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })],
-        roomOverrides: { kitchen: { showNameOnCard: false } },
+        roomOverrides: { kitchen: { showNameOnCard: true } },
       },
       global: {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
@@ -224,13 +224,13 @@ describe('RoomList', () => {
 
     expect(
       (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
-    ).toBe(false)
+    ).toBe(true)
 
     await wrapper.find('[data-testid="room-save-button"]').trigger('click')
 
     expect(wrapper.emitted('save-room')?.[0]).toEqual([
       'kitchen',
-      { name: 'Kitchen', icon: 'mdi:silverware-fork-knife', showNameOnCard: false },
+      { name: 'Kitchen', icon: 'mdi:silverware-fork-knife', showNameOnCard: true },
     ])
   })
 
@@ -282,7 +282,7 @@ describe('RoomList', () => {
 
     expect(wrapper.emitted('save-room')?.[0]).toEqual([
       'kitchen',
-      { name: '', icon: '', showNameOnCard: true },
+      { name: '', icon: '', showNameOnCard: false },
     ])
   })
 

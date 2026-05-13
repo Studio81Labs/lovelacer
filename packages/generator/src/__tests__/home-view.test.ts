@@ -511,7 +511,7 @@ describe('buildActiveRoomsSection', () => {
     const section = buildActiveRoomsSection(groupings)
     const cond = section!.cards[0] as { card: { entity: string; name: string } }
     expect(cond.card.entity).toBe('light.kitchen_main')
-    expect(cond.card.name).toBe('Kitchen')
+    expect(cond.card.name).toBe(' ')
   })
 
   it('tile falls back to first activity sensor when no lights', () => {
@@ -521,7 +521,7 @@ describe('buildActiveRoomsSection', () => {
     expect(cond.card.entity).toBe('binary_sensor.kitchen_motion')
   })
 
-  it('uses room display overrides for active room card names', () => {
+  it('uses room display overrides for active room card names when enabled', () => {
     const view = buildHomeView({
       entities: [ent('light.kitchen_ceiling')],
       groupings: [
@@ -551,14 +551,14 @@ describe('buildActiveRoomsSection', () => {
         scenes: false,
         cameras: false,
       },
-      roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+      roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: true } },
     })
 
     const card = view.sections[0]!.cards[0] as { card: { name?: string } }
     expect(card.card.name).toBe('Breakfast nook')
   })
 
-  it('uses a blank active room card name when showNameOnCard is false', () => {
+  it('uses a blank active room card name by default', () => {
     const view = buildHomeView({
       entities: [ent('light.kitchen_ceiling')],
       groupings: [
@@ -588,7 +588,7 @@ describe('buildActiveRoomsSection', () => {
         scenes: false,
         cameras: false,
       },
-      roomOverrides: { kitchen: { name: 'Breakfast nook', showNameOnCard: false } },
+      roomOverrides: { kitchen: { name: 'Breakfast nook' } },
     })
 
     const card = view.sections[0]!.cards[0] as { card: { name?: string } }
@@ -633,7 +633,7 @@ describe('buildActiveRoomsSection', () => {
     expect(cond.card.tap_action.navigation_path).toBe('living_room')
   })
 
-  it('sorts cards alphabetically by tile name', () => {
+  it('sorts cards alphabetically by effective room title', () => {
     const groupings = [
       grp('living_room', ['light.lr']),
       grp('bedroom', ['light.bedroom']),
@@ -641,13 +641,13 @@ describe('buildActiveRoomsSection', () => {
     ]
     const section = buildActiveRoomsSection(groupings)
     const names = section!.cards.map((c) => (c as { card: { name: string } }).card.name)
-    expect(names).toEqual(['Attic', 'Bedroom', 'Living Room'])
+    expect(names).toEqual([' ', ' ', ' '])
   })
 
   it('sorts by effective room title even when a room card name is hidden', () => {
     const section = buildActiveRoomsSection(
       [grp('living_room', ['light.lr']), grp('bedroom', ['light.bedroom'])],
-      { living_room: { showNameOnCard: false } },
+      { bedroom: { showNameOnCard: true }, living_room: { showNameOnCard: false } },
     )
 
     const cards = section!.cards.map((c) => (c as { card: { entity: string; name?: string } }).card)
@@ -828,18 +828,18 @@ describe('buildRoomsByFloorSection', () => {
     expect(glance.entities).toEqual([
       {
         entity: 'light.kitchen',
-        name: 'Kitchen',
+        name: ' ',
         tap_action: { action: 'navigate', navigation_path: 'kitchen' },
       },
     ])
   })
 
-  it('uses room display overrides for rooms-by-floor glance entry names', () => {
+  it('uses room display overrides for rooms-by-floor glance entry names when enabled', () => {
     const result = buildRoomsByFloorSection({
       rooms: [makeRoom('kitchen', 'kitchen_area')],
       groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
       floorAssignments: new Map([['kitchen', makeFloor('ground', 'Ground Floor', 0)]]),
-      roomOverrides: { kitchen: { name: 'Breakfast nook' } },
+      roomOverrides: { kitchen: { name: 'Breakfast nook', showNameOnCard: true } },
     })
 
     const glance = result!.cards[1] as GlanceCard
@@ -852,12 +852,12 @@ describe('buildRoomsByFloorSection', () => {
     ])
   })
 
-  it('uses blank rooms-by-floor glance entry names when showNameOnCard is false', () => {
+  it('uses blank rooms-by-floor glance entry names by default', () => {
     const result = buildRoomsByFloorSection({
       rooms: [makeRoom('kitchen', 'kitchen_area')],
       groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
       floorAssignments: new Map([['kitchen', makeFloor('ground', 'Ground Floor', 0)]]),
-      roomOverrides: { kitchen: { name: 'Breakfast nook', showNameOnCard: false } },
+      roomOverrides: { kitchen: { name: 'Breakfast nook' } },
     })
 
     const glance = result!.cards[1] as GlanceCard

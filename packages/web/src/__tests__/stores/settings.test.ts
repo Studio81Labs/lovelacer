@@ -133,7 +133,23 @@ describe('useSettingsStore', () => {
     })
 
     expect(store.dirtyState?.roomOverrides).toEqual({
-      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
+    })
+  })
+
+  it('setRoomOverride persists an explicit true showNameOnCard override', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', {
+      name: '  Breakfast nook  ',
+      icon: '  mdi:coffee  ',
+      showNameOnCard: true,
+    })
+
+    expect(store.dirtyState?.roomOverrides).toEqual({
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: true },
     })
   })
 
@@ -146,7 +162,7 @@ describe('useSettingsStore', () => {
     const store = useSettingsStore()
     await store.loadFromServer()
 
-    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: false })
 
     expect(store.dirtyState?.roomOverrides).toBeUndefined()
   })
@@ -156,7 +172,7 @@ describe('useSettingsStore', () => {
     const store = useSettingsStore()
     await store.loadFromServer()
 
-    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: false })
 
     expect(store.dirtyState).toBeNull()
     expect(store.hasDirty).toBe(false)
@@ -366,7 +382,7 @@ describe('useSettingsStore', () => {
     )
     const store = useSettingsStore()
     await store.loadFromServer()
-    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: false })
 
     const save = store.saveRoomOverride('kitchen', { name: 'Dinner nook' })
     await Promise.resolve()

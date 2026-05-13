@@ -477,10 +477,11 @@ describe('buildRoomViews — bulk', () => {
 describe('@lovelacer/generator room display exports', () => {
   it('exports room display helpers from the public barrel', () => {
     const overrides: RoomDisplayOverrides = {
-      kitchen: { name: 'Breakfast nook', showNameOnCard: false },
+      kitchen: { name: 'Breakfast nook', showNameOnCard: true },
     }
 
     expect(resolveRoomDisplay('kitchen', overrides).title).toBe('Breakfast nook')
-    expect(shouldShowRoomNameOnCard('kitchen', overrides)).toBe(false)
+    expect(shouldShowRoomNameOnCard('kitchen', overrides)).toBe(true)
+    expect(shouldShowRoomNameOnCard('bedroom', {})).toBe(false)
   })
 })
