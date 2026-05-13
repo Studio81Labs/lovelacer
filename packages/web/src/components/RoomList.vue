@@ -94,7 +94,7 @@ function openRoomEdit(room: AnalyzedRoom): void {
   editingRoomId.value = room.id
   openRoomIds.value = new Set([...openRoomIds.value, room.id])
   editName.value = override?.name ?? room.displayName
-  editIcon.value = override?.icon ?? room.icon
+  editIcon.value = normalizeRoomIcon(override?.icon ?? room.icon)
   editShowNameOnCard.value = override?.showNameOnCard !== false
 }
 
@@ -240,6 +240,10 @@ function confidenceLabel(confidence: number): string {
 
 function roomIconLabelId(roomId: string): string {
   return `room-icon-label-${roomId}`
+}
+
+function normalizeRoomIcon(icon: string | undefined): string {
+  return icon?.trim() || 'mdi:home-outline'
 }
 
 /**

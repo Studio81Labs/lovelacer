@@ -4,7 +4,7 @@ import { Icon, addCollection, type IconifyJSON } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
-  modelValue: string
+  modelValue?: string | undefined
   labelledBy?: string | undefined
 }>()
 
@@ -20,7 +20,7 @@ const iconNames = ref<string[]>([])
 const isLoading = ref(false)
 const loadFailed = ref(false)
 
-const selectedIcon = computed(() => props.modelValue.trim() || 'mdi:home-outline')
+const selectedIcon = computed(() => normalizeIconValue(props.modelValue))
 const searchTerm = computed(() => normalizeIconQuery(query.value))
 const filteredIconNames = computed(() => {
   const names = iconNames.value
@@ -56,6 +56,10 @@ function selectIcon(iconName: string): void {
 
 function normalizeIconQuery(value: string): string {
   return value.trim().toLowerCase().replace(/^mdi:/, '')
+}
+
+function normalizeIconValue(value: string | undefined): string {
+  return value?.trim() || 'mdi:home-outline'
 }
 
 function prioritizeIconNames(names: string[], priorityNames: string[]): string[] {

@@ -70,6 +70,26 @@ describe('RoomList', () => {
     ).toBe(true)
   })
 
+  it('falls back to a default room edit icon when the API omits one', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [
+          room({
+            displayName: 'Living Room',
+            icon: undefined as unknown as string,
+          }),
+        ],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:home-outline')
+  })
+
   it('does not nest the icon picker trigger inside a label', async () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [room({ displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })] },

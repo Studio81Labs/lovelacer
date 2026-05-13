@@ -40,4 +40,14 @@ describe('RoomIconPicker', () => {
     expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:sofa')
     expect(wrapper.findComponent(Icon).vm.$attrs['icon']).toBe('mdi:sofa')
   })
+
+  it('falls back to a default icon when the model value is missing', () => {
+    const wrapper = mount(RoomIconPicker, {
+      props: { modelValue: undefined },
+      global: { plugins: [createTestI18n()] },
+    })
+
+    expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:home-outline')
+    expect(wrapper.findComponent(Icon).vm.$attrs['icon']).toBe('mdi:home-outline')
+  })
 })
