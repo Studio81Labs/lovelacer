@@ -251,6 +251,20 @@ describe('PUT /api/settings', () => {
     }
   })
 
+  it('returns 400 invalid_body when roomOverrides contains an empty room id', async () => {
+    const app = await makeApp()
+    try {
+      const bad = {
+        settings: { ...VALID_BODY.settings, roomOverrides: { '': { name: 'Nope' } } },
+      }
+      const res = await app.inject({ method: 'PUT', url: '/api/settings', payload: bad })
+      expect(res.statusCode).toBe(400)
+      expect(res.json()).toMatchObject({ error: 'invalid_body' })
+    } finally {
+      await app.close()
+    }
+  })
+
   it('returns 400 invalid_body when roomOrder contains a non-string value', async () => {
     const app = await makeApp()
     try {

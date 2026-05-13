@@ -35,7 +35,7 @@ const PutBodySchema = z.object({
     sections: SectionsSchema,
     uiLanguage: z.enum(SUPPORTED_UI_LANGUAGES).optional(),
     roomOrder: z.array(z.string()).optional(),
-    roomOverrides: z.record(RoomOverrideSchema).optional(),
+    roomOverrides: z.record(z.string().min(1), RoomOverrideSchema).optional(),
   }),
 })
 
