@@ -11,6 +11,7 @@ import { useInviteStore } from '../stores/invite.js'
 import { useOnboardingStore } from '../stores/onboarding.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18nStore } from '../stores/i18n.js'
+import { DEFAULT_SETTINGS } from '../api/types.js'
 import type { PreviewOutput, Settings } from '../api/types.js'
 import { createTestI18n } from './test-utils.js'
 import enLocale from '../locales/en.json'
@@ -88,8 +89,10 @@ describe('App integration', () => {
     vi.mocked(getOverrides).mockReset()
     vi.mocked(putOverrides).mockReset()
     vi.mocked(getInvite).mockReset()
+    vi.mocked(postInvite).mockReset()
     vi.mocked(getOnboarding).mockReset()
     vi.mocked(getSettings).mockReset()
+    vi.mocked(putSettings).mockReset()
     // Default: most existing tests assume the gate is already accepted
     // and onboarding already completed so the main view is visible.
     vi.mocked(getInvite).mockResolvedValue({ accepted: true })
@@ -369,6 +372,73 @@ describe('App integration', () => {
 
     expect(putSettings).toHaveBeenCalledWith({ settings: savedSettings })
     expect(postPreview).toHaveBeenCalled()
+  })
+
+  it('saves a room override and refreshes preview', async () => {
+    const kitchenPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
+    }
+    const breakfastNookPreview: PreviewOutput = {
+      ...kitchenPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Breakfast nook',
+          icon: 'mdi:coffee',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+    }
+    vi.mocked(getSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })
+    vi.mocked(postPreview)
+      .mockResolvedValueOnce(kitchenPreview)
+      .mockResolvedValueOnce(breakfastNookPreview)
+    vi.mocked(putSettings).mockResolvedValueOnce({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+      },
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    await analyze.analyze()
+    await flushPromises()
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
+    await wrapper.find('[data-testid="room-icon-input"]').setValue('mdi:coffee')
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledWith({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+      },
+    })
+    expect(postPreview).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('[data-testid="room-name"]').text()).toBe('Breakfast nook')
   })
 
   it('waits for server settings before saving room order', async () => {
