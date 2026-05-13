@@ -137,7 +137,7 @@ describe('SettingsStore (in-memory)', () => {
   it('falls back to DEFAULT_SETTINGS when roomOverrides has a non-object value', () => {
     const store = new SettingsStore(':memory:')
     try {
-      const db = (store as unknown as { db: import('better-sqlite3').Database }).db
+      const db = (store as unknown as { db: DatabaseType }).db
       db.prepare('INSERT OR REPLACE INTO settings (id, payload) VALUES (1, ?)').run(
         JSON.stringify({ ...DEFAULT_SETTINGS, roomOverrides: [] }),
       )
@@ -151,7 +151,7 @@ describe('SettingsStore (in-memory)', () => {
   it('falls back to DEFAULT_SETTINGS when a room override field has the wrong type', () => {
     const store = new SettingsStore(':memory:')
     try {
-      const db = (store as unknown as { db: import('better-sqlite3').Database }).db
+      const db = (store as unknown as { db: DatabaseType }).db
       db.prepare('INSERT OR REPLACE INTO settings (id, payload) VALUES (1, ?)').run(
         JSON.stringify({
           ...DEFAULT_SETTINGS,
