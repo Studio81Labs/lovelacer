@@ -57,7 +57,18 @@ export const useSettingsStore = defineStore('settings', () => {
     if (settings.roomOrder !== undefined) {
       next.roomOrder = [...settings.roomOrder]
     }
+    if (settings.roomOverrides !== undefined) {
+      next.roomOverrides = cloneRoomOverrides(settings.roomOverrides)
+    }
     return next
+  }
+
+  function cloneRoomOverrides(
+    roomOverrides: NonNullable<Settings['roomOverrides']>,
+  ): NonNullable<Settings['roomOverrides']> {
+    return Object.fromEntries(
+      Object.entries(roomOverrides).map(([roomId, override]) => [roomId, { ...override }]),
+    )
   }
 
   function settingsEqual(a: Settings | null, b: Settings | null): boolean {

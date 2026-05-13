@@ -140,6 +140,31 @@ describe('useSettingsStore', () => {
     expect(store.dirtyState?.sections.cameras).toBe(false)
   })
 
+  it('snapshots and restores roomOverrides without sharing nested references', async () => {
+    const settings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: {
+        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+      },
+    }
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+    store.setLanguage('cs')
+
+    const snapshot = store.snapshotDirtyState()
+    snapshot!.roomOverrides!.kitchen.name = 'Mutated'
+
+    store.restoreDirtyState(snapshot)
+    snapshot!.roomOverrides!.kitchen.icon = 'mdi:tea'
+
+    expect(store.dirtyState?.roomOverrides?.kitchen).toEqual({
+      name: 'Mutated',
+      icon: 'mdi:coffee',
+      showNameOnCard: false,
+    })
+  })
+
   it('discardChanges clears dirtyState only (locale revert lives in SettingsModal — P2-9)', async () => {
     // The store's discardChanges() intentionally does NOT touch i18n.
     // The active-locale revert is owned by SettingsModal because only

@@ -210,6 +210,12 @@ export interface SettingsSections {
   cameras: boolean
 }
 
+export interface RoomDisplayOverride {
+  name?: string
+  icon?: string
+  showNameOnCard?: boolean
+}
+
 export interface Settings {
   /**
    * Detection language for name-based matching (priorities 3-5).
@@ -250,6 +256,12 @@ export interface Settings {
    * rooms keep working without migration.
    */
   roomOrder?: string[]
+
+  /**
+   * Optional user-preferred room display metadata keyed by analyzed room id.
+   * Missing fields fall back to detected/canonical defaults.
+   */
+  roomOverrides?: Record<string, RoomDisplayOverride>
 }
 
 /**

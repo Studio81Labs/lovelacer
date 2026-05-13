@@ -200,6 +200,12 @@ export interface SettingsSections {
   cameras: boolean
 }
 
+export interface RoomDisplayOverride {
+  name?: string
+  icon?: string
+  showNameOnCard?: boolean
+}
+
 export interface Settings {
   language: SettingsLanguage
   cardPack: SettingsCardPack
@@ -216,6 +222,11 @@ export interface Settings {
    * are appended by display name when rendering.
    */
   roomOrder?: string[]
+  /**
+   * Optional user-preferred room display metadata keyed by analyzed room id.
+   * Missing fields fall back to detected/canonical defaults.
+   */
+  roomOverrides?: Record<string, RoomDisplayOverride>
 }
 
 /** Defaults preserve current behavior — mirror of @lovelacer/shared's value. */
