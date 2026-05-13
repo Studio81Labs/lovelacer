@@ -20,6 +20,10 @@ function room(overrides: Partial<AnalyzedRoom> = {}): AnalyzedRoom {
 }
 
 describe('RoomList', () => {
+  async function expandFirstRoom(wrapper: ReturnType<typeof mount>): Promise<void> {
+    await wrapper.find('summary').trigger('click')
+  }
+
   it('renders one row per room', () => {
     const rooms = [
       room({ id: 'kitchen', displayName: 'Kitchen' }),
@@ -57,6 +61,7 @@ describe('RoomList', () => {
       },
     })
 
+    await expandFirstRoom(wrapper)
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
 
     expect(
@@ -85,6 +90,7 @@ describe('RoomList', () => {
       },
     })
 
+    await expandFirstRoom(wrapper)
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
 
     expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:home-outline')
@@ -98,6 +104,7 @@ describe('RoomList', () => {
       },
     })
 
+    await expandFirstRoom(wrapper)
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
 
     const trigger = wrapper.find('[data-testid="room-icon-picker-button"]')
@@ -105,20 +112,34 @@ describe('RoomList', () => {
     expect(trigger.element.closest('label')).toBeNull()
   })
 
-  it('opens the room details row when inline room metadata editing starts', async () => {
+  it('opens inline room metadata editing from an expanded room', async () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [room()] },
       global: {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
-    const details = wrapper.find('details')
-    expect((details.element as HTMLDetailsElement).open).toBe(false)
-
+    await expandFirstRoom(wrapper)
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
 
-    expect((details.element as HTMLDetailsElement).open).toBe(true)
     expect(wrapper.find('[data-testid="room-name-input"]').exists()).toBe(true)
+  })
+
+  it('shows the room edit button only when the room is expanded', async () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room()] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    expect(wrapper.find('[data-testid="room-edit-button"]').exists()).toBe(false)
+
+    await expandFirstRoom(wrapper)
+    expect(wrapper.find('[data-testid="room-edit-button"]').exists()).toBe(true)
+
+    await expandFirstRoom(wrapper)
+    expect(wrapper.find('[data-testid="room-edit-button"]').exists()).toBe(false)
   })
 
   it('emits save-room when inline room metadata is saved', async () => {
@@ -131,6 +152,7 @@ describe('RoomList', () => {
       },
     })
 
+    await expandFirstRoom(wrapper)
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
     await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
     await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
@@ -166,6 +188,7 @@ describe('RoomList', () => {
       },
     })
 
+    await expandFirstRoom(wrapper)
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
 
     expect(
@@ -193,6 +216,7 @@ describe('RoomList', () => {
       },
     })
 
+    await expandFirstRoom(wrapper)
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
 
     expect(
@@ -221,6 +245,7 @@ describe('RoomList', () => {
       },
     })
 
+    await expandFirstRoom(wrapper)
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
     await wrapper.find('[data-testid="room-reset-button"]').trigger('click')
 

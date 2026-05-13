@@ -425,6 +425,7 @@ describe('App integration', () => {
     await analyze.analyze()
     await flushPromises()
 
+    await wrapper.find('summary').trigger('click')
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
     await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
     await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')

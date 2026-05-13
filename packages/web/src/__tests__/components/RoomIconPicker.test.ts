@@ -50,4 +50,28 @@ describe('RoomIconPicker', () => {
     expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:home-outline')
     expect(wrapper.findComponent(Icon).vm.$attrs['icon']).toBe('mdi:home-outline')
   })
+
+  it('closes the options list when clicking outside or pressing escape', async () => {
+    const wrapper = mount(RoomIconPicker, {
+      props: { modelValue: 'mdi:sofa' },
+      attachTo: document.body,
+      global: { plugins: [createTestI18n()] },
+    })
+
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    expect(wrapper.find('[data-testid="room-icon-search"]').exists()).toBe(true)
+
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="room-icon-search"]').exists()).toBe(false)
+
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    expect(wrapper.find('[data-testid="room-icon-search"]').exists()).toBe(true)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="room-icon-search"]').exists()).toBe(false)
+
+    wrapper.unmount()
+  })
 })

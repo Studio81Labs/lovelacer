@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { Icon, addCollection, type IconifyJSON } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
 
@@ -15,6 +15,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const isOpen = ref(false)
+const rootRef = ref<HTMLElement | null>(null)
 const query = ref('')
 const iconNames = ref<string[]>([])
 const isLoading = ref(false)
@@ -31,7 +32,17 @@ const filteredIconNames = computed(() => {
 })
 
 watch(isOpen, (open) => {
-  if (open) void loadMdiCollection()
+  if (open) {
+    void loadMdiCollection()
+    document.addEventListener('pointerdown', onDocumentPointerDown)
+    document.addEventListener('keydown', onDocumentKeyDown)
+  } else {
+    removeDocumentListeners()
+  }
+})
+
+onBeforeUnmount(() => {
+  removeDocumentListeners()
 })
 
 async function loadMdiCollection(): Promise<void> {
@@ -52,6 +63,24 @@ function selectIcon(iconName: string): void {
   emit('update:modelValue', `mdi:${iconName}`)
   query.value = ''
   isOpen.value = false
+}
+
+function onDocumentPointerDown(event: PointerEvent): void {
+  const root = rootRef.value
+  if (root !== null && event.target instanceof Node && !root.contains(event.target)) {
+    isOpen.value = false
+  }
+}
+
+function onDocumentKeyDown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    isOpen.value = false
+  }
+}
+
+function removeDocumentListeners(): void {
+  document.removeEventListener('pointerdown', onDocumentPointerDown)
+  document.removeEventListener('keydown', onDocumentKeyDown)
 }
 
 function normalizeIconQuery(value: string): string {
@@ -118,7 +147,7 @@ async function loadMdiIconNames(): Promise<string[]> {
 </script>
 
 <template>
-  <div class="relative">
+  <div ref="rootRef" class="relative">
     <button
       type="button"
       data-testid="room-icon-picker-button"

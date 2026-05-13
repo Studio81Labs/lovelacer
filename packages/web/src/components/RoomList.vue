@@ -118,6 +118,9 @@ function setRoomOpen(roomId: string, isOpen: boolean): void {
     next.add(roomId)
   } else {
     next.delete(roomId)
+    if (editingRoomId.value === roomId) {
+      editingRoomId.value = null
+    }
   }
   openRoomIds.value = next
 }
@@ -337,7 +340,7 @@ function entityIdToFriendly(entityId: string): string {
                 room.displayName
               }}</span>
               <button
-                v-if="readOnly !== true"
+                v-if="readOnly !== true && openRoomIds.has(room.id)"
                 type="button"
                 data-testid="room-edit-button"
                 :aria-label="t('roomList.editRoom', { room: room.displayName })"
