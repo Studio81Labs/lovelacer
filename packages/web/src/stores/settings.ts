@@ -121,6 +121,28 @@ export const useSettingsStore = defineStore('settings', () => {
     return next
   }
 
+  function roomOverrideFor(
+    settings: Settings | null,
+    roomId: string,
+  ): RoomDisplayOverride | null {
+    if (settings === null) return null
+    return settings.roomOverrides?.[roomId] ?? null
+  }
+
+  function roomOverrideEqual(
+    a: RoomDisplayOverride | null,
+    b: RoomDisplayOverride | null,
+  ): boolean {
+    return JSON.stringify(a) === JSON.stringify(b)
+  }
+
+  function dirtyRoomOverrideStillMatches(roomId: string, snapshot: Settings | null): boolean {
+    return roomOverrideEqual(
+      roomOverrideFor(dirtyState.value, roomId),
+      roomOverrideFor(snapshot, roomId),
+    )
+  }
+
   function replaceDirtyRoomOrder(roomOrder: string[] | undefined): void {
     dirtyState.value = withRoomOrder(dirtyState.value, roomOrder)
   }
@@ -305,7 +327,9 @@ export const useSettingsStore = defineStore('settings', () => {
     const sanitized = sanitizeRoomOverride(override)
     const previousDirty = snapshotDirtyState()
     const previousOverride =
-      previousDirty?.roomOverrides?.[roomId] ?? serverState.value.roomOverrides?.[roomId]
+      previousDirty === null
+        ? roomOverrideFor(serverState.value, roomId)
+        : roomOverrideFor(previousDirty, roomId)
     setRoomOverride(roomId, override)
     const optimisticDirty = snapshotDirtyState()
 
@@ -322,16 +346,16 @@ export const useSettingsStore = defineStore('settings', () => {
         const savedOverride = result.settings.roomOverrides?.[roomId] ?? null
         if (settingsEqual(dirtyState.value, optimisticDirty)) {
           dirtyState.value = withRoomOverride(previousDirty, roomId, savedOverride)
-        } else {
+        } else if (dirtyRoomOverrideStillMatches(roomId, optimisticDirty)) {
           dirtyState.value = withRoomOverride(dirtyState.value, roomId, savedOverride)
         }
         reconcileDirtyWithServer()
         phase.value = 'idle'
       } catch (err) {
         if (settingsEqual(dirtyState.value, optimisticDirty)) {
-          dirtyState.value = withRoomOverride(previousDirty, roomId, previousOverride ?? null)
-        } else {
-          dirtyState.value = withRoomOverride(dirtyState.value, roomId, previousOverride ?? null)
+          dirtyState.value = withRoomOverride(previousDirty, roomId, previousOverride)
+        } else if (dirtyRoomOverrideStillMatches(roomId, optimisticDirty)) {
+          dirtyState.value = withRoomOverride(dirtyState.value, roomId, previousOverride)
         }
         reconcileDirtyWithServer()
         error.value = err as ApiError
