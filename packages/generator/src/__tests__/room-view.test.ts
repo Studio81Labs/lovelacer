@@ -56,18 +56,18 @@ describe('buildRoomView — per-room metadata', () => {
     expect(view.type).toBe('sections')
   })
 
-  it('keeps room HA view tabs icon-only by default', () => {
+  it('shows room HA view tab labels by default', () => {
     const view = buildRoomView(grouping('kitchen', []))
 
-    expect(view.show_icon_and_title).toBeUndefined()
+    expect(view.show_icon_and_title).toBe(true)
   })
 
-  it('shows the room HA view tab label when the room name is enabled', () => {
+  it('keeps room HA view tabs icon-only when the room name is explicitly hidden', () => {
     const view = buildRoomView(grouping('kitchen', []), {
-      kitchen: { showNameOnCard: true },
+      kitchen: { showNameOnCard: false },
     })
 
-    expect(view.show_icon_and_title).toBe(true)
+    expect(view.show_icon_and_title).toBeUndefined()
   })
 
   it('misc room uses path "other" (not "misc")', () => {
@@ -490,6 +490,7 @@ describe('@lovelacer/generator room display exports', () => {
 
     expect(resolveRoomDisplay('kitchen', overrides).title).toBe('Breakfast nook')
     expect(shouldShowRoomNameOnCard('kitchen', overrides)).toBe(true)
-    expect(shouldShowRoomNameOnCard('bedroom', {})).toBe(false)
+    expect(shouldShowRoomNameOnCard('bedroom', {})).toBe(true)
+    expect(shouldShowRoomNameOnCard('bedroom', { bedroom: { showNameOnCard: false } })).toBe(false)
   })
 })

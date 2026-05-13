@@ -473,7 +473,7 @@ describe('App integration', () => {
     const savedSettings = {
       ...DEFAULT_SETTINGS,
       roomOverrides: {
-        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: true },
+        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
       },
     }
     vi.mocked(getSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })

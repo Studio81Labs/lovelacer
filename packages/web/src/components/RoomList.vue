@@ -96,7 +96,7 @@ function openRoomEdit(room: AnalyzedRoom): void {
   openRoomIds.value = new Set([...openRoomIds.value, room.id])
   editName.value = override?.name ?? room.displayName
   editIcon.value = normalizeRoomIcon(override?.icon ?? room.icon, room.id)
-  editShowNameOnCard.value = override?.showNameOnCard === true
+  editShowNameOnCard.value = override?.showNameOnCard !== false
 }
 
 function saveRoomEdit(roomId: string): void {
@@ -109,7 +109,7 @@ function saveRoomEdit(roomId: string): void {
 }
 
 function resetRoomEdit(roomId: string): void {
-  emit('save-room', roomId, { name: '', icon: '', showNameOnCard: false })
+  emit('save-room', roomId, { name: '', icon: '', showNameOnCard: true })
   editingRoomId.value = null
 }
 

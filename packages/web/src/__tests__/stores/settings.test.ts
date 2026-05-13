@@ -133,11 +133,11 @@ describe('useSettingsStore', () => {
     })
 
     expect(store.dirtyState?.roomOverrides).toEqual({
-      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
     })
   })
 
-  it('setRoomOverride persists an explicit true showNameOnCard override', async () => {
+  it('setRoomOverride omits redundant true showNameOnCard overrides', async () => {
     vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
     const store = useSettingsStore()
     await store.loadFromServer()
@@ -149,11 +149,23 @@ describe('useSettingsStore', () => {
     })
 
     expect(store.dirtyState?.roomOverrides).toEqual({
-      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: true },
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
     })
   })
 
-  it('setRoomOverride removes empty room override entries', async () => {
+  it('setRoomOverride persists explicit hidden-label overrides without name or icon', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: false })
+
+    expect(store.dirtyState?.roomOverrides).toEqual({
+      kitchen: { showNameOnCard: false },
+    })
+  })
+
+  it('setRoomOverride reset removes empty room override entries', async () => {
     const saved: Settings = {
       ...DEFAULT_SETTINGS,
       roomOverrides: { kitchen: { name: 'Breakfast nook' } },
@@ -162,17 +174,17 @@ describe('useSettingsStore', () => {
     const store = useSettingsStore()
     await store.loadFromServer()
 
-    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: false })
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
 
     expect(store.dirtyState?.roomOverrides).toBeUndefined()
   })
 
-  it('setRoomOverride collapses empty override against fresh server state', async () => {
+  it('setRoomOverride collapses reset override against fresh server state', async () => {
     vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
     const store = useSettingsStore()
     await store.loadFromServer()
 
-    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: false })
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
 
     expect(store.dirtyState).toBeNull()
     expect(store.hasDirty).toBe(false)
@@ -382,7 +394,7 @@ describe('useSettingsStore', () => {
     )
     const store = useSettingsStore()
     await store.loadFromServer()
-    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: false })
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
 
     const save = store.saveRoomOverride('kitchen', { name: 'Dinner nook' })
     await Promise.resolve()

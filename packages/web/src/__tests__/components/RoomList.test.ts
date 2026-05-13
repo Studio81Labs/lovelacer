@@ -72,7 +72,7 @@ describe('RoomList', () => {
     )
     expect(
       (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it('falls back to the canonical room icon when the API omits one', async () => {
@@ -208,11 +208,10 @@ describe('RoomList', () => {
     ])
   })
 
-  it('prefills and preserves a true show-name-on-card room override', async () => {
+  it('prefills show-name-on-card as enabled when no hidden override exists', async () => {
     const wrapper = mount(RoomList, {
       props: {
         rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })],
-        roomOverrides: { kitchen: { showNameOnCard: true } },
       },
       global: {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
@@ -282,7 +281,7 @@ describe('RoomList', () => {
 
     expect(wrapper.emitted('save-room')?.[0]).toEqual([
       'kitchen',
-      { name: '', icon: '', showNameOnCard: false },
+      { name: '', icon: '', showNameOnCard: true },
     ])
   })
 
