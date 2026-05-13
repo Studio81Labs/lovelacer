@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import type { CanonicalRoomId, NormalizedEntity } from '@lovelacer/shared'
 import type { DomainGroup, RoomGrouping } from '@lovelacer/analyzer'
+import { resolveRoomDisplay, shouldShowRoomNameOnCard } from '../index.js'
+import type { RoomDisplayOverrides } from '../index.js'
 import { buildRoomView, buildRoomViews } from '../room-view.js'
 
 const ent = (id: string, overrides: Partial<NormalizedEntity> = {}): NormalizedEntity => ({
@@ -452,5 +454,27 @@ describe('buildRoomViews — bulk', () => {
       grouping('living_room', [{ key: 'lights', entities: [ent('light.lr')] }]),
     ])
     expect(views.map((v) => v.path)).toEqual(['kitchen', 'living_room'])
+  })
+
+  it('passes room display overrides through to each room view', () => {
+    const views = buildRoomViews(
+      [grouping('kitchen', [{ key: 'lights', entities: [ent('light.k')] }])],
+      { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+    )
+
+    expect(views[0]!.title).toBe('Breakfast nook')
+    expect(views[0]!.icon).toBe('mdi:coffee')
+    expect(views[0]!.path).toBe('kitchen')
+  })
+})
+
+describe('@lovelacer/generator room display exports', () => {
+  it('exports room display helpers from the public barrel', () => {
+    const overrides: RoomDisplayOverrides = {
+      kitchen: { name: 'Breakfast nook', showNameOnCard: false },
+    }
+
+    expect(resolveRoomDisplay('kitchen', overrides).title).toBe('Breakfast nook')
+    expect(shouldShowRoomNameOnCard('kitchen', overrides)).toBe(false)
   })
 })

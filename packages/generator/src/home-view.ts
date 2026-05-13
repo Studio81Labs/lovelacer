@@ -259,7 +259,7 @@ export function buildActiveRoomsSection(
   groupings: RoomGrouping[],
   roomOverrides: RoomDisplayOverrides = {},
 ): GridSection | null {
-  const cards: ConditionalCard[] = []
+  const entries: { card: ConditionalCard; sortTitle: string }[] = []
 
   for (const grouping of groupings) {
     if (grouping.roomId === 'misc') continue
@@ -291,22 +291,21 @@ export function buildActiveRoomsSection(
       tap_action: { action: 'navigate', navigation_path: display.path },
     }
 
-    cards.push({
-      type: 'conditional',
-      conditions: [innerCondition],
-      card: tile,
+    entries.push({
+      sortTitle: display.title,
+      card: {
+        type: 'conditional',
+        conditions: [innerCondition],
+        card: tile,
+      },
     })
   }
 
-  if (cards.length === 0) return null
+  if (entries.length === 0) return null
 
-  cards.sort((a, b) => {
-    const an = (a.card as TileCard).name ?? ''
-    const bn = (b.card as TileCard).name ?? ''
-    return an.localeCompare(bn, 'en')
-  })
+  entries.sort((a, b) => a.sortTitle.localeCompare(b.sortTitle, 'en'))
 
-  return { type: 'grid', cards }
+  return { type: 'grid', cards: entries.map((entry) => entry.card) }
 }
 
 export interface BuildRoomsByFloorSectionInput {

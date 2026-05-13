@@ -641,6 +641,20 @@ describe('buildActiveRoomsSection', () => {
     const names = section!.cards.map((c) => (c as { card: { name: string } }).card.name)
     expect(names).toEqual(['Attic', 'Bedroom', 'Living Room'])
   })
+
+  it('sorts by effective room title even when a room card name is hidden', () => {
+    const section = buildActiveRoomsSection(
+      [grp('living_room', ['light.lr']), grp('bedroom', ['light.bedroom'])],
+      { living_room: { showNameOnCard: false } },
+    )
+
+    const cards = section!.cards.map((c) => (c as { card: { entity: string; name?: string } }).card)
+    expect(cards).toEqual([
+      expect.objectContaining({ entity: 'light.bedroom', name: 'Bedroom' }),
+      expect.objectContaining({ entity: 'light.lr' }),
+    ])
+    expect(cards[1]!.name).toBeUndefined()
+  })
 })
 
 describe('buildHomeView — integration', () => {
@@ -812,6 +826,41 @@ describe('buildRoomsByFloorSection', () => {
       {
         entity: 'light.kitchen',
         name: 'Kitchen',
+        tap_action: { action: 'navigate', navigation_path: 'kitchen' },
+      },
+    ])
+  })
+
+  it('uses room display overrides for rooms-by-floor glance entry names', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area')],
+      groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
+      floorAssignments: new Map([['kitchen', makeFloor('ground', 'Ground Floor', 0)]]),
+      roomOverrides: { kitchen: { name: 'Breakfast nook' } },
+    })
+
+    const glance = result!.cards[1] as GlanceCard
+    expect(glance.entities).toEqual([
+      {
+        entity: 'light.kitchen',
+        name: 'Breakfast nook',
+        tap_action: { action: 'navigate', navigation_path: 'kitchen' },
+      },
+    ])
+  })
+
+  it('omits rooms-by-floor glance entry names when showNameOnCard is false', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area')],
+      groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
+      floorAssignments: new Map([['kitchen', makeFloor('ground', 'Ground Floor', 0)]]),
+      roomOverrides: { kitchen: { name: 'Breakfast nook', showNameOnCard: false } },
+    })
+
+    const glance = result!.cards[1] as GlanceCard
+    expect(glance.entities).toEqual([
+      {
+        entity: 'light.kitchen',
         tap_action: { action: 'navigate', navigation_path: 'kitchen' },
       },
     ])
