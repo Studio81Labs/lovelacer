@@ -7,6 +7,7 @@ function room(id: AnalyzedRoom['id'], haAreaId: string | null): AnalyzedRoom {
     id,
     haAreaId,
     displayName: id === 'misc' ? 'Other' : id,
+    icon: 'mdi:silverware-fork-knife',
     entityCount: 0,
     averageConfidence: 0,
     assignments: [],

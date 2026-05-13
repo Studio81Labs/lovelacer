@@ -39,6 +39,7 @@ function makeRoom(assignments: RoomAssignment[]): AnalyzedRoom {
     id: 'kitchen' as CanonicalRoomId,
     haAreaId: null,
     displayName: 'Kitchen',
+    icon: 'mdi:silverware-fork-knife',
     entityCount: assignments.length,
     averageConfidence: 0,
     assignments,
