@@ -133,6 +133,39 @@ describe('RoomList', () => {
     ])
   })
 
+  it('prefills and preserves dirty room metadata overrides over stale room props', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })],
+        roomOverrides: {
+          kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+        },
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect(
+      (wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value,
+    ).toBe('Breakfast nook')
+    expect(
+      (wrapper.find('[data-testid="room-icon-input"]').element as HTMLInputElement).value,
+    ).toBe('mdi:coffee')
+    expect(
+      (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
+    ).toBe(false)
+
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+
+    expect(wrapper.emitted('save-room')?.[0]).toEqual([
+      'kitchen',
+      { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+    ])
+  })
+
   it('emits save-room with empty values when reset is clicked', async () => {
     const wrapper = mount(RoomList, {
       props: {

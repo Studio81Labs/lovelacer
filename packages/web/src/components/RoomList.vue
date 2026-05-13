@@ -89,11 +89,12 @@ function orderRooms(rooms: AnalyzedRoom[], roomOrder: string[]): AnalyzedRoom[] 
 }
 
 function openRoomEdit(room: AnalyzedRoom): void {
+  const override = props.roomOverrides?.[room.id]
   editingRoomId.value = room.id
   openRoomIds.value = new Set([...openRoomIds.value, room.id])
-  editName.value = room.displayName
-  editIcon.value = room.icon
-  editShowNameOnCard.value = props.roomOverrides?.[room.id]?.showNameOnCard !== false
+  editName.value = override?.name ?? room.displayName
+  editIcon.value = override?.icon ?? room.icon
+  editShowNameOnCard.value = override?.showNameOnCard !== false
 }
 
 function saveRoomEdit(roomId: string): void {
