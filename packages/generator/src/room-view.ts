@@ -46,6 +46,7 @@ export function buildRoomView(
     title: display.title,
     path: display.path,
     icon: display.icon,
+    show_icon_and_title: true,
     sections: grouping.groups.map((group) => buildSection(group)),
   }
 }

@@ -56,6 +56,12 @@ describe('buildRoomView — per-room metadata', () => {
     expect(view.type).toBe('sections')
   })
 
+  it('shows both the room icon and title in the HA view tab', () => {
+    const view = buildRoomView(grouping('kitchen', []))
+
+    expect(view.show_icon_and_title).toBe(true)
+  })
+
   it('misc room uses path "other" (not "misc")', () => {
     const view = buildRoomView(grouping('misc', []))
     expect(view.path).toBe('other')

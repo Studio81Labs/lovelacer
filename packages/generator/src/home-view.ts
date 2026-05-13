@@ -151,6 +151,7 @@ export function buildHomeView(input: BuildHomeViewInput): HomeView {
     title: 'Home',
     path: 'home',
     icon: 'mdi:home-variant',
+    show_icon_and_title: true,
     sections,
   }
 }
@@ -284,10 +285,11 @@ export function buildActiveRoomsSection(
         : { condition: 'or', conditions: stateConditions }
 
     const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
+    const showName = shouldShowRoomNameOnCard(grouping.roomId, roomOverrides)
     const tile: TileCard = {
       type: 'tile',
       entity: primary.entityId,
-      ...(shouldShowRoomNameOnCard(grouping.roomId, roomOverrides) ? { name: display.title } : {}),
+      name: showName ? display.title : ' ',
       tap_action: { action: 'navigate', navigation_path: display.path },
     }
 
@@ -397,12 +399,13 @@ function buildFloorGlance(
     const primary = pickPrimaryEntity(grouping)
     if (primary === null) continue
     const display = resolveRoomDisplay(room.id, roomOverrides)
+    const showName = shouldShowRoomNameOnCard(room.id, roomOverrides)
     entries.push({
       entity: primary.entityId,
-      ...(shouldShowRoomNameOnCard(room.id, roomOverrides) ? { name: display.title } : {}),
+      name: showName ? display.title : ' ',
       tap_action: { action: 'navigate', navigation_path: display.path },
     })
   }
   if (entries.length === 0) return null
-  return { type: 'glance', entities: entries }
+  return { type: 'glance', show_name: true, entities: entries }
 }

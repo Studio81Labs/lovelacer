@@ -558,7 +558,7 @@ describe('buildActiveRoomsSection', () => {
     expect(card.card.name).toBe('Breakfast nook')
   })
 
-  it('omits active room card name when showNameOnCard is false', () => {
+  it('uses a blank active room card name when showNameOnCard is false', () => {
     const view = buildHomeView({
       entities: [ent('light.kitchen_ceiling')],
       groupings: [
@@ -592,7 +592,7 @@ describe('buildActiveRoomsSection', () => {
     })
 
     const card = view.sections[0]!.cards[0] as { card: { name?: string } }
-    expect(card.card.name).toBeUndefined()
+    expect(card.card.name).toBe(' ')
   })
 
   it('filters out hidden + disabled candidates', () => {
@@ -655,7 +655,7 @@ describe('buildActiveRoomsSection', () => {
       expect.objectContaining({ entity: 'light.bedroom', name: 'Bedroom' }),
       expect.objectContaining({ entity: 'light.lr' }),
     ])
-    expect(cards[1]!.name).toBeUndefined()
+    expect(cards[1]!.name).toBe(' ')
   })
 })
 
@@ -852,7 +852,7 @@ describe('buildRoomsByFloorSection', () => {
     ])
   })
 
-  it('omits rooms-by-floor glance entry names when showNameOnCard is false', () => {
+  it('uses blank rooms-by-floor glance entry names when showNameOnCard is false', () => {
     const result = buildRoomsByFloorSection({
       rooms: [makeRoom('kitchen', 'kitchen_area')],
       groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
@@ -864,6 +864,7 @@ describe('buildRoomsByFloorSection', () => {
     expect(glance.entities).toEqual([
       {
         entity: 'light.kitchen',
+        name: ' ',
         tap_action: { action: 'navigate', navigation_path: 'kitchen' },
       },
     ])
@@ -1012,6 +1013,12 @@ describe('buildHomeView — section toggles (P2-6)', () => {
     scenes: false,
     cameras: false,
   }
+
+  it('shows both the home icon and title in the HA view tab', () => {
+    const home = buildHomeView(makeInput(ALL_OFF))
+
+    expect(home.show_icon_and_title).toBe(true)
+  })
 
   it('with all toggles on, includes the welcome section', () => {
     const home = buildHomeView(makeInput(ALL_SECTIONS_ON))
