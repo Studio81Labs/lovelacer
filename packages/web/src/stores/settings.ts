@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { getSettings, putSettings } from '../api/client.js'
 import type {
   ApiError,
+  RoomDisplayOverride,
   Settings,
   SettingsCardPack,
   SettingsLanguage,
@@ -89,6 +90,37 @@ export const useSettingsStore = defineStore('settings', () => {
     return next
   }
 
+  function sanitizeRoomOverride(override: RoomDisplayOverride): RoomDisplayOverride | null {
+    const next: RoomDisplayOverride = {}
+    const name = override.name?.trim()
+    const icon = override.icon?.trim()
+    if (name) next.name = name
+    if (icon) next.icon = icon
+    if (override.showNameOnCard === false) next.showNameOnCard = false
+    return Object.keys(next).length === 0 ? null : next
+  }
+
+  function withRoomOverride(
+    settings: Settings | null,
+    roomId: string,
+    override: RoomDisplayOverride | null,
+  ): Settings | null {
+    if (settings === null) return null
+    const next = cloneSettings(settings)
+    const roomOverrides = cloneRoomOverrides(next.roomOverrides ?? {})
+    if (override === null) {
+      delete roomOverrides[roomId]
+    } else {
+      roomOverrides[roomId] = { ...override }
+    }
+    if (Object.keys(roomOverrides).length === 0) {
+      delete next.roomOverrides
+    } else {
+      next.roomOverrides = roomOverrides
+    }
+    return next
+  }
+
   function replaceDirtyRoomOrder(roomOrder: string[] | undefined): void {
     dirtyState.value = withRoomOrder(dirtyState.value, roomOrder)
   }
@@ -154,6 +186,11 @@ export const useSettingsStore = defineStore('settings', () => {
     const next = cloneEffective()
     next.roomOrder = [...roomIds]
     dirtyState.value = next
+  }
+
+  function setRoomOverride(roomId: string, override: RoomDisplayOverride): void {
+    dirtyState.value = withRoomOverride(cloneEffective(), roomId, sanitizeRoomOverride(override))
+    reconcileDirtyWithServer()
   }
 
   function discardChanges(): void {
@@ -262,6 +299,48 @@ export const useSettingsStore = defineStore('settings', () => {
     })
   }
 
+  async function saveRoomOverride(roomId: string, override: RoomDisplayOverride): Promise<void> {
+    if (serverState.value === null) return
+
+    const sanitized = sanitizeRoomOverride(override)
+    const previousDirty = snapshotDirtyState()
+    const previousOverride =
+      previousDirty?.roomOverrides?.[roomId] ?? serverState.value.roomOverrides?.[roomId]
+    setRoomOverride(roomId, override)
+    const optimisticDirty = snapshotDirtyState()
+
+    return enqueueSettingsWrite(async () => {
+      if (serverState.value === null) return
+      phase.value = 'saving'
+      error.value = null
+      const next = withRoomOverride(serverState.value, roomId, sanitized)
+      if (next === null) return
+
+      try {
+        const result = await putSettings({ settings: next })
+        replaceServerState(result.settings)
+        const savedOverride = result.settings.roomOverrides?.[roomId] ?? null
+        if (settingsEqual(dirtyState.value, optimisticDirty)) {
+          dirtyState.value = withRoomOverride(previousDirty, roomId, savedOverride)
+        } else {
+          dirtyState.value = withRoomOverride(dirtyState.value, roomId, savedOverride)
+        }
+        reconcileDirtyWithServer()
+        phase.value = 'idle'
+      } catch (err) {
+        if (settingsEqual(dirtyState.value, optimisticDirty)) {
+          dirtyState.value = withRoomOverride(previousDirty, roomId, previousOverride ?? null)
+        } else {
+          dirtyState.value = withRoomOverride(dirtyState.value, roomId, previousOverride ?? null)
+        }
+        reconcileDirtyWithServer()
+        error.value = err as ApiError
+        phase.value = 'error'
+        throw err
+      }
+    })
+  }
+
   async function saveAndReanalyze(): Promise<void> {
     await saveOnly()
     // Trigger a fresh analyze so the dashboard preview reflects the new
@@ -284,12 +363,14 @@ export const useSettingsStore = defineStore('settings', () => {
     setSection,
     setUiLanguage,
     setRoomOrder,
+    setRoomOverride,
     snapshotDirtyState,
     restoreDirtyState,
     discardChanges,
     loadFromServer,
     saveOnly,
     saveRoomOrder,
+    saveRoomOverride,
     saveAndReanalyze,
   }
 })

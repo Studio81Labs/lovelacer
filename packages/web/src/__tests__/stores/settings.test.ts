@@ -121,6 +121,36 @@ describe('useSettingsStore', () => {
     expect(store.effective.roomOrder).toEqual(['bedroom', 'kitchen'])
   })
 
+  it('setRoomOverride stages a sanitized room override', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', {
+      name: '  Breakfast nook  ',
+      icon: '  mdi:coffee  ',
+      showNameOnCard: false,
+    })
+
+    expect(store.dirtyState?.roomOverrides).toEqual({
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+    })
+  })
+
+  it('setRoomOverride removes empty room override entries', async () => {
+    const saved: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: { kitchen: { name: 'Breakfast nook' } },
+    }
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: saved })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
+
+    expect(store.dirtyState?.roomOverrides).toBeUndefined()
+  })
+
   it('snapshots and restores dirty settings without sharing references', async () => {
     vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
     const store = useSettingsStore()
@@ -229,6 +259,25 @@ describe('useSettingsStore', () => {
     expect(store.dirtyState?.language).toBe('cs')
     expect(store.dirtyState?.roomOrder).toEqual(['bedroom', 'kitchen'])
     expect(store.phase).toBe('idle')
+  })
+
+  it('saveRoomOverride saves one room override and preserves existing dirty settings', async () => {
+    const savedSettings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+    }
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    vi.mocked(putSettings).mockResolvedValueOnce({ settings: savedSettings })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+    store.setLanguage('cs')
+
+    await store.saveRoomOverride('kitchen', { name: 'Breakfast nook', icon: 'mdi:coffee' })
+
+    expect(vi.mocked(putSettings)).toHaveBeenCalledWith({ settings: savedSettings })
+    expect(store.serverState).toEqual(savedSettings)
+    expect(store.dirtyState?.language).toBe('cs')
+    expect(store.dirtyState?.roomOverrides).toEqual(savedSettings.roomOverrides)
   })
 
   it('saveRoomOrder preserves modal edits made while the save is in flight', async () => {
