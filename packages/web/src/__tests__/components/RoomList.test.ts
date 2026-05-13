@@ -49,6 +49,79 @@ describe('RoomList', () => {
     expect(iconNames).not.toContain('mdi:silverware-fork-knife')
   })
 
+  it('opens inline room metadata editing prefilled from the room', async () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room({ displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect(
+      (wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value,
+    ).toBe('Kitchen')
+    expect(
+      (wrapper.find('[data-testid="room-icon-input"]').element as HTMLInputElement).value,
+    ).toBe('mdi:silverware-fork-knife')
+    expect(
+      (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
+    ).toBe(true)
+  })
+
+  it('emits save-room when inline room metadata is saved', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
+    await wrapper.find('[data-testid="room-icon-input"]').setValue('mdi:coffee')
+    await wrapper.find('[data-testid="room-show-name-toggle"]').setValue(false)
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+
+    expect(wrapper.emitted('save-room')?.[0]).toEqual([
+      'kitchen',
+      { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+    ])
+  })
+
+  it('emits save-room with empty values when reset is clicked', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [room({ id: 'kitchen', displayName: 'Breakfast nook', icon: 'mdi:coffee' })],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-reset-button"]').trigger('click')
+
+    expect(wrapper.emitted('save-room')?.[0]).toEqual([
+      'kitchen',
+      { name: '', icon: '', showNameOnCard: true },
+    ])
+  })
+
+  it('does not render room edit controls in read-only mode', () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room()], readOnly: true },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    expect(wrapper.find('[data-testid="room-edit-button"]').exists()).toBe(false)
+  })
+
   it('orders rooms by the saved roomOrder preference', () => {
     const rooms = [
       room({ id: 'kitchen', displayName: 'Kitchen' }),
