@@ -19,11 +19,7 @@ import type {
   StateCondition,
   TileCard,
 } from './lovelace-types.js'
-import {
-  resolveRoomDisplay,
-  shouldShowRoomNameOnCard,
-  type RoomDisplayOverrides,
-} from './rooms.js'
+import { resolveRoomDisplay, shouldShowRoomNameOnCard, type RoomDisplayOverrides } from './rooms.js'
 
 /**
  * Home view shares RoomView's structural shape (sections layout). The

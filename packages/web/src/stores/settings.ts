@@ -121,10 +121,7 @@ export const useSettingsStore = defineStore('settings', () => {
     return next
   }
 
-  function roomOverrideFor(
-    settings: Settings | null,
-    roomId: string,
-  ): RoomDisplayOverride | null {
+  function roomOverrideFor(settings: Settings | null, roomId: string): RoomDisplayOverride | null {
     if (settings === null) return null
     return settings.roomOverrides?.[roomId] ?? null
   }

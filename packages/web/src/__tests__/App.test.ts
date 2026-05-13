@@ -514,9 +514,9 @@ describe('App integration', () => {
     expect(wrapper.find('[data-testid="room-name"]').text()).toBe('Breakfast nook')
 
     await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
-    expect((wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value).toBe(
-      'Breakfast nook',
-    )
+    expect(
+      (wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value,
+    ).toBe('Breakfast nook')
     expect(
       (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
     ).toBe(true)

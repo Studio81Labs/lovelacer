@@ -551,7 +551,9 @@ describe('buildActiveRoomsSection', () => {
         scenes: false,
         cameras: false,
       },
-      roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: true } },
+      roomOverrides: {
+        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: true },
+      },
     })
 
     const card = view.sections[0]!.cards[0] as { card: { name?: string } }

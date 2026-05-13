@@ -30,6 +30,7 @@
 ## Task 1: Shared Settings Contract And Validation
 
 **Files:**
+
 - Modify: `packages/shared/src/types.ts`
 - Modify: `packages/server/src/storage/settings-store.ts`
 - Modify: `packages/server/src/routes/settings.ts`
@@ -189,7 +190,7 @@ Mirror the same interface and field in `packages/web/src/api/types.ts`.
 In `packages/server/src/storage/settings-store.ts`, import `RoomDisplayOverride` and add to `isSettings`:
 
 ```ts
-  if (v.roomOverrides !== undefined && !isRoomOverrides(v.roomOverrides)) return false
+if (v.roomOverrides !== undefined && !isRoomOverrides(v.roomOverrides)) return false
 ```
 
 Add helper:
@@ -240,9 +241,9 @@ Add to the `next: Settings` object:
 In `packages/web/src/stores/settings.ts`, update `cloneSettings`:
 
 ```ts
-    if (settings.roomOverrides !== undefined) {
-      next.roomOverrides = cloneRoomOverrides(settings.roomOverrides)
-    }
+if (settings.roomOverrides !== undefined) {
+  next.roomOverrides = cloneRoomOverrides(settings.roomOverrides)
+}
 ```
 
 Add helper near `cloneSettings`:
@@ -279,6 +280,7 @@ git commit -m "feat(settings): persist room display overrides"
 ## Task 2: Generator Room Display Overrides
 
 **Files:**
+
 - Modify: `packages/generator/src/rooms.ts`
 - Modify: `packages/generator/src/room-view.ts`
 - Modify: `packages/generator/src/home-view.ts`
@@ -331,9 +333,26 @@ it('uses room display overrides for active room card names', () => {
     groupings: [
       { roomId: 'kitchen', groups: [{ key: 'lights', entities: [ent('light.kitchen_ceiling')] }] },
     ],
-    rooms: [{ id: 'kitchen', haAreaId: null, displayName: 'Kitchen', entityCount: 1, averageConfidence: 1, assignments: [] }],
+    rooms: [
+      {
+        id: 'kitchen',
+        haAreaId: null,
+        displayName: 'Kitchen',
+        entityCount: 1,
+        averageConfidence: 1,
+        assignments: [],
+      },
+    ],
     floorAssignments: new Map(),
-    sections: { ...ALL_SECTIONS_ON, welcome: false, quickStats: false, people: false, roomsByFloor: false, scenes: false, cameras: false },
+    sections: {
+      ...ALL_SECTIONS_ON,
+      welcome: false,
+      quickStats: false,
+      people: false,
+      roomsByFloor: false,
+      scenes: false,
+      cameras: false,
+    },
     roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
   })
 
@@ -347,9 +366,26 @@ it('omits active room card name when showNameOnCard is false', () => {
     groupings: [
       { roomId: 'kitchen', groups: [{ key: 'lights', entities: [ent('light.kitchen_ceiling')] }] },
     ],
-    rooms: [{ id: 'kitchen', haAreaId: null, displayName: 'Kitchen', entityCount: 1, averageConfidence: 1, assignments: [] }],
+    rooms: [
+      {
+        id: 'kitchen',
+        haAreaId: null,
+        displayName: 'Kitchen',
+        entityCount: 1,
+        averageConfidence: 1,
+        assignments: [],
+      },
+    ],
     floorAssignments: new Map(),
-    sections: { ...ALL_SECTIONS_ON, welcome: false, quickStats: false, people: false, roomsByFloor: false, scenes: false, cameras: false },
+    sections: {
+      ...ALL_SECTIONS_ON,
+      welcome: false,
+      quickStats: false,
+      people: false,
+      roomsByFloor: false,
+      scenes: false,
+      cameras: false,
+    },
     roomOverrides: { kitchen: { name: 'Breakfast nook', showNameOnCard: false } },
   })
 
@@ -425,9 +461,7 @@ export function buildRoomViews(
   groupings: RoomGrouping[],
   roomOverrides: RoomDisplayOverrides = {},
 ): RoomView[] {
-  return groupings
-    .filter((g) => g.groups.length > 0)
-    .map((g) => buildRoomView(g, roomOverrides))
+  return groupings.filter((g) => g.groups.length > 0).map((g) => buildRoomView(g, roomOverrides))
 }
 ```
 
@@ -436,11 +470,7 @@ export function buildRoomViews(
 In `packages/generator/src/home-view.ts`, import:
 
 ```ts
-import {
-  resolveRoomDisplay,
-  shouldShowRoomNameOnCard,
-  type RoomDisplayOverrides,
-} from './rooms.js'
+import { resolveRoomDisplay, shouldShowRoomNameOnCard, type RoomDisplayOverrides } from './rooms.js'
 ```
 
 Add to `BuildHomeViewInput`:
@@ -463,13 +493,13 @@ export function buildActiveRoomsSection(
 Inside it:
 
 ```ts
-    const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
-    const tile: TileCard = {
-      type: 'tile',
-      entity: primary.entityId,
-      ...(shouldShowRoomNameOnCard(grouping.roomId, roomOverrides) ? { name: display.title } : {}),
-      tap_action: { action: 'navigate', navigation_path: display.path },
-    }
+const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
+const tile: TileCard = {
+  type: 'tile',
+  entity: primary.entityId,
+  ...(shouldShowRoomNameOnCard(grouping.roomId, roomOverrides) ? { name: display.title } : {}),
+  tap_action: { action: 'navigate', navigation_path: display.path },
+}
 ```
 
 Add `roomOverrides?: RoomDisplayOverrides` to `BuildRoomsByFloorSectionInput`, pass it to `buildFloorGlance`, and in `buildFloorGlance` use the same `resolveRoomDisplay` plus conditional `name` spread for entries.
@@ -495,6 +525,7 @@ git commit -m "feat(generator): apply room display overrides"
 ## Task 3: Server Pipeline Applies Effective Room Metadata
 
 **Files:**
+
 - Modify: `packages/shared/src/types.ts`
 - Modify: `packages/server/src/pipeline.ts`
 - Test: `packages/server/src/__tests__/pipeline.test.ts`
@@ -549,13 +580,7 @@ it('applies room display overrides to generated preview views', async () => {
     kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
   })
   try {
-    const result = await runPreview(
-      fake.client,
-      makeStore(),
-      appliedSnapshot,
-      dismissed,
-      settings,
-    )
+    const result = await runPreview(fake.client, makeStore(), appliedSnapshot, dismissed, settings)
     const view = result.config.views.find((candidate) => candidate.path === 'kitchen')
     expect(view?.title).toBe('Breakfast nook')
     expect(view?.icon).toBe('mdi:coffee')
@@ -580,7 +605,7 @@ Expected: FAIL because `AnalyzedRoom` has no `icon` field and preview generation
 In `packages/shared/src/types.ts`, add to `AnalyzedRoom`:
 
 ```ts
-  icon: string
+icon: string
 ```
 
 In `packages/web/src/api/types.ts`, add the same field to `AnalyzedRoom`.
@@ -604,13 +629,13 @@ import { resolveRoomDisplay, type RoomDisplayOverrides } from '@lovelacer/genera
 Add to `PipelineState`:
 
 ```ts
-  roomOverrides: RoomDisplayOverrides
+roomOverrides: RoomDisplayOverrides
 ```
 
 After reading settings:
 
 ```ts
-  const roomOverrides = (cfg.roomOverrides ?? {}) as RoomDisplayOverrides
+const roomOverrides = (cfg.roomOverrides ?? {}) as RoomDisplayOverrides
 ```
 
 Pass `roomOverrides` to `buildAnalyzedRoom`.
@@ -630,14 +655,14 @@ function buildAnalyzedRoom(
 Inside `buildAnalyzedRoom`:
 
 ```ts
-  const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
-  const detectedDisplayName =
-    haAreaId !== null
-      ? (areas.find((a) => a.area_id === haAreaId)?.name ?? CANONICAL_ROOM_NAMES[grouping.roomId])
-      : CANONICAL_ROOM_NAMES[grouping.roomId]
-  const displayName = roomOverrides[grouping.roomId]?.name?.trim()
-    ? display.title
-    : detectedDisplayName
+const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
+const detectedDisplayName =
+  haAreaId !== null
+    ? (areas.find((a) => a.area_id === haAreaId)?.name ?? CANONICAL_ROOM_NAMES[grouping.roomId])
+    : CANONICAL_ROOM_NAMES[grouping.roomId]
+const displayName = roomOverrides[grouping.roomId]?.name?.trim()
+  ? display.title
+  : detectedDisplayName
 ```
 
 Return:
@@ -693,6 +718,7 @@ git commit -m "feat(server): surface effective room metadata"
 ## Task 4: Web Store Save Helper For One Room Override
 
 **Files:**
+
 - Modify: `packages/web/src/stores/settings.ts`
 - Test: `packages/web/src/__tests__/stores/settings.test.ts`
 
@@ -812,7 +838,8 @@ async function saveRoomOverride(roomId: string, override: RoomDisplayOverride): 
 
   const sanitized = sanitizeRoomOverride(override)
   const previousDirty = snapshotDirtyState()
-  const previousOverride = previousDirty?.roomOverrides?.[roomId] ?? serverState.value.roomOverrides?.[roomId]
+  const previousOverride =
+    previousDirty?.roomOverrides?.[roomId] ?? serverState.value.roomOverrides?.[roomId]
   setRoomOverride(roomId, override)
   const optimisticDirty = snapshotDirtyState()
 
@@ -872,6 +899,7 @@ git commit -m "feat(web): add room override settings actions"
 ## Task 5: RoomList Inline Editing UI
 
 **Files:**
+
 - Modify: `packages/web/src/components/RoomList.vue`
 - Modify: `packages/web/src/icons.ts`
 - Modify: `packages/web/src/locales/en.json`
@@ -886,7 +914,9 @@ Add to `packages/web/src/__tests__/components/RoomList.test.ts`:
 ```ts
 it('emits save-room when inline room metadata is saved', async () => {
   const wrapper = mount(RoomList, {
-    props: { rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })] },
+    props: {
+      rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })],
+    },
     global: {
       plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
     },
@@ -948,7 +978,12 @@ Expected: FAIL because the edit controls and `save-room` emit do not exist.
 In `RoomList.vue`, update imports:
 
 ```ts
-import type { AnalyzedRoom, EntityDiff, RoomDiffSummary, RoomDisplayOverride } from '../api/types.js'
+import type {
+  AnalyzedRoom,
+  EntityDiff,
+  RoomDiffSummary,
+  RoomDisplayOverride,
+} from '../api/types.js'
 ```
 
 Update emits:
@@ -1110,6 +1145,7 @@ git commit -m "feat(web): add inline room customization"
 ## Task 6: App Wiring And Preview Refresh
 
 **Files:**
+
 - Modify: `packages/web/src/App.vue`
 - Test: `packages/web/src/__tests__/App.test.ts`
 
@@ -1123,32 +1159,36 @@ it('saves a room override and refreshes preview', async () => {
   mockOnboardingComplete()
   vi.mocked(getSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })
   vi.mocked(postPreview)
-    .mockResolvedValueOnce(makePreview({
-      rooms: [
-        {
-          id: 'kitchen',
-          haAreaId: 'kitchen',
-          displayName: 'Kitchen',
-          icon: 'mdi:silverware-fork-knife',
-          entityCount: 1,
-          averageConfidence: 1,
-          assignments: [],
-        },
-      ],
-    }))
-    .mockResolvedValueOnce(makePreview({
-      rooms: [
-        {
-          id: 'kitchen',
-          haAreaId: 'kitchen',
-          displayName: 'Breakfast nook',
-          icon: 'mdi:coffee',
-          entityCount: 1,
-          averageConfidence: 1,
-          assignments: [],
-        },
-      ],
-    }))
+    .mockResolvedValueOnce(
+      makePreview({
+        rooms: [
+          {
+            id: 'kitchen',
+            haAreaId: 'kitchen',
+            displayName: 'Kitchen',
+            icon: 'mdi:silverware-fork-knife',
+            entityCount: 1,
+            averageConfidence: 1,
+            assignments: [],
+          },
+        ],
+      }),
+    )
+    .mockResolvedValueOnce(
+      makePreview({
+        rooms: [
+          {
+            id: 'kitchen',
+            haAreaId: 'kitchen',
+            displayName: 'Breakfast nook',
+            icon: 'mdi:coffee',
+            entityCount: 1,
+            averageConfidence: 1,
+            assignments: [],
+          },
+        ],
+      }),
+    )
   vi.mocked(putSettings).mockResolvedValueOnce({
     settings: {
       ...DEFAULT_SETTINGS,
@@ -1230,7 +1270,9 @@ Update the `RoomList` usage:
 Update `ApplyBar` guard:
 
 ```vue
-<ApplyBar v-if="!roomOrderSaveInFlight && !roomOverrideSaveInFlight && !analyze.isRefreshingPreview" />
+<ApplyBar
+  v-if="!roomOrderSaveInFlight && !roomOverrideSaveInFlight && !analyze.isRefreshingPreview"
+/>
 ```
 
 - [ ] **Step 4: Run App test and verify GREEN**
@@ -1254,6 +1296,7 @@ git commit -m "feat(web): save room customization from review"
 ## Task 7: Final Verification
 
 **Files:**
+
 - Verify all modified files.
 
 - [ ] **Step 1: Run focused package tests**

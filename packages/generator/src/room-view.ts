@@ -11,11 +11,7 @@ import type {
   ThermostatCard,
   TileCard,
 } from './lovelace-types.js'
-import {
-  resolveRoomDisplay,
-  shouldShowRoomNameOnCard,
-  type RoomDisplayOverrides,
-} from './rooms.js'
+import { resolveRoomDisplay, shouldShowRoomNameOnCard, type RoomDisplayOverrides } from './rooms.js'
 
 const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
   lights: 'Lights & Outlets',
