@@ -238,6 +238,10 @@ function confidenceLabel(confidence: number): string {
   return t('roomList.avgConfidence', { percent: Math.round(confidence * 100) })
 }
 
+function roomIconLabelId(roomId: string): string {
+  return `room-icon-label-${roomId}`
+}
+
 /**
  * `RoomAssignment` doesn't carry `friendlyName`. Until the API surfaces
  * it on assignments, derive a fallback from the entityId — readable
@@ -389,12 +393,15 @@ function entityIdToFriendly(entityId: string): string {
                 class="w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
               />
             </label>
-            <label class="block min-w-0">
-              <span class="mb-1 block text-xs font-medium text-stone-600">{{
-                t('roomList.iconLabel')
-              }}</span>
-              <RoomIconPicker v-model="editIcon" />
-            </label>
+            <div class="block min-w-0">
+              <span
+                :id="roomIconLabelId(room.id)"
+                class="mb-1 block text-xs font-medium text-stone-600"
+              >
+                {{ t('roomList.iconLabel') }}
+              </span>
+              <RoomIconPicker v-model="editIcon" :labelled-by="roomIconLabelId(room.id)" />
+            </div>
             <label class="flex items-center gap-2 self-end pb-2 text-sm text-stone-700">
               <input
                 v-model="editShowNameOnCard"

@@ -70,6 +70,21 @@ describe('RoomList', () => {
     ).toBe(true)
   })
 
+  it('does not nest the icon picker trigger inside a label', async () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room({ displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    const trigger = wrapper.find('[data-testid="room-icon-picker-button"]')
+    expect(trigger.exists()).toBe(true)
+    expect(trigger.element.closest('label')).toBeNull()
+  })
+
   it('opens the room details row when inline room metadata editing starts', async () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [room()] },

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   modelValue: string
+  labelledBy?: string | undefined
 }>()
 
 const emit = defineEmits<{
@@ -119,6 +120,7 @@ async function loadMdiIconNames(): Promise<string[]> {
       data-testid="room-icon-picker-button"
       class="flex w-full items-center justify-between gap-2 rounded border border-stone-300 bg-white px-3 py-2 text-left text-sm text-stone-800 hover:bg-stone-50 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
       :aria-expanded="isOpen"
+      :aria-labelledby="labelledBy"
       @click="isOpen = !isOpen"
     >
       <span data-testid="room-icon-selected" class="flex min-w-0 items-center gap-2">
