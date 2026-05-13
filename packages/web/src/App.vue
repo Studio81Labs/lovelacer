@@ -38,6 +38,7 @@ const roomOrderDraftResetKey = ref(0)
 const roomOrderSaveInFlight = ref(false)
 const roomOverrideSaveInFlight = ref(false)
 let pendingRoomOrder: string[] | null = null
+const pendingRoomOverrides = new Map<string, RoomDisplayOverride>()
 
 // P2-9 — post-load reconciliation watcher. When the settings store
 // resolves `loadFromServer()`, sync `settings.serverState.uiLanguage`
@@ -172,15 +173,46 @@ async function saveRoomOrder(roomIds: string[]): Promise<void> {
   }
 }
 
-async function saveRoomOverride(roomId: string, override: RoomDisplayOverride): Promise<void> {
+async function persistRoomOverride(
+  roomId: string,
+  override: RoomDisplayOverride,
+): Promise<boolean> {
   if (settings.serverState === null) {
     await settings.loadFromServer()
   }
-  if (settings.serverState === null) return
-  roomOverrideSaveInFlight.value = true
+  if (settings.serverState === null) return false
   try {
     await settings.saveRoomOverride(roomId, override)
-    await analyze.refreshPreview()
+  } catch {
+    return false
+  }
+  return true
+}
+
+async function saveRoomOverride(roomId: string, override: RoomDisplayOverride): Promise<void> {
+  pendingRoomOverrides.set(roomId, { ...override })
+  if (roomOverrideSaveInFlight.value) return
+  roomOverrideSaveInFlight.value = true
+  let roomOverrideNeedsPreviewRefresh = false
+  try {
+    while (pendingRoomOverrides.size > 0) {
+      const nextOverrides = [...pendingRoomOverrides.entries()]
+      pendingRoomOverrides.clear()
+      for (const [nextRoomId, nextOverride] of nextOverrides) {
+        const saved = await persistRoomOverride(nextRoomId, nextOverride)
+        roomOverrideNeedsPreviewRefresh ||= saved
+      }
+      if (roomOverrideNeedsPreviewRefresh && pendingRoomOverrides.size === 0) {
+        try {
+          await analyze.refreshPreview()
+          roomOverrideNeedsPreviewRefresh = false
+        } catch (err) {
+          if (pendingRoomOverrides.size === 0) {
+            throw err
+          }
+        }
+      }
+    }
   } catch {
     // Settings/analyze stores own their visible error state.
   } finally {
