@@ -246,6 +246,15 @@ function roomIconLabelId(roomId: string): string {
   return `room-icon-label-${roomId}`
 }
 
+function roomDisplayName(room: AnalyzedRoom): string {
+  const overrideName = props.roomOverrides?.[room.id]?.name?.trim()
+  return overrideName || room.displayName
+}
+
+function roomDisplayIcon(room: AnalyzedRoom): string {
+  return normalizeRoomIcon(props.roomOverrides?.[room.id]?.icon ?? room.icon, room.id)
+}
+
 function normalizeRoomIcon(icon: string | undefined, roomId: string): string {
   return icon?.trim() || roomIdToIcon(roomId)
 }
@@ -325,8 +334,8 @@ function entityIdToFriendly(entityId: string): string {
               <button
                 type="button"
                 data-testid="room-drag-handle"
-                :aria-label="t('roomList.dragHandle', { room: room.displayName })"
-                :title="t('roomList.dragHandle', { room: room.displayName })"
+                :aria-label="t('roomList.dragHandle', { room: roomDisplayName(room) })"
+                :title="t('roomList.dragHandle', { room: roomDisplayName(room) })"
                 :disabled="!canReorder"
                 :draggable="canReorder"
                 class="cursor-grab rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
@@ -336,16 +345,16 @@ function entityIdToFriendly(entityId: string): string {
               >
                 <Icon icon="mdi:drag-vertical" class="h-4 w-4" />
               </button>
-              <Icon :icon="normalizeRoomIcon(room.icon, room.id)" class="h-5 w-5 text-stone-700" />
+              <Icon :icon="roomDisplayIcon(room)" class="h-5 w-5 text-stone-700" />
               <span data-testid="room-name" class="truncate text-sm font-medium text-stone-900">{{
-                room.displayName
+                roomDisplayName(room)
               }}</span>
               <button
                 v-if="readOnly !== true && openRoomIds.has(room.id)"
                 type="button"
                 data-testid="room-edit-button"
-                :aria-label="t('roomList.editRoom', { room: room.displayName })"
-                :title="t('roomList.editRoom', { room: room.displayName })"
+                :aria-label="t('roomList.editRoom', { room: roomDisplayName(room) })"
+                :title="t('roomList.editRoom', { room: roomDisplayName(room) })"
                 class="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
                 @click.prevent.stop="openRoomEdit(room)"
               >

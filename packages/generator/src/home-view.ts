@@ -151,7 +151,6 @@ export function buildHomeView(input: BuildHomeViewInput): HomeView {
     title: 'Home',
     path: 'home',
     icon: 'mdi:home-variant',
-    show_icon_and_title: true,
     sections,
   }
 }

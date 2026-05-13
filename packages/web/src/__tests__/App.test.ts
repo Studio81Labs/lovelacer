@@ -454,6 +454,74 @@ describe('App integration', () => {
     expect(wrapper.find('[data-testid="room-name"]').text()).toBe('Breakfast nook')
   })
 
+  it('renders saved room overrides even before preview reflects them', async () => {
+    const kitchenPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
+    }
+    const savedSettings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: {
+        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: true },
+      },
+    }
+    vi.mocked(getSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })
+    vi.mocked(postPreview).mockResolvedValue(kitchenPreview)
+    vi.mocked(putSettings).mockResolvedValueOnce({ settings: savedSettings })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    await analyze.analyze()
+    await flushPromises()
+
+    await wrapper.find('summary').trigger('click')
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    await flushPromises()
+    await wrapper.find('[data-testid="room-icon-search"]').setValue('coffee')
+    let coffee = wrapper
+      .findAll('[data-testid="room-icon-option"]')
+      .find((option) => option.text().includes('mdi:coffee'))
+    await vi.waitFor(() => {
+      coffee = wrapper
+        .findAll('[data-testid="room-icon-option"]')
+        .find((option) => option.text().includes('mdi:coffee'))
+      expect(coffee).toBeDefined()
+    })
+    await coffee!.trigger('click')
+    await wrapper.find('[data-testid="room-show-name-toggle"]').setValue(true)
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledWith({ settings: savedSettings })
+    expect(wrapper.find('[data-testid="room-name"]').text()).toBe('Breakfast nook')
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    expect((wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value).toBe(
+      'Breakfast nook',
+    )
+    expect(
+      (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
+    ).toBe(true)
+  })
+
   it('queues quick room override saves and refreshes preview once after the latest save', async () => {
     const twoRoomPreview: PreviewOutput = {
       ...mockPreview,

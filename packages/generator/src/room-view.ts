@@ -11,7 +11,11 @@ import type {
   ThermostatCard,
   TileCard,
 } from './lovelace-types.js'
-import { resolveRoomDisplay, type RoomDisplayOverrides } from './rooms.js'
+import {
+  resolveRoomDisplay,
+  shouldShowRoomNameOnCard,
+  type RoomDisplayOverrides,
+} from './rooms.js'
 
 const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
   lights: 'Lights & Outlets',
@@ -46,7 +50,9 @@ export function buildRoomView(
     title: display.title,
     path: display.path,
     icon: display.icon,
-    show_icon_and_title: true,
+    ...(shouldShowRoomNameOnCard(grouping.roomId, roomOverrides) && {
+      show_icon_and_title: true,
+    }),
     sections: grouping.groups.map((group) => buildSection(group)),
   }
 }

@@ -1014,10 +1014,10 @@ describe('buildHomeView — section toggles (P2-6)', () => {
     cameras: false,
   }
 
-  it('shows both the home icon and title in the HA view tab', () => {
+  it('keeps the home HA view tab icon-only by default', () => {
     const home = buildHomeView(makeInput(ALL_OFF))
 
-    expect(home.show_icon_and_title).toBe(true)
+    expect(home.show_icon_and_title).toBeUndefined()
   })
 
   it('with all toggles on, includes the welcome section', () => {

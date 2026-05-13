@@ -56,8 +56,16 @@ describe('buildRoomView — per-room metadata', () => {
     expect(view.type).toBe('sections')
   })
 
-  it('shows both the room icon and title in the HA view tab', () => {
+  it('keeps room HA view tabs icon-only by default', () => {
     const view = buildRoomView(grouping('kitchen', []))
+
+    expect(view.show_icon_and_title).toBeUndefined()
+  })
+
+  it('shows the room HA view tab label when the room name is enabled', () => {
+    const view = buildRoomView(grouping('kitchen', []), {
+      kitchen: { showNameOnCard: true },
+    })
 
     expect(view.show_icon_and_title).toBe(true)
   })
