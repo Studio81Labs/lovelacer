@@ -41,6 +41,20 @@ describe('RoomIconPicker', () => {
     expect(wrapper.findComponent(Icon).vm.$attrs['icon']).toBe('mdi:sofa')
   })
 
+  it('shows the current icon as the first option when opened', async () => {
+    const wrapper = mount(RoomIconPicker, {
+      props: { modelValue: 'mdi:garage-variant' },
+      global: { plugins: [createTestI18n()] },
+    })
+
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    await flushPromises()
+
+    const firstOption = wrapper.find('[data-testid="room-icon-option"]')
+    expect(firstOption.text()).toContain('mdi:garage-variant')
+    expect(firstOption.attributes('aria-selected')).toBe('true')
+  })
+
   it('falls back to a default icon when the model value is missing', () => {
     const wrapper = mount(RoomIconPicker, {
       props: { modelValue: undefined },

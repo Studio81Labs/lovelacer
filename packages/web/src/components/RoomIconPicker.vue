@@ -22,13 +22,16 @@ const isLoading = ref(false)
 const loadFailed = ref(false)
 
 const selectedIcon = computed(() => normalizeIconValue(props.modelValue))
+const selectedIconName = computed(() => normalizeIconQuery(selectedIcon.value))
 const searchTerm = computed(() => normalizeIconQuery(query.value))
 const filteredIconNames = computed(() => {
   const names = iconNames.value
   if (names.length === 0) return []
-  if (searchTerm.value === '') return prioritizeIconNames(names, POPULAR_ROOM_ICON_NAMES)
+  if (searchTerm.value === '') {
+    return prioritizeIconNames(names, [selectedIconName.value, ...POPULAR_ROOM_ICON_NAMES])
+  }
   const matches = names.filter((name) => name.includes(searchTerm.value))
-  return prioritizeIconNames(matches, [searchTerm.value]).slice(0, 80)
+  return prioritizeIconNames(matches, [selectedIconName.value, searchTerm.value]).slice(0, 80)
 })
 
 watch(isOpen, (open) => {
@@ -92,7 +95,10 @@ function normalizeIconValue(value: string | undefined): string {
 }
 
 function prioritizeIconNames(names: string[], priorityNames: string[]): string[] {
-  const priority = new Map(priorityNames.map((name, index) => [name, index]))
+  const priority = new Map<string, number>()
+  priorityNames.forEach((name, index) => {
+    if (!priority.has(name)) priority.set(name, index)
+  })
   return [...names]
     .sort((a, b) => {
       const aPriority = priority.get(a)
