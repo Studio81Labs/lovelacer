@@ -32,6 +32,7 @@ import kitchen from '@iconify-icons/mdi/silverware-fork-knife'
 import laundry from '@iconify-icons/mdi/washing-machine'
 import livingRoom from '@iconify-icons/mdi/sofa'
 import office from '@iconify-icons/mdi/desk'
+import pencil from '@iconify-icons/mdi/pencil'
 
 const REGISTRY: Record<string, Parameters<typeof addIcon>[1]> = {
   'mdi:bed': bedroom,
@@ -45,6 +46,7 @@ const REGISTRY: Record<string, Parameters<typeof addIcon>[1]> = {
   'mdi:home-outline': homeOutline,
   'mdi:home-roof': attic,
   'mdi:home-variant': homeVariant,
+  'mdi:pencil': pencil,
   'mdi:shower-head': bathroom,
   'mdi:silverware': diningRoom,
   'mdi:silverware-fork-knife': kitchen,

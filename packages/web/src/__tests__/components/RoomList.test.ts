@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
+import { Icon } from '@iconify/vue'
 import RoomList from '../../components/RoomList.vue'
 import type { AnalyzedRoom } from '../../api/types.js'
 import { createTestI18n } from '../test-utils.js'
@@ -10,6 +11,7 @@ function room(overrides: Partial<AnalyzedRoom> = {}): AnalyzedRoom {
     id: 'kitchen',
     haAreaId: 'kitchen',
     displayName: 'Kitchen',
+    icon: 'mdi:silverware-fork-knife',
     entityCount: 12,
     averageConfidence: 0.92,
     assignments: [],
@@ -18,6 +20,10 @@ function room(overrides: Partial<AnalyzedRoom> = {}): AnalyzedRoom {
 }
 
 describe('RoomList', () => {
+  async function expandFirstRoom(wrapper: ReturnType<typeof mount>): Promise<void> {
+    await wrapper.find('summary').trigger('click')
+  }
+
   it('renders one row per room', () => {
     const rooms = [
       room({ id: 'kitchen', displayName: 'Kitchen' }),
@@ -32,6 +38,262 @@ describe('RoomList', () => {
     })
     const rows = wrapper.findAll('[data-testid="room-row"]')
     expect(rows).toHaveLength(3)
+  })
+
+  it('renders the API-provided room icon', () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room({ id: 'kitchen', icon: 'mdi:coffee' })] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    const iconNames = wrapper.findAllComponents(Icon).map((icon) => icon.vm.$attrs['icon'])
+    expect(iconNames).toContain('mdi:coffee')
+    expect(iconNames).not.toContain('mdi:silverware-fork-knife')
+  })
+
+  it('opens inline room metadata editing prefilled from the room', async () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room({ displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect(
+      (wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value,
+    ).toBe('Kitchen')
+    expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain(
+      'mdi:silverware-fork-knife',
+    )
+    expect(
+      (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
+    ).toBe(true)
+  })
+
+  it('falls back to the canonical room icon when the API omits one', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [
+          room({
+            id: 'living_room',
+            displayName: 'Living Room',
+            icon: undefined as unknown as string,
+          }),
+        ],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:sofa')
+  })
+
+  it('opens the icon picker with the canonical fallback room icon selected', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [
+          room({
+            id: 'living_room',
+            displayName: 'Living Room',
+            icon: undefined as unknown as string,
+          }),
+        ],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    await flushPromises()
+
+    let firstOption = wrapper.find('[data-testid="room-icon-option"]')
+    await vi.waitFor(() => {
+      firstOption = wrapper.find('[data-testid="room-icon-option"]')
+      expect(firstOption.exists()).toBe(true)
+    })
+    expect(firstOption.text()).toContain('mdi:sofa')
+    expect(firstOption.attributes('aria-selected')).toBe('true')
+  })
+
+  it('does not nest the icon picker trigger inside a label', async () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room({ displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    const trigger = wrapper.find('[data-testid="room-icon-picker-button"]')
+    expect(trigger.exists()).toBe(true)
+    expect(trigger.element.closest('label')).toBeNull()
+  })
+
+  it('opens inline room metadata editing from an expanded room', async () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room()] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="room-name-input"]').exists()).toBe(true)
+  })
+
+  it('shows the room edit button only when the room is expanded', async () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room()] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    expect(wrapper.find('[data-testid="room-edit-button"]').exists()).toBe(false)
+
+    await expandFirstRoom(wrapper)
+    expect(wrapper.find('[data-testid="room-edit-button"]').exists()).toBe(true)
+
+    await expandFirstRoom(wrapper)
+    expect(wrapper.find('[data-testid="room-edit-button"]').exists()).toBe(false)
+  })
+
+  it('emits save-room when inline room metadata is saved', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    await flushPromises()
+    await wrapper.find('[data-testid="room-icon-search"]').setValue('coffee')
+    let coffee = wrapper
+      .findAll('[data-testid="room-icon-option"]')
+      .find((option) => option.text().includes('mdi:coffee'))
+    await vi.waitFor(() => {
+      coffee = wrapper
+        .findAll('[data-testid="room-icon-option"]')
+        .find((option) => option.text().includes('mdi:coffee'))
+      expect(coffee).toBeDefined()
+    })
+    await coffee!.trigger('click')
+    await wrapper.find('[data-testid="room-show-name-toggle"]').setValue(false)
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+
+    expect(wrapper.emitted('save-room')?.[0]).toEqual([
+      'kitchen',
+      { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+    ])
+  })
+
+  it('prefills show-name-on-card as enabled when no hidden override exists', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect(
+      (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
+    ).toBe(true)
+
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+
+    expect(wrapper.emitted('save-room')?.[0]).toEqual([
+      'kitchen',
+      { name: 'Kitchen', icon: 'mdi:silverware-fork-knife', showNameOnCard: true },
+    ])
+  })
+
+  it('prefills and preserves dirty room metadata overrides over stale room props', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [room({ id: 'kitchen', displayName: 'Kitchen', icon: 'mdi:silverware-fork-knife' })],
+        roomOverrides: {
+          kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+        },
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    expect(
+      (wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value,
+    ).toBe('Breakfast nook')
+    expect(wrapper.find('[data-testid="room-icon-selected"]').text()).toContain('mdi:coffee')
+    expect(
+      (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
+    ).toBe(false)
+
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+
+    expect(wrapper.emitted('save-room')?.[0]).toEqual([
+      'kitchen',
+      { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+    ])
+  })
+
+  it('emits save-room with empty values when reset is clicked', async () => {
+    const wrapper = mount(RoomList, {
+      props: {
+        rooms: [room({ id: 'kitchen', displayName: 'Breakfast nook', icon: 'mdi:coffee' })],
+      },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-reset-button"]').trigger('click')
+
+    expect(wrapper.emitted('save-room')?.[0]).toEqual([
+      'kitchen',
+      { name: '', icon: '', showNameOnCard: true },
+    ])
+  })
+
+  it('does not render room edit controls in read-only mode', () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room()], readOnly: true },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    expect(wrapper.find('[data-testid="room-edit-button"]').exists()).toBe(false)
   })
 
   it('orders rooms by the saved roomOrder preference', () => {
@@ -381,6 +643,7 @@ describe('RoomList', () => {
       room({
         id: 'kitchen',
         displayName: 'Kitchen',
+        icon: 'mdi:silverware-fork-knife',
         assignments: [
           { entityId: 'light.kitchen_ceiling', roomId: 'kitchen', confidence: 0.9, signals: [] },
         ],
@@ -486,6 +749,7 @@ describe('RoomList', () => {
       id: 'kitchen',
       haAreaId: 'kitchen',
       displayName: 'Kitchen',
+      icon: 'mdi:silverware-fork-knife',
       entityCount: 2,
       averageConfidence: 0.9,
       assignments: [
@@ -514,6 +778,7 @@ describe('RoomList', () => {
       room({
         id: 'kitchen',
         displayName: 'Kitchen',
+        icon: 'mdi:silverware-fork-knife',
         assignments: [
           { entityId: 'light.kitchen_ceiling', roomId: 'kitchen', confidence: 0.9, signals: [] },
         ],
@@ -549,6 +814,7 @@ describe('RoomList', () => {
           room({
             id: 'kitchen',
             displayName: 'Kitchen',
+            icon: 'mdi:silverware-fork-knife',
             assignments: [
               {
                 entityId: 'light.kitchen_ceiling',
@@ -612,6 +878,7 @@ describe('RoomList diff badges', () => {
     id: 'kitchen',
     haAreaId: 'kitchen',
     displayName: 'Kitchen',
+    icon: 'mdi:silverware-fork-knife',
     entityCount: 1,
     averageConfidence: 0.9,
     assignments: [
@@ -664,6 +931,7 @@ describe('RoomList diff badges', () => {
             id: 'kitchen',
             haAreaId: null,
             displayName: 'Kitchen',
+            icon: 'mdi:silverware-fork-knife',
             entityCount: 1,
             averageConfidence: 0.8,
             assignments: [

@@ -19,7 +19,7 @@ import type {
   StateCondition,
   TileCard,
 } from './lovelace-types.js'
-import { roomIdToDisplay } from './rooms.js'
+import { resolveRoomDisplay, shouldShowRoomNameOnCard, type RoomDisplayOverrides } from './rooms.js'
 
 /**
  * Home view shares RoomView's structural shape (sections layout). The
@@ -38,6 +38,7 @@ export interface BuildHomeViewInput {
    * has an empty `sections` array (valid but empty home view).
    */
   sections: SettingsSections
+  roomOverrides?: RoomDisplayOverrides
 }
 
 const PRESENCE_ID_PATTERN = /anyone[_-]?home|someone[_-]?home|presence/i
@@ -100,6 +101,7 @@ function hasOutdoorMarker(entity: NormalizedEntity): boolean {
  */
 export function buildHomeView(input: BuildHomeViewInput): HomeView {
   const sections: GridSection[] = []
+  const roomOverrides = input.roomOverrides ?? {}
 
   if (input.sections.welcome) {
     sections.push(buildWelcomeSection(input.entities))
@@ -120,12 +122,13 @@ export function buildHomeView(input: BuildHomeViewInput): HomeView {
       rooms: input.rooms,
       groupings: input.groupings,
       floorAssignments: input.floorAssignments,
+      roomOverrides,
     })
     if (roomsByFloor !== null) sections.push(roomsByFloor)
   }
 
   if (input.sections.activeRooms) {
-    const activeRooms = buildActiveRoomsSection(input.groupings)
+    const activeRooms = buildActiveRoomsSection(input.groupings, roomOverrides)
     if (activeRooms !== null) sections.push(activeRooms)
   }
 
@@ -248,8 +251,11 @@ function pickPrimaryEntity(grouping: RoomGrouping): NormalizedEntity | null {
  * Skips rooms with no lights AND no activity sensors. Skips the misc
  * bucket (no view to navigate to). Returns null if no rooms qualify.
  */
-export function buildActiveRoomsSection(groupings: RoomGrouping[]): GridSection | null {
-  const cards: ConditionalCard[] = []
+export function buildActiveRoomsSection(
+  groupings: RoomGrouping[],
+  roomOverrides: RoomDisplayOverrides = {},
+): GridSection | null {
+  const entries: { card: ConditionalCard; sortTitle: string }[] = []
 
   for (const grouping of groupings) {
     if (grouping.roomId === 'misc') continue
@@ -273,36 +279,37 @@ export function buildActiveRoomsSection(groupings: RoomGrouping[]): GridSection 
         ? stateConditions[0]!
         : { condition: 'or', conditions: stateConditions }
 
-    const display = roomIdToDisplay(grouping.roomId)
+    const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
+    const showName = shouldShowRoomNameOnCard(grouping.roomId, roomOverrides)
     const tile: TileCard = {
       type: 'tile',
       entity: primary.entityId,
-      name: display.title,
+      name: showName ? display.title : ' ',
       tap_action: { action: 'navigate', navigation_path: display.path },
     }
 
-    cards.push({
-      type: 'conditional',
-      conditions: [innerCondition],
-      card: tile,
+    entries.push({
+      sortTitle: display.title,
+      card: {
+        type: 'conditional',
+        conditions: [innerCondition],
+        card: tile,
+      },
     })
   }
 
-  if (cards.length === 0) return null
+  if (entries.length === 0) return null
 
-  cards.sort((a, b) => {
-    const an = (a.card as TileCard).name ?? ''
-    const bn = (b.card as TileCard).name ?? ''
-    return an.localeCompare(bn, 'en')
-  })
+  entries.sort((a, b) => a.sortTitle.localeCompare(b.sortTitle, 'en'))
 
-  return { type: 'grid', cards }
+  return { type: 'grid', cards: entries.map((entry) => entry.card) }
 }
 
 export interface BuildRoomsByFloorSectionInput {
   rooms: AnalyzedRoom[]
   groupings: RoomGrouping[]
   floorAssignments: Map<CanonicalRoomId, FloorAssignment | null>
+  roomOverrides?: RoomDisplayOverrides
 }
 
 /**
@@ -354,13 +361,13 @@ export function buildRoomsByFloorSection(input: BuildRoomsByFloorSectionInput): 
 
   const cards: LovelaceCard[] = []
   for (const [, { floor, rooms }] of flooredEntries) {
-    const glance = buildFloorGlance(rooms, groupingByRoom)
+    const glance = buildFloorGlance(rooms, groupingByRoom, input.roomOverrides)
     if (glance === null) continue
     cards.push({ type: 'heading', heading: floor!.name })
     cards.push(glance)
   }
   if (nullEntry !== undefined) {
-    const glance = buildFloorGlance(nullEntry.rooms, groupingByRoom)
+    const glance = buildFloorGlance(nullEntry.rooms, groupingByRoom, input.roomOverrides)
     if (glance !== null) {
       cards.push({ type: 'heading', heading: 'Other' })
       cards.push(glance)
@@ -378,6 +385,7 @@ export function buildRoomsByFloorSection(input: BuildRoomsByFloorSectionInput): 
 function buildFloorGlance(
   rooms: AnalyzedRoom[],
   groupingByRoom: Map<CanonicalRoomId, RoomGrouping>,
+  roomOverrides: RoomDisplayOverrides = {},
 ): GlanceCard | null {
   const entries: GlanceEntityEntry[] = []
   for (const room of rooms) {
@@ -385,13 +393,14 @@ function buildFloorGlance(
     if (grouping === undefined) continue
     const primary = pickPrimaryEntity(grouping)
     if (primary === null) continue
-    const display = roomIdToDisplay(room.id)
+    const display = resolveRoomDisplay(room.id, roomOverrides)
+    const showName = shouldShowRoomNameOnCard(room.id, roomOverrides)
     entries.push({
       entity: primary.entityId,
-      name: display.title,
+      name: showName ? display.title : ' ',
       tap_action: { action: 'navigate', navigation_path: display.path },
     })
   }
   if (entries.length === 0) return null
-  return { type: 'glance', entities: entries }
+  return { type: 'glance', show_name: true, entities: entries }
 }

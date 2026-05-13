@@ -11,6 +11,7 @@ import { useInviteStore } from '../stores/invite.js'
 import { useOnboardingStore } from '../stores/onboarding.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18nStore } from '../stores/i18n.js'
+import { DEFAULT_SETTINGS } from '../api/types.js'
 import type { PreviewOutput, Settings } from '../api/types.js'
 import { createTestI18n } from './test-utils.js'
 import enLocale from '../locales/en.json'
@@ -46,6 +47,7 @@ const mockPreview: PreviewOutput = {
       id: 'kitchen',
       haAreaId: 'kitchen',
       displayName: 'Kitchen',
+      icon: 'mdi:silverware-fork-knife',
       entityCount: 1,
       averageConfidence: 0.9,
       assignments: [
@@ -87,8 +89,10 @@ describe('App integration', () => {
     vi.mocked(getOverrides).mockReset()
     vi.mocked(putOverrides).mockReset()
     vi.mocked(getInvite).mockReset()
+    vi.mocked(postInvite).mockReset()
     vi.mocked(getOnboarding).mockReset()
     vi.mocked(getSettings).mockReset()
+    vi.mocked(putSettings).mockReset()
     // Default: most existing tests assume the gate is already accepted
     // and onboarding already completed so the main view is visible.
     vi.mocked(getInvite).mockResolvedValue({ accepted: true })
@@ -219,6 +223,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 2,
           averageConfidence: 0.9,
           assignments: [
@@ -329,6 +334,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -337,6 +343,7 @@ describe('App integration', () => {
           id: 'bedroom',
           haAreaId: 'bedroom',
           displayName: 'Bedroom',
+          icon: 'mdi:bed',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -367,6 +374,255 @@ describe('App integration', () => {
     expect(postPreview).toHaveBeenCalled()
   })
 
+  it('saves a room override and refreshes preview', async () => {
+    const kitchenPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
+    }
+    const breakfastNookPreview: PreviewOutput = {
+      ...kitchenPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Breakfast nook',
+          icon: 'mdi:coffee',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+    }
+    vi.mocked(getSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })
+    vi.mocked(postPreview)
+      .mockResolvedValueOnce(kitchenPreview)
+      .mockResolvedValueOnce(breakfastNookPreview)
+    vi.mocked(putSettings).mockResolvedValueOnce({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+      },
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    await analyze.analyze()
+    await flushPromises()
+
+    await wrapper.find('summary').trigger('click')
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    await flushPromises()
+    await wrapper.find('[data-testid="room-icon-search"]').setValue('coffee')
+    let coffee = wrapper
+      .findAll('[data-testid="room-icon-option"]')
+      .find((option) => option.text().includes('mdi:coffee'))
+    await vi.waitFor(() => {
+      coffee = wrapper
+        .findAll('[data-testid="room-icon-option"]')
+        .find((option) => option.text().includes('mdi:coffee'))
+      expect(coffee).toBeDefined()
+    })
+    await coffee!.trigger('click')
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledWith({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+      },
+    })
+    expect(postPreview).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('[data-testid="room-name"]').text()).toBe('Breakfast nook')
+  })
+
+  it('renders saved room overrides even before preview reflects them', async () => {
+    const kitchenPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
+    }
+    const savedSettings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: {
+        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
+      },
+    }
+    vi.mocked(getSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })
+    vi.mocked(postPreview).mockResolvedValue(kitchenPreview)
+    vi.mocked(putSettings).mockResolvedValueOnce({ settings: savedSettings })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    await analyze.analyze()
+    await flushPromises()
+
+    await wrapper.find('summary').trigger('click')
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    await wrapper.find('[data-testid="room-name-input"]').setValue('Breakfast nook')
+    await wrapper.find('[data-testid="room-icon-picker-button"]').trigger('click')
+    await flushPromises()
+    await wrapper.find('[data-testid="room-icon-search"]').setValue('coffee')
+    let coffee = wrapper
+      .findAll('[data-testid="room-icon-option"]')
+      .find((option) => option.text().includes('mdi:coffee'))
+    await vi.waitFor(() => {
+      coffee = wrapper
+        .findAll('[data-testid="room-icon-option"]')
+        .find((option) => option.text().includes('mdi:coffee'))
+      expect(coffee).toBeDefined()
+    })
+    await coffee!.trigger('click')
+    await wrapper.find('[data-testid="room-show-name-toggle"]').setValue(true)
+    await wrapper.find('[data-testid="room-save-button"]').trigger('click')
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledWith({ settings: savedSettings })
+    expect(wrapper.find('[data-testid="room-name"]').text()).toBe('Breakfast nook')
+
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+    expect(
+      (wrapper.find('[data-testid="room-name-input"]').element as HTMLInputElement).value,
+    ).toBe('Breakfast nook')
+    expect(
+      (wrapper.find('[data-testid="room-show-name-toggle"]').element as HTMLInputElement).checked,
+    ).toBe(true)
+  })
+
+  it('queues quick room override saves and refreshes preview once after the latest save', async () => {
+    const twoRoomPreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+        {
+          id: 'bedroom',
+          haAreaId: 'bedroom',
+          displayName: 'Bedroom',
+          icon: 'mdi:bed',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      summary: { entityCount: 2, roomCount: 2, miscCount: 0 },
+    }
+    const refreshedPreview: PreviewOutput = {
+      ...twoRoomPreview,
+      rooms: [
+        {
+          ...twoRoomPreview.rooms[0],
+          displayName: 'Kitchenette',
+        },
+        {
+          ...twoRoomPreview.rooms[1],
+          icon: 'mdi:bed-king',
+        },
+      ],
+    }
+    const firstSettings: Settings = {
+      ...defaultSettings,
+      roomOverrides: { kitchen: { name: 'Kitchenette' } },
+    }
+    const latestSettings: Settings = {
+      ...defaultSettings,
+      roomOverrides: {
+        kitchen: { name: 'Kitchenette' },
+        bedroom: { icon: 'mdi:bed-king' },
+      },
+    }
+    let resolveFirstSave: (value: { settings: Settings }) => void = () => {}
+    let resolvePreview: (preview: PreviewOutput) => void = () => {}
+    vi.mocked(putSettings)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirstSave = resolve
+        }),
+      )
+      .mockResolvedValueOnce({ settings: latestSettings })
+    vi.mocked(postPreview).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolvePreview = resolve
+      }),
+    )
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    analyze.$patch({ phase: 'ready', preview: twoRoomPreview })
+    await wrapper.vm.$nextTick()
+    vi.mocked(putSettings).mockClear()
+    vi.mocked(postPreview).mockClear()
+
+    wrapper.findComponent(RoomList).vm.$emit('save-room', 'kitchen', { name: 'Kitchenette' })
+    await Promise.resolve()
+    wrapper.findComponent(RoomList).vm.$emit('save-room', 'bedroom', { icon: 'mdi:bed-king' })
+    await Promise.resolve()
+
+    expect(putSettings).toHaveBeenCalledTimes(1)
+    expect(putSettings).toHaveBeenNthCalledWith(1, { settings: firstSettings })
+    expect(postPreview).not.toHaveBeenCalled()
+    expect(wrapper.findComponent(ApplyBar).exists()).toBe(false)
+
+    resolveFirstSave({ settings: firstSettings })
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledTimes(2)
+    expect(putSettings).toHaveBeenNthCalledWith(2, { settings: latestSettings })
+    expect(postPreview).toHaveBeenCalledTimes(1)
+    expect(wrapper.findComponent(ApplyBar).exists()).toBe(false)
+
+    resolvePreview(refreshedPreview)
+    await flushPromises()
+
+    expect(analyze.preview).toEqual(refreshedPreview)
+    expect(wrapper.findComponent(ApplyBar).exists()).toBe(true)
+  })
+
   it('waits for server settings before saving room order', async () => {
     const orderedPreview: PreviewOutput = {
       ...mockPreview,
@@ -375,6 +631,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -383,6 +640,7 @@ describe('App integration', () => {
           id: 'bedroom',
           haAreaId: 'bedroom',
           displayName: 'Bedroom',
+          icon: 'mdi:bed',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -451,6 +709,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -459,6 +718,7 @@ describe('App integration', () => {
           id: 'bedroom',
           haAreaId: 'bedroom',
           displayName: 'Bedroom',
+          icon: 'mdi:bed',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -505,6 +765,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -513,6 +774,7 @@ describe('App integration', () => {
           id: 'bedroom',
           haAreaId: 'bedroom',
           displayName: 'Bedroom',
+          icon: 'mdi:bed',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -521,6 +783,7 @@ describe('App integration', () => {
           id: 'living_room',
           haAreaId: 'living_room',
           displayName: 'Living Room',
+          icon: 'mdi:sofa',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -583,6 +846,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -591,6 +855,7 @@ describe('App integration', () => {
           id: 'bedroom',
           haAreaId: 'bedroom',
           displayName: 'Bedroom',
+          icon: 'mdi:bed',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -599,6 +864,7 @@ describe('App integration', () => {
           id: 'living_room',
           haAreaId: 'living_room',
           displayName: 'Living Room',
+          icon: 'mdi:sofa',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -662,6 +928,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -670,6 +937,7 @@ describe('App integration', () => {
           id: 'bedroom',
           haAreaId: 'bedroom',
           displayName: 'Bedroom',
+          icon: 'mdi:bed',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -678,6 +946,7 @@ describe('App integration', () => {
           id: 'living_room',
           haAreaId: 'living_room',
           displayName: 'Living Room',
+          icon: 'mdi:sofa',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -742,6 +1011,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -750,6 +1020,7 @@ describe('App integration', () => {
           id: 'bedroom',
           haAreaId: 'bedroom',
           displayName: 'Bedroom',
+          icon: 'mdi:bed',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -815,6 +1086,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -823,6 +1095,7 @@ describe('App integration', () => {
           id: 'bedroom',
           haAreaId: 'bedroom',
           displayName: 'Bedroom',
+          icon: 'mdi:bed',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -831,6 +1104,7 @@ describe('App integration', () => {
           id: 'living_room',
           haAreaId: 'living_room',
           displayName: 'Living Room',
+          icon: 'mdi:sofa',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -895,6 +1169,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -903,6 +1178,7 @@ describe('App integration', () => {
           id: 'bedroom',
           haAreaId: 'bedroom',
           displayName: 'Bedroom',
+          icon: 'mdi:bed',
           entityCount: 0,
           averageConfidence: 1,
           assignments: [],
@@ -960,6 +1236,7 @@ describe('App integration', () => {
           id: 'kitchen',
           haAreaId: 'kitchen',
           displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
           entityCount: 3,
           averageConfidence: 1,
           assignments: [

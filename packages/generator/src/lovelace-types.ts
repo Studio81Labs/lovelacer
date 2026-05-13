@@ -16,6 +16,8 @@ export interface RoomView {
   title: string
   path: string
   icon: string
+  /** HA hides view titles when an icon is set unless this is true. */
+  show_icon_and_title?: boolean
   sections: GridSection[]
 }
 
@@ -136,6 +138,7 @@ export interface GlanceEntityEntry {
 export interface GlanceCard {
   type: 'glance'
   title?: string
+  show_name?: boolean
   entities: (string | GlanceEntityEntry)[]
 }
 

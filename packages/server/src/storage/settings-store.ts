@@ -4,6 +4,7 @@ import {
   SUPPORTED_CARD_PACKS,
   SUPPORTED_LANGUAGES,
   SUPPORTED_UI_LANGUAGES,
+  type RoomDisplayOverride,
   type Settings,
   type SettingsCardPack,
   type SettingsLanguage,
@@ -119,6 +120,7 @@ function isSettings(value: unknown): value is Settings {
   // value.
   if (v.uiLanguage !== undefined && !isUiLanguage(v.uiLanguage)) return false
   if (v.roomOrder !== undefined && !isStringArray(v.roomOrder)) return false
+  if (v.roomOverrides !== undefined && !isRoomOverrides(v.roomOverrides)) return false
   return true
 }
 
@@ -136,6 +138,21 @@ function isUiLanguage(value: unknown): value is UiLanguage {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+function isRoomOverrides(value: unknown): value is Record<string, RoomDisplayOverride> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  for (const [roomId, override] of Object.entries(value)) {
+    if (roomId.length === 0) return false
+    if (typeof override !== 'object' || override === null || Array.isArray(override)) return false
+    const record = override as Record<string, unknown>
+    if (record.name !== undefined && typeof record.name !== 'string') return false
+    if (record.icon !== undefined && typeof record.icon !== 'string') return false
+    if (record.showNameOnCard !== undefined && typeof record.showNameOnCard !== 'boolean') {
+      return false
+    }
+  }
+  return true
 }
 
 const SECTION_KEYS: ReadonlyArray<keyof SettingsSections> = [

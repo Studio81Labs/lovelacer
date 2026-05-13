@@ -35,6 +35,9 @@ const VALID_BODY: { settings: Settings } = {
     },
     uiLanguage: 'en',
     roomOrder: ['bedroom', 'kitchen'],
+    roomOverrides: {
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+    },
   },
 }
 
@@ -210,6 +213,53 @@ describe('PUT /api/settings', () => {
       })
       const res = await app.inject({ method: 'GET', url: '/api/settings' })
       expect(res.json().settings.roomOrder).toEqual(['bedroom', 'kitchen'])
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('round-trips roomOverrides through PUT/GET', async () => {
+    const app = await makeApp()
+    try {
+      const body = {
+        settings: {
+          ...VALID_BODY.settings,
+          roomOverrides: {
+            kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+          },
+        },
+      }
+      await app.inject({ method: 'PUT', url: '/api/settings', payload: body })
+      const res = await app.inject({ method: 'GET', url: '/api/settings' })
+      expect(res.json().settings.roomOverrides).toEqual(body.settings.roomOverrides)
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns 400 invalid_body when roomOverrides contains a non-string name', async () => {
+    const app = await makeApp()
+    try {
+      const bad = {
+        settings: { ...VALID_BODY.settings, roomOverrides: { kitchen: { name: 42 } } },
+      }
+      const res = await app.inject({ method: 'PUT', url: '/api/settings', payload: bad })
+      expect(res.statusCode).toBe(400)
+      expect(res.json()).toMatchObject({ error: 'invalid_body' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns 400 invalid_body when roomOverrides contains an empty room id', async () => {
+    const app = await makeApp()
+    try {
+      const bad = {
+        settings: { ...VALID_BODY.settings, roomOverrides: { '': { name: 'Nope' } } },
+      }
+      const res = await app.inject({ method: 'PUT', url: '/api/settings', payload: bad })
+      expect(res.statusCode).toBe(400)
+      expect(res.json()).toMatchObject({ error: 'invalid_body' })
     } finally {
       await app.close()
     }

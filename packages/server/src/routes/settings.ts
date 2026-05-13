@@ -22,6 +22,12 @@ const SectionsSchema = z.object({
   cameras: z.boolean(),
 })
 
+const RoomOverrideSchema = z.object({
+  name: z.string().optional(),
+  icon: z.string().optional(),
+  showNameOnCard: z.boolean().optional(),
+})
+
 const PutBodySchema = z.object({
   settings: z.object({
     language: z.enum(SUPPORTED_LANGUAGES),
@@ -29,6 +35,7 @@ const PutBodySchema = z.object({
     sections: SectionsSchema,
     uiLanguage: z.enum(SUPPORTED_UI_LANGUAGES).optional(),
     roomOrder: z.array(z.string()).optional(),
+    roomOverrides: z.record(z.string().min(1), RoomOverrideSchema).optional(),
   }),
 })
 
@@ -71,6 +78,9 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (
         sections: data.sections,
         ...(data.uiLanguage !== undefined && { uiLanguage: data.uiLanguage }),
         ...(data.roomOrder !== undefined && { roomOrder: data.roomOrder }),
+        ...(data.roomOverrides !== undefined && {
+          roomOverrides: normalizeRoomOverrides(data.roomOverrides),
+        }),
       }
       opts.settings.save(next)
       return reply.code(200).send({ settings: opts.settings.get() })
@@ -79,4 +89,22 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (
       return reply.code(500).send({ error: 'storage_error', message: String(err) })
     }
   })
+}
+
+function normalizeRoomOverrides(
+  roomOverrides: z.infer<typeof PutBodySchema>['settings']['roomOverrides'],
+): NonNullable<Settings['roomOverrides']> {
+  if (roomOverrides === undefined) return {}
+  return Object.fromEntries(
+    Object.entries(roomOverrides).map(([roomId, override]) => [
+      roomId,
+      {
+        ...(override.name !== undefined && { name: override.name }),
+        ...(override.icon !== undefined && { icon: override.icon }),
+        ...(override.showNameOnCard !== undefined && {
+          showNameOnCard: override.showNameOnCard,
+        }),
+      },
+    ]),
+  )
 }

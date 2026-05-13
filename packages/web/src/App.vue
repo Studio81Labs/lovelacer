@@ -23,7 +23,7 @@ import { useSuggestionsStore } from './stores/suggestions.js'
 import { useSettingsStore } from './stores/settings.js'
 import { useOnboardingStore } from './stores/onboarding.js'
 import { useI18nStore } from './stores/i18n.js'
-import type { EntityDiff, RoomDiffSummary } from './api/types.js'
+import type { EntityDiff, RoomDiffSummary, RoomDisplayOverride } from './api/types.js'
 
 const { t } = useI18n()
 const analyze = useAnalyzeStore()
@@ -36,7 +36,9 @@ const i18n = useI18nStore()
 const settingsOpen = ref(false)
 const roomOrderDraftResetKey = ref(0)
 const roomOrderSaveInFlight = ref(false)
+const roomOverrideSaveInFlight = ref(false)
 let pendingRoomOrder: string[] | null = null
+const pendingRoomOverrides = new Map<string, RoomDisplayOverride>()
 
 // P2-9 — post-load reconciliation watcher. When the settings store
 // resolves `loadFromServer()`, sync `settings.serverState.uiLanguage`
@@ -171,6 +173,53 @@ async function saveRoomOrder(roomIds: string[]): Promise<void> {
   }
 }
 
+async function persistRoomOverride(
+  roomId: string,
+  override: RoomDisplayOverride,
+): Promise<boolean> {
+  if (settings.serverState === null) {
+    await settings.loadFromServer()
+  }
+  if (settings.serverState === null) return false
+  try {
+    await settings.saveRoomOverride(roomId, override)
+  } catch {
+    return false
+  }
+  return true
+}
+
+async function saveRoomOverride(roomId: string, override: RoomDisplayOverride): Promise<void> {
+  pendingRoomOverrides.set(roomId, { ...override })
+  if (roomOverrideSaveInFlight.value) return
+  roomOverrideSaveInFlight.value = true
+  let roomOverrideNeedsPreviewRefresh = false
+  try {
+    while (pendingRoomOverrides.size > 0) {
+      const nextOverrides = [...pendingRoomOverrides.entries()]
+      pendingRoomOverrides.clear()
+      for (const [nextRoomId, nextOverride] of nextOverrides) {
+        const saved = await persistRoomOverride(nextRoomId, nextOverride)
+        roomOverrideNeedsPreviewRefresh ||= saved
+      }
+      if (roomOverrideNeedsPreviewRefresh && pendingRoomOverrides.size === 0) {
+        try {
+          await analyze.refreshPreview()
+          roomOverrideNeedsPreviewRefresh = false
+        } catch (err) {
+          if (pendingRoomOverrides.size === 0) {
+            throw err
+          }
+        }
+      }
+    }
+  } catch {
+    // Settings/analyze stores own their visible error state.
+  } finally {
+    roomOverrideSaveInFlight.value = false
+  }
+}
+
 const diffByRoom = computed<Record<string, RoomDiffSummary>>(
   () => analyze.preview?.diff?.perRoom ?? {},
 )
@@ -301,17 +350,21 @@ watch(
       <RoomList
         :rooms="analyze.preview.rooms"
         :room-order="settings.effective.roomOrder"
+        :room-overrides="settings.effective.roomOverrides ?? {}"
         :draft-reset-key="roomOrderDraftResetKey"
         :diff-by-room="diffByRoom"
         :diff-by-entity-id="diffByEntityId"
         @reorder="saveRoomOrder"
+        @save-room="saveRoomOverride"
       />
       <MiscBucket :misc="analyze.preview.misc" />
       <AdministrativeEntitiesPanel :administrative="analyze.preview.administrative ?? []" />
       <HiddenEntitiesPanel :hidden-entities="analyze.preview.hidden ?? []" />
       <OverridesBar />
       <DashboardPreview :config="analyze.preview.config" />
-      <ApplyBar v-if="!roomOrderSaveInFlight && !analyze.isRefreshingPreview" />
+      <ApplyBar
+        v-if="!roomOrderSaveInFlight && !roomOverrideSaveInFlight && !analyze.isRefreshingPreview"
+      />
       <SuggestionsPanel :suggestions="analyze.preview.suggestions" />
     </section>
   </main>

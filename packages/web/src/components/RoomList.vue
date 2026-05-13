@@ -2,10 +2,16 @@
 import { computed, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
-import { roomIdToIcon } from '../icons.js'
 import EntityRow from './EntityRow.vue'
+import RoomIconPicker from './RoomIconPicker.vue'
 import { entityMatchesSearch, normalizeEntitySearch } from '../entity-search.js'
-import type { AnalyzedRoom, EntityDiff, RoomDiffSummary } from '../api/types.js'
+import { roomIdToIcon } from '../icons.js'
+import type {
+  AnalyzedRoom,
+  EntityDiff,
+  RoomDiffSummary,
+  RoomDisplayOverride,
+} from '../api/types.js'
 
 const { t } = useI18n()
 
@@ -15,6 +21,7 @@ const props = defineProps<{
   draftResetKey?: number | string | undefined
   diffByRoom?: Record<string, RoomDiffSummary>
   diffByEntityId?: Map<string, EntityDiff>
+  roomOverrides?: Record<string, RoomDisplayOverride>
   /**
    * P2-7 — when true, EntityRow children render in read-only mode
    * (no override dropdowns, no hide toggles). Forwarded as-is.
@@ -24,9 +31,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   reorder: [roomIds: string[]]
+  'save-room': [roomId: string, override: RoomDisplayOverride]
 }>()
 
 const searchQuery = ref('')
+const editingRoomId = ref<string | null>(null)
+const openRoomIds = ref(new Set<string>())
+const editName = ref('')
+const editIcon = ref('')
+const editShowNameOnCard = ref(true)
 const hasSearch = computed(() => normalizeEntitySearch(searchQuery.value) !== '')
 const draggedRoomId = ref<string | null>(null)
 const draftRoomOrder = ref<string[] | null>(null)
@@ -75,6 +88,42 @@ function orderRooms(rooms: AnalyzedRoom[], roomOrder: string[]): AnalyzedRoom[] 
     if (bIndex !== undefined) return 1
     return a.displayName.localeCompare(b.displayName)
   })
+}
+
+function openRoomEdit(room: AnalyzedRoom): void {
+  const override = props.roomOverrides?.[room.id]
+  editingRoomId.value = room.id
+  openRoomIds.value = new Set([...openRoomIds.value, room.id])
+  editName.value = override?.name ?? room.displayName
+  editIcon.value = normalizeRoomIcon(override?.icon ?? room.icon, room.id)
+  editShowNameOnCard.value = override?.showNameOnCard !== false
+}
+
+function saveRoomEdit(roomId: string): void {
+  emit('save-room', roomId, {
+    name: editName.value,
+    icon: editIcon.value,
+    showNameOnCard: editShowNameOnCard.value,
+  })
+  editingRoomId.value = null
+}
+
+function resetRoomEdit(roomId: string): void {
+  emit('save-room', roomId, { name: '', icon: '', showNameOnCard: true })
+  editingRoomId.value = null
+}
+
+function setRoomOpen(roomId: string, isOpen: boolean): void {
+  const next = new Set(openRoomIds.value)
+  if (isOpen) {
+    next.add(roomId)
+  } else {
+    next.delete(roomId)
+    if (editingRoomId.value === roomId) {
+      editingRoomId.value = null
+    }
+  }
+  openRoomIds.value = next
 }
 
 function onDragStart(roomId: string, event: DragEvent): void {
@@ -193,6 +242,23 @@ function confidenceLabel(confidence: number): string {
   return t('roomList.avgConfidence', { percent: Math.round(confidence * 100) })
 }
 
+function roomIconLabelId(roomId: string): string {
+  return `room-icon-label-${roomId}`
+}
+
+function roomDisplayName(room: AnalyzedRoom): string {
+  const overrideName = props.roomOverrides?.[room.id]?.name?.trim()
+  return overrideName || room.displayName
+}
+
+function roomDisplayIcon(room: AnalyzedRoom): string {
+  return normalizeRoomIcon(props.roomOverrides?.[room.id]?.icon ?? room.icon, room.id)
+}
+
+function normalizeRoomIcon(icon: string | undefined, roomId: string): string {
+  return icon?.trim() || roomIdToIcon(roomId)
+}
+
 /**
  * `RoomAssignment` doesn't carry `friendlyName`. Until the API surfaces
  * it on assignments, derive a fallback from the entityId — readable
@@ -256,16 +322,20 @@ function entityIdToFriendly(entityId: string): string {
         @dragover="onDragOver(room.id, $event)"
         @drop.stop="onDrop(room.id, $event)"
       >
-        <details class="group">
+        <details
+          class="group"
+          :open="openRoomIds.has(room.id)"
+          @toggle="setRoomOpen(room.id, ($event.currentTarget as HTMLDetailsElement).open)"
+        >
           <summary
             class="flex cursor-pointer items-center justify-between gap-4 px-5 py-3 hover:bg-stone-50"
           >
-            <div class="flex items-center gap-3">
+            <div class="flex min-w-0 items-center gap-3">
               <button
                 type="button"
                 data-testid="room-drag-handle"
-                :aria-label="t('roomList.dragHandle', { room: room.displayName })"
-                :title="t('roomList.dragHandle', { room: room.displayName })"
+                :aria-label="t('roomList.dragHandle', { room: roomDisplayName(room) })"
+                :title="t('roomList.dragHandle', { room: roomDisplayName(room) })"
                 :disabled="!canReorder"
                 :draggable="canReorder"
                 class="cursor-grab rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
@@ -275,10 +345,21 @@ function entityIdToFriendly(entityId: string): string {
               >
                 <Icon icon="mdi:drag-vertical" class="h-4 w-4" />
               </button>
-              <Icon :icon="roomIdToIcon(room.id)" class="h-5 w-5 text-stone-700" />
-              <span data-testid="room-name" class="text-sm font-medium text-stone-900">{{
-                room.displayName
+              <Icon :icon="roomDisplayIcon(room)" class="h-5 w-5 text-stone-700" />
+              <span data-testid="room-name" class="truncate text-sm font-medium text-stone-900">{{
+                roomDisplayName(room)
               }}</span>
+              <button
+                v-if="readOnly !== true && openRoomIds.has(room.id)"
+                type="button"
+                data-testid="room-edit-button"
+                :aria-label="t('roomList.editRoom', { room: roomDisplayName(room) })"
+                :title="t('roomList.editRoom', { room: roomDisplayName(room) })"
+                class="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+                @click.prevent.stop="openRoomEdit(room)"
+              >
+                <Icon icon="mdi:pencil" class="h-4 w-4" />
+              </button>
             </div>
 
             <div class="flex items-center gap-3 text-xs text-stone-600">
@@ -314,6 +395,57 @@ function entityIdToFriendly(entityId: string): string {
               </span>
             </div>
           </summary>
+
+          <div
+            v-if="editingRoomId === room.id"
+            class="grid gap-3 border-t border-stone-100 bg-stone-50 px-5 py-4 sm:grid-cols-[1fr_14rem_auto_auto]"
+          >
+            <label class="block min-w-0">
+              <span class="mb-1 block text-xs font-medium text-stone-600">{{
+                t('roomList.nameLabel')
+              }}</span>
+              <input
+                v-model="editName"
+                data-testid="room-name-input"
+                class="w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
+              />
+            </label>
+            <div class="block min-w-0">
+              <span
+                :id="roomIconLabelId(room.id)"
+                class="mb-1 block text-xs font-medium text-stone-600"
+              >
+                {{ t('roomList.iconLabel') }}
+              </span>
+              <RoomIconPicker v-model="editIcon" :labelled-by="roomIconLabelId(room.id)" />
+            </div>
+            <label class="flex items-center gap-2 self-end pb-2 text-sm text-stone-700">
+              <input
+                v-model="editShowNameOnCard"
+                data-testid="room-show-name-toggle"
+                type="checkbox"
+              />
+              <span>{{ t('roomList.showNameOnCard') }}</span>
+            </label>
+            <div class="flex items-end gap-2">
+              <button
+                type="button"
+                data-testid="room-reset-button"
+                class="rounded border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-100"
+                @click="resetRoomEdit(room.id)"
+              >
+                {{ t('roomList.reset') }}
+              </button>
+              <button
+                type="button"
+                data-testid="room-save-button"
+                class="rounded bg-stone-900 px-3 py-2 text-xs font-medium text-white hover:bg-stone-700"
+                @click="saveRoomEdit(room.id)"
+              >
+                {{ t('roomList.save') }}
+              </button>
+            </div>
+          </div>
 
           <ul class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
             <li v-for="a in room.assignments" :key="a.entityId">

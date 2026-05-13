@@ -121,6 +121,75 @@ describe('useSettingsStore', () => {
     expect(store.effective.roomOrder).toEqual(['bedroom', 'kitchen'])
   })
 
+  it('setRoomOverride stages a sanitized room override', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', {
+      name: '  Breakfast nook  ',
+      icon: '  mdi:coffee  ',
+      showNameOnCard: false,
+    })
+
+    expect(store.dirtyState?.roomOverrides).toEqual({
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+    })
+  })
+
+  it('setRoomOverride omits redundant true showNameOnCard overrides', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', {
+      name: '  Breakfast nook  ',
+      icon: '  mdi:coffee  ',
+      showNameOnCard: true,
+    })
+
+    expect(store.dirtyState?.roomOverrides).toEqual({
+      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' },
+    })
+  })
+
+  it('setRoomOverride persists explicit hidden-label overrides without name or icon', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: false })
+
+    expect(store.dirtyState?.roomOverrides).toEqual({
+      kitchen: { showNameOnCard: false },
+    })
+  })
+
+  it('setRoomOverride reset removes empty room override entries', async () => {
+    const saved: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: { kitchen: { name: 'Breakfast nook' } },
+    }
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: saved })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
+
+    expect(store.dirtyState?.roomOverrides).toBeUndefined()
+  })
+
+  it('setRoomOverride collapses reset override against fresh server state', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
+
+    expect(store.dirtyState).toBeNull()
+    expect(store.hasDirty).toBe(false)
+  })
+
   it('snapshots and restores dirty settings without sharing references', async () => {
     vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
     const store = useSettingsStore()
@@ -138,6 +207,31 @@ describe('useSettingsStore', () => {
     expect(store.dirtyState?.language).toBe('cs')
     expect(store.dirtyState?.roomOrder).toEqual(['mutated'])
     expect(store.dirtyState?.sections.cameras).toBe(false)
+  })
+
+  it('snapshots and restores roomOverrides without sharing nested references', async () => {
+    const settings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: {
+        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+      },
+    }
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+    store.setLanguage('cs')
+
+    const snapshot = store.snapshotDirtyState()
+    snapshot!.roomOverrides!.kitchen.name = 'Mutated'
+
+    store.restoreDirtyState(snapshot)
+    snapshot!.roomOverrides!.kitchen.icon = 'mdi:tea'
+
+    expect(store.dirtyState?.roomOverrides?.kitchen).toEqual({
+      name: 'Mutated',
+      icon: 'mdi:coffee',
+      showNameOnCard: false,
+    })
   })
 
   it('discardChanges clears dirtyState only (locale revert lives in SettingsModal — P2-9)', async () => {
@@ -204,6 +298,112 @@ describe('useSettingsStore', () => {
     expect(store.dirtyState?.language).toBe('cs')
     expect(store.dirtyState?.roomOrder).toEqual(['bedroom', 'kitchen'])
     expect(store.phase).toBe('idle')
+  })
+
+  it('saveRoomOverride saves one room override and preserves existing dirty settings', async () => {
+    const savedSettings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+    }
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    vi.mocked(putSettings).mockResolvedValueOnce({ settings: savedSettings })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+    store.setLanguage('cs')
+
+    await store.saveRoomOverride('kitchen', { name: 'Breakfast nook', icon: 'mdi:coffee' })
+
+    expect(vi.mocked(putSettings)).toHaveBeenCalledWith({ settings: savedSettings })
+    expect(store.serverState).toEqual(savedSettings)
+    expect(store.dirtyState?.language).toBe('cs')
+    expect(store.dirtyState?.roomOverrides).toEqual(savedSettings.roomOverrides)
+  })
+
+  it('saveRoomOverride preserves newer same-room dirty edits made while save is in flight on success', async () => {
+    const savedSettings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+    }
+    let resolveSave: (value: { settings: Settings }) => void = () => {}
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    vi.mocked(putSettings).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSave = resolve
+      }),
+    )
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    const save = store.saveRoomOverride('kitchen', {
+      name: 'Breakfast nook',
+      icon: 'mdi:coffee',
+    })
+    await Promise.resolve()
+    store.setRoomOverride('kitchen', { name: 'Dinner nook', icon: 'mdi:silverware' })
+    resolveSave({ settings: savedSettings })
+    await save
+
+    expect(store.serverState).toEqual(savedSettings)
+    expect(store.dirtyState?.roomOverrides?.kitchen).toEqual({
+      name: 'Dinner nook',
+      icon: 'mdi:silverware',
+    })
+  })
+
+  it('saveRoomOverride preserves newer same-room dirty edits made while save is in flight on failure', async () => {
+    const apiErr: ApiError = { error: 'storage_error', message: 'disk full' }
+    let rejectSave: (reason: ApiError) => void = () => {}
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    vi.mocked(putSettings).mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectSave = reject
+      }),
+    )
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    const save = store.saveRoomOverride('kitchen', {
+      name: 'Breakfast nook',
+      icon: 'mdi:coffee',
+    })
+    await Promise.resolve()
+    store.setRoomOverride('kitchen', { name: 'Dinner nook', icon: 'mdi:silverware' })
+    rejectSave(apiErr)
+    await expect(save).rejects.toEqual(apiErr)
+
+    expect(store.dirtyState?.roomOverrides?.kitchen).toEqual({
+      name: 'Dinner nook',
+      icon: 'mdi:silverware',
+    })
+    expect(store.phase).toBe('error')
+    expect(store.error).toEqual(apiErr)
+  })
+
+  it('saveRoomOverride keeps a previous dirty reset removed on failure', async () => {
+    const serverSettings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: { kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee' } },
+    }
+    const apiErr: ApiError = { error: 'storage_error', message: 'disk full' }
+    let rejectSave: (reason: ApiError) => void = () => {}
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: serverSettings })
+    vi.mocked(putSettings).mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectSave = reject
+      }),
+    )
+    const store = useSettingsStore()
+    await store.loadFromServer()
+    store.setRoomOverride('kitchen', { name: '', icon: '', showNameOnCard: true })
+
+    const save = store.saveRoomOverride('kitchen', { name: 'Dinner nook' })
+    await Promise.resolve()
+    rejectSave(apiErr)
+    await expect(save).rejects.toEqual(apiErr)
+
+    expect(store.serverState).toEqual(serverSettings)
+    expect(store.dirtyState?.roomOverrides).toBeUndefined()
+    expect(store.effective.roomOverrides).toBeUndefined()
   })
 
   it('saveRoomOrder preserves modal edits made while the save is in flight', async () => {

@@ -99,6 +99,24 @@ describe('SettingsStore (in-memory)', () => {
     expect(store.get().roomOrder).toEqual(['bedroom', 'kitchen'])
   })
 
+  it('round-trips roomOverrides through save and get', () => {
+    const store = new SettingsStore(':memory:')
+    try {
+      store.save({
+        ...DEFAULT_SETTINGS,
+        roomOverrides: {
+          kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+        },
+      })
+
+      expect(store.get().roomOverrides).toEqual({
+        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+      })
+    } finally {
+      store.close()
+    }
+  })
+
   it('falls back to DEFAULT_SETTINGS when roomOrder is not a string array', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     try {
@@ -113,6 +131,37 @@ describe('SettingsStore (in-memory)', () => {
       expect(warnSpy).toHaveBeenCalled()
     } finally {
       warnSpy.mockRestore()
+    }
+  })
+
+  it('falls back to DEFAULT_SETTINGS when roomOverrides has a non-object value', () => {
+    const store = new SettingsStore(':memory:')
+    try {
+      const db = (store as unknown as { db: DatabaseType }).db
+      db.prepare('INSERT OR REPLACE INTO settings (id, payload) VALUES (1, ?)').run(
+        JSON.stringify({ ...DEFAULT_SETTINGS, roomOverrides: [] }),
+      )
+
+      expect(store.get()).toEqual(DEFAULT_SETTINGS)
+    } finally {
+      store.close()
+    }
+  })
+
+  it('falls back to DEFAULT_SETTINGS when a room override field has the wrong type', () => {
+    const store = new SettingsStore(':memory:')
+    try {
+      const db = (store as unknown as { db: DatabaseType }).db
+      db.prepare('INSERT OR REPLACE INTO settings (id, payload) VALUES (1, ?)').run(
+        JSON.stringify({
+          ...DEFAULT_SETTINGS,
+          roomOverrides: { kitchen: { name: 'Kitchen', icon: 123 } },
+        }),
+      )
+
+      expect(store.get()).toEqual(DEFAULT_SETTINGS)
+    } finally {
+      store.close()
     }
   })
 })

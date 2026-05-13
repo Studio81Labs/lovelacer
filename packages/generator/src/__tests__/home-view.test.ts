@@ -521,6 +521,82 @@ describe('buildActiveRoomsSection', () => {
     expect(cond.card.entity).toBe('binary_sensor.kitchen_motion')
   })
 
+  it('uses room display overrides for active room card names when enabled', () => {
+    const view = buildHomeView({
+      entities: [ent('light.kitchen_ceiling')],
+      groupings: [
+        {
+          roomId: 'kitchen',
+          groups: [{ key: 'lights', entities: [ent('light.kitchen_ceiling')] }],
+        },
+      ],
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: null,
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      floorAssignments: new Map(),
+      sections: {
+        ...ALL_SECTIONS_ON,
+        welcome: false,
+        quickStats: false,
+        people: false,
+        roomsByFloor: false,
+        scenes: false,
+        cameras: false,
+      },
+      roomOverrides: {
+        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: true },
+      },
+    })
+
+    const card = view.sections[0]!.cards[0] as { card: { name?: string } }
+    expect(card.card.name).toBe('Breakfast nook')
+  })
+
+  it('uses room display overrides for active room card names by default', () => {
+    const view = buildHomeView({
+      entities: [ent('light.kitchen_ceiling')],
+      groupings: [
+        {
+          roomId: 'kitchen',
+          groups: [{ key: 'lights', entities: [ent('light.kitchen_ceiling')] }],
+        },
+      ],
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: null,
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      floorAssignments: new Map(),
+      sections: {
+        ...ALL_SECTIONS_ON,
+        welcome: false,
+        quickStats: false,
+        people: false,
+        roomsByFloor: false,
+        scenes: false,
+        cameras: false,
+      },
+      roomOverrides: { kitchen: { name: 'Breakfast nook' } },
+    })
+
+    const card = view.sections[0]!.cards[0] as { card: { name?: string } }
+    expect(card.card.name).toBe('Breakfast nook')
+  })
+
   it('filters out hidden + disabled candidates', () => {
     // Construct a room with one hidden light and one visible motion sensor.
     // Expected: hidden light excluded from condition; tile uses the motion sensor.
@@ -559,7 +635,7 @@ describe('buildActiveRoomsSection', () => {
     expect(cond.card.tap_action.navigation_path).toBe('living_room')
   })
 
-  it('sorts cards alphabetically by tile name', () => {
+  it('sorts cards alphabetically by effective room title', () => {
     const groupings = [
       grp('living_room', ['light.lr']),
       grp('bedroom', ['light.bedroom']),
@@ -568,6 +644,20 @@ describe('buildActiveRoomsSection', () => {
     const section = buildActiveRoomsSection(groupings)
     const names = section!.cards.map((c) => (c as { card: { name: string } }).card.name)
     expect(names).toEqual(['Attic', 'Bedroom', 'Living Room'])
+  })
+
+  it('sorts by effective room title even when a room card name is hidden', () => {
+    const section = buildActiveRoomsSection(
+      [grp('living_room', ['light.lr']), grp('bedroom', ['light.bedroom'])],
+      { bedroom: { showNameOnCard: true }, living_room: { showNameOnCard: false } },
+    )
+
+    const cards = section!.cards.map((c) => (c as { card: { entity: string; name?: string } }).card)
+    expect(cards).toEqual([
+      expect.objectContaining({ entity: 'light.bedroom', name: 'Bedroom' }),
+      expect.objectContaining({ entity: 'light.lr' }),
+    ])
+    expect(cards[1]!.name).toBe(' ')
   })
 })
 
@@ -678,6 +768,7 @@ function makeRoom(id: AnalyzedRoom['id'], haAreaId: string | null): AnalyzedRoom
     id,
     haAreaId,
     displayName: id === 'misc' ? 'Other' : id,
+    icon: 'mdi:silverware-fork-knife',
     entityCount: 1,
     averageConfidence: 0.9,
     assignments: [],
@@ -740,6 +831,60 @@ describe('buildRoomsByFloorSection', () => {
       {
         entity: 'light.kitchen',
         name: 'Kitchen',
+        tap_action: { action: 'navigate', navigation_path: 'kitchen' },
+      },
+    ])
+  })
+
+  it('uses room display overrides for rooms-by-floor glance entry names when enabled', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area')],
+      groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
+      floorAssignments: new Map([['kitchen', makeFloor('ground', 'Ground Floor', 0)]]),
+      roomOverrides: { kitchen: { name: 'Breakfast nook', showNameOnCard: true } },
+    })
+
+    const glance = result!.cards[1] as GlanceCard
+    expect(glance.entities).toEqual([
+      {
+        entity: 'light.kitchen',
+        name: 'Breakfast nook',
+        tap_action: { action: 'navigate', navigation_path: 'kitchen' },
+      },
+    ])
+  })
+
+  it('hides rooms-by-floor glance entry names when explicitly disabled', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area')],
+      groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
+      floorAssignments: new Map([['kitchen', makeFloor('ground', 'Ground Floor', 0)]]),
+      roomOverrides: { kitchen: { name: 'Breakfast nook', showNameOnCard: false } },
+    })
+
+    const glance = result!.cards[1] as GlanceCard
+    expect(glance.entities).toEqual([
+      {
+        entity: 'light.kitchen',
+        name: ' ',
+        tap_action: { action: 'navigate', navigation_path: 'kitchen' },
+      },
+    ])
+  })
+
+  it('uses room display overrides for rooms-by-floor glance entry names by default', () => {
+    const result = buildRoomsByFloorSection({
+      rooms: [makeRoom('kitchen', 'kitchen_area')],
+      groupings: [makeGroupingWithLight('kitchen', 'light.kitchen')],
+      floorAssignments: new Map([['kitchen', makeFloor('ground', 'Ground Floor', 0)]]),
+      roomOverrides: { kitchen: { name: 'Breakfast nook' } },
+    })
+
+    const glance = result!.cards[1] as GlanceCard
+    expect(glance.entities).toEqual([
+      {
+        entity: 'light.kitchen',
+        name: 'Breakfast nook',
         tap_action: { action: 'navigate', navigation_path: 'kitchen' },
       },
     ])
@@ -888,6 +1033,12 @@ describe('buildHomeView — section toggles (P2-6)', () => {
     scenes: false,
     cameras: false,
   }
+
+  it('keeps the home HA view tab icon-only by default', () => {
+    const home = buildHomeView(makeInput(ALL_OFF))
+
+    expect(home.show_icon_and_title).toBeUndefined()
+  })
 
   it('with all toggles on, includes the welcome section', () => {
     const home = buildHomeView(makeInput(ALL_SECTIONS_ON))
