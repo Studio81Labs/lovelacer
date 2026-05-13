@@ -62,12 +62,12 @@ describe('buildRoomView — per-room metadata', () => {
     expect(view.show_icon_and_title).toBe(true)
   })
 
-  it('keeps room HA view tabs icon-only when the room name is explicitly hidden', () => {
+  it('keeps room HA view tab labels when card names are explicitly hidden', () => {
     const view = buildRoomView(grouping('kitchen', []), {
       kitchen: { showNameOnCard: false },
     })
 
-    expect(view.show_icon_and_title).toBeUndefined()
+    expect(view.show_icon_and_title).toBe(true)
   })
 
   it('misc room uses path "other" (not "misc")', () => {
