@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
+import { Icon } from '@iconify/vue'
 import RoomList from '../../components/RoomList.vue'
 import type { AnalyzedRoom } from '../../api/types.js'
 import { createTestI18n } from '../test-utils.js'
@@ -33,6 +34,19 @@ describe('RoomList', () => {
     })
     const rows = wrapper.findAll('[data-testid="room-row"]')
     expect(rows).toHaveLength(3)
+  })
+
+  it('renders the API-provided room icon', () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room({ id: 'kitchen', icon: 'mdi:coffee' })] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    const iconNames = wrapper.findAllComponents(Icon).map((icon) => icon.vm.$attrs['icon'])
+    expect(iconNames).toContain('mdi:coffee')
+    expect(iconNames).not.toContain('mdi:silverware-fork-knife')
   })
 
   it('orders rooms by the saved roomOrder preference', () => {

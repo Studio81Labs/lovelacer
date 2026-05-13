@@ -2,7 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
-import { roomIdToIcon } from '../icons.js'
 import EntityRow from './EntityRow.vue'
 import { entityMatchesSearch, normalizeEntitySearch } from '../entity-search.js'
 import type { AnalyzedRoom, EntityDiff, RoomDiffSummary } from '../api/types.js'
@@ -275,7 +274,7 @@ function entityIdToFriendly(entityId: string): string {
               >
                 <Icon icon="mdi:drag-vertical" class="h-4 w-4" />
               </button>
-              <Icon :icon="roomIdToIcon(room.id)" class="h-5 w-5 text-stone-700" />
+              <Icon :icon="room.icon" class="h-5 w-5 text-stone-700" />
               <span data-testid="room-name" class="text-sm font-medium text-stone-900">{{
                 room.displayName
               }}</span>
