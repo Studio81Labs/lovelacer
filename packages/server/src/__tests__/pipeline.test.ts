@@ -211,6 +211,34 @@ function makePowerQuickStatsHa(): HaClient {
   } as unknown as HaClient
 }
 
+function makeCustomNamedLivingRoomHa(): HaClient {
+  const areas: HaAreaRegistryEntry[] = [
+    { area_id: 'living_area', name: 'Obývák', floor_id: null, icon: null },
+  ]
+  const entities: HaEntityRegistryEntry[] = [
+    {
+      entity_id: 'light.living_room_couch_strip',
+      name: 'Obývák LED Pásek Gauč',
+      original_name: null,
+      area_id: 'living_area',
+      device_id: null,
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: null,
+      device_class: null,
+    },
+  ]
+
+  return {
+    isConnected: () => true,
+    getEntityRegistry: vi.fn(async () => entities),
+    getDeviceRegistry: vi.fn(async () => []),
+    getAreaRegistry: vi.fn(async () => areas),
+    getFloorRegistry: vi.fn(async () => []),
+  } as unknown as HaClient
+}
+
 describe('runAnalyze', () => {
   it('returns rooms, misc, summary with consistent counts', async () => {
     const fake = makeFakeHa()
@@ -384,6 +412,27 @@ describe('runPreview', () => {
     } finally {
       settings.close()
     }
+  })
+
+  it('strips detected HA area names from generated labels when room display is overridden', async () => {
+    const result = await runPreview(
+      makeCustomNamedLivingRoomHa(),
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettingsWithRoomOverrides({
+        living_room: { name: 'Living Room' },
+      }),
+    )
+
+    const view = result.config.views.find((candidate) => candidate.path === 'living_room')
+    expect(view?.title).toBe('Living Room')
+    expect(view?.sections[0]?.cards[1]).toEqual({
+      type: 'tile',
+      entity: 'light.living_room_couch_strip',
+      name: 'LED Pásek Gauč',
+      features: [{ type: 'light-brightness' }],
+    })
   })
 
   it('trims unused HA registry fields and normalizes entities in place', async () => {

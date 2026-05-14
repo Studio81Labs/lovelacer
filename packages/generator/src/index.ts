@@ -16,6 +16,7 @@
  */
 export { GENERATOR_VERSION } from './version.js'
 export { buildRoomView, buildRoomViews } from './room-view.js'
+export type { RoomDisplayNames } from './room-view.js'
 export { resolveRoomDisplay, shouldShowRoomNameOnCard } from './rooms.js'
 export type { RoomDisplayOverrides } from './rooms.js'
 export type {
@@ -23,6 +24,7 @@ export type {
   ConditionEntry,
   CoverOpenCloseFeature,
   EntitiesCard,
+  EntityCardEntry,
   FanSpeedFeature,
   GlanceCard,
   GlanceEntityEntry,
