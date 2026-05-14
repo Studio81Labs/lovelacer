@@ -1,6 +1,7 @@
-import type { NormalizedEntity } from '@lovelacer/shared'
+import type { CanonicalRoomId, NormalizedEntity } from '@lovelacer/shared'
 import type { DomainGroup, DomainGroupKey, RoomGrouping } from '@lovelacer/analyzer'
 import type {
+  EntityCardEntry,
   EntitiesCard,
   GridSection,
   HeadingCard,
@@ -12,6 +13,8 @@ import type {
   TileCard,
 } from './lovelace-types.js'
 import { resolveRoomDisplay, type RoomDisplayOverrides } from './rooms.js'
+
+export type RoomDisplayNames = Partial<Record<CanonicalRoomId, string>>
 
 const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
   lights: 'Lights & Outlets',
@@ -39,15 +42,20 @@ const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
 export function buildRoomView(
   grouping: RoomGrouping,
   roomOverrides: RoomDisplayOverrides = {},
+  roomDisplayNames: RoomDisplayNames = {},
 ): RoomView {
   const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
+  const roomNames = buildRoomNameCandidates(
+    roomOverrides[grouping.roomId]?.name,
+    roomDisplayNames[grouping.roomId],
+  )
   return {
     type: 'sections',
     title: display.title,
     path: display.path,
     icon: display.icon,
     show_icon_and_title: true,
-    sections: grouping.groups.map((group) => buildSection(group)),
+    sections: grouping.groups.map((group) => buildSection(group, roomNames)),
   }
 }
 
@@ -59,11 +67,14 @@ export function buildRoomView(
 export function buildRoomViews(
   groupings: RoomGrouping[],
   roomOverrides: RoomDisplayOverrides = {},
+  roomDisplayNames: RoomDisplayNames = {},
 ): RoomView[] {
-  return groupings.filter((g) => g.groups.length > 0).map((g) => buildRoomView(g, roomOverrides))
+  return groupings
+    .filter((g) => g.groups.length > 0)
+    .map((g) => buildRoomView(g, roomOverrides, roomDisplayNames))
 }
 
-function buildSection(group: DomainGroup): GridSection {
+function buildSection(group: DomainGroup, roomNames: string[]): GridSection {
   const heading = GROUP_HEADINGS[group.key]
   const headingCard: HeadingCard = { type: 'heading', heading }
 
@@ -74,32 +85,34 @@ function buildSection(group: DomainGroup): GridSection {
     case 'security':
     case 'vacuum':
     case 'fans':
-      bodyCards = group.entities.map((e) => buildTileCard(e))
+      bodyCards = group.entities.map((e) => buildTileCard(e, roomNames))
       break
     case 'climate':
-      bodyCards = group.entities.map((e) => buildThermostatCard(e))
+      bodyCards = group.entities.map((e) => buildThermostatCard(e, roomNames))
       break
     case 'media':
-      bodyCards = group.entities.map((e) => buildMediaControlCard(e))
+      bodyCards = group.entities.map((e) => buildMediaControlCard(e, roomNames))
       break
     case 'cameras':
-      bodyCards = group.entities.map((e) => buildPictureEntityCard(e))
+      bodyCards = group.entities.map((e) => buildPictureEntityCard(e, roomNames))
       break
     case 'environment':
     case 'activity':
     case 'other':
-      bodyCards = [buildEntitiesCard(group.entities)]
+      bodyCards = [buildEntitiesCard(group.entities, roomNames)]
       break
   }
 
   return { type: 'grid', cards: [headingCard, ...bodyCards] }
 }
 
-function buildTileCard(entity: NormalizedEntity): TileCard {
+function buildTileCard(entity: NormalizedEntity, roomNames: string[]): TileCard {
+  const name = strippedEntityName(entity, roomNames)
   if (entity.domain === 'light') {
     return {
       type: 'tile',
       entity: entity.entityId,
+      ...(name !== undefined ? { name } : {}),
       features: [{ type: 'light-brightness' }],
     }
   }
@@ -107,6 +120,7 @@ function buildTileCard(entity: NormalizedEntity): TileCard {
     return {
       type: 'tile',
       entity: entity.entityId,
+      ...(name !== undefined ? { name } : {}),
       features: [{ type: 'cover-open-close' }],
     }
   }
@@ -114,32 +128,114 @@ function buildTileCard(entity: NormalizedEntity): TileCard {
     return {
       type: 'tile',
       entity: entity.entityId,
+      ...(name !== undefined ? { name } : {}),
       features: [{ type: 'fan-speed' }],
     }
   }
   // switch, lock, vacuum — plain tile, no features
-  return { type: 'tile', entity: entity.entityId }
+  return { type: 'tile', entity: entity.entityId, ...(name !== undefined ? { name } : {}) }
 }
 
-function buildThermostatCard(entity: NormalizedEntity): ThermostatCard {
-  return { type: 'thermostat', entity: entity.entityId }
+function buildThermostatCard(entity: NormalizedEntity, roomNames: string[]): ThermostatCard {
+  const name = strippedEntityName(entity, roomNames)
+  return { type: 'thermostat', entity: entity.entityId, ...(name !== undefined ? { name } : {}) }
 }
 
-function buildEntitiesCard(entities: NormalizedEntity[]): EntitiesCard {
-  return { type: 'entities', entities: entities.map((e) => e.entityId) }
+function buildEntitiesCard(entities: NormalizedEntity[], roomNames: string[]): EntitiesCard {
+  return { type: 'entities', entities: entities.map((e) => buildEntitiesCardEntry(e, roomNames)) }
 }
 
-function buildMediaControlCard(entity: NormalizedEntity): MediaControlCard {
+function buildMediaControlCard(entity: NormalizedEntity, roomNames: string[]): MediaControlCard {
+  const name = strippedEntityName(entity, roomNames)
   return {
     type: 'media-control',
     entity: entity.entityId,
+    ...(name !== undefined ? { name } : {}),
   }
 }
 
-function buildPictureEntityCard(entity: NormalizedEntity): PictureEntityCard {
+function buildPictureEntityCard(entity: NormalizedEntity, roomNames: string[]): PictureEntityCard {
+  const name = strippedEntityName(entity, roomNames)
   return {
     type: 'picture-entity',
     entity: entity.entityId,
+    ...(name !== undefined ? { name } : {}),
     camera_view: 'live',
   }
+}
+
+function buildEntitiesCardEntry(
+  entity: NormalizedEntity,
+  roomNames: string[],
+): string | EntityCardEntry {
+  const name = strippedEntityName(entity, roomNames)
+  return name === undefined ? entity.entityId : { entity: entity.entityId, name }
+}
+
+function strippedEntityName(entity: NormalizedEntity, roomNames: string[]): string | undefined {
+  for (const roomName of roomNames) {
+    const stripped = stripRoomNamePrefix(entity.friendlyName, roomName)
+    if (stripped !== null) return stripRepeatedFinalWord(stripped)
+  }
+  return undefined
+}
+
+function buildRoomNameCandidates(...names: (string | undefined)[]): string[] {
+  const candidates: string[] = []
+  const seen = new Set<string>()
+  for (const name of names) {
+    const trimmed = name?.trim()
+    if (!trimmed) continue
+    const key = normalizeForRoomPrefix(trimmed)
+    if (seen.has(key)) continue
+    seen.add(key)
+    candidates.push(trimmed)
+  }
+  return candidates
+}
+
+function stripRoomNamePrefix(friendlyName: string, roomName: string): string | null {
+  const friendly = Array.from(friendlyName)
+  const room = Array.from(roomName.trim())
+  if (room.length === 0 || friendly.length <= room.length) return null
+
+  for (let index = 0; index < room.length; index += 1) {
+    if (normalizeForRoomPrefix(friendly[index]!) !== normalizeForRoomPrefix(room[index]!)) {
+      return null
+    }
+  }
+
+  if (friendly[room.length] === undefined || !isPrefixSeparator(friendly[room.length]!)) return null
+
+  let suffixStart = room.length
+  while (friendly[suffixStart] !== undefined && isPrefixSeparator(friendly[suffixStart]!)) {
+    suffixStart += 1
+  }
+
+  const stripped = friendly.slice(suffixStart).join('').trim()
+  return stripped.length > 0 ? stripped : null
+}
+
+function normalizeForRoomPrefix(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+}
+
+function isPrefixSeparator(value: string): boolean {
+  return /^[\s:_-]$/u.test(value)
+}
+
+function stripRepeatedFinalWord(value: string): string {
+  const words = value.trim().split(/\s+/u)
+  if (words.length < 2) return value
+
+  const finalWord = words[words.length - 1]!
+  const normalizedFinal = normalizeForRoomPrefix(finalWord)
+  const repeatsEarlier = words
+    .slice(0, -1)
+    .some((word) => normalizeForRoomPrefix(word) === normalizedFinal)
+
+  return repeatsEarlier ? words.slice(0, -1).join(' ') : value
 }

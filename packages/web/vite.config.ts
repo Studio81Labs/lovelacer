@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { fileURLToPath, URL } from 'node:url'
 
+const apiProxyTarget = process.env.API_PROXY_TARGET ?? 'http://localhost:3000'
+
 export default defineConfig({
   // Relative base so the auto-generated <script>/<link> tags in dist/index.html
   // emit ingress-friendly paths (`assets/...` instead of `/assets/...`). HA
@@ -25,7 +27,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: apiProxyTarget,
         changeOrigin: true,
       },
     },

@@ -104,6 +104,93 @@ describe('buildRoomView — empty groups', () => {
 })
 
 describe('buildRoomView — lights group', () => {
+  it('strips an installation-specific room name prefix from tile card labels', () => {
+    const view = buildRoomView(
+      grouping('living_room', [
+        {
+          key: 'lights',
+          entities: [
+            ent('light.living_room_couch_strip', { friendlyName: 'Obývák LED Pásek Gauč' }),
+          ],
+        },
+      ]),
+      {},
+      { living_room: 'Obývák' },
+    )
+
+    expect(view.sections[0]!.cards[1]).toEqual({
+      type: 'tile',
+      entity: 'light.living_room_couch_strip',
+      name: 'LED Pásek Gauč',
+      features: [{ type: 'light-brightness' }],
+    })
+  })
+
+  it('strips room name prefixes separated by punctuation', () => {
+    const view = buildRoomView(
+      grouping('living_room', [
+        {
+          key: 'lights',
+          entities: [ent('switch.living_room_socket', { friendlyName: 'Obývák - Zásuvka Gauč' })],
+        },
+      ]),
+      {},
+      { living_room: 'Obývák' },
+    )
+
+    expect(view.sections[0]!.cards[1]).toEqual({
+      type: 'tile',
+      entity: 'switch.living_room_socket',
+      name: 'Zásuvka Gauč',
+    })
+  })
+
+  it('removes a repeated final entity role after stripping the room name', () => {
+    const view = buildRoomView(
+      grouping('bathroom', [
+        {
+          key: 'lights',
+          entities: [
+            ent('light.bathroom_main_light', { friendlyName: 'Koupelna Světlo Hlavní Světlo' }),
+          ],
+        },
+      ]),
+      {},
+      { bathroom: 'Koupelna' },
+    )
+
+    expect(view.sections[0]!.cards[1]).toEqual({
+      type: 'tile',
+      entity: 'light.bathroom_main_light',
+      name: 'Světlo Hlavní',
+      features: [{ type: 'light-brightness' }],
+    })
+  })
+
+  it('keeps the final entity role when it is not already present in the stripped name', () => {
+    const view = buildRoomView(
+      grouping('bathroom', [
+        {
+          key: 'lights',
+          entities: [
+            ent('sensor.bathroom_main_light_energy', {
+              domain: 'sensor',
+              friendlyName: 'Koupelna Světlo Hlavní Spotřeba',
+            }),
+          ],
+        },
+      ]),
+      {},
+      { bathroom: 'Koupelna' },
+    )
+
+    expect(view.sections[0]!.cards[1]).toEqual({
+      type: 'tile',
+      entity: 'sensor.bathroom_main_light_energy',
+      name: 'Světlo Hlavní Spotřeba',
+    })
+  })
+
   it('produces heading + tile per light entity with light-brightness feature', () => {
     const view = buildRoomView(
       grouping('kitchen', [
@@ -201,6 +288,48 @@ describe('buildRoomView — climate group', () => {
 })
 
 describe('buildRoomView — environment / activity / other groups', () => {
+  it('strips room name prefixes from entities card rows', () => {
+    const view = buildRoomView(
+      grouping('living_room', [
+        {
+          key: 'environment',
+          entities: [
+            ent('sensor.living_room_temp', { friendlyName: 'Obývák teplota' }),
+            ent('sensor.living_room_humidity', { friendlyName: 'Obývák vlhkost' }),
+          ],
+        },
+      ]),
+      {},
+      { living_room: 'Obývák' },
+    )
+
+    expect(view.sections[0]!.cards[1]).toEqual({
+      type: 'entities',
+      entities: [
+        { entity: 'sensor.living_room_temp', name: 'teplota' },
+        { entity: 'sensor.living_room_humidity', name: 'vlhkost' },
+      ],
+    })
+  })
+
+  it('collapses a two-word duplicate entity role in entities card rows', () => {
+    const view = buildRoomView(
+      grouping('bathroom', [
+        {
+          key: 'environment',
+          entities: [ent('sensor.bathroom_temp', { friendlyName: 'Koupelna Teplota Teplota' })],
+        },
+      ]),
+      {},
+      { bathroom: 'Koupelna' },
+    )
+
+    expect(view.sections[0]!.cards[1]).toEqual({
+      type: 'entities',
+      entities: [{ entity: 'sensor.bathroom_temp', name: 'Teplota' }],
+    })
+  })
+
   it('environment group becomes heading + single entities card', () => {
     const view = buildRoomView(
       grouping('kitchen', [

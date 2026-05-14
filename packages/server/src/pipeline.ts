@@ -17,6 +17,7 @@ import {
   pickQuickStatsEntities,
   resolveRoomDisplay,
   type LovelaceConfig,
+  type RoomDisplayNames,
   type RoomDisplayOverrides,
 } from '@lovelacer/generator'
 import type { ApplyDashboardOptions, ApplyDashboardResult, HaClient } from '@lovelacer/ha-client'
@@ -381,6 +382,7 @@ interface PipelineState {
   /** P2-6 — per-section toggles read from SettingsStore at the top of runFullPipeline. */
   sectionFlags: SettingsSections
   roomOverrides: RoomDisplayOverrides
+  roomDisplayNames: RoomDisplayNames
   hasRoomOrder: boolean
 }
 
@@ -522,6 +524,7 @@ async function runFullPipeline(
   const administrative: AnalyzeOutput['administrative'] = []
   const hidden: AnalyzeOutput['hidden'] = []
   const dashboardEntityIds = collectDashboardEntityIds(assignments, entityById)
+  const roomDisplayNames: RoomDisplayNames = {}
 
   await timedSyncStage(options, 'build_analyze_output', () => {
     for (const override of overrides.getAll()) {
@@ -572,9 +575,15 @@ async function runFullPipeline(
         continue
       }
 
-      rooms.push(
-        buildAnalyzedRoom(grouping, roomAssignments, entityById, areaRegistry, roomOverrides),
+      const { room, detectedDisplayName } = buildAnalyzedRoom(
+        grouping,
+        roomAssignments,
+        entityById,
+        areaRegistry,
+        roomOverrides,
       )
+      rooms.push(room)
+      roomDisplayNames[grouping.roomId] = detectedDisplayName
     }
   })
 
@@ -620,6 +629,7 @@ async function runFullPipeline(
     floorAssignments,
     sectionFlags: cfg.sections,
     roomOverrides,
+    roomDisplayNames,
     hasRoomOrder: (cfg.roomOrder?.length ?? 0) > 0,
   }
 }
@@ -660,7 +670,7 @@ function buildAnalyzedRoom(
   entityById: ReadonlyMap<string, NormalizedEntity>,
   areas: HaAreaRegistryEntry[],
   roomOverrides: RoomDisplayOverrides,
-): AnalyzedRoom {
+): { room: AnalyzedRoom; detectedDisplayName: string } {
   // Find the dominant haAreaId (the most common area_id among entities in
   // this room). If no entities have an area, fall back to canonical name.
   const areaCounts = new Map<string, number>()
@@ -698,13 +708,16 @@ function buildAnalyzedRoom(
     roomAssignments.length === 0 ? 0 : totalConfidence / roomAssignments.length
 
   return {
-    id: grouping.roomId,
-    haAreaId,
-    displayName,
-    icon: display.icon,
-    entityCount: roomAssignments.length,
-    averageConfidence,
-    assignments: roomAssignments,
+    room: {
+      id: grouping.roomId,
+      haAreaId,
+      displayName,
+      icon: display.icon,
+      entityCount: roomAssignments.length,
+      averageConfidence,
+      assignments: roomAssignments,
+    },
+    detectedDisplayName,
   }
 }
 
@@ -753,7 +766,7 @@ export async function runPreview(
     }),
   )
   const rooms = await timedSyncStage(options, 'build_room_views', () =>
-    buildRoomViews(dashboardGroupings, state.roomOverrides),
+    buildRoomViews(dashboardGroupings, state.roomOverrides, state.roomDisplayNames),
   )
   const config = await timedSyncStage(options, 'build_lovelace_config', () =>
     buildLovelaceConfig({ home, rooms, ...(state.hasRoomOrder ? { sortRooms: false } : {}) }),

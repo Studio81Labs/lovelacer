@@ -108,12 +108,20 @@ export interface NavigateAction {
 export interface ThermostatCard {
   type: 'thermostat'
   entity: string
+  /** Display name override; default is HA's friendly_name. */
+  name?: string
 }
 
 export interface EntitiesCard {
   type: 'entities'
   title?: string
-  entities: string[]
+  entities: (string | EntityCardEntry)[]
+}
+
+export interface EntityCardEntry {
+  entity: string
+  /** Display name override; default is HA's friendly_name. */
+  name?: string
 }
 
 export interface MarkdownCard {
@@ -145,11 +153,15 @@ export interface GlanceCard {
 export interface MediaControlCard {
   type: 'media-control'
   entity: string
+  /** Display name override; default is HA's friendly_name. */
+  name?: string
 }
 
 export interface PictureEntityCard {
   type: 'picture-entity'
   entity: string
+  /** Display name override; default is HA's friendly_name. */
+  name?: string
   /** `live` streams the camera; `auto` shows a refreshing snapshot. Snake_case matches HA's YAML schema. */
   camera_view?: 'live' | 'auto'
 }
