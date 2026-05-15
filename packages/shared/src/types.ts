@@ -41,10 +41,11 @@ export interface HaFloorRegistryEntry {
 }
 
 /**
- * Languages with localized room keyword sets. Adding a new language is a
- * pure data change in `room-keywords.ts` — this union already declares
- * all 8 documented languages even though EN+CS are the only ones with
- * keyword data shipped today.
+ * Analyzer-level language union. This is intentionally broader than the
+ * user-facing detection setting so future keyword packs can be added as
+ * data. `ROOM_KEYWORDS` contains the keyword data that ships today, while
+ * `SUPPORTED_LANGUAGES` below controls which languages users can select
+ * explicitly in settings.
  */
 export type LanguageCode = 'en' | 'cs' | 'de' | 'es' | 'fr' | 'it' | 'pl' | 'nl'
 
@@ -153,9 +154,10 @@ export interface Suggestion {
 
 /**
  * P2-6 — User-facing language setting values. Subset of `LanguageCode`
- * (the analyzer's full keyword-data language union) plus the `'auto'`
- * sentinel, restricted to languages with shipped keyword data today
- * (EN + CS). Expand when a new language's keyword data ships.
+ * plus the `'auto'` sentinel, restricted to languages supported as
+ * explicit settings today (EN + CS). `auto` matches all shipped keyword
+ * rows, including DE. Expand this tuple when a language is ready to be
+ * user-selectable, not merely present as keyword data.
  *
  * Exposed as a tuple `as const` so the route's Zod enum derives from
  * a single source of truth. `'auto'` matches all available keyword
@@ -167,7 +169,7 @@ export const SUPPORTED_LANGUAGES = ['auto', 'en', 'cs'] as const
 
 /**
  * Detection language for name-based matching (priorities 3-5).
- * `'auto'` is the match-all default.
+ * `'auto'` is the match-all default across shipped keyword data.
  */
 export type SettingsLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 

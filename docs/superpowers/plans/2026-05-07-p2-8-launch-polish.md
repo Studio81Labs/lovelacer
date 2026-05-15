@@ -1512,7 +1512,7 @@ Full breakdown in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - **Distribution:** Home Assistant Add-on (Supervisor-managed) as primary channel, standalone Docker as secondary.
 - **Apply mode:** Lovelace **storage mode** by default (writes via WebSocket), with YAML export as a feature.
 - **Stack:** Node.js + Fastify backend, Vue 3 + Vite frontend, SQLite for local state.
-- **i18n:** Multi-language room detection from day one (EN, CS, DE, ES, FR, IT, PL, NL).
+- **i18n:** Multi-language room detection from day one with shipped EN, CS, and DE keyword data.
 - **License:** MIT for OSS core. AI features are also MIT but require runtime configuration of an LLM provider.
 - **Monetization:** Three tiers — Free/OSS, AI/BYO key (still free, user pays LLM provider), Pro/managed cloud (subscription, future).
 - **Privacy:** Tier 2 with Ollama provider = zero external requests, full AI features. Tier 3 cloud handles only entity registry metadata, never sensor states.
@@ -1608,7 +1608,7 @@ Generate a Home Assistant Lovelace dashboard from your existing entities.
 
 ## What it does
 
-1. Click **Analyze** — Lovelacer reads your HA entity, device, and area registries and detects rooms across 8 languages.
+1. Click **Analyze** — Lovelacer reads your HA entity, device, and area registries and detects rooms with shipped EN, CS, and DE keyword data.
 2. Review the preview. Re-run **Analyze** any time; the diff view shows what moved, what was added, and what was removed.
 3. Adjust per-entity overrides if needed, accept smart suggestions with one click, then click **Apply**.
 
@@ -1636,7 +1636,7 @@ All add-on state (overrides, applied snapshots, settings, onboarding completion)
 
 ## Status
 
-Phase 2 alpha. Multi-language room detection (EN / CS / DE / ES / FR / IT / PL / NL). Re-analyze diff view shows what changed since the last apply. Per-entity overrides + smart suggestions panel. Settings UI for language and dashboard sections. Onboarding wizard for first-run.
+Phase 2 alpha. Multi-language room detection uses shipped EN / CS / DE keyword data; Settings exposes Auto / EN / CS, with DE participating through Auto. Re-analyze diff view shows what changed since the last apply. Per-entity overrides + smart suggestions panel. Settings UI for language and dashboard sections. Onboarding wizard for first-run.
 
 The single honest constraint: custom Lovelace cards (Mushroom, Tile-extras) are not generated — pure HA core cards only.
 
@@ -1667,7 +1667,7 @@ Overwrite with:
 
 ### Phase 1b (already shipped, summarised)
 
-- Multi-language room detection: EN, CS, DE, ES, FR, IT, PL, NL.
+- Multi-language room detection: EN, CS, and DE keyword data.
 - Per-entity overrides: drag rooms manually, mark entities hidden.
 - Invite-code gate for closed alpha.
 - HA add-on packaging with multi-arch images (aarch64, amd64, armv7).
