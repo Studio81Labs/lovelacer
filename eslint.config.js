@@ -8,7 +8,13 @@ import globals from 'globals'
 
 export default [
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', '**/*.config.js'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/coverage/**',
+      '**/.vitepress/cache/**',
+      '**/*.config.js',
+    ],
   },
 
   js.configs.recommended,

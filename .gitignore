@@ -39,6 +39,7 @@ coverage/
 
 # Vite
 .vite/
+**/.vitepress/cache/
 
 # Local SQLite
 *.sqlite
