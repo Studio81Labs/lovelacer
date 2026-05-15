@@ -1,6 +1,6 @@
 # Installing the Lovelacer add-on
 
-Phase 1a alpha — install via custom add-on repository on your own HA instance.
+Phase 2 alpha — install via custom add-on repository on your own HA instance.
 
 ## Prerequisites
 
@@ -39,7 +39,7 @@ The defaults work out of the box. To change them:
 
 Lovelacer publishes two channels:
 
-- **`latest` / `vX.Y.Z`** — tagged releases. Recommended.
+- **`latest` / `vX.Y.Z`** — tagged pre-releases and releases. Recommended.
 - **`main` / `sha-<short>`** — bleeding edge from `main`. For our own dogfood; the add-on store always installs `latest`.
 
 When a new tagged release is published, HA's add-on store shows an **Update available** banner. Click it to pull the new image.
@@ -52,7 +52,7 @@ When a new tagged release is published, HA's add-on store shows an **Update avai
 ## Troubleshooting
 
 - **"Backend unreachable" in the SPA**: the Fastify server inside the add-on is starting up. Wait 10s and reload, or check **Logs** for a startup error.
-- **HA shows "disconnected" in the SPA's HealthBar**: the add-on can reach the network but not HA. Usually means `SUPERVISOR_TOKEN` is missing — try restarting the add-on.
+- **HA shows "disconnected" in the SPA's HealthBar**: the add-on can reach the network but not HA through the Supervisor Core proxy. Usually means `SUPERVISOR_TOKEN` is missing or the add-on did not start with `homeassistant_api: true` — try restarting the add-on and check the first startup lines in **Logs**.
 - **Apply fails with `ha_apply_failed` step `save`**: HA rejected the generated config. Often happens when an existing dashboard at the same `url_path` was modified manually. Either delete it from HA's UI first or change `dashboard_url_path`.
 - **"No rooms detected"**: your HA install doesn't have areas assigned to entities, or the device / entity names don't match Lovelacer's English + Czech room patterns. Open `log_level: debug` and re-run Analyze; the add-on log shows which patterns matched what.
 
@@ -63,6 +63,6 @@ The add-on packages two services into one container:
 - A **Fastify backend** (`@lovelacer/server`) that holds the analysis pipeline, generator, and HA WebSocket client. Listens on `:3000`.
 - A **Vue 3 SPA** (`@lovelacer/web`) served as static assets by the same Fastify server. Loaded into the HA UI via Supervisor ingress.
 
-The backend uses `SUPERVISOR_TOKEN` to talk to HA Core's WS API at `ws://homeassistant:8123/api/websocket`. No internet access is needed at runtime once the image is pulled.
+The backend uses `SUPERVISOR_TOKEN` against Supervisor's Core proxy endpoints: REST traffic goes to `http://supervisor/core/api`, and WebSocket traffic goes to `ws://supervisor/core/websocket`. The token is sent as the bearer token/password expected by Supervisor's proxy; the add-on does not call `homeassistant:8123` directly. No internet access is needed at runtime once the image is pulled.
 
 For the full architecture, see `docs/ARCHITECTURE.md` in the source repo.
