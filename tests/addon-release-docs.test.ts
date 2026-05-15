@@ -21,23 +21,31 @@ describe('add-on release documentation', () => {
 
   it('documents the current add-on release phase and Supervisor proxy wiring', () => {
     const installDocs = readText('docs/ADDON_INSTALL.md')
+    const publishedInstallDocs = readText('apps/docs/src/install/supervised.md')
 
     expect(runScript).toContain(`export HA_URL="${expectedHttpProxy}"`)
     expect(runScript).toContain(`export HA_WEBSOCKET_URL="${expectedWebsocketProxy}"`)
-    expect(installDocs).toContain('Phase 2 alpha')
-    expect(installDocs).toContain(expectedHttpProxy)
-    expect(installDocs).toContain(expectedWebsocketProxy)
-    expect(installDocs).toContain('SUPERVISOR_TOKEN')
-    expect(installDocs).not.toContain('Phase 1a alpha')
-    expect(installDocs).not.toContain('ws://homeassistant:8123/api/websocket')
+
+    for (const doc of [installDocs, publishedInstallDocs]) {
+      expect(doc).toContain('Phase 2 alpha')
+      expect(doc).toContain(expectedHttpProxy)
+      expect(doc).toContain(expectedWebsocketProxy)
+      expect(doc).toContain('SUPERVISOR_TOKEN')
+      expect(doc).toContain('homeassistant_api: true')
+      expect(doc).not.toContain('Phase 1a alpha')
+      expect(doc).not.toContain('ws://homeassistant:8123/api/websocket')
+    }
   })
 
   it('keeps architecture auth text aligned with runtime endpoints', () => {
     const architecture = readText('docs/ARCHITECTURE.md')
+    const publishedArchitecture = readText('apps/docs/src/architecture.md')
 
-    expect(architecture).toContain(expectedHttpProxy)
-    expect(architecture).toContain(expectedWebsocketProxy)
-    expect(architecture).not.toContain('http://supervisor/core/websocket')
+    for (const doc of [architecture, publishedArchitecture]) {
+      expect(doc).toContain(expectedHttpProxy)
+      expect(doc).toContain(expectedWebsocketProxy)
+      expect(doc).not.toContain('http://supervisor/core/websocket')
+    }
   })
 
   it('documents config, changelog, and tag expectations before pre-release promotion', () => {

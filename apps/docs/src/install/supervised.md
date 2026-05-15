@@ -1,5 +1,7 @@
 # Install on Home Assistant Supervised
 
+Phase 2 alpha installs through a custom add-on repository on your own Home Assistant instance.
+
 Use this path for Home Assistant OS or Home Assistant Supervised. The add-on store is not available in Home Assistant Core or Home Assistant Container, so those installs should use the standalone Docker guide.
 
 ## Prerequisites
@@ -29,7 +31,7 @@ https://github.com/Studio81Labs/lovelacer
 4. Click **Open Web UI** or use the sidebar entry.
 5. Follow the first-run wizard to analyze, preview, and apply a dashboard.
 
-The add-on uses Home Assistant Supervisor ingress, so users do not need to expose an extra port.
+The add-on uses Home Assistant Supervisor ingress, so users do not need to expose an extra port. Runtime Home Assistant access goes through Supervisor's Core proxy: REST traffic uses `http://supervisor/core/api`, WebSocket traffic uses `ws://supervisor/core/websocket`, and `SUPERVISOR_TOKEN` is sent through that proxy. The add-on should not call `homeassistant:8123` directly.
 
 ## Configuration
 
@@ -52,9 +54,9 @@ Uninstalling the add-on removes the Lovelacer container and its local state. It 
 
 ## Troubleshooting
 
-| Symptom                                    | What to check                                                                                                    |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| The web UI says the backend is unreachable | Wait a few seconds and reload. If it continues, open the add-on logs and check for startup errors.               |
-| Home Assistant shows as disconnected       | Restart the add-on. In add-on mode the server authenticates with `SUPERVISOR_TOKEN`.                             |
-| Apply fails while saving                   | Delete or rename an existing dashboard at the same URL path, or change `dashboard_url_path` and try again.       |
-| No rooms are detected                      | Assign areas in Home Assistant or use Lovelacer overrides after analysis. Debug logs show which signals matched. |
+| Symptom                                    | What to check                                                                                                                                                                        |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The web UI says the backend is unreachable | Wait a few seconds and reload. If it continues, open the add-on logs and check for startup errors.                                                                                   |
+| Home Assistant shows as disconnected       | Restart the add-on. In add-on mode the server authenticates with `SUPERVISOR_TOKEN` through the Supervisor Core proxy; check that the add-on started with `homeassistant_api: true`. |
+| Apply fails while saving                   | Delete or rename an existing dashboard at the same URL path, or change `dashboard_url_path` and try again.                                                                           |
+| No rooms are detected                      | Assign areas in Home Assistant or use Lovelacer overrides after analysis. Debug logs show which signals matched.                                                                     |
