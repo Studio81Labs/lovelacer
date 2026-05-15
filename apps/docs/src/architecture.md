@@ -49,6 +49,8 @@ flowchart LR
 | Add-on            | `SUPERVISOR_TOKEN`       | Home Assistant ingress | Primary distribution path. No user token setup.            |
 | Standalone Docker | `HA_URL` plus `HA_TOKEN` | Direct HTTP port       | Secondary path for HA Core, HA Container, and development. |
 
+In add-on mode, `homeassistant_api: true` lets the backend use Supervisor's Core proxy instead of calling Home Assistant Core directly. REST calls go to `http://supervisor/core/api`, WebSocket calls go to `ws://supervisor/core/websocket`, and `SUPERVISOR_TOKEN` is used as the proxy bearer token/password.
+
 Both paths use the same server, analyzer, generator, and web packages. Keep changes compatible with both unless a feature explicitly targets one runtime.
 
 ## Dashboard apply strategy

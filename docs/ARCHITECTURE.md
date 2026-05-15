@@ -165,8 +165,8 @@ If the user re-runs and applies again, we **update** the existing `lovelacer-hom
 
 Supervisor injects `SUPERVISOR_TOKEN` into the container env. Backend uses this token for both:
 
-- Supervisor API calls (Add-on info, ingress)
-- HA Core WebSocket (via `http://supervisor/core/websocket`)
+- HA Core REST calls through the Supervisor proxy at `http://supervisor/core/api`
+- HA Core WebSocket calls through the Supervisor proxy at `ws://supervisor/core/websocket`
 
 No user-facing auth setup. This is the seamless path.
 

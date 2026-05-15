@@ -17,8 +17,9 @@ to track a run. One issue per pre-release tag.
 - [ ] `pnpm install && pnpm build` succeeds with no warnings.
 - [ ] `pnpm test` passes (78+ unit/fixture suites green).
 - [ ] `pnpm lint` clean.
-- [ ] `apps/addon/config.yaml` `version` matches the git tag (without the `v` prefix).
-- [ ] `apps/addon/CHANGELOG.md` has an entry for the new version.
+- [ ] Before cutting the pre-release tag, choose the next `X.Y.Z` version and update `apps/addon/config.yaml` `version` to that exact value.
+- [ ] `apps/addon/CHANGELOG.md` has a top entry for the same `X.Y.Z` version, including user-facing changes and any known issues.
+- [ ] Create the git tag as `vX.Y.Z`; the tag version must match `apps/addon/config.yaml` without the `v` prefix and must have a matching changelog entry.
 - [ ] CI is green on the tagged commit (`build-addon.yml` produced multi-arch images).
 
 ## Install
