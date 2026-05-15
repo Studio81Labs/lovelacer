@@ -3,6 +3,23 @@
 // contributor docs, while also requiring a scope locally.
 module.exports = {
   extends: ["@commitlint/config-conventional"],
+  plugins: [
+    {
+      rules: {
+        // Mirrors lint-pr.yml's subjectPattern: ^(?![A-Z]).+$
+        // — the first character of the subject must not be uppercase.
+        // Acronyms later in the subject (HA, AI, API, UI, JSON, ...) are fine.
+        "subject-first-char-lowercase": ({ subject }) => {
+          if (!subject) return [true];
+          const first = subject[0];
+          return [
+            first === first.toLowerCase(),
+            "subject must start with a lowercase character",
+          ];
+        },
+      },
+    },
+  ],
   rules: {
     "type-enum": [
       2,
@@ -40,10 +57,11 @@ module.exports = {
       ],
     ],
     "scope-empty": [2, "never"],
-    // subject-case left to the PR-title check (lint-pr.yml subjectPattern),
-    // which requires only the first character to be lowercase. Strict
-    // all-lowercase rejects legitimate acronyms (HA, AI, API, UI, JSON, ...).
+    // Disable the strict all-lowercase rule (it rejects legitimate
+    // acronyms like HA, AI, API, UI, JSON) and use our custom rule
+    // above to mirror lint-pr.yml's leading-lowercase check exactly.
     "subject-case": [0],
+    "subject-first-char-lowercase": [2, "always"],
     "subject-empty": [2, "never"],
     "subject-full-stop": [2, "never", "."],
   },
