@@ -657,7 +657,7 @@ describe('buildActiveRoomsSection', () => {
       expect.objectContaining({ entity: 'light.bedroom', name: 'Bedroom' }),
       expect.objectContaining({ entity: 'light.lr' }),
     ])
-    expect(cards[1]!.name).toBe(' ')
+    expect(cards[1]!.name).toBe('')
   })
 })
 
@@ -866,7 +866,7 @@ describe('buildRoomsByFloorSection', () => {
     expect(glance.entities).toEqual([
       {
         entity: 'light.kitchen',
-        name: ' ',
+        name: '',
         tap_action: { action: 'navigate', navigation_path: 'kitchen' },
       },
     ])

@@ -3,11 +3,13 @@ import { computed } from 'vue'
 import { I18nT, useI18n } from 'vue-i18n'
 import { useAnalyzeStore } from '../stores/analyze.js'
 import { useApplyStore } from '../stores/apply.js'
+import { useSettingsStore } from '../stores/settings.js'
 import type { SnapshotAssignment } from '../api/types.js'
 
 const { t } = useI18n()
 const analyze = useAnalyzeStore()
 const apply = useApplyStore()
+const settings = useSettingsStore()
 
 function startOver() {
   apply.reset()
@@ -57,6 +59,14 @@ const showRetry = computed(
     apply.error.error !== 'ha_unavailable' &&
     apply.error.error !== 'invalid_config',
 )
+
+const applyDisabled = computed(
+  () =>
+    apply.phase === 'applying' ||
+    analyze.phase !== 'ready' ||
+    analyze.isRefreshingPreview ||
+    settings.phase === 'saving',
+)
 </script>
 
 <template>
@@ -65,7 +75,7 @@ const showRetry = computed(
       v-if="apply.phase === 'idle' || apply.phase === 'applying'"
       type="button"
       class="w-full rounded bg-amber-500 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-stone-300"
-      :disabled="apply.phase === 'applying' || analyze.phase !== 'ready'"
+      :disabled="applyDisabled"
       @click="applyClicked"
     >
       {{ apply.phase === 'applying' ? t('applyBar.applying') : t('applyBar.apply') }}

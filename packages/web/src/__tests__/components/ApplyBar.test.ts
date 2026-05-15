@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ApplyBar from '../../components/ApplyBar.vue'
 import { useAnalyzeStore } from '../../stores/analyze.js'
 import { useApplyStore } from '../../stores/apply.js'
+import { useSettingsStore } from '../../stores/settings.js'
 import type { PreviewOutput } from '../../api/types.js'
 import { createTestI18n } from '../test-utils.js'
 
@@ -50,5 +51,28 @@ describe('ApplyBar', () => {
     expect(analyze.phase).toBe('idle')
     expect(analyze.preview).toBeNull()
     expect(apply.phase).toBe('idle')
+  })
+
+  it('disables apply while room settings are saving or preview is refreshing', async () => {
+    const wrapper = mount(ApplyBar, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const analyze = useAnalyzeStore()
+    const settings = useSettingsStore()
+    analyze.$patch({ phase: 'ready', preview })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.get('button').attributes('disabled')).toBeUndefined()
+
+    settings.$patch({ phase: 'saving' })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('button').attributes('disabled')).toBeDefined()
+
+    settings.$patch({ phase: 'idle' })
+    analyze.$patch({ isRefreshingPreview: true })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('button').attributes('disabled')).toBeDefined()
   })
 })

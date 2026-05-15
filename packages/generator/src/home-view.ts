@@ -284,7 +284,7 @@ export function buildActiveRoomsSection(
     const tile: TileCard = {
       type: 'tile',
       entity: primary.entityId,
-      name: showName ? display.title : ' ',
+      name: showName ? display.title : '',
       tap_action: { action: 'navigate', navigation_path: display.path },
     }
 
@@ -397,7 +397,7 @@ function buildFloorGlance(
     const showName = shouldShowRoomNameOnCard(room.id, roomOverrides)
     entries.push({
       entity: primary.entityId,
-      name: showName ? display.title : ' ',
+      name: showName ? display.title : '',
       tap_action: { action: 'navigate', navigation_path: display.path },
     })
   }
