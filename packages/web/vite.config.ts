@@ -35,5 +35,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    // The full MDI collection is intentionally emitted as a lazy chunk for the
+    // room icon picker so HA add-on installs can search icons offline without
+    // loading the payload during normal app startup. Keep the limit close to the
+    // observed ~2.86 MB minified chunk so unrelated bundle growth still warns.
+    chunkSizeWarningLimit: 3000,
   },
 })
