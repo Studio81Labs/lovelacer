@@ -10,13 +10,13 @@ Heuristics get a Home Assistant install from messy to organized. AI gets it from
 
 ## Why a tiered model
 
-The HA community is notably privacy-conscious. A pure cloud SaaS would alienate the audience that should be most receptive to a smart home tool. Three tiers solve this:
+The HA community is privacy-conscious, so a pure cloud SaaS would be a poor fit. Three tiers map to how inference is paid for, not to feature gating:
 
-1. **Free / OSS** — Heuristics only. Privacy-perfect because nothing leaves the local network. The 80% solution.
-2. **AI / BYO key** — User chooses their LLM provider (including local Ollama). Privacy controlled by the user. The 99% solution.
-3. **Pro / managed cloud** — For users who want the AI tier without managing API keys. Lovelacer relays inference. Convenience-tier monetization.
+1. **Free / OSS** — Heuristics only. Nothing leaves the local network. The 80% solution.
+2. **AI / BYO key** — User chooses their LLM provider (including local Ollama). Privacy is in the user's hands. The 99% solution.
+3. **Managed cloud** — For users who want the AI tier without managing API keys. Lovelacer relays inference. Optional offering, not a paywall on any feature.
 
-Tiers 1 and 2 ship in the same Add-on, gated by configuration. Tier 3 is an optional later product.
+Tiers 1 and 2 ship in the same Add-on, gated by configuration. The managed-cloud tier is an optional later product.
 
 ## AI features catalog
 
@@ -262,16 +262,15 @@ Setting `provider: ollama` guarantees no network egress. The Add-on can be run o
 
 Estimated cost per analysis run (200-entity install, ~30 low-confidence entities triggering F1, plus F3 layout review, plus inline hints):
 
-| Provider        | Model             | Per run | Per month (4 runs) |
-| --------------- | ----------------- | ------- | ------------------ |
-| Anthropic       | Claude Haiku 4.5  | ~$0.02  | ~$0.08             |
-| Anthropic       | Claude Sonnet 4.7 | ~$0.20  | ~$0.80             |
-| OpenAI          | GPT-4o-mini       | ~$0.02  | ~$0.08             |
-| OpenAI          | GPT-4o            | ~$0.25  | ~$1.00             |
-| Ollama (local)  | llama3.1:8b       | $0      | $0                 |
-| Lovelacer Cloud | bundled           | $5/mo   | $5/mo              |
+| Provider       | Model             | Per run | Per month (4 runs) |
+| -------------- | ----------------- | ------- | ------------------ |
+| Anthropic      | Claude Haiku 4.5  | ~$0.02  | ~$0.08             |
+| Anthropic      | Claude Sonnet 4.7 | ~$0.20  | ~$0.80             |
+| OpenAI         | GPT-4o-mini       | ~$0.02  | ~$0.08             |
+| OpenAI         | GPT-4o            | ~$0.25  | ~$1.00             |
+| Ollama (local) | llama3.1:8b       | $0      | $0                 |
 
-Most users will run analysis 1–4 times per month, so even cloud providers sit under $1/month. The Lovelacer Cloud margin at $5/month is healthy assuming Anthropic Haiku-class inference under the hood.
+Most users will run analysis 1–4 times per month, so even cloud providers sit under $1/month with BYO key. The managed-cloud tier bundles inference into a flat fee; see the [managed-cloud architecture section](#tier-3-architecture-lovelacer-cloud-future) for details.
 
 ### Budget safety
 
@@ -380,13 +379,11 @@ Detect via initial health check before run. Refuse to start; offer to fall back 
 - **Stripe** for subscription billing + license key issuance
 - **Anthropic API** under the hood (Claude Haiku 4.5 default, Sonnet for premium)
 
-### Pricing model (working theory)
+### Pricing model
 
-- **Lovelacer Pro:** $5/month, includes ~50 analysis runs and all AI features
-- **Lovelacer Pro+:** $15/month, unlimited runs, Sonnet-class inference, premium templates, priority support
-- **Lifetime:** $99 one-time, capped at 100 runs/month — for users who hate subscriptions
+Pricing is not finalised; the working assumptions live in [`ROADMAP.md`](./ROADMAP.md#open-questions) and will be resolved against Tier 2 adoption data before the managed-cloud tier is built. Whatever the final shape, the relay design above is intentionally cheap to operate so the margin can be modest and the tier remains a convenience option rather than a subsidy carrier.
 
-Stripe-managed, no card-on-file in Lovelacer. License key emailed on signup.
+Billing will be Stripe-managed, with no card-on-file held by Lovelacer. License keys would be emailed on signup.
 
 ### Why not build this in MVP
 
@@ -481,4 +478,5 @@ Tier 3 buildout: Cloudflare Worker relay, license keys, Stripe, marketing site, 
 3. How aggressive should the `ai_confidence_threshold` default be? 0.5 sweet spot, configurable.
 4. Should F4 natural language operations be guarded behind a "two-step confirm" UX or trust the LLM more aggressively? Two-step for first release.
 5. Multi-model strategy: cheap Haiku for F1/F2/F5, expensive Sonnet for F3/F4/F7 where quality matters more? Worth testing.
-6. Tier 3 pricing: $5/mo or $9/mo? Need to benchmark against ai-automation-suggester pricing and HACS donation patterns.
+
+For broader product-roadmap-level open questions (managed-cloud pricing, build trigger, custom card support), see [`ROADMAP.md`](./ROADMAP.md#open-questions).

@@ -1,6 +1,6 @@
 # PRD — Lovelacer
 
-**Status:** Draft v1 · **Owner:** Adam · **Last updated:** 2026-04-27
+**Status:** Draft v1 · **Owner:** Studio81 Labs · **Last updated:** 2026-04-27
 
 ## Vision
 

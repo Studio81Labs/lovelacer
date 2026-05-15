@@ -280,6 +280,15 @@ Generate separate dashboards: e.g., "Living" (rooms) + "Tech" (network, system) 
 
 Detect user's active theme, generate dashboards that look good with it.
 
+## Open questions
+
+Forward-looking decisions that are not yet locked. Each will be resolved on the schedule indicated below.
+
+- **Tier 3 pricing.** Working theory is in [`AI_FEATURES.md`](./AI_FEATURES.md#tier-3-architecture-lovelacer-cloud-future). Final shape depends on Tier 2 adoption patterns and benchmarking against comparable HA-ecosystem tools. Resolve before the Phase 6 build.
+- **Tier 3 build trigger.** The criterion that flips the "build it" switch — likely a combination of Tier 2 adoption volume and explicit "I don't want to manage an API key" requests. Define before end of Phase 5.
+- **Custom card support.** MVP ships pure-core only (no `custom:` cards). Mushroom / Tile-extras / other community card packs as opt-in later. Revisit during Phase 3 based on user feedback.
+- **Default LLM models per provider.** Likely Haiku for Anthropic, GPT-4o-mini for OpenAI, llama3.1:8b for Ollama, but benchmark on the suggestion-quality test set before locking. Resolve during Phase 4.
+
 ## Sizing reference
 
 - **S** (Small) ≈ 1 evening

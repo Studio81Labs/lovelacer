@@ -94,30 +94,21 @@ Full breakdown in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 | [`docs/HEURISTICS.md`](./docs/HEURISTICS.md)                     | Room detection chain, multi-language matching, confidence scoring                         |
 | [`docs/DASHBOARD_GENERATION.md`](./docs/DASHBOARD_GENERATION.md) | View layout, per-domain card mapping, example outputs                                     |
 | [`docs/AI_FEATURES.md`](./docs/AI_FEATURES.md)                   | Tier 2 / Tier 3 AI design, LLM provider abstraction, privacy boundaries                   |
-| [`docs/SMART_PANEL_BRIDGE.md`](./docs/SMART_PANEL_BRIDGE.md)     | Strategic relationship to FastyBird Smart Panel — export target, not marketing funnel     |
+| [`docs/SMART_PANEL_BRIDGE.md`](./docs/SMART_PANEL_BRIDGE.md)     | Design note for the FastyBird Smart Panel export target                                   |
 | [`docs/BRAND.md`](./docs/BRAND.md)                               | Visual identity — palette, typography, logo usage, voice                                  |
 | [`docs/ADDON_INSTALL.md`](./docs/ADDON_INSTALL.md)               | HA add-on installation walkthrough + troubleshooting                                      |
 | [`docs/ROADMAP.md`](./docs/ROADMAP.md)                           | Phased plan with real tickets and acceptance criteria                                     |
 
-## Decisions locked
+## Project facts
 
-- **Name**: Lovelacer. Wordmark sets the trailing **r** in italic amber. Insider portmanteau (Lovelace + agentive _-r_) — appropriate for the HA-native audience.
-- **Distribution:** Home Assistant Add-on (Supervisor-managed) as primary channel, standalone Docker as secondary.
+- **Name:** Lovelacer. Wordmark sets the trailing **r** in italic amber. A portmanteau of Lovelace and the agentive _-r_ suffix.
+- **Distribution:** Home Assistant Add-on (Supervisor-managed) as the primary channel, standalone Docker as a secondary one.
 - **Apply mode:** Lovelace **storage mode** by default (writes via WebSocket), with YAML export as a feature.
 - **Stack:** Node.js + Fastify backend, Vue 3 + Vite frontend, SQLite for local state.
-- **Room detection i18n:** Multi-language room detection from day one (EN, CS, DE, ES, FR, IT, PL, NL).
+- **Room detection i18n:** Multi-language room detection (EN, CS, DE, ES, FR, IT, PL, NL).
 - **UI i18n:** UI ships in English, Czech, and German (independent of room-detection language). German is alpha-quality; translation PRs welcome.
-- **License:** MIT for OSS core. AI features are also MIT but require runtime configuration of an LLM provider.
-- **Monetization:** Three tiers — Free/OSS, AI/BYO key (still free, user pays LLM provider), Pro/managed cloud (subscription, future).
-- **Privacy:** Tier 2 with Ollama provider = zero external requests, full AI features. Tier 3 cloud handles only entity registry metadata, never sensor states.
-- **Visual identity:** Honey amber (`#C76712`) primary, warm stone neutrals, forest green (`#7CA84A`) accent. Instrument Serif (display) + Inter (UI) + JetBrains Mono (code). See [`docs/BRAND.md`](./docs/BRAND.md).
-
-## Decisions still open
-
-- **Tier 3 pricing** — $5/mo, $9/mo, $99 lifetime — needs validation post-Tier-2.
-- **Tier 3 build trigger** — what specific metric flips the "build it" switch.
-- **Custom card support** — pure-core for MVP; Mushroom/Tile-extras as opt-in later?
-- **Default LLM models** — ship with Haiku + GPT-4o-mini + llama3.1:8b as defaults?
+- **License:** MIT. AI features are part of the same code base; using them requires runtime configuration of an LLM provider.
+- **Visual identity:** Honey amber primary, warm stone neutrals, forest green accent. Instrument Serif (display) + Inter (UI) + JetBrains Mono (code). See [`docs/BRAND.md`](./docs/BRAND.md).
 
 ## Roadmap
 
