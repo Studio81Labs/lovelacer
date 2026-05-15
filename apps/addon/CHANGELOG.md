@@ -467,7 +467,7 @@ the checklist passes on the dev HA stack and on a real HA install.
 
 ### Phase 1b (already shipped, summarised)
 
-- Multi-language room detection: EN, CS, DE, ES, FR, IT, PL, NL.
+- Multi-language room detection: EN, CS, and DE keyword data.
 - Per-entity overrides: drag rooms manually, mark entities hidden.
 - Invite-code gate for closed alpha.
 - HA add-on packaging with multi-arch images (aarch64, amd64, armv7).

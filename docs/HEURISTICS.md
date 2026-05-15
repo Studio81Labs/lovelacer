@@ -9,7 +9,7 @@ The room detection algorithm. Determines, for every entity in the registry, whic
 1. **Trust HA first.** If the user has set up areas, we use them. We don't override explicit user data.
 2. **Be transparent about confidence.** Every assignment has a score. Low scores surface in the UI for review.
 3. **Fail to "Misc," not to wrong placement.** Better to bucket an unknown into a Misc room than confidently place it in the wrong one.
-4. **Multi-language from day one.** ~half of HA's user base is non-English-speaking; English-only matching is a non-starter.
+4. **Multi-language from day one.** ~half of HA's user base is non-English-speaking; English-only matching is a non-starter. Current shipped keyword data covers EN, CS, and DE; the settings UI exposes Auto, EN, and CS.
 5. **Respect overrides forever.** Once a user manually places an entity, we never re-decide for them.
 
 ## Detection priority chain
@@ -69,6 +69,12 @@ For every entity, evaluate sources in order. Higher-priority hits short-circuit 
 
 A `RoomKeyword` is a tuple of canonical room ID + language + matchers.
 
+There are three related language surfaces:
+
+- `LanguageCode` in `packages/shared/src/types.ts` declares EN, CS, DE, ES, FR, IT, PL, and NL so adding a future keyword pack stays a data change.
+- `ROOM_KEYWORDS` in `packages/shared/src/room-keywords.ts` is the keyword data that ships today. It currently contains EN, CS, and DE rows.
+- `SUPPORTED_LANGUAGES` is the user-facing detection setting. It currently exposes `auto`, `en`, and `cs`; `auto` matches all shipped keyword rows, including DE.
+
 ```typescript
 type RoomKeyword = {
   canonical:
@@ -86,7 +92,7 @@ type RoomKeyword = {
     | 'attic'
     | 'kids_room'
     | 'guest_room'
-  language: 'en' | 'cs' | 'de' | 'es' | 'fr' | 'it' | 'pl' | 'nl'
+  language: 'en' | 'cs' | 'de' | 'es' | 'fr' | 'it' | 'pl' | 'nl' // type-level future union
   patterns: string[] // exact words and common compounds
   excludes?: string[] // false-positive guards
 }
@@ -100,11 +106,6 @@ const KEYWORDS: RoomKeyword[] = [
   { canonical: 'kitchen', language: 'en', patterns: ['kitchen'] },
   { canonical: 'kitchen', language: 'cs', patterns: ['kuchyne', 'kuchyně', 'kuch'] },
   { canonical: 'kitchen', language: 'de', patterns: ['kueche', 'küche', 'kuche'] },
-  { canonical: 'kitchen', language: 'es', patterns: ['cocina'] },
-  { canonical: 'kitchen', language: 'fr', patterns: ['cuisine'] },
-  { canonical: 'kitchen', language: 'it', patterns: ['cucina'] },
-  { canonical: 'kitchen', language: 'pl', patterns: ['kuchnia'] },
-  { canonical: 'kitchen', language: 'nl', patterns: ['keuken'] },
 
   // Living room
   {
@@ -118,7 +119,6 @@ const KEYWORDS: RoomKeyword[] = [
     patterns: ['obyvak', 'obývák', 'obyvaci pokoj', 'obývací pokoj'],
   },
   { canonical: 'living_room', language: 'de', patterns: ['wohnzimmer', 'wohnraum'] },
-  { canonical: 'living_room', language: 'es', patterns: ['salon', 'salón', 'sala de estar'] },
   // ...
 
   // Bedroom
@@ -134,7 +134,7 @@ const KEYWORDS: RoomKeyword[] = [
 ]
 ```
 
-The complete keyword table lives in `packages/shared/src/room-keywords.ts` — checked in, version-controlled, community-extensible. ~14 canonical rooms × 8 languages = ~112 entries plus aliases.
+The complete keyword table lives in `packages/shared/src/room-keywords.ts` — checked in, version-controlled, community-extensible. Today it ships ~14 canonical rooms × 3 keyword languages (EN, CS, DE) plus aliases. The broader `LanguageCode` union reserves ES, FR, IT, PL, and NL for future additions.
 
 ### Normalization before matching
 
@@ -152,7 +152,7 @@ So `Light.Master_Bedroom_Lamp` becomes `light master bedroom lamp` and matches `
 Per Add-on `language` option:
 
 - `auto` (default) — try all loaded languages, take the highest-confidence match
-- explicit code — restrict matching to that language pack only
+- explicit code — restrict matching to that language pack only. The user-facing setting currently supports `en` and `cs`; DE keywords participate through `auto` but are not yet an explicit selector option.
 
 `auto` works because keyword sets are designed to minimize cross-language collisions. `kuchyne` won't match anything in English; `kitchen` won't match anything in Czech.
 

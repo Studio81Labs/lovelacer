@@ -10,8 +10,10 @@ import type { RoomKeyword } from './types.js'
  * Writing `kuchyně` here will silently fail to match anything; the schema
  * test in __tests__/room-keywords.test.ts catches this at CI time.
  *
- * Adding a new language: append rows. No type changes needed (LanguageCode
- * already declares all 8 documented languages).
+ * Adding a new keyword language: append rows. No type changes are needed
+ * because LanguageCode reserves future locales. Add the language to
+ * SUPPORTED_LANGUAGES only when it should become explicitly user-selectable;
+ * until then, rows participate through the `auto` setting.
  */
 export const ROOM_KEYWORDS: RoomKeyword[] = [
   // ── kitchen ──────────────────────────────────────────────────────

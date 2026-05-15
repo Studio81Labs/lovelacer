@@ -357,7 +357,7 @@ Refreshed to reflect what shipped. Same structure as today; refreshed content.
 2. One-liner: "Generate a Home Assistant Lovelace dashboard from your existing entities." (unchanged)
 
 3. What it does — refreshed:
-   1. Click **Analyze** — Lovelacer reads HA registries, detects rooms across 8 languages.
+   1. Click **Analyze** — Lovelacer reads HA registries, detects rooms with shipped EN, CS, and DE keyword data.
    2. Review the preview. Re-run Analyze any time; the diff view shows what moved.
    3. Adjust per-entity overrides, accept smart suggestions, then click **Apply**.
 
@@ -371,7 +371,7 @@ Refreshed to reflect what shipped. Same structure as today; refreshed content.
    - Keep: "Doesn't modify other dashboards or automations."
 
 7. Status — REPLACE existing alpha-1a section entirely:
-   "Phase 2 alpha. Multi-language room detection (EN / CS / DE / ES / FR / IT / PL / NL).
+   "Phase 2 alpha. Multi-language room detection uses shipped EN / CS / DE keyword data.
    Re-analyze diff view. Per-entity overrides + smart suggestions. Settings UI for
    language and dashboard sections. Onboarding wizard for first-run.
    The single honest constraint: custom Lovelace cards (Mushroom, Tile-extras) are
@@ -398,7 +398,7 @@ Refreshed to reflect what shipped. Same structure as today; refreshed content.
 
 ### Phase 1b (already shipped, summarised)
 
-- Multi-language room detection: EN, CS, DE, ES, FR, IT, PL, NL.
+- Multi-language room detection: EN, CS, and DE keyword data.
 - Per-entity overrides: drag rooms manually, mark entities hidden.
 - Invite-code gate for closed alpha.
 - HA add-on packaging with multi-arch images (aarch64, amd64, armv7).

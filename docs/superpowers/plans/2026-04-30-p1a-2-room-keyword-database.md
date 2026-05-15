@@ -37,10 +37,11 @@ Read `packages/shared/src/types.ts` first to find a sensible insertion point. In
 
 ```ts
 /**
- * Languages with localized room keyword sets. Adding a new language is a
- * pure data change in `room-keywords.ts` — this union already declares
- * all 8 documented languages even though EN+CS are the only ones with
- * keyword data shipped today.
+ * Analyzer-level language union. This is intentionally broader than the
+ * user-facing detection setting so future keyword packs can be added as
+ * data. `ROOM_KEYWORDS` contains the keyword data that ships today, while
+ * `SUPPORTED_LANGUAGES` controls which languages users can select
+ * explicitly in settings.
  */
 export type LanguageCode = 'en' | 'cs' | 'de' | 'es' | 'fr' | 'it' | 'pl' | 'nl'
 
@@ -78,8 +79,8 @@ git -C <worktree> commit -m "$(cat <<'EOF'
 feat(shared): add LanguageCode and RoomKeyword types
 
 Foundation for the EN+CS room keyword database (P1a-2). LanguageCode
-declares all 8 documented languages even though only EN+CS ship now —
-adding DE in P1b-1 becomes a pure data change. RoomKeyword.canonical
+reserves future locales even though only EN+CS ship now — adding DE in
+P1b-1 becomes a pure data change. RoomKeyword.canonical
 narrows CanonicalRoomId via Exclude<…, 'misc'> because misc is the
 fallback bucket and cannot be a keyword target.
 
@@ -205,8 +206,9 @@ import type { RoomKeyword } from './types.js'
  * Writing `kuchyně` here will silently fail to match anything; the schema
  * test in __tests__/room-keywords.test.ts catches this at CI time.
  *
- * Adding a new language: append rows. No type changes needed (LanguageCode
- * already declares all 8 documented languages).
+ * Adding a new keyword language: append rows. No type changes are needed
+ * because LanguageCode reserves future locales. Add the language to
+ * SUPPORTED_LANGUAGES only when it should become explicitly user-selectable.
  */
 export const ROOM_KEYWORDS: RoomKeyword[] = [
   // ── kitchen ──────────────────────────────────────────────────────
