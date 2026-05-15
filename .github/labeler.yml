@@ -1,0 +1,54 @@
+addon:
+  - changed-files:
+      - any-glob-to-any-file: 'apps/addon/**'
+
+server:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/server/**'
+
+web:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/web/**'
+
+analyzer:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/analyzer/**'
+
+generator:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/generator/**'
+
+ha-client:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/ha-client/**'
+
+shared:
+  - changed-files:
+      - any-glob-to-any-file: 'packages/shared/**'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+
+infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'dev/**'
+          - 'scripts/**'
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - 'README.md'
+          - 'CONTRIBUTING.md'
+          - 'AGENTS.md'
+          - 'CLAUDE.md'
+
+deps:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'pnpm-lock.yaml'
+          - 'apps/**/package.json'
+          - 'packages/**/package.json'
