@@ -46,16 +46,23 @@ describe('docs site workspace', () => {
     expect(readText('apps/docs/src/faq.md')).toContain('AI features')
   })
 
-  test('builds in CI and deploys to Cloudflare Pages from main', () => {
+  test('builds in CI and deploys to Cloudflare Workers from main', () => {
     const ciWorkflow = readText('.github/workflows/ci.yml')
     const deployWorkflow = readText('.github/workflows/docs-pages.yml')
+    const wranglerConfig = readText('apps/docs/wrangler.jsonc')
 
     expect(ciWorkflow).toContain('pnpm build')
-    expect(deployWorkflow).toContain('Deploy documentation to Cloudflare Pages')
+    expect(deployWorkflow).toContain('Deploy documentation to Cloudflare Workers')
     expect(deployWorkflow).toContain('pnpm --filter @lovelacer/docs build')
-    expect(deployWorkflow).toContain('cloudflare/wrangler-action@v3')
-    expect(deployWorkflow).toContain('pages deploy apps/docs/src/.vitepress/dist')
+    expect(deployWorkflow).toContain('pnpm dlx wrangler@latest deploy --name "$WORKER_NAME"')
+    expect(deployWorkflow).toContain('DOCS_WORKER_NAME')
+    expect(deployWorkflow).toContain('DOCS_WORKERS_SUBDOMAIN')
     expect(deployWorkflow).toContain('CLOUDFLARE_ACCOUNT_ID')
     expect(deployWorkflow).toContain('CLOUDFLARE_API_TOKEN')
+
+    expect(wranglerConfig).toContain('"compatibility_date": "2026-05-15"')
+    expect(wranglerConfig).toContain('"directory": "./src/.vitepress/dist"')
+    expect(wranglerConfig).toContain('"not_found_handling": "404-page"')
+    expect(wranglerConfig).toContain('"html_handling": "auto-trailing-slash"')
   })
 })
