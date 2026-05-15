@@ -1,0 +1,39 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ['type:feature']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What problem does this solve? Why is it needed?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe how you'd like it to work.
+    validations:
+      required: true
+  - type: dropdown
+    id: epic
+    attributes:
+      label: Area
+      options:
+        - Dashboard generation
+        - Entity / area analysis
+        - HA integration
+        - Web UI
+        - Add-on packaging
+        - AI features
+        - Infrastructure / CI
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you've thought about?

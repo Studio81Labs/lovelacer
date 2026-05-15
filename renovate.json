@@ -1,0 +1,73 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "timezone": "Europe/Prague",
+  "schedule": ["before 4am on monday"],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 0,
+  "labels": ["dependencies"],
+  "semanticCommitType": "chore",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 4am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Group all minor + patch into one weekly PR",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all minor and patch"
+    },
+    {
+      "description": "Scope commits to addon",
+      "matchFileNames": ["apps/addon/**"],
+      "semanticCommitScope": "addon",
+      "addLabels": ["addon"]
+    },
+    {
+      "description": "Scope commits to server",
+      "matchFileNames": ["packages/server/**"],
+      "semanticCommitScope": "server",
+      "addLabels": ["server"]
+    },
+    {
+      "description": "Scope commits to web",
+      "matchFileNames": ["packages/web/**"],
+      "semanticCommitScope": "web",
+      "addLabels": ["web"]
+    },
+    {
+      "description": "Scope commits to analyzer",
+      "matchFileNames": ["packages/analyzer/**"],
+      "semanticCommitScope": "analyzer",
+      "addLabels": ["analyzer"]
+    },
+    {
+      "description": "Scope commits to generator",
+      "matchFileNames": ["packages/generator/**"],
+      "semanticCommitScope": "generator",
+      "addLabels": ["generator"]
+    },
+    {
+      "description": "Scope commits to ha-client",
+      "matchFileNames": ["packages/ha-client/**"],
+      "semanticCommitScope": "ha-client",
+      "addLabels": ["ha-client"]
+    },
+    {
+      "description": "Scope commits to shared",
+      "matchFileNames": ["packages/shared/**"],
+      "semanticCommitScope": "shared"
+    },
+    {
+      "description": "GitHub Actions bumps get the ci scope",
+      "matchManagers": ["github-actions"],
+      "semanticCommitScope": "ci",
+      "addLabels": ["ci"]
+    },
+    {
+      "description": "Hold TypeScript on 5.x until we do the v6 migration manually",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<6.0.0"
+    }
+  ]
+}

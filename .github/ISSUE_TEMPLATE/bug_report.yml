@@ -1,0 +1,60 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+labels: ['type:bugfix']
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce this?
+      placeholder: |
+        1. Install the add-on / run the server with ...
+        2. Open the dashboard at ...
+        3. See error
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Add-on (apps/addon)
+        - Server (packages/server)
+        - Web UI (packages/web)
+        - Analyzer (packages/analyzer)
+        - Generator (packages/generator)
+        - HA client (packages/ha-client)
+        - AI features
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: 'HA OS 12.x, Add-on v0.x / Standalone Docker on Linux'
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: '2026.5.1'
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste any relevant logs (server, add-on, or browser console) or attach screenshots.
