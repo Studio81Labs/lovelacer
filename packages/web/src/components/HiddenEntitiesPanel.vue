@@ -75,7 +75,8 @@ function unhide(entityId: string): void {
       <li
         v-for="entry in filteredHidden"
         :key="entry.entityId"
-        class="flex items-center justify-between gap-3 px-5 py-2"
+        data-testid="hidden-entity-list-row"
+        class="flex items-center justify-between gap-3 px-5 py-2 odd:bg-white even:bg-stone-50/25 hover:bg-amber-50/10 transition-colors"
       >
         <div class="min-w-0">
           <p class="truncate text-sm text-stone-700">{{ entry.friendlyName }}</p>

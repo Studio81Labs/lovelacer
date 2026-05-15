@@ -186,7 +186,8 @@ watch(filteredMisc, (entities) => {
       <li
         v-for="entity in displayedMisc"
         :key="entity.entityId"
-        class="flex items-center gap-3 pl-5"
+        data-testid="misc-entity-list-row"
+        class="flex items-center gap-3 pl-5 odd:bg-white even:bg-stone-50/25 hover:bg-amber-50/10 transition-colors"
       >
         <input
           v-if="!readOnly"

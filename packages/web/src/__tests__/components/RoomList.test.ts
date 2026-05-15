@@ -799,6 +799,16 @@ describe('RoomList', () => {
     expect(rows).toHaveLength(2)
     expect(rows[0]!.text()).toContain('light.a')
     expect(rows[1]!.text()).toContain('sensor.b')
+
+    const listRows = wrapper.findAll('[data-testid="room-entity-list-row"]')
+    expect(listRows[0]!.classes()).toEqual(
+      expect.arrayContaining([
+        'odd:bg-white',
+        'even:bg-stone-50/25',
+        'hover:bg-amber-50/10',
+        'transition-colors',
+      ]),
+    )
   })
 
   it('filters rooms by matching entity id', async () => {
