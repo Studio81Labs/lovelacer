@@ -14,15 +14,15 @@ assignees: []
 
 ## Environments
 
-- [ ] Dev HA stack (`pnpm dev:ha`, fresh `dev/ha-config/`)
-- [ ] Real HA install (the maintainer's daily HA)
+- [ ] Dev HA Core stack (`pnpm dev:ha`, fresh `dev/ha-config/`)
+- [ ] Real HA Supervisor add-on install (the maintainer's daily HA)
 
 ## Checklist
 
-Run every section in `docs/RELEASE_CHECKLIST.md` against both environments.
-Tick boxes inline as you go. The summary below mirrors the doc — if a section
-fails, link the bug issue here and keep this issue open until it's fixed or
-explicitly waived.
+Run every applicable section in `docs/RELEASE_CHECKLIST.md` against both
+environments. Tick boxes inline as you go. The summary below mirrors the doc —
+if a section fails, link the bug issue here and keep this issue open until it's
+fixed or explicitly waived.
 
 ### Pre-flight
 
@@ -32,9 +32,11 @@ explicitly waived.
 
 ### Install
 
-- [ ] Dev HA install
-- [ ] Real HA install
-- [ ] Clean startup, ingress panel loads
+- [ ] Dev HA Core stack starts and serves onboarding
+- [ ] Standalone Lovelacer connects to Dev HA Core with `HA_URL` + `HA_TOKEN`
+- [ ] Real HA Supervisor add-on install
+- [ ] Supervisor add-on install, ingress, sidebar icon
+- [ ] Add-on starts cleanly
 
 ### Onboarding (P2-7)
 
