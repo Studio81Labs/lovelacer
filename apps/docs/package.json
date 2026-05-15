@@ -1,0 +1,14 @@
+{
+  "name": "@lovelacer/docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vitepress build src",
+    "dev": "vitepress dev src --host 0.0.0.0",
+    "preview": "vitepress preview src --host 0.0.0.0"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}
