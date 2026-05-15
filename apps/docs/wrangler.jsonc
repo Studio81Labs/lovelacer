@@ -1,0 +1,10 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "lovelacer-docs",
+  "compatibility_date": "2026-05-15",
+  "assets": {
+    "directory": "./src/.vitepress/dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash",
+  },
+}

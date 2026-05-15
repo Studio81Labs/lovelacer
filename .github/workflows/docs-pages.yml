@@ -1,8 +1,26 @@
 name: Docs Pages
 
+# Deploy model:
+#   push to main      -> staging  (auto)
+#   push tag docs-v*  -> production (auto)
+#   workflow_dispatch -> choose staging or production
+#
+# Deploy target: Cloudflare Workers static assets (wrangler).
+#
+# Required repo-level secrets:
+#   CLOUDFLARE_API_TOKEN
+#
+# Required repo-level variables:
+#   CLOUDFLARE_ACCOUNT_ID
+#   DOCS_WORKERS_SUBDOMAIN
+#
+# Required per-environment (staging + production) variables:
+#   DOCS_WORKER_NAME
+
 on:
   push:
     branches: [main]
+    tags: ['docs-v*']
     paths:
       - 'apps/docs/**'
       - 'docs/**'
@@ -11,18 +29,65 @@ on:
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options: ['staging', 'production']
+        default: 'staging'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-deploy-${{ inputs.environment || (startsWith(github.ref, 'refs/tags/docs-v') && 'production' || 'staging') }}
+  cancel-in-progress: false
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.env.outputs.name }}
+      checkout_ref: ${{ steps.env.outputs.checkout_ref }}
+    steps:
+      - name: Resolve environment
+        id: env
+        env:
+          INPUT_ENV: ${{ inputs.environment || '' }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/docs-v') }}
+          EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "$INPUT_ENV" ]; then
+            ENV_NAME="$INPUT_ENV"
+          elif [ "$IS_TAG" = "true" ]; then
+            ENV_NAME="production"
+          else
+            ENV_NAME="staging"
+          fi
+          echo "name=${ENV_NAME}" >> "$GITHUB_OUTPUT"
+
+          if [ "$EVENT_NAME" = "push" ]; then
+            CHECKOUT_REF="$GITHUB_REF"
+          else
+            CHECKOUT_REF="refs/heads/main"
+          fi
+          echo "checkout_ref=${CHECKOUT_REF}" >> "$GITHUB_OUTPUT"
+
   deploy:
-    name: Deploy documentation to Cloudflare Pages
+    name: Deploy documentation to Cloudflare Workers
+    needs: resolve
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      contents: read
-      deployments: write
+    environment: ${{ needs.resolve.outputs.name }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -39,10 +104,63 @@ jobs:
       - name: Build documentation
         run: pnpm --filter @lovelacer/docs build
 
-      - name: Deploy documentation to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/docs/src/.vitepress/dist --project-name=lovelacer-docs
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve worker name
+        id: worker
+        env:
+          ENV_NAME: ${{ needs.resolve.outputs.name }}
+          WORKER_NAME: ${{ vars.DOCS_WORKER_NAME }}
+        run: |
+          set -euo pipefail
+          test -n "$WORKER_NAME" || {
+            echo "::error::DOCS_WORKER_NAME var is not set in env ${ENV_NAME}"
+            exit 1
+          }
+          echo "name=${WORKER_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy documentation to Cloudflare Workers
+        id: deploy
+        working-directory: apps/docs
+        env:
+          ENV_NAME: ${{ needs.resolve.outputs.name }}
+          WORKER_NAME: ${{ steps.worker.outputs.name }}
+          WORKERS_SUBDOMAIN: ${{ vars.DOCS_WORKERS_SUBDOMAIN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || {
+            echo "::error::CLOUDFLARE_ACCOUNT_ID repo variable is not set"
+            exit 1
+          }
+          test -n "$CLOUDFLARE_API_TOKEN" || {
+            echo "::error::CLOUDFLARE_API_TOKEN secret is not set"
+            exit 1
+          }
+          test -n "$WORKERS_SUBDOMAIN" || {
+            echo "::error::DOCS_WORKERS_SUBDOMAIN repo variable is not set"
+            exit 1
+          }
+
+          pnpm dlx wrangler@latest deploy --name "$WORKER_NAME"
+
+          DEPLOY_URL="https://${WORKER_NAME}.${WORKERS_SUBDOMAIN}.workers.dev"
+          echo "url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
+          echo "::notice::Docs deployed to ${DEPLOY_URL}"
+
+      - name: Smoke test
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            STATUS=$(curl -sL -o response.html -w '%{http_code}' "$URL" || echo '000')
+            if [ "$STATUS" = "200" ] && grep -qi "Home Assistant dashboards" response.html; then
+              echo "::notice::Docs smoke OK ($URL)"
+              exit 0
+            fi
+            echo "Smoke attempt ${attempt}: HTTP ${STATUS}"
+            sleep 5
+          done
+          echo "::error::Docs smoke failed after 5 attempts (last status ${STATUS})"
+          exit 1
