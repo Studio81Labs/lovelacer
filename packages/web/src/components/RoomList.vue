@@ -448,7 +448,12 @@ function entityIdToFriendly(entityId: string): string {
           </div>
 
           <ul class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
-            <li v-for="a in room.assignments" :key="a.entityId">
+            <li
+              v-for="a in room.assignments"
+              :key="a.entityId"
+              data-testid="room-entity-list-row"
+              class="odd:bg-white even:bg-stone-50/25 hover:bg-amber-50/10 transition-colors"
+            >
               <EntityRow
                 :entity-id="a.entityId"
                 :friendly-name="entityIdToFriendly(a.entityId)"

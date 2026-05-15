@@ -37,6 +37,16 @@ describe('AdministrativeEntitiesPanel', () => {
     expect(panel.text()).toContain('Kitchen Voltage')
     expect(panel.text()).toContain('sensor.kitchen_voltage')
     expect(panel.text()).toContain('Detected room: Kitchen')
+
+    const listRow = wrapper.find('[data-testid="administrative-entity-list-row"]')
+    expect(listRow.classes()).toEqual(
+      expect.arrayContaining([
+        'odd:bg-white',
+        'even:bg-stone-50/25',
+        'hover:bg-amber-50/10',
+        'transition-colors',
+      ]),
+    )
   })
 
   it('stages a room override when the user assigns an administrative entity', async () => {

@@ -62,7 +62,12 @@ const filteredAdministrative = computed(() =>
     </div>
 
     <ul v-else class="divide-y divide-stone-100 border-t border-stone-100 bg-stone-50/30">
-      <li v-for="entity in filteredAdministrative" :key="entity.entityId" class="space-y-1">
+      <li
+        v-for="entity in filteredAdministrative"
+        :key="entity.entityId"
+        data-testid="administrative-entity-list-row"
+        class="space-y-1 odd:bg-white even:bg-stone-50/25 hover:bg-amber-50/10 transition-colors"
+      >
         <p v-if="entity.roomId !== undefined" class="px-5 pt-2 text-xs text-stone-500">
           {{
             t('administrativeEntitiesPanel.detectedRoom', {

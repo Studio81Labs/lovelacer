@@ -40,6 +40,16 @@ describe('MiscBucket', () => {
     expect(rows[0]!.text()).toContain('Entity A')
     expect(rows[1]!.text()).toContain('c.d')
     expect(rows[1]!.text()).toContain('Entity B')
+
+    const listRows = wrapper.findAll('[data-testid="misc-entity-list-row"]')
+    expect(listRows[0]!.classes()).toEqual(
+      expect.arrayContaining([
+        'odd:bg-white',
+        'even:bg-stone-50/25',
+        'hover:bg-amber-50/10',
+        'transition-colors',
+      ]),
+    )
   })
 
   it('filters misc entities by friendly name', async () => {

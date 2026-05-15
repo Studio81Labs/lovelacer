@@ -43,6 +43,16 @@ describe('HiddenEntitiesPanel', () => {
     expect(panel.text()).toContain('sensor.rssi')
     expect(panel.text()).toContain('button.restart')
 
+    const listRows = wrapper.findAll('[data-testid="hidden-entity-list-row"]')
+    expect(listRows[0]!.classes()).toEqual(
+      expect.arrayContaining([
+        'odd:bg-white',
+        'even:bg-stone-50/25',
+        'hover:bg-amber-50/10',
+        'transition-colors',
+      ]),
+    )
+
     const unhideButtons = wrapper.findAll('[data-testid="hidden-entity-unhide"]')
     expect(unhideButtons).toHaveLength(2)
     await unhideButtons[0]!.trigger('click')
