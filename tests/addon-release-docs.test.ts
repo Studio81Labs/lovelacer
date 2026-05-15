@@ -57,4 +57,22 @@ describe('add-on release documentation', () => {
     expect(checklist).toContain('git tag')
     expect(checklist).toContain('vX.Y.Z')
   })
+
+  it('keeps release smoke docs honest about Core dev stack versus Supervisor-only checks', () => {
+    const checklist = readText('docs/RELEASE_CHECKLIST.md')
+    const issueTemplate = readText('.github/ISSUE_TEMPLATE/release-smoke-test.md')
+
+    expect(checklist).toContain('HA Core stack, not a Supervisor install')
+    expect(checklist).toMatch(
+      /Supervisor-specific\s+add-on install, ingress, and sidebar checks are real-install checks/,
+    )
+    expect(checklist).not.toContain(
+      'Dev HA: `pnpm dev:ha` brings HA up; add-on installs from the local repo.',
+    )
+
+    expect(issueTemplate).toContain('Dev HA Core stack')
+    expect(issueTemplate).toContain('Real HA Supervisor add-on install')
+    expect(issueTemplate).toContain('Supervisor add-on install, ingress, sidebar icon')
+    expect(issueTemplate).not.toContain('| Install/startup/ingress/sidebar icon | [ ] | [ ] |')
+  })
 })

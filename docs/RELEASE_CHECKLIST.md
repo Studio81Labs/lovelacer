@@ -1,11 +1,15 @@
 # Release Checklist
 
 End-to-end smoke pass before promoting a Lovelacer pre-release to a public
-stable tag. Every box must be checked on:
+stable tag. Every applicable box must be checked on:
 
-1. The dev HA stack (`dev/ha-stack.yml`), reset to a clean state.
-2. A real HA install used in daily life, with at least 48h of usage between
-   "apply" and the final review.
+1. The dev HA Core stack (`dev/ha-stack.yml`), reset to a clean state.
+2. A real HA Supervisor install used in daily life, with at least 48h of usage
+   between "apply" and the final review.
+
+The dev stack is an HA Core stack, not a Supervisor install. Supervisor-specific
+add-on install, ingress, and sidebar checks are real-install checks unless a
+separate supervised development host is explicitly added to the smoke run.
 
 Open the corresponding **Release smoke test** issue from the issue templates
 to track a run. One issue per pre-release tag.
@@ -24,11 +28,12 @@ to track a run. One issue per pre-release tag.
 
 ## Install
 
-- [ ] Dev HA: `pnpm dev:ha` brings HA up; add-on installs from the local repo.
+- [ ] Dev HA Core: `pnpm dev:ha` brings HA up and the standalone Lovelacer
+      runtime can connect with `HA_URL` + `HA_TOKEN`.
 - [ ] Real HA: add-on installs from the published add-on store entry.
-- [ ] Add-on starts cleanly; no errors in the first 30s of logs.
-- [ ] Ingress panel loads at **Settings → Add-ons → Lovelacer → Open Web UI**.
-- [ ] The sidebar `Lovelacer` panel shows the correct icon (mdi:home-variant).
+- [ ] Real HA: add-on starts cleanly; no errors in the first 30s of logs.
+- [ ] Real HA: ingress panel loads at **Settings → Add-ons → Lovelacer → Open Web UI**.
+- [ ] Real HA: the sidebar `Lovelacer` panel shows the correct icon (mdi:home-variant).
 
 ## Onboarding (P2-7)
 
@@ -131,6 +136,6 @@ to track a run. One issue per pre-release tag.
 ## Promotion
 
 Only promote to a stable `vX.Y.Z` tag (and post to r/homeassistant) when **every
-box above is checked** in both the dev-stack and real-install columns of the
-release smoke test issue, and any bugs filed during the run are either fixed
-or explicitly accepted as known-issues in the release notes.
+applicable box above is checked** in both the dev-stack and real-install columns
+of the release smoke test issue, and any bugs filed during the run are either
+fixed or explicitly accepted as known-issues in the release notes.
