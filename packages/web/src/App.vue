@@ -23,6 +23,7 @@ import { useSuggestionsStore } from './stores/suggestions.js'
 import { useSettingsStore } from './stores/settings.js'
 import { useOnboardingStore } from './stores/onboarding.js'
 import { useI18nStore } from './stores/i18n.js'
+import { roomIdToDisplay } from './rooms.js'
 import type { EntityDiff, LovelaceView, RoomDiffSummary, RoomDisplayOverride } from './api/types.js'
 
 const { t } = useI18n()
@@ -249,17 +250,16 @@ const dashboardViewCandidates = computed<LovelaceView[]>(() => {
   const preview = analyze.preview
   if (preview === null) return []
 
-  const viewsByPath = new Map(preview.config.views.map((view) => [view.path, view]))
-  const home = viewsByPath.get('home') ?? preview.config.views[0]
-  const rooms = preview.rooms.map(
-    (room): LovelaceView =>
-      viewsByPath.get(room.id) ?? {
-        type: 'sections',
-        title: room.displayName,
-        path: room.id,
-        icon: room.icon,
-      },
-  )
+  const home = preview.config.views.find((view) => view.path === 'home') ?? preview.config.views[0]
+  const rooms = preview.rooms.map((room): LovelaceView => {
+    const overrideName = settings.effective.roomOverrides?.[room.id]?.name?.trim()
+    return {
+      type: 'sections',
+      title: overrideName || roomIdToDisplay(room.id),
+      path: room.id,
+      icon: room.icon,
+    }
+  })
 
   return home === undefined ? rooms : [home, ...rooms]
 })
