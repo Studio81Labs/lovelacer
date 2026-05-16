@@ -736,6 +736,7 @@ export async function runPreview(
   const roomPosition = new Map(state.rooms.map((room, index) => [room.id, index]))
   const dashboardGroupings = state.groupings
     .filter((g) => g.roomId !== 'misc')
+    .filter((g) => state.roomOverrides[g.roomId]?.hiddenFromDashboard !== true)
     .sort((a, b) => {
       const aIndex = roomPosition.get(a.roomId)
       const bIndex = roomPosition.get(b.roomId)

@@ -166,6 +166,29 @@ describe('useSettingsStore', () => {
     })
   })
 
+  it('setRoomOverride persists hidden dashboard overrides without name or icon', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', { hiddenFromDashboard: true })
+
+    expect(store.dirtyState?.roomOverrides).toEqual({
+      kitchen: { hiddenFromDashboard: true },
+    })
+  })
+
+  it('setRoomOverride omits redundant false hidden dashboard overrides', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setRoomOverride('kitchen', { hiddenFromDashboard: false })
+
+    expect(store.dirtyState).toBeNull()
+    expect(store.hasDirty).toBe(false)
+  })
+
   it('setRoomOverride reset removes empty room override entries', async () => {
     const saved: Settings = {
       ...DEFAULT_SETTINGS,
@@ -214,7 +237,12 @@ describe('useSettingsStore', () => {
     const settings: Settings = {
       ...DEFAULT_SETTINGS,
       roomOverrides: {
-        kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+        kitchen: {
+          name: 'Breakfast nook',
+          icon: 'mdi:coffee',
+          showNameOnCard: false,
+          hiddenFromDashboard: true,
+        },
       },
     }
     vi.mocked(getSettings).mockResolvedValueOnce({ settings })
@@ -232,6 +260,7 @@ describe('useSettingsStore', () => {
       name: 'Mutated',
       icon: 'mdi:coffee',
       showNameOnCard: false,
+      hiddenFromDashboard: true,
     })
   })
 

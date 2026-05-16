@@ -1,17 +1,76 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { LovelaceConfig } from '../api/types.js'
+import type { LovelaceConfig, LovelaceView, RoomDisplayOverride } from '../api/types.js'
 
 const { t } = useI18n()
-defineProps<{ config: LovelaceConfig }>()
+const props = withDefaults(
+  defineProps<{
+    config: LovelaceConfig
+    viewCandidates?: LovelaceView[]
+    roomOverrides?: Record<string, RoomDisplayOverride>
+    disabled?: boolean
+    interactive?: boolean
+  }>(),
+  {
+    viewCandidates: () => [],
+    roomOverrides: () => ({}),
+    disabled: false,
+    interactive: false,
+  },
+)
+const emit = defineEmits<{
+  'toggle-room-view': [roomId: string]
+}>()
+
+const candidateViews = computed(() =>
+  props.viewCandidates.length > 0 ? props.viewCandidates : props.config.views,
+)
+const activePaths = computed(() => new Set(props.config.views.map((view) => view.path)))
+const totalCount = computed(() => candidateViews.value.length)
+const activeCount = computed(() => props.config.views.length)
+
+function isHomeView(view: LovelaceView): boolean {
+  return view.path === 'home'
+}
+
+function isSelected(view: LovelaceView): boolean {
+  if (isHomeView(view)) return true
+  return (
+    activePaths.value.has(view.path) && props.roomOverrides[view.path]?.hiddenFromDashboard !== true
+  )
+}
+
+function chipLabel(view: LovelaceView): string {
+  if (isHomeView(view) || !props.interactive) return view.title
+  return t(isSelected(view) ? 'dashboardPreview.hideView' : 'dashboardPreview.showView', {
+    title: view.title,
+  })
+}
+
+function toggleRoomView(view: LovelaceView): void {
+  if (isHomeView(view) || !props.interactive || props.disabled) return
+  emit('toggle-room-view', view.path)
+}
 </script>
 
 <template>
-  <section v-if="config.views.length > 0">
+  <section v-if="candidateViews.length > 0">
     <div class="mb-3 flex items-center justify-between">
       <h3 class="text-sm font-medium text-stone-700">
-        {{ t('dashboardPreview.willCreate', { count: config.views.length }, config.views.length) }}
+        <template v-if="activeCount === totalCount">
+          {{ t('dashboardPreview.willCreate', { count: activeCount }, activeCount) }}
+        </template>
+        <template v-else>
+          {{
+            t(
+              'dashboardPreview.willCreateSelected',
+              { active: activeCount, total: totalCount },
+              totalCount,
+            )
+          }}
+        </template>
       </h3>
       <!--
         Document-relative URL (no leading slash) so the link resolves
@@ -30,14 +89,27 @@ defineProps<{ config: LovelaceConfig }>()
       </a>
     </div>
     <ul class="flex flex-wrap gap-2">
-      <li
-        v-for="view in config.views"
-        :key="view.path"
-        data-testid="view-pill"
-        class="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-stone-700"
-      >
-        <Icon :icon="view.icon" class="h-4 w-4" />
-        <span>{{ view.title }}</span>
+      <li v-for="view in candidateViews" :key="view.path">
+        <button
+          type="button"
+          data-testid="view-chip"
+          :disabled="disabled || isHomeView(view) || !interactive"
+          :aria-pressed="isSelected(view) ? 'true' : 'false'"
+          :aria-label="chipLabel(view)"
+          :class="[
+            'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition',
+            isSelected(view)
+              ? 'border-forest-200 bg-forest-50 text-forest-700'
+              : 'border-stone-200 bg-white text-stone-500 opacity-60 line-through',
+            disabled || isHomeView(view) || !interactive
+              ? 'cursor-default'
+              : 'cursor-pointer hover:border-forest-300 hover:bg-forest-50',
+          ]"
+          @click="toggleRoomView(view)"
+        >
+          <Icon :icon="view.icon" class="h-4 w-4" />
+          <span>{{ view.title }}</span>
+        </button>
       </li>
     </ul>
   </section>

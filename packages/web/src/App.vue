@@ -23,7 +23,8 @@ import { useSuggestionsStore } from './stores/suggestions.js'
 import { useSettingsStore } from './stores/settings.js'
 import { useOnboardingStore } from './stores/onboarding.js'
 import { useI18nStore } from './stores/i18n.js'
-import type { EntityDiff, RoomDiffSummary, RoomDisplayOverride } from './api/types.js'
+import { roomIdToDisplay } from './rooms.js'
+import type { EntityDiff, LovelaceView, RoomDiffSummary, RoomDisplayOverride } from './api/types.js'
 
 const { t } = useI18n()
 const analyze = useAnalyzeStore()
@@ -220,6 +221,30 @@ async function saveRoomOverride(roomId: string, override: RoomDisplayOverride): 
   }
 }
 
+function roomOverrideFor(roomId: string): RoomDisplayOverride {
+  return { ...(settings.effective.roomOverrides?.[roomId] ?? {}) }
+}
+
+const dashboardPreviewDisabled = computed(
+  () =>
+    roomOverrideSaveInFlight.value ||
+    analyze.isRefreshingPreview ||
+    settings.phase === 'loading' ||
+    settings.phase === 'saving' ||
+    settings.serverState === null,
+)
+
+async function toggleDashboardRoomView(roomId: string): Promise<void> {
+  if (dashboardPreviewDisabled.value) return
+  const override = roomOverrideFor(roomId)
+  if (override.hiddenFromDashboard === true) {
+    delete override.hiddenFromDashboard
+  } else {
+    override.hiddenFromDashboard = true
+  }
+  await saveRoomOverride(roomId, override)
+}
+
 const diffByRoom = computed<Record<string, RoomDiffSummary>>(
   () => analyze.preview?.diff?.perRoom ?? {},
 )
@@ -229,6 +254,24 @@ const diffByEntityId = computed<Map<string, EntityDiff>>(() => {
   const entities = analyze.preview?.diff?.entities ?? []
   for (const e of entities) map.set(e.entityId, e)
   return map
+})
+
+const dashboardViewCandidates = computed<LovelaceView[]>(() => {
+  const preview = analyze.preview
+  if (preview === null) return []
+
+  const home = preview.config.views.find((view) => view.path === 'home') ?? preview.config.views[0]
+  const rooms = preview.rooms.map((room): LovelaceView => {
+    const overrideName = settings.effective.roomOverrides?.[room.id]?.name?.trim()
+    return {
+      type: 'sections',
+      title: overrideName || roomIdToDisplay(room.id),
+      path: room.id,
+      icon: room.icon,
+    }
+  })
+
+  return home === undefined ? rooms : [home, ...rooms]
 })
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -403,7 +446,14 @@ watch(
       <AdministrativeEntitiesPanel :administrative="analyze.preview.administrative ?? []" />
       <HiddenEntitiesPanel :hidden-entities="analyze.preview.hidden ?? []" />
       <OverridesBar />
-      <DashboardPreview :config="analyze.preview.config" />
+      <DashboardPreview
+        :config="analyze.preview.config"
+        :view-candidates="dashboardViewCandidates"
+        :room-overrides="settings.effective.roomOverrides ?? {}"
+        :interactive="true"
+        :disabled="dashboardPreviewDisabled"
+        @toggle-room-view="toggleDashboardRoomView"
+      />
       <ApplyBar
         v-if="
           analyze.preview.config.views.length > 0 &&

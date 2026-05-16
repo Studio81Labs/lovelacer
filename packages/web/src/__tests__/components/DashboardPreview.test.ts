@@ -2,12 +2,20 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Icon } from '@iconify/vue'
 import DashboardPreview from '../../components/DashboardPreview.vue'
-import type { LovelaceConfig } from '../../api/types.js'
+import type { LovelaceConfig, LovelaceView, RoomDisplayOverride } from '../../api/types.js'
 import { createTestI18n } from '../test-utils.js'
 
-function mountPreview(config: LovelaceConfig) {
+function mountPreview(
+  config: LovelaceConfig,
+  props: {
+    viewCandidates?: LovelaceView[]
+    roomOverrides?: Record<string, RoomDisplayOverride>
+    disabled?: boolean
+    interactive?: boolean
+  } = {},
+) {
   return mount(DashboardPreview, {
-    props: { config },
+    props: { config, ...props },
     global: { plugins: [createTestI18n()] },
   })
 }
@@ -22,13 +30,91 @@ const config: LovelaceConfig = {
 }
 
 describe('DashboardPreview', () => {
-  it('renders one pill per view in input order', () => {
+  it('renders one toggle chip per view in input order', () => {
     const wrapper = mountPreview(config)
-    const pills = wrapper.findAll('[data-testid="view-pill"]')
-    expect(pills).toHaveLength(3)
-    expect(pills[0]!.text()).toContain('Home')
-    expect(pills[1]!.text()).toContain('Kitchen')
-    expect(pills[2]!.text()).toContain('Bedroom')
+    const chips = wrapper.findAll('[data-testid="view-chip"]')
+    expect(chips).toHaveLength(3)
+    expect(chips[0]!.text()).toContain('Home')
+    expect(chips[1]!.text()).toContain('Kitchen')
+    expect(chips[2]!.text()).toContain('Bedroom')
+  })
+
+  it('renders the Home chip as selected and disabled', () => {
+    const wrapper = mountPreview(config)
+    const home = wrapper.findAll('[data-testid="view-chip"]')[0]!
+    expect(home.attributes('aria-pressed')).toBe('true')
+    expect(home.attributes('disabled')).toBeDefined()
+  })
+
+  it('emits the room id when a room chip is clicked', async () => {
+    const wrapper = mountPreview(config, { interactive: true })
+
+    await wrapper.findAll('[data-testid="view-chip"]')[1]!.trigger('click')
+
+    expect(wrapper.emitted('toggle-room-view')).toEqual([['kitchen']])
+  })
+
+  it('keeps room chips read-only when no interactive toggle flow is supplied', async () => {
+    const wrapper = mountPreview(config)
+    const kitchen = wrapper.findAll('[data-testid="view-chip"]')[1]!
+
+    expect(kitchen.attributes('disabled')).toBeDefined()
+    expect(kitchen.attributes('aria-label')).toBe('Kitchen')
+
+    await kitchen.trigger('click')
+
+    expect(wrapper.emitted('toggle-room-view')).toBeUndefined()
+  })
+
+  it('renders hidden candidate room chips as inactive and toggleable', () => {
+    const wrapper = mountPreview(
+      {
+        title: config.title,
+        views: [
+          { type: 'sections', title: 'Home', path: 'home', icon: 'mdi:home-variant' },
+          {
+            type: 'sections',
+            title: 'Kitchen',
+            path: 'kitchen',
+            icon: 'mdi:silverware-fork-knife',
+          },
+        ],
+      },
+      {
+        viewCandidates: config.views,
+        roomOverrides: { bedroom: { hiddenFromDashboard: true } },
+        interactive: true,
+      },
+    )
+    const bedroom = wrapper.findAll('[data-testid="view-chip"]')[2]!
+
+    expect(bedroom.text()).toContain('Bedroom')
+    expect(bedroom.attributes('aria-pressed')).toBe('false')
+    expect(bedroom.attributes('aria-label')).toBe('Show Bedroom dashboard view')
+    expect(bedroom.classes()).toContain('opacity-60')
+  })
+
+  it('shows active and total view counts when some room chips are hidden', () => {
+    const wrapper = mountPreview(
+      {
+        title: config.title,
+        views: [
+          { type: 'sections', title: 'Home', path: 'home', icon: 'mdi:home-variant' },
+          {
+            type: 'sections',
+            title: 'Kitchen',
+            path: 'kitchen',
+            icon: 'mdi:silverware-fork-knife',
+          },
+        ],
+      },
+      {
+        viewCandidates: config.views,
+        roomOverrides: { bedroom: { hiddenFromDashboard: true } },
+      },
+    )
+
+    expect(wrapper.text()).toContain('Will create 2 of 3 dashboard views')
   })
 
   it('passes the view.icon string to the Iconify component', () => {
@@ -45,8 +131,8 @@ describe('DashboardPreview', () => {
   it('renders nothing when views array is empty', () => {
     const empty: LovelaceConfig = { title: 'x', views: [] }
     const wrapper = mountPreview(empty)
-    const pills = wrapper.findAll('[data-testid="view-pill"]')
-    expect(pills).toHaveLength(0)
+    const chips = wrapper.findAll('[data-testid="view-chip"]')
+    expect(chips).toHaveLength(0)
   })
 
   it('renders a document-relative Download YAML link when views are present', () => {

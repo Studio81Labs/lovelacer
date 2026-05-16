@@ -216,6 +216,7 @@ export interface RoomDisplayOverride {
   name?: string
   icon?: string
   showNameOnCard?: boolean
+  hiddenFromDashboard?: boolean
 }
 
 export interface Settings {
