@@ -553,6 +553,66 @@ describe('App integration', () => {
     expect(wrapper.text()).toContain('Will create 1 of 2 dashboard views')
   })
 
+  it('disables dashboard room toggles until server settings load', async () => {
+    const visiblePreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
+      config: {
+        title: 'Lovelacer — Home',
+        views: [
+          { type: 'sections', title: 'Home', path: 'home', icon: 'mdi:home-variant' },
+          {
+            type: 'sections',
+            title: 'Kitchen',
+            path: 'kitchen',
+            icon: 'mdi:silverware-fork-knife',
+          },
+        ],
+      },
+    }
+    let resolveSettings: (value: { settings: Settings }) => void = () => {}
+    vi.mocked(getSettings).mockReturnValue(
+      new Promise((resolve) => {
+        resolveSettings = resolve
+      }),
+    )
+    vi.mocked(getLatestAnalysis).mockResolvedValueOnce({
+      analyzedAt: 1700000000,
+      analysis: visiblePreview,
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+
+    const kitchenChip = wrapper
+      .findAll('[data-testid="view-chip"]')
+      .find((chip) => chip.text().includes('Kitchen'))
+    expect(kitchenChip).toBeDefined()
+    expect(kitchenChip?.attributes('disabled')).toBeDefined()
+
+    await kitchenChip!.trigger('click')
+
+    expect(putSettings).not.toHaveBeenCalled()
+
+    resolveSettings({ settings: DEFAULT_SETTINGS })
+    await flushPromises()
+  })
+
   it('keeps dashboard view chip labels stable after hiding localized HA rooms', async () => {
     const visiblePreview: PreviewOutput = {
       ...mockPreview,

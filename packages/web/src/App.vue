@@ -225,7 +225,16 @@ function roomOverrideFor(roomId: string): RoomDisplayOverride {
   return { ...(settings.effective.roomOverrides?.[roomId] ?? {}) }
 }
 
+const dashboardPreviewDisabled = computed(
+  () =>
+    roomOverrideSaveInFlight.value ||
+    analyze.isRefreshingPreview ||
+    settings.phase !== 'idle' ||
+    settings.serverState === null,
+)
+
 async function toggleDashboardRoomView(roomId: string): Promise<void> {
+  if (dashboardPreviewDisabled.value) return
   const override = roomOverrideFor(roomId)
   if (override.hiddenFromDashboard === true) {
     delete override.hiddenFromDashboard
@@ -441,9 +450,7 @@ watch(
         :view-candidates="dashboardViewCandidates"
         :room-overrides="settings.effective.roomOverrides ?? {}"
         :interactive="true"
-        :disabled="
-          roomOverrideSaveInFlight || analyze.isRefreshingPreview || settings.phase === 'saving'
-        "
+        :disabled="dashboardPreviewDisabled"
         @toggle-room-view="toggleDashboardRoomView"
       />
       <ApplyBar
