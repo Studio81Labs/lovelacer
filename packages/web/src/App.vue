@@ -229,7 +229,8 @@ const dashboardPreviewDisabled = computed(
   () =>
     roomOverrideSaveInFlight.value ||
     analyze.isRefreshingPreview ||
-    settings.phase !== 'idle' ||
+    settings.phase === 'loading' ||
+    settings.phase === 'saving' ||
     settings.serverState === null,
 )
 

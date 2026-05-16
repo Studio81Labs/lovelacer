@@ -613,6 +613,86 @@ describe('App integration', () => {
     await flushPromises()
   })
 
+  it('reenables dashboard room toggles after a settings save failure', async () => {
+    const visiblePreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
+      config: {
+        title: 'Lovelacer — Home',
+        views: [
+          { type: 'sections', title: 'Home', path: 'home', icon: 'mdi:home-variant' },
+          {
+            type: 'sections',
+            title: 'Kitchen',
+            path: 'kitchen',
+            icon: 'mdi:silverware-fork-knife',
+          },
+        ],
+      },
+    }
+    const hiddenPreview: PreviewOutput = {
+      ...visiblePreview,
+      config: {
+        title: 'Lovelacer — Home',
+        views: [{ type: 'sections', title: 'Home', path: 'home', icon: 'mdi:home-variant' }],
+      },
+    }
+    const savedSettings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: { kitchen: { hiddenFromDashboard: true } },
+    }
+    vi.mocked(getSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })
+    vi.mocked(postPreview)
+      .mockResolvedValueOnce(visiblePreview)
+      .mockResolvedValueOnce(hiddenPreview)
+    vi.mocked(putSettings)
+      .mockRejectedValueOnce({ error: 'storage_error', message: 'disk full' })
+      .mockResolvedValueOnce({ settings: savedSettings })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    const settings = useSettingsStore()
+    await analyze.analyze()
+    await flushPromises()
+
+    const kitchenChip = wrapper
+      .findAll('[data-testid="view-chip"]')
+      .find((chip) => chip.text().includes('Kitchen'))
+    expect(kitchenChip).toBeDefined()
+    await kitchenChip!.trigger('click')
+    await flushPromises()
+
+    expect(settings.phase).toBe('error')
+    const retryChip = wrapper
+      .findAll('[data-testid="view-chip"]')
+      .find((chip) => chip.text().includes('Kitchen'))
+    expect(retryChip).toBeDefined()
+    expect(retryChip?.attributes('disabled')).toBeUndefined()
+
+    await retryChip!.trigger('click')
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledTimes(2)
+    expect(putSettings).toHaveBeenLastCalledWith({ settings: savedSettings })
+    expect(postPreview).toHaveBeenCalledTimes(2)
+  })
+
   it('keeps dashboard view chip labels stable after hiding localized HA rooms', async () => {
     const visiblePreview: PreviewOutput = {
       ...mockPreview,
