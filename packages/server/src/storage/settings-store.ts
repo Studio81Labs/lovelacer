@@ -151,6 +151,12 @@ function isRoomOverrides(value: unknown): value is Record<string, RoomDisplayOve
     if (record.showNameOnCard !== undefined && typeof record.showNameOnCard !== 'boolean') {
       return false
     }
+    if (
+      record.hiddenFromDashboard !== undefined &&
+      typeof record.hiddenFromDashboard !== 'boolean'
+    ) {
+      return false
+    }
   }
   return true
 }

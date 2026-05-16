@@ -96,6 +96,23 @@ function makeSettingsWithRoomOverrides(roomOverrides: Settings['roomOverrides'])
   return settings
 }
 
+function collectNavigationPaths(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap((item) => collectNavigationPaths(item))
+  if (typeof value !== 'object' || value === null) return []
+
+  const record = value as Record<string, unknown>
+  const current =
+    record.tap_action !== undefined &&
+    typeof record.tap_action === 'object' &&
+    record.tap_action !== null &&
+    (record.tap_action as Record<string, unknown>).action === 'navigate' &&
+    typeof (record.tap_action as Record<string, unknown>).navigation_path === 'string'
+      ? [(record.tap_action as Record<string, string>).navigation_path]
+      : []
+
+  return [...current, ...Object.values(record).flatMap((item) => collectNavigationPaths(item))]
+}
+
 function makeAdministrativeHa(): HaClient {
   const areas: HaAreaRegistryEntry[] = [
     { area_id: 'kitchen', name: 'Kitchen', floor_id: null, icon: null },
@@ -409,6 +426,79 @@ describe('runPreview', () => {
       const view = result.config.views.find((candidate) => candidate.path === 'kitchen')
       expect(view?.title).toBe('Breakfast nook')
       expect(view?.icon).toBe('mdi:coffee')
+    } finally {
+      settings.close()
+    }
+  })
+
+  it('excludes hidden dashboard rooms from generated preview views but keeps analysis rooms editable', async () => {
+    const fake = makeFakeHa()
+    const settings = makeSettingsWithRoomOverrides({
+      kitchen: { hiddenFromDashboard: true },
+    })
+    try {
+      const result = await runPreview(
+        fake.client,
+        makeStore(),
+        makeAppliedSnapshot(),
+        makeDismissed(),
+        settings,
+      )
+
+      expect(result.rooms.map((room) => room.id)).toContain('kitchen')
+      expect(result.config.views.map((view) => view.path)).not.toContain('kitchen')
+    } finally {
+      settings.close()
+    }
+  })
+
+  it('does not render home navigation paths for hidden dashboard rooms', async () => {
+    const fake = makeFakeHa()
+    const settings = makeSettingsWithRoomOverrides({
+      kitchen: { hiddenFromDashboard: true },
+    })
+    try {
+      const result = await runPreview(
+        fake.client,
+        makeStore(),
+        makeAppliedSnapshot(),
+        makeDismissed(),
+        settings,
+      )
+      const home = result.config.views[0]
+      const paths = collectNavigationPaths(home)
+
+      expect(paths).not.toContain('kitchen')
+    } finally {
+      settings.close()
+    }
+  })
+
+  it('keeps the Home view when every detected room is hidden from the dashboard', async () => {
+    const fake = makeFakeHa()
+    const detected = await runPreview(
+      fake.client,
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+    )
+    const hiddenOverrides = Object.fromEntries(
+      detected.rooms.map((room) => [room.id, { hiddenFromDashboard: true }]),
+    )
+    const settings = makeSettingsWithRoomOverrides(hiddenOverrides)
+    try {
+      const result = await runPreview(
+        fake.client,
+        makeStore(),
+        makeAppliedSnapshot(),
+        makeDismissed(),
+        settings,
+      )
+
+      expect(result.rooms.length).toBeGreaterThan(0)
+      expect(result.config.views).toHaveLength(1)
+      expect(result.config.views[0]?.path).toBe('home')
     } finally {
       settings.close()
     }

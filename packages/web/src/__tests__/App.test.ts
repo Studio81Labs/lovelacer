@@ -482,6 +482,77 @@ describe('App integration', () => {
     expect(wrapper.find('[data-testid="room-name"]').text()).toBe('Breakfast nook')
   })
 
+  it('hides a dashboard room view from the preview chips and refreshes preview', async () => {
+    const visiblePreview: PreviewOutput = {
+      ...mockPreview,
+      rooms: [
+        {
+          id: 'kitchen',
+          haAreaId: 'kitchen',
+          displayName: 'Kitchen',
+          icon: 'mdi:silverware-fork-knife',
+          entityCount: 1,
+          averageConfidence: 1,
+          assignments: [],
+        },
+      ],
+      summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
+      config: {
+        title: 'Lovelacer — Home',
+        views: [
+          { type: 'sections', title: 'Home', path: 'home', icon: 'mdi:home-variant' },
+          {
+            type: 'sections',
+            title: 'Kitchen',
+            path: 'kitchen',
+            icon: 'mdi:silverware-fork-knife',
+          },
+        ],
+      },
+    }
+    const hiddenPreview: PreviewOutput = {
+      ...visiblePreview,
+      config: {
+        title: 'Lovelacer — Home',
+        views: [{ type: 'sections', title: 'Home', path: 'home', icon: 'mdi:home-variant' }],
+      },
+    }
+    const savedSettings: Settings = {
+      ...DEFAULT_SETTINGS,
+      roomOverrides: { kitchen: { hiddenFromDashboard: true } },
+    }
+    vi.mocked(getSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })
+    vi.mocked(postPreview)
+      .mockResolvedValueOnce(visiblePreview)
+      .mockResolvedValueOnce(hiddenPreview)
+    vi.mocked(putSettings).mockResolvedValueOnce({ settings: savedSettings })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    await flushPromises()
+    const analyze = useAnalyzeStore()
+    await analyze.analyze()
+    await flushPromises()
+
+    const kitchenChip = wrapper
+      .findAll('[data-testid="view-chip"]')
+      .find((chip) => chip.text().includes('Kitchen'))
+    expect(kitchenChip).toBeDefined()
+    await kitchenChip!.trigger('click')
+    await flushPromises()
+
+    expect(putSettings).toHaveBeenCalledWith({ settings: savedSettings })
+    expect(postPreview).toHaveBeenCalledTimes(2)
+    const hiddenKitchenChip = wrapper
+      .findAll('[data-testid="view-chip"]')
+      .find((chip) => chip.text().includes('Kitchen'))
+    expect(hiddenKitchenChip?.attributes('aria-pressed')).toBe('false')
+    expect(wrapper.text()).toContain('Will create 1 of 2 dashboard views')
+  })
+
   it('renders saved room overrides even before preview reflects them', async () => {
     const kitchenPreview: PreviewOutput = {
       ...mockPreview,

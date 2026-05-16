@@ -97,6 +97,7 @@ export const useSettingsStore = defineStore('settings', () => {
     if (name) next.name = name
     if (icon) next.icon = icon
     if (override.showNameOnCard === false) next.showNameOnCard = false
+    if (override.hiddenFromDashboard === true) next.hiddenFromDashboard = true
     return Object.keys(next).length === 0 ? null : next
   }
 
