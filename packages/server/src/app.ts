@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
 import fastifyStatic from '@fastify/static'
 import { pino, type Logger } from 'pino'
+import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { HaClient } from '@lovelacer/ha-client'
 import { analyzeRoute } from './routes/analyze.js'
 import { applyRoute } from './routes/apply.js'
@@ -71,6 +72,14 @@ export async function createApp(opts: CreateAppOptions) {
 
   await app.register(cors, { origin: true })
   await app.register(sensible)
+
+  if (opts.isDev === true) {
+    const socketIoProbeHandler = (_req: FastifyRequest, reply: FastifyReply) =>
+      reply.code(404).send()
+
+    app.get('/socket.io', { logLevel: 'silent' }, socketIoProbeHandler)
+    app.get('/socket.io/', { logLevel: 'silent' }, socketIoProbeHandler)
+  }
 
   if (opts.directAccessToken !== undefined) {
     app.addHook('onRequest', async (req, reply) => {
