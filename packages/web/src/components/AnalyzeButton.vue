@@ -10,10 +10,13 @@ const apply = useApplyStore()
 
 // Disabled while either store is mid-flight to prevent racing the
 // in-progress request. Re-enabled in idle/ready/error/success.
-const disabled = computed(() => analyze.phase === 'loading' || apply.phase === 'applying')
+const disabled = computed(
+  () =>
+    analyze.status === 'loading' || analyze.status === 'analyzing' || apply.phase === 'applying',
+)
 
 const label = computed(() =>
-  analyze.phase === 'loading' ? t('analyzeButton.analyzing') : t('analyzeButton.analyze'),
+  analyze.status === 'analyzing' ? t('analyzeButton.analyzing') : t('analyzeButton.analyze'),
 )
 
 function clickAnalyze() {
@@ -28,7 +31,7 @@ function clickAnalyze() {
 <template>
   <button
     type="button"
-    class="rounded bg-amber-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+    class="ll-btn ll-btn-primary px-5"
     :disabled="disabled"
     @click="clickAnalyze"
   >

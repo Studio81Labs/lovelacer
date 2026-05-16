@@ -12,6 +12,7 @@ import { createTestI18n } from '../test-utils.js'
 vi.mock('../../api/client.js', async () => {
   const { DEFAULT_SETTINGS } = await vi.importActual<typeof ApiTypes>('../../api/types.js')
   return {
+    getLatestAnalysis: vi.fn(),
     getSettings: vi.fn().mockResolvedValue({ settings: DEFAULT_SETTINGS }),
     putSettings: vi.fn().mockResolvedValue({ settings: DEFAULT_SETTINGS }),
     postAnalyze: vi.fn(),

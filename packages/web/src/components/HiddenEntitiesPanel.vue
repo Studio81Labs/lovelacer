@@ -59,7 +59,7 @@ function unhide(entityId: string): void {
           data-testid="section-search"
           :aria-label="t('sectionSearch.hiddenLabel')"
           :placeholder="t('sectionSearch.hiddenPlaceholder')"
-          class="w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
+          class="ll-control ll-control-comfortable"
         />
       </label>
     </div>
@@ -88,7 +88,7 @@ function unhide(entityId: string): void {
         <button
           type="button"
           data-testid="hidden-entity-unhide"
-          class="shrink-0 rounded border border-stone-300 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+          class="ll-btn ll-btn-secondary ll-btn-compact shrink-0"
           :disabled="isSaving"
           @click="unhide(entry.entityId)"
         >

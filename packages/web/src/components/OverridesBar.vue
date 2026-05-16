@@ -43,7 +43,7 @@ function onSave() {
         <button
           data-testid="discard-button"
           type="button"
-          class="rounded bg-stone-600 px-3 py-1 text-xs font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-50"
+          class="ll-btn ll-btn-secondary ll-btn-compact"
           :disabled="isSaving"
           @click="onDiscard"
         >
@@ -53,7 +53,7 @@ function onSave() {
           v-if="!isError"
           data-testid="save-button"
           type="button"
-          class="rounded bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+          class="ll-btn ll-btn-primary ll-btn-compact"
           :disabled="isSaving"
           @click="onSave"
         >
@@ -67,7 +67,7 @@ function onSave() {
       <button
         data-testid="retry-button"
         type="button"
-        class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
+        class="ll-btn ll-btn-danger ll-btn-compact"
         @click="onSave"
       >
         {{ t('common.retry') }}

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getHealth } from '../api/client.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18nStore } from '../stores/i18n.js'
 import type { SettingsLanguage, SettingsSections, UiLanguage } from '../api/types.js'
@@ -10,6 +11,7 @@ const emit = defineEmits<{ close: [] }>()
 const store = useSettingsStore()
 const { t } = useI18n()
 const i18nStore = useI18nStore()
+const buildVersion = ref<string | null>(null)
 
 /**
  * P2-9 — capture the active locale at modal open time so we can restore
@@ -91,6 +93,14 @@ async function onSave(): Promise<void> {
     // stays open with dirty state preserved for retry.
   }
 }
+
+onMounted(async () => {
+  try {
+    buildVersion.value = (await getHealth()).version
+  } catch {
+    buildVersion.value = null
+  }
+})
 </script>
 
 <template>
@@ -109,7 +119,7 @@ async function onSave(): Promise<void> {
         <button
           data-testid="settings-close"
           :aria-label="t('settings.close.aria')"
-          class="text-stone-500 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+          class="ll-btn ll-btn-ghost h-8 w-8 px-0"
           :disabled="store.hasDirty"
           :title="closeTitle"
           @click="requestClose"
@@ -127,7 +137,7 @@ async function onSave(): Promise<void> {
           <select
             id="settings-ui-language"
             data-testid="settings-ui-language"
-            class="mt-1 w-full rounded border border-stone-300 px-2 py-1.5"
+            class="ll-control mt-1"
             :value="displayUiLanguage"
             @change="onUiLanguageChange"
           >
@@ -145,7 +155,7 @@ async function onSave(): Promise<void> {
           <select
             id="settings-language"
             data-testid="settings-language"
-            class="mt-1 w-full rounded border border-stone-300 px-2 py-1.5"
+            class="ll-control mt-1"
             :value="store.effective.language"
             @change="
               store.setLanguage(($event.target as HTMLSelectElement).value as SettingsLanguage)
@@ -168,7 +178,7 @@ async function onSave(): Promise<void> {
           <select
             id="settings-card-pack"
             data-testid="settings-card-pack"
-            class="mt-1 w-full rounded border border-stone-300 px-2 py-1.5 disabled:opacity-50"
+            class="ll-control mt-1"
             :value="store.effective.cardPack"
             disabled
           >
@@ -214,7 +224,7 @@ async function onSave(): Promise<void> {
           v-if="store.hasDirty"
           type="button"
           data-testid="settings-discard"
-          class="rounded border border-stone-300 px-3 py-1.5 text-stone-700 hover:bg-stone-50"
+          class="ll-btn ll-btn-secondary ll-btn-compact"
           @click="onDiscard"
         >
           {{ t('settings.discardChanges') }}
@@ -222,13 +232,20 @@ async function onSave(): Promise<void> {
         <button
           type="button"
           data-testid="settings-save"
-          class="rounded bg-amber-500 px-3 py-1.5 font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+          class="ll-btn ll-btn-primary ll-btn-compact"
           :disabled="!store.hasDirty || store.phase === 'saving'"
           @click="onSave"
         >
           {{ t('settings.saveAndReanalyze') }}
         </button>
       </footer>
+      <p
+        v-if="buildVersion !== null"
+        data-testid="settings-build-info"
+        class="mt-4 border-t border-stone-100 pt-3 text-xs text-stone-500"
+      >
+        {{ t('settings.buildInfo', { version: buildVersion }) }}
+      </p>
     </div>
   </div>
 </template>

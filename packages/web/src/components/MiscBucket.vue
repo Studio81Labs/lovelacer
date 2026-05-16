@@ -112,7 +112,7 @@ watch(filteredMisc, (entities) => {
           data-testid="section-search"
           :aria-label="t('sectionSearch.miscLabel')"
           :placeholder="t('sectionSearch.miscPlaceholder')"
-          class="w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
+          class="ll-control ll-control-comfortable"
         />
       </label>
     </div>
@@ -128,7 +128,7 @@ watch(filteredMisc, (entities) => {
       <button
         type="button"
         data-testid="misc-bulk-toggle-all"
-        class="text-amber-700 hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+        class="ll-btn ll-btn-ghost ll-btn-compact disabled:no-underline"
         :disabled="isSaving"
         @click="toggleAll"
       >
@@ -139,7 +139,7 @@ watch(filteredMisc, (entities) => {
         v-model="bulkRoom"
         data-testid="misc-bulk-room"
         :disabled="isSaving"
-        class="rounded border border-stone-300 bg-white px-2 py-1 text-xs"
+        class="ll-control ll-control-compact w-auto"
       >
         <option value="">{{ t('miscBucket.pickRoom') }}</option>
         <option v-for="rid in ASSIGNABLE_ROOMS" :key="rid" :value="rid">
@@ -149,7 +149,7 @@ watch(filteredMisc, (entities) => {
       <button
         type="button"
         data-testid="misc-bulk-assign"
-        class="rounded bg-amber-500 px-3 py-1 font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+        class="ll-btn ll-btn-primary ll-btn-compact"
         :disabled="bulkRoom === '' || isSaving"
         @click="applyAssign"
       >
@@ -158,7 +158,7 @@ watch(filteredMisc, (entities) => {
       <button
         type="button"
         data-testid="misc-bulk-hide"
-        class="rounded border border-stone-300 bg-white px-3 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+        class="ll-btn ll-btn-secondary ll-btn-compact"
         :disabled="isSaving"
         @click="applyHide"
       >
@@ -167,7 +167,7 @@ watch(filteredMisc, (entities) => {
       <button
         type="button"
         data-testid="misc-bulk-clear"
-        class="ml-auto text-stone-600 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+        class="ll-btn ll-btn-ghost ll-btn-compact ml-auto"
         :disabled="isSaving"
         @click="clearSelection"
       >

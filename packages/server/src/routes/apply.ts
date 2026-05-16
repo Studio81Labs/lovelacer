@@ -3,6 +3,7 @@ import type { HaClient } from '@lovelacer/ha-client'
 import { HaApplyError } from '@lovelacer/ha-client'
 import type { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from '../storage/dismissed-suggestion-store.js'
+import type { LatestAnalysisStore } from '../storage/latest-analysis-store.js'
 import type { OverrideStore } from '../storage/override-store.js'
 import type { SettingsStore } from '../storage/settings-store.js'
 import { InvalidConfigError, runApply, type ApplyInput } from '../pipeline.js'
@@ -26,6 +27,7 @@ export interface ApplyRouteOptions {
   ha: HaClient
   overrides: OverrideStore
   appliedSnapshot: AppliedSnapshotStore
+  latestAnalysis?: LatestAnalysisStore
   dismissedSuggestions: DismissedSuggestionStore
   settings: SettingsStore
   /** Default url_path for the generated dashboard. Body.options.urlPath wins when present. */
@@ -76,6 +78,11 @@ export const applyRoute: FastifyPluginAsync<ApplyRouteOptions> = async (
           { err: result.snapshotError, urlPath: result.urlPath },
           'snapshot persistence failed after successful apply',
         )
+      }
+      try {
+        opts.latestAnalysis?.clear()
+      } catch (err) {
+        req.log.error({ err, urlPath: result.urlPath }, 'latest analysis cache invalidation failed')
       }
       const responseBody: ApplySuccessResponse = {
         ok: true,

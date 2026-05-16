@@ -12,7 +12,13 @@ const preview: PreviewOutput = {
   rooms: [],
   misc: [],
   summary: { entityCount: 0, roomCount: 0, miscCount: 0 },
-  config: { title: 'Lovelacer - Home', views: [] },
+  config: {
+    title: 'Lovelacer - Home',
+    views: [
+      { type: 'sections', title: 'Home', path: 'home', icon: 'mdi:home-variant' },
+      { type: 'sections', title: 'Kitchen', path: 'kitchen', icon: 'mdi:silverware' },
+    ],
+  },
   diff: null,
   suggestions: [],
 }
@@ -45,12 +51,36 @@ describe('ApplyBar', () => {
     expect(analyze.phase).toBe('ready')
     expect(analyze.preview).toEqual(preview)
     expect(apply.phase).toBe('success')
+    expect(wrapper.get('a').attributes('href')).toBe('/lovelace/lovelacer-home')
 
     await wrapper.get('button').trigger('click')
 
     expect(analyze.phase).toBe('idle')
     expect(analyze.preview).toBeNull()
     expect(apply.phase).toBe('idle')
+  })
+
+  it('renders as a sticky bottom action bar with view summary', async () => {
+    const wrapper = mount(ApplyBar, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+    const analyze = useAnalyzeStore()
+    analyze.$patch({
+      phase: 'ready',
+      preview,
+      analyzedAt: Math.floor(Date.now() / 1000),
+    })
+    await wrapper.vm.$nextTick()
+
+    const bar = wrapper.get('[data-testid="apply-bar"]')
+    expect(bar.classes()).toContain('fixed')
+    expect(bar.classes()).toContain('bottom-0')
+    expect(bar.text()).toContain('Will create 2 dashboard views')
+    expect(bar.text()).toContain('Last analyzed today.')
+    expect(bar.text()).toContain('Apply to Home Assistant')
+    expect(bar.text()).toContain('Start over')
   })
 
   it('disables apply while room settings are saving or preview is refreshing', async () => {

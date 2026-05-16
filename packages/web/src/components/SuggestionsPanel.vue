@@ -108,7 +108,7 @@ function acceptLabel(s: Suggestion): string {
         <button
           type="button"
           data-testid="suggestion-accept"
-          class="rounded bg-amber-500 px-3 py-1 font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+          class="ll-btn ll-btn-primary ll-btn-compact"
           :disabled="suggestionsStore.phase === 'dismissing'"
           @click="accept(s)"
         >
@@ -117,7 +117,7 @@ function acceptLabel(s: Suggestion): string {
         <button
           type="button"
           data-testid="suggestion-dismiss"
-          class="rounded border border-stone-300 bg-white px-3 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
+          class="ll-btn ll-btn-secondary ll-btn-compact"
           :disabled="suggestionsStore.phase === 'dismissing'"
           @click="dismiss(s)"
         >
@@ -136,7 +136,7 @@ function acceptLabel(s: Suggestion): string {
       <button
         type="button"
         data-testid="suggestions-show-all"
-        class="font-medium text-stone-700 hover:text-stone-900"
+        class="ll-btn ll-btn-ghost ll-btn-compact"
         @click="showAll = !showAll"
       >
         {{ showAll ? t('suggestionsPanel.showLess') : t('suggestionsPanel.showAll') }}

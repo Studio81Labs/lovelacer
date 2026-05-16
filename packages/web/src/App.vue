@@ -231,12 +231,39 @@ const diffByEntityId = computed<Map<string, EntityDiff>>(() => {
   return map
 })
 
+const DAY_MS = 24 * 60 * 60 * 1000
+function startOfLocalDay(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+}
+
+const lastAnalyzedLabel = computed(() => {
+  if (analyze.analyzedAt === null) return ''
+  const analyzedDay = startOfLocalDay(new Date(analyze.analyzedAt * 1000))
+  const today = startOfLocalDay(new Date())
+  const daysAgo = Math.max(0, Math.floor((today - analyzedDay) / DAY_MS))
+  if (daysAgo === 0) return t('analysisStatus.lastAnalyzedToday')
+  if (daysAgo === 1) return t('analysisStatus.lastAnalyzedYesterday')
+  return t('analysisStatus.lastAnalyzedDaysAgo', { count: daysAgo })
+})
+
 const showWizard = computed(() => invite.accepted === true && wizardOpen.value)
 // `onboarding.isResolved` flips true on successful load OR error — failing
 // open into the main view if the status endpoint errors. The pre-resolution
 // `false` state continues to suppress the first-paint flash.
 const showMainView = computed(
   () => invite.accepted === true && !wizardOpen.value && onboarding.isResolved,
+)
+
+let latestRestoreAttempted = false
+watch(
+  showMainView,
+  (visible) => {
+    if (visible && !latestRestoreAttempted && analyze.phase === 'idle') {
+      latestRestoreAttempted = true
+      void analyze.restoreLatest()
+    }
+  },
+  { immediate: true },
 )
 
 onMounted(() => {
@@ -276,7 +303,7 @@ watch(
 </script>
 
 <template>
-  <main v-if="showMainView" class="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-8">
+  <main v-if="showMainView" class="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-8 pb-32">
     <header
       class="sticky top-0 z-20 flex items-start justify-between gap-4 border-b border-stone-200 bg-stone-50/95 py-3 backdrop-blur"
     >
@@ -300,7 +327,7 @@ watch(
           type="button"
           data-testid="settings-button"
           :aria-label="t('common.settings')"
-          class="rounded p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+          class="ll-btn ll-btn-ghost ll-btn-icon"
           @click="openSettings"
         >
           ⚙
@@ -316,7 +343,7 @@ watch(
         <span>{{ analyze.error.message }}</span>
         <button
           type="button"
-          class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
+          class="ll-btn ll-btn-danger ll-btn-compact"
           @click="analyze.analyze()"
         >
           {{ t('common.retry') }}
@@ -327,7 +354,7 @@ watch(
     <section
       v-if="analyze.phase === 'idle'"
       data-testid="idle-state"
-      class="flex flex-1 items-center justify-center"
+      class="flex flex-1 items-start justify-center pt-[12vh] md:pt-[16vh]"
     >
       <div
         class="mx-auto max-w-xl rounded-lg border border-stone-200 bg-white px-6 py-8 text-center shadow-sm"
@@ -341,7 +368,22 @@ watch(
       </div>
     </section>
 
-    <section v-if="analyze.phase === 'ready' && analyze.preview !== null" class="space-y-4">
+    <section
+      v-if="analyze.status === 'loading'"
+      data-testid="analysis-restore-loading"
+      class="rounded-lg border border-stone-200 bg-white px-5 py-4 text-sm text-stone-600 shadow-sm"
+    >
+      {{ t('analysisStatus.loadingLatest') }}
+    </section>
+
+    <section v-if="analyze.phase === 'ready' && analyze.preview !== null" class="space-y-4 pb-20">
+      <p
+        v-if="lastAnalyzedLabel"
+        data-testid="analysis-status"
+        class="text-xs font-medium text-stone-500"
+      >
+        {{ lastAnalyzedLabel }}
+      </p>
       <DiffBanner :diff="analyze.preview.diff" />
       <RemovedEntitiesPanel
         v-if="analyze.preview.diff !== null && analyze.preview.diff.totals.removed > 0"
@@ -363,7 +405,12 @@ watch(
       <OverridesBar />
       <DashboardPreview :config="analyze.preview.config" />
       <ApplyBar
-        v-if="!roomOrderSaveInFlight && !roomOverrideSaveInFlight && !analyze.isRefreshingPreview"
+        v-if="
+          analyze.preview.config.views.length > 0 &&
+          !roomOrderSaveInFlight &&
+          !roomOverrideSaveInFlight &&
+          !analyze.isRefreshingPreview
+        "
       />
       <SuggestionsPanel :suggestions="analyze.preview.suggestions" />
     </section>

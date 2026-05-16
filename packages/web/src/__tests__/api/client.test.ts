@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   postAnalyze,
+  getHealth,
+  getLatestAnalysis,
   postApply,
   postPreview,
   postDismissSuggestion,
@@ -111,6 +113,40 @@ describe('postPreview', () => {
       error: 'network',
       message: 'HTTP 500',
     })
+  })
+})
+
+describe('getLatestAnalysis', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('GETs api/analysis/latest and returns null when no cache exists', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(null),
+    } as unknown as Response)
+
+    const result = await getLatestAnalysis()
+    expect(result).toBeNull()
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/analysis/latest', {})
+  })
+})
+
+describe('getHealth', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('GETs api/health', async () => {
+    const health = { ok: true, version: 'dev', ha: { connected: true } }
+    globalThis.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(health),
+    } as unknown as Response)
+
+    await expect(getHealth()).resolves.toEqual(health)
+    expect(globalThis.fetch).toHaveBeenCalledWith('api/health', {})
   })
 })
 

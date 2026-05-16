@@ -51,7 +51,7 @@ async function onSubmit(e: Event) {
         autocapitalize="off"
         spellcheck="false"
         :disabled="isSubmitting"
-        class="mt-1 w-full rounded border border-stone-300 px-3 py-2 font-mono text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50"
+        class="ll-control mt-1 font-mono"
         placeholder="BETA-2026-XXXX"
       />
 
@@ -62,7 +62,7 @@ async function onSubmit(e: Event) {
       <button
         data-testid="invite-submit"
         type="submit"
-        class="mt-5 w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+        class="ll-btn ll-btn-primary ll-btn-full mt-5"
         :disabled="isSubmitting || code.length === 0"
       >
         {{ isSubmitting ? t('inviteGate.checking') : t('common.continue') }}

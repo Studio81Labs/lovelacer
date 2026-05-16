@@ -18,6 +18,8 @@ import enLocale from '../locales/en.json'
 import csLocale from '../locales/cs.json'
 
 vi.mock('../api/client.js', () => ({
+  getHealth: vi.fn(),
+  getLatestAnalysis: vi.fn(),
   postPreview: vi.fn(),
   postApply: vi.fn(),
   getOverrides: vi.fn(),
@@ -31,6 +33,8 @@ vi.mock('../api/client.js', () => ({
 }))
 
 const {
+  getHealth,
+  getLatestAnalysis,
   postPreview,
   getOverrides,
   putOverrides,
@@ -57,7 +61,10 @@ const mockPreview: PreviewOutput = {
   ],
   misc: [],
   summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
-  config: { title: 'Lovelacer — Home', views: [] },
+  config: {
+    title: 'Lovelacer — Home',
+    views: [{ type: 'sections', title: 'Home', path: 'home', icon: 'mdi:home-variant' }],
+  },
   diff: null,
   suggestions: [],
 }
@@ -86,6 +93,8 @@ const defaultSettings: Settings = {
 describe('App integration', () => {
   beforeEach(() => {
     vi.mocked(postPreview).mockReset()
+    vi.mocked(getHealth).mockReset()
+    vi.mocked(getLatestAnalysis).mockReset()
     vi.mocked(getOverrides).mockReset()
     vi.mocked(putOverrides).mockReset()
     vi.mocked(getInvite).mockReset()
@@ -98,10 +107,8 @@ describe('App integration', () => {
     vi.mocked(getInvite).mockResolvedValue({ accepted: true })
     vi.mocked(getOnboarding).mockResolvedValue({ completedAt: 1700000000 })
     vi.mocked(getSettings).mockResolvedValue({ settings: defaultSettings })
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ ok: true, version: 'dev', ha: { connected: true } }),
-    })
+    vi.mocked(getLatestAnalysis).mockResolvedValue(null)
+    vi.mocked(getHealth).mockResolvedValue({ ok: true, version: 'dev', ha: { connected: true } })
   })
 
   it('places health status and analyze action in the header toolbar', async () => {
@@ -118,8 +125,8 @@ describe('App integration', () => {
     expect(header.classes()).toContain('justify-between')
     expect(header.classes()).toContain('sticky')
     expect(header.classes()).toContain('top-0')
-    expect(header.text()).toContain('Version')
-    expect(header.text()).toContain('dev')
+    expect(header.text()).not.toContain('Version')
+    expect(header.text()).not.toContain('dev')
     expect(header.text()).toContain('HA connected')
     expect(header.findComponent({ name: 'AnalyzeButton' }).exists()).toBe(true)
 
@@ -134,6 +141,27 @@ describe('App integration', () => {
     expect(wrapper.find('[data-testid="standalone-analyze"]').exists()).toBe(false)
   })
 
+  it('restores the last cached analysis after app load', async () => {
+    vi.mocked(getLatestAnalysis).mockResolvedValueOnce({
+      analysis: mockPreview,
+      analyzedAt: Math.floor(Date.now() / 1000),
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await flushPromises()
+
+    expect(getLatestAnalysis).toHaveBeenCalledOnce()
+    expect(postPreview).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="idle-state"]').exists()).toBe(false)
+    expect(wrapper.findComponent(RoomList).exists()).toBe(true)
+    expect(wrapper.text()).toContain('Last analyzed today.')
+  })
+
   it('shows a first-run prompt before analysis starts', async () => {
     const wrapper = mount(App, {
       global: {
@@ -146,7 +174,7 @@ describe('App integration', () => {
     const idleState = wrapper.find('[data-testid="idle-state"]')
     expect(idleState.exists()).toBe(true)
     expect(idleState.classes()).toContain('flex-1')
-    expect(idleState.classes()).toContain('items-center')
+    expect(idleState.classes()).toContain('items-start')
     expect(idleState.text()).toContain('Ready to build your dashboard')
     expect(idleState.text()).toContain('Nothing will be changed until you click Apply.')
     expect(idleState.findComponent({ name: 'AnalyzeButton' }).exists()).toBe(true)

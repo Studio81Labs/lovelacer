@@ -24,7 +24,7 @@ defineProps<{ config: LovelaceConfig }>()
         href="api/export.yaml"
         download
         data-testid="export-yaml-link"
-        class="rounded border border-stone-300 bg-white px-3 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50"
+        class="ll-btn ll-btn-secondary ll-btn-compact"
       >
         {{ t('dashboardPreview.downloadYaml') }}
       </a>

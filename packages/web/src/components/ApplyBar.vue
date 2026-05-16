@@ -12,6 +12,9 @@ const apply = useApplyStore()
 const settings = useSettingsStore()
 
 function startOver() {
+  // Safer Start over semantics: clear only this browser session's loaded
+  // preview. The persisted latest analysis and user overrides remain intact,
+  // so reopening the app can still restore the last successful analysis.
   apply.reset()
   analyze.reset()
 }
@@ -67,62 +70,94 @@ const applyDisabled = computed(
     analyze.isRefreshingPreview ||
     settings.phase === 'saving',
 )
+
+const viewCount = computed(() => analyze.preview?.config.views.length ?? 0)
+
+const lastAnalyzedLabel = computed(() => {
+  if (analyze.analyzedAt === null) return ''
+  const analyzed = new Date(analyze.analyzedAt * 1000)
+  const now = new Date()
+  const analyzedDay = new Date(
+    analyzed.getFullYear(),
+    analyzed.getMonth(),
+    analyzed.getDate(),
+  ).getTime()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const daysAgo = Math.max(0, Math.floor((today - analyzedDay) / (24 * 60 * 60 * 1000)))
+  if (daysAgo === 0) return t('analysisStatus.lastAnalyzedToday')
+  if (daysAgo === 1) return t('analysisStatus.lastAnalyzedYesterday')
+  return t('analysisStatus.lastAnalyzedDaysAgo', { count: daysAgo })
+})
+
+const dashboardUrl = computed(() => {
+  const path = apply.result?.urlPath
+  return path === undefined ? '' : `/lovelace/${path}`
+})
 </script>
 
 <template>
-  <section>
-    <button
-      v-if="apply.phase === 'idle' || apply.phase === 'applying'"
-      type="button"
-      class="w-full rounded bg-amber-500 px-5 py-3 text-sm font-medium text-white shadow-sm hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-stone-300"
-      :disabled="applyDisabled"
-      @click="applyClicked"
-    >
-      {{ apply.phase === 'applying' ? t('applyBar.applying') : t('applyBar.apply') }}
-    </button>
-
+  <section
+    data-testid="apply-bar"
+    class="fixed inset-x-0 bottom-0 z-30 !m-0 border-t border-stone-200 bg-white/95 px-4 pt-3 pb-2 shadow-[0_-8px_24px_rgba(44,44,42,0.08)] backdrop-blur sm:pb-3"
+  >
     <div
-      v-else-if="apply.phase === 'success' && apply.result !== null"
-      class="flex items-center justify-between rounded-lg bg-forest-50 px-5 py-3 text-sm text-forest-700"
+      class="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
-      <I18nT
-        :keypath="apply.result.created ? 'applyBar.success.created' : 'applyBar.success.updated'"
-        tag="span"
-      >
-        <template #urlPath>
-          <span class="font-mono">{{ apply.result.urlPath }}</span>
-        </template>
-      </I18nT>
-      <button
-        type="button"
-        class="rounded bg-forest-700 px-3 py-1 text-xs font-medium text-white hover:bg-forest-900"
-        @click="startOver"
-      >
-        {{ t('applyBar.doneStartOver') }}
-      </button>
-    </div>
+      <div v-if="apply.phase === 'idle' || apply.phase === 'applying'" class="min-w-0">
+        <p class="text-sm font-medium text-stone-900">
+          {{ t('dashboardPreview.willCreate', { count: viewCount }, viewCount) }}
+        </p>
+        <p v-if="lastAnalyzedLabel" class="mt-0.5 text-xs text-stone-500">
+          {{ lastAnalyzedLabel }}
+        </p>
+      </div>
 
-    <div
-      v-else-if="apply.phase === 'error'"
-      class="flex items-center justify-between rounded-lg bg-danger-50 px-5 py-3 text-sm text-danger-700"
-    >
-      <span>{{ errorMessage }}</span>
-      <button
-        v-if="showRetry"
-        type="button"
-        class="rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
-        @click="applyClicked"
-      >
-        {{ t('common.retry') }}
-      </button>
-      <button
-        v-else
-        type="button"
-        class="rounded bg-stone-600 px-3 py-1 text-xs font-medium text-white hover:bg-stone-700"
-        @click="startOver"
-      >
-        {{ t('applyBar.startOver') }}
-      </button>
+      <div v-else-if="apply.phase === 'success' && apply.result !== null" class="min-w-0">
+        <p class="text-sm font-medium text-forest-700">{{ t('applyBar.success.heading') }}</p>
+        <I18nT
+          :keypath="apply.result.created ? 'applyBar.success.created' : 'applyBar.success.updated'"
+          tag="p"
+          class="mt-0.5 text-xs text-stone-500"
+        >
+          <template #urlPath>
+            <span class="font-mono">{{ apply.result.urlPath }}</span>
+          </template>
+        </I18nT>
+      </div>
+
+      <div v-else-if="apply.phase === 'error'" class="min-w-0">
+        <p class="text-sm font-medium text-danger-700">{{ errorMessage }}</p>
+      </div>
+
+      <div class="flex shrink-0 items-center justify-end gap-2">
+        <button
+          v-if="apply.phase === 'idle' || apply.phase === 'applying'"
+          type="button"
+          class="ll-btn ll-btn-primary px-5"
+          :disabled="applyDisabled"
+          @click="applyClicked"
+        >
+          {{ apply.phase === 'applying' ? t('applyBar.applying') : t('applyBar.apply') }}
+        </button>
+        <a
+          v-else-if="apply.phase === 'success' && apply.result !== null"
+          :href="dashboardUrl"
+          class="ll-btn ll-btn-primary px-5"
+        >
+          {{ t('applyBar.openDashboard') }}
+        </a>
+        <button
+          v-else-if="showRetry"
+          type="button"
+          class="ll-btn ll-btn-danger"
+          @click="applyClicked"
+        >
+          {{ t('common.retry') }}
+        </button>
+        <button type="button" class="ll-btn ll-btn-secondary" @click="startOver">
+          {{ t('applyBar.startOver') }}
+        </button>
+      </div>
     </div>
   </section>
 </template>

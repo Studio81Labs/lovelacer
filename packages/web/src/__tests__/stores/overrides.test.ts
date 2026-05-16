@@ -4,6 +4,7 @@ import { useOverridesStore } from '../../stores/overrides.js'
 import type { ApiError, Override } from '../../api/types.js'
 
 vi.mock('../../api/client.js', () => ({
+  getLatestAnalysis: vi.fn(),
   getOverrides: vi.fn(),
   putOverrides: vi.fn(),
   postPreview: vi.fn(),

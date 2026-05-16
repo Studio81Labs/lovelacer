@@ -5,10 +5,11 @@ import { useApplyStore } from '../../stores/apply.js'
 import type { ApiError, PreviewOutput } from '../../api/types.js'
 
 vi.mock('../../api/client.js', () => ({
+  getLatestAnalysis: vi.fn(),
   postPreview: vi.fn(),
 }))
 
-const { postPreview } = await import('../../api/client.js')
+const { getLatestAnalysis, postPreview } = await import('../../api/client.js')
 
 const mockPreview: PreviewOutput = {
   rooms: [
@@ -48,8 +49,38 @@ describe('useAnalyzeStore', () => {
   it('initializes idle', () => {
     const store = useAnalyzeStore()
     expect(store.phase).toBe('idle')
+    expect(store.status).toBe('empty')
     expect(store.preview).toBeNull()
     expect(store.error).toBeNull()
+  })
+
+  it('restoreLatest loads a cached preview without running a new analysis', async () => {
+    vi.mocked(getLatestAnalysis).mockResolvedValueOnce({
+      analysis: mockPreview,
+      analyzedAt: 1700000000,
+    })
+    const store = useAnalyzeStore()
+
+    const promise = store.restoreLatest()
+    expect(store.status).toBe('loading')
+    await promise
+
+    expect(store.phase).toBe('ready')
+    expect(store.status).toBe('loaded')
+    expect(store.preview).toEqual(mockPreview)
+    expect(store.analyzedAt).toBe(1700000000)
+    expect(postPreview).not.toHaveBeenCalled()
+  })
+
+  it('restoreLatest returns to empty when no cached preview exists', async () => {
+    vi.mocked(getLatestAnalysis).mockResolvedValueOnce(null)
+    const store = useAnalyzeStore()
+
+    await store.restoreLatest()
+
+    expect(store.phase).toBe('idle')
+    expect(store.status).toBe('empty')
+    expect(store.preview).toBeNull()
   })
 
   it('happy path: loading → ready, populates preview', async () => {
@@ -58,9 +89,11 @@ describe('useAnalyzeStore', () => {
 
     const promise = store.analyze()
     expect(store.phase).toBe('loading')
+    expect(store.status).toBe('analyzing')
     await promise
 
     expect(store.phase).toBe('ready')
+    expect(store.status).toBe('loaded')
     expect(store.preview).toEqual(mockPreview)
     expect(store.error).toBeNull()
   })
@@ -101,6 +134,7 @@ describe('useAnalyzeStore', () => {
     store.reset()
 
     expect(store.phase).toBe('idle')
+    expect(store.status).toBe('empty')
     expect(store.preview).toBeNull()
     expect(store.error).toBeNull()
   })

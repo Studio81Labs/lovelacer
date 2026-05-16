@@ -2,6 +2,8 @@ import type {
   AnalyzeOutput,
   ApiError,
   ApplyResult,
+  HealthResponse,
+  LatestAnalysis,
   LovelaceConfig,
   OnboardingStatus,
   Override,
@@ -56,6 +58,14 @@ export function postAnalyze(): Promise<AnalyzeOutput> {
 
 export function postPreview(): Promise<PreviewOutput> {
   return fetchJson<PreviewOutput>('api/preview', { method: 'POST' })
+}
+
+export function getLatestAnalysis(): Promise<LatestAnalysis | null> {
+  return fetchJson<LatestAnalysis | null>('api/analysis/latest')
+}
+
+export function getHealth(): Promise<HealthResponse> {
+  return fetchJson<HealthResponse>('api/health')
 }
 
 /**
