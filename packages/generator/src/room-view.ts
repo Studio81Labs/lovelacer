@@ -45,13 +45,12 @@ export function buildRoomView(
   roomDisplayNames: RoomDisplayNames = {},
 ): RoomView {
   const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
-  const roomNames = buildRoomNameCandidates(
-    roomOverrides[grouping.roomId]?.name,
-    roomDisplayNames[grouping.roomId],
-  )
+  const overrideTitle = roomOverrides[grouping.roomId]?.name?.trim()
+  const detectedTitle = roomDisplayNames[grouping.roomId]?.trim()
+  const roomNames = buildRoomNameCandidates(overrideTitle, detectedTitle)
   return {
     type: 'sections',
-    title: display.title,
+    title: overrideTitle || detectedTitle || display.title,
     path: display.path,
     icon: display.icon,
     show_icon_and_title: shouldShowRoomNameOnCard(grouping.roomId, roomOverrides),

@@ -380,7 +380,7 @@ describe('runAnalyze', () => {
 })
 
 describe('runPreview', () => {
-  it('keeps default generated room views sorted by English title when roomOrder is unset', async () => {
+  it('uses HA area display names for generated room view titles when roomOrder is unset', async () => {
     const result = await runPreview(
       makeCzechHa(),
       makeStore(),
@@ -391,7 +391,7 @@ describe('runPreview', () => {
     const roomTitles = result.config.views.slice(1).map((view) => view.title)
 
     expect(roomTitles).toEqual([...roomTitles].sort((a, b) => a.localeCompare(b, 'en')))
-    expect(roomTitles.indexOf('Bedroom')).toBeLessThan(roomTitles.indexOf('Kitchen'))
+    expect(roomTitles).toEqual(['Kancelář', 'Koupelna', 'Kuchyně', 'Ložnice', 'Obývací pokoj'])
   })
 
   it('orders generated room views by settings.roomOrder', async () => {

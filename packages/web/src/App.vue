@@ -265,7 +265,7 @@ const dashboardViewCandidates = computed<LovelaceView[]>(() => {
     const overrideName = settings.effective.roomOverrides?.[room.id]?.name?.trim()
     return {
       type: 'sections',
-      title: overrideName || roomIdToDisplay(room.id),
+      title: overrideName || room.displayName || roomIdToDisplay(room.id),
       path: room.id,
       icon: room.icon,
     }
