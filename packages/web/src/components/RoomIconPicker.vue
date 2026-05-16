@@ -157,7 +157,7 @@ async function loadMdiIconNames(): Promise<string[]> {
     <button
       type="button"
       data-testid="room-icon-picker-button"
-      class="flex w-full items-center justify-between gap-2 rounded border border-stone-300 bg-white px-3 py-2 text-left text-sm text-stone-800 hover:bg-stone-50 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
+      class="ll-control flex items-center justify-between gap-2 text-left hover:bg-white"
       :aria-expanded="isOpen"
       :aria-labelledby="labelledBy"
       @click="isOpen = !isOpen"
@@ -179,7 +179,7 @@ async function loadMdiIconNames(): Promise<string[]> {
         type="search"
         :aria-label="t('roomList.iconSearchLabel')"
         :placeholder="t('roomList.iconSearchPlaceholder')"
-        class="mb-2 w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
+        class="ll-control ll-control-comfortable mb-2"
       />
 
       <div v-if="isLoading" class="px-2 py-3 text-sm text-stone-500">
@@ -199,7 +199,7 @@ async function loadMdiIconNames(): Promise<string[]> {
           data-testid="room-icon-option"
           role="option"
           :aria-selected="selectedIcon === `mdi:${iconName}`"
-          class="flex w-full items-center gap-3 rounded px-2 py-2 text-left text-sm text-stone-700 hover:bg-amber-50 aria-selected:bg-amber-100 aria-selected:text-stone-900"
+          class="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-stone-700 hover:bg-amber-50 aria-selected:bg-amber-100 aria-selected:text-stone-900"
           @click="selectIcon(iconName)"
         >
           <Icon :icon="`mdi:${iconName}`" class="h-5 w-5 shrink-0 text-stone-700" />

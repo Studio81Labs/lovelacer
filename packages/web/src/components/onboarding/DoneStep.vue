@@ -34,7 +34,7 @@ function openDashboard(): void {
       <button
         type="button"
         data-testid="done-open-dashboard"
-        class="w-full rounded bg-amber-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-amber-700"
+        class="ll-btn ll-btn-primary ll-btn-full"
         @click="openDashboard"
       >
         {{ t('doneStep.openDashboard') }}
@@ -42,7 +42,7 @@ function openDashboard(): void {
       <button
         type="button"
         data-testid="done-finish"
-        class="w-full rounded border border-stone-300 px-5 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
+        class="ll-btn ll-btn-secondary ll-btn-full"
         @click="$emit('finish')"
       >
         {{ t('doneStep.finish') }}

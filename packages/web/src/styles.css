@@ -12,6 +12,7 @@
  * Four roles:
  *   amber  → primary (brand, action, focus)
  *   stone  → neutrals (surfaces, text, borders)
+ *   warm   → tactile form/button controls
  *   forest → accent (success, status, secondary data)
  *   danger → semantic (errors only)
  *
@@ -26,7 +27,9 @@
   --color-amber-100: #fbe2a6;
   --color-amber-300: #f4b73d;
   --color-amber-500: #c76712;
+  --color-amber-600: #b85e0f;
   --color-amber-700: #7a3d08;
+  --color-amber-800: #a34e0d;
   --color-amber-900: #3d1e04;
 
   /* ─── Neutral · Stone ─── */
@@ -36,6 +39,14 @@
   --color-stone-500: #888780;
   --color-stone-700: #444441;
   --color-stone-900: #2c2c2a;
+
+  /* ─── Control System · Warm Neutrals ─── */
+  --color-warm-surface: #f3efe8;
+  --color-warm-surface-hover: #ece7df;
+  --color-warm-surface-active: #e5e0d6;
+  --color-warm-border: #e4dfd6;
+  --color-warm-text: #2e2b26;
+  --color-warm-muted: #6b665e;
 
   /* ─── Accent · Forest ─── */
   --color-forest-50: #e8f0dd;
@@ -50,9 +61,16 @@
 
   /* ─── Typography ─── */
   --font-display: 'Instrument Serif', 'Times New Roman', Georgia, serif;
-  --font-sans:
-    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ─── Controls ─── */
+  --radius-control: 10px;
+  --shadow-control: 0 1px 2px rgb(0 0 0 / 0.06);
+  --shadow-button-secondary: 0 1px 2px rgb(0 0 0 / 0.06);
+  --shadow-button-primary: 0 2px 6px rgb(0 0 0 / 0.08);
+  --shadow-button-hover: 0 4px 12px rgb(0 0 0 / 0.08);
+  --shadow-button-active: inset 0 1px 2px rgb(0 0 0 / 0.1);
 }
 
 html {
@@ -74,4 +92,152 @@ html {
 .lovelacer-wordmark > i {
   font-style: italic;
   color: var(--color-amber-500);
+}
+
+@layer components {
+  .ll-control {
+    @apply h-10 w-full border px-3.5 text-sm transition-colors placeholder:text-stone-500 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-50;
+    color: var(--color-warm-text);
+    background: var(--color-stone-25);
+    border-color: var(--color-warm-border);
+    border-radius: var(--radius-control);
+    box-shadow: var(--shadow-control);
+  }
+
+  .ll-control-comfortable {
+    @apply h-auto py-2.5;
+  }
+
+  .ll-control-compact {
+    @apply h-8 px-2.5 text-xs;
+  }
+
+  .ll-btn {
+    @apply inline-flex h-10 items-center justify-center gap-2 border px-4 text-sm font-medium transition-[background-color,border-color,box-shadow,color] focus:outline-none focus:ring-2 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-50;
+    border-radius: var(--radius-control);
+    box-shadow: var(--shadow-button-secondary);
+  }
+
+  .ll-btn:hover:not(:disabled) {
+    box-shadow: var(--shadow-button-hover);
+  }
+
+  .ll-btn:active:not(:disabled) {
+    box-shadow: var(--shadow-button-active);
+  }
+
+  .ll-btn-primary {
+    @apply border-transparent bg-amber-500 text-white focus:border-amber-700;
+    box-shadow: var(--shadow-button-primary);
+  }
+
+  .ll-btn-primary:hover:not(:disabled) {
+    @apply bg-amber-600;
+  }
+
+  .ll-btn-primary:active:not(:disabled) {
+    @apply bg-amber-800;
+  }
+
+  .ll-btn-secondary {
+    @apply focus:border-amber-500;
+    color: var(--color-warm-text);
+    background: var(--color-warm-surface);
+    border-color: var(--color-warm-border);
+  }
+
+  .ll-btn-secondary:hover:not(:disabled) {
+    background: var(--color-warm-surface-hover);
+  }
+
+  .ll-btn-secondary:active:not(:disabled) {
+    background: var(--color-warm-surface-active);
+  }
+
+  .ll-btn-dark {
+    @apply border-transparent text-white focus:border-stone-700 focus:ring-stone-300;
+    background: var(--color-warm-text);
+  }
+
+  .ll-btn-dark:hover:not(:disabled) {
+    @apply bg-stone-700;
+  }
+
+  .ll-btn-danger {
+    @apply border-transparent bg-danger-700 text-white focus:border-danger-900 focus:ring-danger-50;
+  }
+
+  .ll-btn-danger:hover:not(:disabled) {
+    @apply bg-danger-900;
+  }
+
+  .ll-btn-tertiary {
+    @apply border-transparent bg-transparent shadow-none focus:border-amber-500;
+    color: var(--color-warm-muted);
+    box-shadow: none;
+  }
+
+  .ll-btn-tertiary:hover:not(:disabled) {
+    color: var(--color-warm-text);
+    background: var(--color-warm-surface);
+    box-shadow: none;
+  }
+
+  .ll-btn-tertiary:active:not(:disabled) {
+    color: var(--color-warm-text);
+    background: var(--color-warm-surface-active);
+    box-shadow: none;
+  }
+
+  .ll-btn-ghost {
+    @apply border-transparent bg-transparent shadow-none focus:border-amber-500;
+    color: var(--color-warm-muted);
+    box-shadow: none;
+  }
+
+  .ll-btn-ghost:hover:not(:disabled) {
+    color: var(--color-warm-text);
+    background: var(--color-warm-surface);
+    box-shadow: none;
+  }
+
+  .ll-btn-ghost:active:not(:disabled) {
+    color: var(--color-warm-text);
+    background: var(--color-warm-surface-active);
+    box-shadow: none;
+  }
+
+  .ll-btn-compact {
+    @apply h-8 px-2.5 text-xs;
+  }
+
+  .ll-btn-icon {
+    @apply h-10 w-10 px-0;
+  }
+
+  .ll-btn-full {
+    @apply w-full;
+  }
+}
+
+@layer utilities {
+  .ll-shadow-control {
+    box-shadow: var(--shadow-control);
+  }
+
+  .ll-shadow-button-secondary {
+    box-shadow: var(--shadow-button-secondary);
+  }
+
+  .ll-shadow-button-primary {
+    box-shadow: var(--shadow-button-primary);
+  }
+
+  .ll-shadow-hover {
+    box-shadow: var(--shadow-button-hover);
+  }
+
+  .ll-shadow-active {
+    box-shadow: var(--shadow-button-active);
+  }
 }

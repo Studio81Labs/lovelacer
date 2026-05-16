@@ -59,7 +59,7 @@ function applyClicked(): void {
       <p>{{ analyze.error.message }}</p>
       <button
         type="button"
-        class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
+        class="ll-btn ll-btn-danger ll-btn-compact mt-2"
         @click="analyze.analyze()"
       >
         {{ t('common.retry') }}
@@ -97,7 +97,7 @@ function applyClicked(): void {
         <p>{{ t('previewStep.applyError', { message: apply.error.message }) }}</p>
         <button
           type="button"
-          class="mt-2 rounded bg-danger-700 px-3 py-1 text-xs font-medium text-white hover:bg-danger-900"
+          class="ll-btn ll-btn-danger ll-btn-compact mt-2"
           @click="applyClicked"
         >
           {{ t('common.retry') }}
@@ -110,7 +110,7 @@ function applyClicked(): void {
       <button
         type="button"
         data-testid="preview-back"
-        class="text-sm text-stone-500 hover:text-stone-700"
+        class="ll-btn ll-btn-ghost"
         @click="$emit('back')"
       >
         {{ t('common.back') }}
@@ -118,7 +118,7 @@ function applyClicked(): void {
       <button
         type="button"
         data-testid="preview-apply"
-        class="rounded bg-amber-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+        class="ll-btn ll-btn-primary px-5"
         :disabled="analyze.phase !== 'ready' || apply.phase === 'applying'"
         @click="applyClicked"
       >
@@ -129,7 +129,7 @@ function applyClicked(): void {
     <button
       type="button"
       data-testid="preview-skip"
-      class="mt-3 w-full text-sm text-stone-500 hover:text-stone-700"
+      class="ll-btn ll-btn-ghost ll-btn-full mt-3"
       @click="$emit('skip')"
     >
       {{ t('common.skipOnboarding') }}

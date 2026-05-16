@@ -61,23 +61,22 @@ const rowClass = computed(() => {
 })
 
 const hideButtonClass = computed(() => {
-  const base = [
-    'rounded',
-    'border',
-    'px-2.5',
-    'py-1',
-    'text-xs',
-    'font-medium',
-    'disabled:cursor-not-allowed',
-    'disabled:opacity-50',
-  ]
+  const base = ['ll-btn', 'll-btn-compact']
   if (isHidden.value) {
-    base.push('border-amber-300', 'bg-amber-100', 'text-amber-800')
+    base.push(
+      'border',
+      'border-amber-300',
+      'bg-amber-100',
+      'text-amber-800',
+      'focus:border-amber-500',
+    )
   } else {
-    base.push('border-stone-300', 'bg-white', 'text-stone-700', 'hover:bg-stone-50')
+    base.push('ll-btn-secondary')
   }
   return base
 })
+
+const roomSelectClass = ['ll-control', 'll-control-compact', 'w-auto']
 
 const diffTagText = computed<string | null>(() => {
   if (props.diff === undefined) return null
@@ -119,7 +118,7 @@ const diffTagClass = computed<string>(() => {
       <select
         data-testid="room-select"
         :aria-label="t('entityRow.assignRoom')"
-        class="rounded border border-stone-300 bg-white px-2 py-1 text-xs text-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+        :class="roomSelectClass"
         :value="selectedRoom"
         :disabled="isSaving"
         @change="onRoomChange"

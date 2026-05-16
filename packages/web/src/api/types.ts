@@ -119,6 +119,17 @@ export interface PreviewOutput extends AnalyzeOutput {
   suggestions: Suggestion[]
 }
 
+export interface LatestAnalysis {
+  analysis: PreviewOutput
+  analyzedAt: number
+}
+
+export interface HealthResponse {
+  ok: boolean
+  version: string
+  ha: { connected: boolean }
+}
+
 export interface ApplyResult {
   ok: true
   urlPath: string

@@ -8,6 +8,8 @@ import { DEFAULT_SETTINGS } from '../../api/types.js'
 import { createTestI18n } from '../test-utils.js'
 
 vi.mock('../../api/client.js', () => ({
+  getHealth: vi.fn(),
+  getLatestAnalysis: vi.fn(),
   getSettings: vi.fn(),
   putSettings: vi.fn(),
   postAnalyze: vi.fn(),
@@ -20,7 +22,7 @@ vi.mock('../../api/client.js', () => ({
   postDismissSuggestion: vi.fn(),
 }))
 
-import { putSettings, postPreview } from '../../api/client.js'
+import { getHealth, putSettings, postPreview } from '../../api/client.js'
 
 const DEFAULT_PREVIEW = {
   rooms: [],
@@ -41,6 +43,7 @@ function mountModal() {
 
 describe('SettingsModal', () => {
   beforeEach(() => {
+    vi.mocked(getHealth).mockResolvedValue({ ok: true, version: 'dev', ha: { connected: true } })
     vi.mocked(putSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })
     vi.mocked(postPreview).mockResolvedValue(DEFAULT_PREVIEW)
   })
@@ -80,6 +83,20 @@ describe('SettingsModal', () => {
     for (const key of SECTION_KEYS) {
       expect(wrapper.find(`[data-testid="settings-section-${key}"]`).exists()).toBe(true)
     }
+  })
+
+  it('shows version info in the settings footer', async () => {
+    vi.mocked(getHealth).mockResolvedValueOnce({
+      ok: true,
+      version: '0.1.0-dev',
+      ha: { connected: true },
+    })
+    const wrapper = mountModal()
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="settings-build-info"]').text()).toContain(
+      'Lovelacer v0.1.0-dev',
+    )
   })
 
   it('toggling a checkbox marks the store dirty', async () => {

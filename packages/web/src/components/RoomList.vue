@@ -293,7 +293,7 @@ function entityIdToFriendly(entityId: string): string {
         data-testid="section-search"
         :aria-label="t('sectionSearch.roomsLabel')"
         :placeholder="t('sectionSearch.roomsPlaceholder')"
-        class="w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
+        class="ll-control ll-control-comfortable"
       />
     </label>
 
@@ -338,7 +338,7 @@ function entityIdToFriendly(entityId: string): string {
                 :title="t('roomList.dragHandle', { room: roomDisplayName(room) })"
                 :disabled="!canReorder"
                 :draggable="canReorder"
-                class="cursor-grab rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
+                class="ll-btn ll-btn-ghost h-8 w-8 cursor-grab px-0 disabled:cursor-not-allowed disabled:opacity-40"
                 @click.prevent.stop
                 @dragstart.stop="onDragStart(room.id, $event)"
                 @dragend="onDragEnd"
@@ -355,7 +355,7 @@ function entityIdToFriendly(entityId: string): string {
                 data-testid="room-edit-button"
                 :aria-label="t('roomList.editRoom', { room: roomDisplayName(room) })"
                 :title="t('roomList.editRoom', { room: roomDisplayName(room) })"
-                class="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+                class="ll-btn ll-btn-ghost h-8 w-8 px-0"
                 @click.prevent.stop="openRoomEdit(room)"
               >
                 <Icon icon="mdi:pencil" class="h-4 w-4" />
@@ -404,11 +404,7 @@ function entityIdToFriendly(entityId: string): string {
               <span class="mb-1 block text-xs font-medium text-stone-600">{{
                 t('roomList.nameLabel')
               }}</span>
-              <input
-                v-model="editName"
-                data-testid="room-name-input"
-                class="w-full rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100"
-              />
+              <input v-model="editName" data-testid="room-name-input" class="ll-control" />
             </label>
             <div class="block min-w-0">
               <span
@@ -419,7 +415,7 @@ function entityIdToFriendly(entityId: string): string {
               </span>
               <RoomIconPicker v-model="editIcon" :labelled-by="roomIconLabelId(room.id)" />
             </div>
-            <label class="flex items-center gap-2 self-end pb-2 text-sm text-stone-700">
+            <label class="flex h-10 items-center gap-2 self-end text-sm text-stone-700">
               <input
                 v-model="editShowNameOnCard"
                 data-testid="room-show-name-toggle"
@@ -431,7 +427,7 @@ function entityIdToFriendly(entityId: string): string {
               <button
                 type="button"
                 data-testid="room-reset-button"
-                class="rounded border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-100"
+                class="ll-btn ll-btn-secondary px-3.5 text-xs"
                 @click="resetRoomEdit(room.id)"
               >
                 {{ t('roomList.reset') }}
@@ -439,7 +435,7 @@ function entityIdToFriendly(entityId: string): string {
               <button
                 type="button"
                 data-testid="room-save-button"
-                class="rounded bg-stone-900 px-3 py-2 text-xs font-medium text-white hover:bg-stone-700"
+                class="ll-btn ll-btn-dark px-3.5 text-xs"
                 @click="saveRoomEdit(room.id)"
               >
                 {{ t('roomList.save') }}

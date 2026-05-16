@@ -8,6 +8,7 @@ import { createApp } from './app.js'
 import { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.js'
 import { InviteStore } from './storage/invite-store.js'
+import { LatestAnalysisStore } from './storage/latest-analysis-store.js'
 import { OverrideStore } from './storage/override-store.js'
 import { SettingsStore } from './storage/settings-store.js'
 import { OnboardingStore } from './storage/onboarding-store.js'
@@ -92,6 +93,7 @@ interface StorageHandles {
   overrides: OverrideStore
   invite: InviteStore
   appliedSnapshot: AppliedSnapshotStore
+  latestAnalysis: LatestAnalysisStore
   dismissedSuggestions: DismissedSuggestionStore
   settings: SettingsStore
   onboarding: OnboardingStore
@@ -105,6 +107,7 @@ function openStorage(filename: string): StorageHandles {
       overrides: new OverrideStore(sqlite),
       invite: new InviteStore(sqlite),
       appliedSnapshot: new AppliedSnapshotStore(sqlite),
+      latestAnalysis: new LatestAnalysisStore(sqlite),
       dismissedSuggestions: new DismissedSuggestionStore(sqlite),
       settings: new SettingsStore(sqlite),
       onboarding: new OnboardingStore(sqlite),
@@ -174,8 +177,16 @@ async function main() {
     `${sqlitePath}-wal`,
     `${sqlitePath}-shm`,
   ])
-  const { sqlite, overrides, invite, appliedSnapshot, dismissedSuggestions, settings, onboarding } =
-    storage
+  const {
+    sqlite,
+    overrides,
+    invite,
+    appliedSnapshot,
+    latestAnalysis,
+    dismissedSuggestions,
+    settings,
+    onboarding,
+  } = storage
   logger.info({ path: sqlitePath }, 'sqlite storage opened')
 
   const app = await createApp({
@@ -183,6 +194,7 @@ async function main() {
     overrides,
     invite,
     appliedSnapshot,
+    latestAnalysis,
     dismissedSuggestions,
     settings,
     onboarding,
@@ -201,6 +213,7 @@ async function main() {
           overrides,
           invite,
           appliedSnapshot,
+          latestAnalysis,
           dismissedSuggestions,
           settings,
           onboarding,
@@ -228,6 +241,7 @@ async function main() {
       overrides.close()
       invite.close()
       appliedSnapshot.close()
+      latestAnalysis.close()
       dismissedSuggestions.close()
       settings.close()
       onboarding.close()

@@ -4,6 +4,7 @@ import type { ApiError, Settings } from '../../api/types.js'
 import { DEFAULT_SETTINGS } from '../../api/types.js'
 
 vi.mock('../../api/client.js', () => ({
+  getLatestAnalysis: vi.fn(),
   getSettings: vi.fn(),
   putSettings: vi.fn(),
   postPreview: vi.fn().mockResolvedValue({

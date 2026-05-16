@@ -6,6 +6,7 @@ import { fixtureToHaRegistries } from '../../../../../tests/fixtures/_builder/in
 import { createApp } from '../../app.js'
 import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
+import { LatestAnalysisStore } from '../../storage/latest-analysis-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 import { SettingsStore } from '../../storage/settings-store.js'
@@ -14,6 +15,7 @@ import { OnboardingStore } from '../../storage/onboarding-store.js'
 let dismissed: DismissedSuggestionStore | null = null
 let settings: SettingsStore | null = null
 let onboarding: OnboardingStore | null = null
+let latestAnalysis: LatestAnalysisStore | null = null
 
 afterEach(() => {
   dismissed?.close()
@@ -22,6 +24,8 @@ afterEach(() => {
   settings = null
   onboarding?.close()
   onboarding = null
+  latestAnalysis?.close()
+  latestAnalysis = null
 })
 
 function makeStore(): OverrideStore {
@@ -38,6 +42,11 @@ function makeAppliedSnapshot(initial?: Omit<AppliedSnapshot, 'appliedAt'>): Appl
   const s = new AppliedSnapshotStore(':memory:')
   if (initial !== undefined) s.save(initial)
   return s
+}
+
+function makeLatestAnalysis(): LatestAnalysisStore {
+  latestAnalysis = new LatestAnalysisStore(':memory:')
+  return latestAnalysis
 }
 
 function makeHa(connected = true): HaClient {
@@ -66,6 +75,7 @@ async function makeApp(
     overrides: makeStore(),
     invite: makeAcceptedInvite(),
     appliedSnapshot: makeAppliedSnapshot(opts.snapshot),
+    latestAnalysis: makeLatestAnalysis(),
     dismissedSuggestions: dismissed,
     settings,
     onboarding,
@@ -88,6 +98,39 @@ describe('POST /api/preview', () => {
       expect(body.summary.entityCount).toBeGreaterThan(0)
       expect(body.config.title).toBe('Lovelacer — Home')
       expect(body.config.views[0]!.path).toBe('home')
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('still returns preview when latest-analysis cache persistence fails', async () => {
+    dismissed = new DismissedSuggestionStore(':memory:')
+    settings = new SettingsStore(':memory:')
+    onboarding = new OnboardingStore(':memory:')
+    const app = await createApp({
+      ha: makeHa(true),
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
+      latestAnalysis: {
+        get: () => null,
+        save: () => {
+          throw new Error('disk full')
+        },
+        close: () => {},
+      } as unknown as LatestAnalysisStore,
+      dismissedSuggestions: dismissed,
+      settings,
+      onboarding,
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const res = await app.inject({ method: 'POST', url: '/api/preview' })
+      expect(res.statusCode).toBe(200)
+      expect(
+        (res.json() as { summary: { entityCount: number } }).summary.entityCount,
+      ).toBeGreaterThan(0)
     } finally {
       await app.close()
     }
@@ -122,6 +165,7 @@ describe('POST /api/preview', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      latestAnalysis: makeLatestAnalysis(),
       dismissedSuggestions: dismissed,
       settings,
       onboarding,
@@ -158,6 +202,7 @@ describe('POST /api/preview', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      latestAnalysis: makeLatestAnalysis(),
       dismissedSuggestions: dismissed,
       settings,
       onboarding,
@@ -190,6 +235,7 @@ describe('POST /api/preview', () => {
         assignments,
         config: { title: 'x', views: [] },
       }),
+      latestAnalysis: makeLatestAnalysis(),
       dismissedSuggestions: dismissed,
       settings: settings!,
       onboarding: onboarding!,
@@ -277,6 +323,7 @@ describe('POST /api/preview', () => {
       overrides: makeStore(),
       invite: makeAcceptedInvite(),
       appliedSnapshot: makeAppliedSnapshot(),
+      latestAnalysis: makeLatestAnalysis(),
       dismissedSuggestions: dismissed,
       settings,
       onboarding,
@@ -296,6 +343,44 @@ describe('POST /api/preview', () => {
       // No floor data → no headings on the home view.
       const headings = home!.sections.flatMap((s) => s.cards).filter((c) => c.type === 'heading')
       expect(headings).toHaveLength(0)
+    } finally {
+      await app.close()
+    }
+  })
+})
+
+describe('GET /api/analysis/latest', () => {
+  it('returns null before any preview has been cached', async () => {
+    const app = await makeApp()
+    try {
+      const res = await app.inject({ method: 'GET', url: '/api/analysis/latest' })
+      expect(res.statusCode).toBe(200)
+      expect(res.json()).toBeNull()
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns the latest preview result after a successful preview', async () => {
+    const app = await makeApp()
+    try {
+      const previewRes = await app.inject({ method: 'POST', url: '/api/preview' })
+      expect(previewRes.statusCode).toBe(200)
+      const preview = previewRes.json() as {
+        rooms: unknown[]
+        config: { views: unknown[] }
+        summary: { entityCount: number }
+      }
+
+      const latestRes = await app.inject({ method: 'GET', url: '/api/analysis/latest' })
+      expect(latestRes.statusCode).toBe(200)
+      const latest = latestRes.json() as {
+        analysis: typeof preview
+        analyzedAt: number
+      }
+      expect(latest.analysis.summary).toEqual(preview.summary)
+      expect(latest.analysis.config.views).toEqual(preview.config.views)
+      expect(latest.analyzedAt).toBeGreaterThan(0)
     } finally {
       await app.close()
     }

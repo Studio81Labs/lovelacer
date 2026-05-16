@@ -16,6 +16,7 @@ import { suggestionsRoute } from './routes/suggestions.js'
 import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.js'
 import type { InviteStore } from './storage/invite-store.js'
+import type { LatestAnalysisStore } from './storage/latest-analysis-store.js'
 import type { OnboardingStore } from './storage/onboarding-store.js'
 import type { OverrideStore } from './storage/override-store.js'
 import type { SettingsStore } from './storage/settings-store.js'
@@ -25,6 +26,7 @@ export interface CreateAppOptions {
   overrides: OverrideStore
   invite: InviteStore
   appliedSnapshot: AppliedSnapshotStore
+  latestAnalysis?: LatestAnalysisStore
   dismissedSuggestions: DismissedSuggestionStore
   settings: SettingsStore
   onboarding: OnboardingStore
@@ -118,6 +120,7 @@ export async function createApp(opts: CreateAppOptions) {
     ha: opts.ha,
     overrides: opts.overrides,
     appliedSnapshot: opts.appliedSnapshot,
+    ...(opts.latestAnalysis !== undefined && { latestAnalysis: opts.latestAnalysis }),
     dismissedSuggestions: opts.dismissedSuggestions,
     settings: opts.settings,
   })
@@ -125,6 +128,7 @@ export async function createApp(opts: CreateAppOptions) {
     ha: opts.ha,
     overrides: opts.overrides,
     appliedSnapshot: opts.appliedSnapshot,
+    ...(opts.latestAnalysis !== undefined && { latestAnalysis: opts.latestAnalysis }),
     dismissedSuggestions: opts.dismissedSuggestions,
     settings: opts.settings,
     dashboardUrlPath: opts.dashboardUrlPath,

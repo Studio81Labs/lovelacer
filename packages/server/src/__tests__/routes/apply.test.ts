@@ -8,6 +8,7 @@ import { createApp } from '../../app.js'
 import { AppliedSnapshotStore } from '../../storage/applied-snapshot-store.js'
 import { DismissedSuggestionStore } from '../../storage/dismissed-suggestion-store.js'
 import { InviteStore } from '../../storage/invite-store.js'
+import { LatestAnalysisStore } from '../../storage/latest-analysis-store.js'
 import { OverrideStore } from '../../storage/override-store.js'
 import { SettingsStore } from '../../storage/settings-store.js'
 import { OnboardingStore } from '../../storage/onboarding-store.js'
@@ -24,6 +25,10 @@ function makeAcceptedInvite(): InviteStore {
 
 function makeAppliedSnapshot(): AppliedSnapshotStore {
   return new AppliedSnapshotStore(':memory:')
+}
+
+function makeLatestAnalysis(): LatestAnalysisStore {
+  return new LatestAnalysisStore(':memory:')
 }
 
 function makeDismissed(): DismissedSuggestionStore {
@@ -274,6 +279,55 @@ describe('POST /api/apply — error paths', () => {
 })
 
 describe('POST /api/apply — snapshot persistence', () => {
+  it('invalidates latest analysis cache after successful HA push', async () => {
+    const fake = makeHa(true)
+    fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: false })
+    const latestAnalysis = makeLatestAnalysis()
+    latestAnalysis.save({
+      rooms: [],
+      misc: [],
+      summary: { entityCount: 1, roomCount: 1, miscCount: 0 },
+      config: validConfig,
+      diff: {
+        added: [{ entityId: 'light.kitchen_ceiling', roomId: 'kitchen' }],
+        removed: [],
+        moved: [],
+        unchanged: 0,
+      },
+      suggestions: [],
+    })
+    const app = await createApp({
+      ha: fake.client,
+      overrides: makeStore(),
+      invite: makeAcceptedInvite(),
+      appliedSnapshot: makeAppliedSnapshot(),
+      latestAnalysis,
+      dismissedSuggestions: makeDismissed(),
+      settings: new SettingsStore(':memory:'),
+      onboarding: new OnboardingStore(':memory:'),
+      logLevel: 'silent',
+      dashboardUrlPath: 'lovelacer-home',
+    })
+    try {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/apply',
+        payload: {
+          config: validConfig,
+          snapshot: {
+            assignments: [{ entityId: 'light.kitchen_ceiling', roomId: 'kitchen' }],
+            config: validConfig,
+          },
+        },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(latestAnalysis.get()).toBeNull()
+    } finally {
+      await app.close()
+      latestAnalysis.close()
+    }
+  })
+
   it('persists snapshot after successful HA push', async () => {
     const fake = makeHa(true)
     fake.applyDashboard.mockResolvedValueOnce({ urlPath: 'lovelacer-home', created: false })

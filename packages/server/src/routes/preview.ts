@@ -2,9 +2,10 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import type { HaClient } from '@lovelacer/ha-client'
 import type { AppliedSnapshotStore } from '../storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from '../storage/dismissed-suggestion-store.js'
+import type { LatestAnalysisStore } from '../storage/latest-analysis-store.js'
 import type { OverrideStore } from '../storage/override-store.js'
 import type { SettingsStore } from '../storage/settings-store.js'
-import { runPreview } from '../pipeline.js'
+import { runPreview, type PreviewOutput } from '../pipeline.js'
 import { performance } from 'node:perf_hooks'
 import { setImmediate as yieldToEventLoop } from 'node:timers/promises'
 
@@ -12,6 +13,7 @@ export interface PreviewRouteOptions {
   ha: HaClient
   overrides: OverrideStore
   appliedSnapshot: AppliedSnapshotStore
+  latestAnalysis?: LatestAnalysisStore
   dismissedSuggestions: DismissedSuggestionStore
   settings: SettingsStore
 }
@@ -29,6 +31,8 @@ export const previewRoute: FastifyPluginAsync<PreviewRouteOptions> = async (
   app: FastifyInstance,
   opts,
 ) => {
+  app.get('/api/analysis/latest', async () => opts.latestAnalysis?.get<PreviewOutput>() ?? null)
+
   app.post('/api/preview', async (req, reply) => {
     if (!opts.ha.isConnected()) {
       return reply
@@ -55,6 +59,11 @@ export const previewRoute: FastifyPluginAsync<PreviewRouteOptions> = async (
         },
         'preview request ready to send response',
       )
+      try {
+        opts.latestAnalysis?.save(result)
+      } catch (err) {
+        req.log.error({ err }, 'latest analysis cache persistence failed')
+      }
       const serializeStart = performance.now()
       req.log.info({ stage: 'preview_json_serialize' }, 'preview pipeline stage started')
       await yieldToEventLoop()
