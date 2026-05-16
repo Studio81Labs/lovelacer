@@ -11,6 +11,7 @@ function mountPreview(
     viewCandidates?: LovelaceView[]
     roomOverrides?: Record<string, RoomDisplayOverride>
     disabled?: boolean
+    interactive?: boolean
   } = {},
 ) {
   return mount(DashboardPreview, {
@@ -46,11 +47,23 @@ describe('DashboardPreview', () => {
   })
 
   it('emits the room id when a room chip is clicked', async () => {
-    const wrapper = mountPreview(config)
+    const wrapper = mountPreview(config, { interactive: true })
 
     await wrapper.findAll('[data-testid="view-chip"]')[1]!.trigger('click')
 
     expect(wrapper.emitted('toggle-room-view')).toEqual([['kitchen']])
+  })
+
+  it('keeps room chips read-only when no interactive toggle flow is supplied', async () => {
+    const wrapper = mountPreview(config)
+    const kitchen = wrapper.findAll('[data-testid="view-chip"]')[1]!
+
+    expect(kitchen.attributes('disabled')).toBeDefined()
+    expect(kitchen.attributes('aria-label')).toBe('Kitchen')
+
+    await kitchen.trigger('click')
+
+    expect(wrapper.emitted('toggle-room-view')).toBeUndefined()
   })
 
   it('renders hidden candidate room chips as inactive and toggleable', () => {
@@ -70,6 +83,7 @@ describe('DashboardPreview', () => {
       {
         viewCandidates: config.views,
         roomOverrides: { bedroom: { hiddenFromDashboard: true } },
+        interactive: true,
       },
     )
     const bedroom = wrapper.findAll('[data-testid="view-chip"]')[2]!

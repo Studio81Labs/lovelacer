@@ -11,11 +11,13 @@ const props = withDefaults(
     viewCandidates?: LovelaceView[]
     roomOverrides?: Record<string, RoomDisplayOverride>
     disabled?: boolean
+    interactive?: boolean
   }>(),
   {
     viewCandidates: () => [],
     roomOverrides: () => ({}),
     disabled: false,
+    interactive: false,
   },
 )
 const emit = defineEmits<{
@@ -41,14 +43,14 @@ function isSelected(view: LovelaceView): boolean {
 }
 
 function chipLabel(view: LovelaceView): string {
-  if (isHomeView(view)) return view.title
+  if (isHomeView(view) || !props.interactive) return view.title
   return t(isSelected(view) ? 'dashboardPreview.hideView' : 'dashboardPreview.showView', {
     title: view.title,
   })
 }
 
 function toggleRoomView(view: LovelaceView): void {
-  if (isHomeView(view) || props.disabled) return
+  if (isHomeView(view) || !props.interactive || props.disabled) return
   emit('toggle-room-view', view.path)
 }
 </script>
@@ -91,7 +93,7 @@ function toggleRoomView(view: LovelaceView): void {
         <button
           type="button"
           data-testid="view-chip"
-          :disabled="disabled || isHomeView(view)"
+          :disabled="disabled || isHomeView(view) || !interactive"
           :aria-pressed="isSelected(view) ? 'true' : 'false'"
           :aria-label="chipLabel(view)"
           :class="[
@@ -99,7 +101,7 @@ function toggleRoomView(view: LovelaceView): void {
             isSelected(view)
               ? 'border-forest-200 bg-forest-50 text-forest-700'
               : 'border-stone-200 bg-white text-stone-500 opacity-60 line-through',
-            disabled || isHomeView(view)
+            disabled || isHomeView(view) || !interactive
               ? 'cursor-default'
               : 'cursor-pointer hover:border-forest-300 hover:bg-forest-50',
           ]"

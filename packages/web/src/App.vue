@@ -440,6 +440,7 @@ watch(
         :config="analyze.preview.config"
         :view-candidates="dashboardViewCandidates"
         :room-overrides="settings.effective.roomOverrides ?? {}"
+        :interactive="true"
         :disabled="
           roomOverrideSaveInFlight || analyze.isRefreshingPreview || settings.phase === 'saving'
         "
