@@ -26,6 +26,7 @@ const RoomOverrideSchema = z.object({
   name: z.string().optional(),
   icon: z.string().optional(),
   showNameOnCard: z.boolean().optional(),
+  hiddenFromDashboard: z.boolean().optional(),
 })
 
 const PutBodySchema = z.object({
@@ -103,6 +104,9 @@ function normalizeRoomOverrides(
         ...(override.icon !== undefined && { icon: override.icon }),
         ...(override.showNameOnCard !== undefined && {
           showNameOnCard: override.showNameOnCard,
+        }),
+        ...(override.hiddenFromDashboard !== undefined && {
+          hiddenFromDashboard: override.hiddenFromDashboard,
         }),
       },
     ]),

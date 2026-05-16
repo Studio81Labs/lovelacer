@@ -36,7 +36,12 @@ const VALID_BODY: { settings: Settings } = {
     uiLanguage: 'en',
     roomOrder: ['bedroom', 'kitchen'],
     roomOverrides: {
-      kitchen: { name: 'Breakfast nook', icon: 'mdi:coffee', showNameOnCard: false },
+      kitchen: {
+        name: 'Breakfast nook',
+        icon: 'mdi:coffee',
+        showNameOnCard: false,
+        hiddenFromDashboard: true,
+      },
     },
   },
 }
@@ -213,6 +218,40 @@ describe('PUT /api/settings', () => {
       })
       const res = await app.inject({ method: 'GET', url: '/api/settings' })
       expect(res.json().settings.roomOrder).toEqual(['bedroom', 'kitchen'])
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('round-trips hiddenFromDashboard room overrides through PUT/GET', async () => {
+    const app = await makeApp()
+    try {
+      await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: {
+          settings: {
+            language: 'auto',
+            cardPack: 'default',
+            sections: {
+              welcome: true,
+              quickStats: true,
+              people: true,
+              roomsByFloor: true,
+              activeRooms: true,
+              scenes: true,
+              cameras: true,
+            },
+            roomOverrides: {
+              kitchen: { hiddenFromDashboard: true },
+            },
+          },
+        },
+      })
+      const res = await app.inject({ method: 'GET', url: '/api/settings' })
+      expect(res.json().settings.roomOverrides).toEqual({
+        kitchen: { hiddenFromDashboard: true },
+      })
     } finally {
       await app.close()
     }
