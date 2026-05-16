@@ -751,18 +751,18 @@ describe('App integration', () => {
 
     const kitchenChip = wrapper
       .findAll('[data-testid="view-chip"]')
-      .find((chip) => chip.text().includes('Kitchen'))
+      .find((chip) => chip.text().includes('Kuchyň'))
     expect(kitchenChip).toBeDefined()
     await kitchenChip!.trigger('click')
     await flushPromises()
 
     const hiddenKitchenChip = wrapper
       .findAll('[data-testid="view-chip"]')
-      .find((chip) => chip.text().includes('Kitchen'))
+      .find((chip) => chip.text().includes('Kuchyň'))
     expect(hiddenKitchenChip).toBeDefined()
     expect(wrapper.findAll('[data-testid="view-chip"]').map((chip) => chip.text())).toEqual([
       'Home',
-      'Kitchen',
+      'Kuchyň',
     ])
   })
 

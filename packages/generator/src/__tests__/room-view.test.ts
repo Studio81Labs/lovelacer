@@ -86,6 +86,13 @@ describe('buildRoomView — per-room metadata', () => {
     expect(view.path).toBe('kitchen')
   })
 
+  it('uses detected HA area display names for title when no manual room name override exists', () => {
+    const view = buildRoomView(grouping('kitchen', []), {}, { kitchen: 'Kuchyně' })
+
+    expect(view.title).toBe('Kuchyně')
+    expect(view.path).toBe('kitchen')
+  })
+
   it('falls back field-by-field when a room display override is partial', () => {
     const view = buildRoomView(grouping('kitchen', []), {
       kitchen: { icon: 'mdi:coffee' },
@@ -608,6 +615,17 @@ describe('buildRoomViews — bulk', () => {
     expect(views[0]!.title).toBe('Breakfast nook')
     expect(views[0]!.icon).toBe('mdi:coffee')
     expect(views[0]!.path).toBe('kitchen')
+  })
+
+  it('passes detected HA area display names through to each room view', () => {
+    const views = buildRoomViews(
+      [grouping('living_room', [{ key: 'lights', entities: [ent('light.lr')] }])],
+      {},
+      { living_room: 'Obývací pokoj' },
+    )
+
+    expect(views[0]!.title).toBe('Obývací pokoj')
+    expect(views[0]!.path).toBe('living_room')
   })
 })
 

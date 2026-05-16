@@ -764,10 +764,27 @@ describe('buildHomeView — section ordering and conditional rendering', () => {
 })
 
 function makeRoom(id: AnalyzedRoom['id'], haAreaId: string | null): AnalyzedRoom {
+  const displayNames: Record<AnalyzedRoom['id'], string> = {
+    kitchen: 'Kitchen',
+    living_room: 'Living Room',
+    bedroom: 'Bedroom',
+    bathroom: 'Bathroom',
+    office: 'Office',
+    garage: 'Garage',
+    garden: 'Garden',
+    dining_room: 'Dining Room',
+    laundry: 'Laundry',
+    basement: 'Basement',
+    attic: 'Attic',
+    kids_room: "Kids' Room",
+    guest_room: 'Guest Room',
+    hallway: 'Hallway',
+    misc: 'Other',
+  }
   return {
     id,
     haAreaId,
-    displayName: id === 'misc' ? 'Other' : id,
+    displayName: displayNames[id],
     icon: 'mdi:silverware-fork-knife',
     entityCount: 1,
     averageConfidence: 0.9,

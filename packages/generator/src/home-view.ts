@@ -26,6 +26,7 @@ import { resolveRoomDisplay, shouldShowRoomNameOnCard, type RoomDisplayOverrides
  * discriminator is the `path: 'home'` value, not the type itself.
  */
 export type HomeView = RoomView
+type RoomDisplayNames = Partial<Record<CanonicalRoomId, string>>
 
 export interface BuildHomeViewInput {
   entities: NormalizedEntity[]
@@ -102,6 +103,7 @@ function hasOutdoorMarker(entity: NormalizedEntity): boolean {
 export function buildHomeView(input: BuildHomeViewInput): HomeView {
   const sections: GridSection[] = []
   const roomOverrides = input.roomOverrides ?? {}
+  const roomDisplayNames = roomDisplayNamesFromAnalyzedRooms(input.rooms)
 
   if (input.sections.welcome) {
     sections.push(buildWelcomeSection(input.entities))
@@ -128,7 +130,7 @@ export function buildHomeView(input: BuildHomeViewInput): HomeView {
   }
 
   if (input.sections.activeRooms) {
-    const activeRooms = buildActiveRoomsSection(input.groupings, roomOverrides)
+    const activeRooms = buildActiveRoomsSection(input.groupings, roomOverrides, roomDisplayNames)
     if (activeRooms !== null) sections.push(activeRooms)
   }
 
@@ -254,6 +256,7 @@ function pickPrimaryEntity(grouping: RoomGrouping): NormalizedEntity | null {
 export function buildActiveRoomsSection(
   groupings: RoomGrouping[],
   roomOverrides: RoomDisplayOverrides = {},
+  roomDisplayNames: RoomDisplayNames = {},
 ): GridSection | null {
   const entries: { card: ConditionalCard; sortTitle: string }[] = []
 
@@ -280,16 +283,17 @@ export function buildActiveRoomsSection(
         : { condition: 'or', conditions: stateConditions }
 
     const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
+    const title = roomDisplayTitle(grouping.roomId, roomOverrides, roomDisplayNames)
     const showName = shouldShowRoomNameOnCard(grouping.roomId, roomOverrides)
     const tile: TileCard = {
       type: 'tile',
       entity: primary.entityId,
-      name: showName ? display.title : '',
+      name: showName ? title : '',
       tap_action: { action: 'navigate', navigation_path: display.path },
     }
 
     entries.push({
-      sortTitle: display.title,
+      sortTitle: title,
       card: {
         type: 'conditional',
         conditions: [innerCondition],
@@ -394,13 +398,35 @@ function buildFloorGlance(
     const primary = pickPrimaryEntity(grouping)
     if (primary === null) continue
     const display = resolveRoomDisplay(room.id, roomOverrides)
+    const title = roomDisplayTitle(room.id, roomOverrides, { [room.id]: room.displayName })
     const showName = shouldShowRoomNameOnCard(room.id, roomOverrides)
     entries.push({
       entity: primary.entityId,
-      name: showName ? display.title : '',
+      name: showName ? title : '',
       tap_action: { action: 'navigate', navigation_path: display.path },
     })
   }
   if (entries.length === 0) return null
   return { type: 'glance', show_name: true, entities: entries }
+}
+
+function roomDisplayNamesFromAnalyzedRooms(rooms: AnalyzedRoom[]): RoomDisplayNames {
+  const names: RoomDisplayNames = {}
+  for (const room of rooms) {
+    const trimmed = room.displayName.trim()
+    if (trimmed) names[room.id] = trimmed
+  }
+  return names
+}
+
+function roomDisplayTitle(
+  roomId: CanonicalRoomId,
+  roomOverrides: RoomDisplayOverrides,
+  roomDisplayNames: RoomDisplayNames,
+): string {
+  const overrideTitle = roomOverrides[roomId]?.name?.trim()
+  if (overrideTitle) return overrideTitle
+  const detectedTitle = roomDisplayNames[roomId]?.trim()
+  if (detectedTitle) return detectedTitle
+  return resolveRoomDisplay(roomId, roomOverrides).title
 }
