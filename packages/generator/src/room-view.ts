@@ -15,6 +15,7 @@ import type {
 import { resolveRoomDisplay, shouldShowRoomNameOnCard, type RoomDisplayOverrides } from './rooms.js'
 
 export type RoomDisplayNames = Partial<Record<CanonicalRoomId, string>>
+export type RoomNamePrefixCandidates = Partial<Record<CanonicalRoomId, string[]>>
 
 const GROUP_HEADINGS: Record<DomainGroupKey, string> = {
   lights: 'Lights & Outlets',
@@ -43,11 +44,16 @@ export function buildRoomView(
   grouping: RoomGrouping,
   roomOverrides: RoomDisplayOverrides = {},
   roomDisplayNames: RoomDisplayNames = {},
+  roomNamePrefixCandidates: RoomNamePrefixCandidates = {},
 ): RoomView {
   const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
   const overrideTitle = roomOverrides[grouping.roomId]?.name?.trim()
   const detectedTitle = roomDisplayNames[grouping.roomId]?.trim()
-  const roomNames = buildRoomNameCandidates(overrideTitle, detectedTitle)
+  const roomNames = buildRoomNameCandidates(
+    overrideTitle,
+    detectedTitle,
+    ...(roomNamePrefixCandidates[grouping.roomId] ?? []),
+  )
   return {
     type: 'sections',
     title: overrideTitle || detectedTitle || display.title,
@@ -67,10 +73,11 @@ export function buildRoomViews(
   groupings: RoomGrouping[],
   roomOverrides: RoomDisplayOverrides = {},
   roomDisplayNames: RoomDisplayNames = {},
+  roomNamePrefixCandidates: RoomNamePrefixCandidates = {},
 ): RoomView[] {
   return groupings
     .filter((g) => g.groups.length > 0)
-    .map((g) => buildRoomView(g, roomOverrides, roomDisplayNames))
+    .map((g) => buildRoomView(g, roomOverrides, roomDisplayNames, roomNamePrefixCandidates))
 }
 
 function buildSection(group: DomainGroup, roomNames: string[]): GridSection {

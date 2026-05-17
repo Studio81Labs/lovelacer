@@ -67,10 +67,11 @@ export interface SettingsSections {
 
 export interface Settings {
   /**
-   * Detection language for name-based matching (priorities 3-5).
-   * `'auto'` matches all available keyword sets simultaneously — today's
-   * behavior. Specific languages narrow the matcher to that set's
-   * keywords; priorities 1-2 (HA-supplied area names) stay multilingual.
+   * Detection language for name-based matching and generated room titles.
+   * `'auto'` matches all available keyword sets simultaneously and preserves
+   * HA area names for room titles when available. Specific languages narrow
+   * the matcher to that set's keywords and use localized canonical room names
+   * for generated titles; priorities 1-2 stay multilingual for assignment.
    */
   language: SettingsLanguage
 

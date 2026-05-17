@@ -161,15 +161,17 @@ export interface Suggestion {
  *
  * Exposed as a tuple `as const` so the route's Zod enum derives from
  * a single source of truth. `'auto'` matches all available keyword
- * sets simultaneously (today's detector behavior). Specific languages
- * narrow the matcher to that language's keywords for priorities 3-5
- * only.
+ * sets simultaneously and preserves HA area names for room titles when
+ * available. Specific languages narrow the matcher to that language's
+ * keywords for priorities 3-5 and localize generated room titles from
+ * canonical room IDs.
  */
 export const SUPPORTED_LANGUAGES = ['auto', 'en', 'cs'] as const
 
 /**
- * Detection language for name-based matching (priorities 3-5).
- * `'auto'` is the match-all default across shipped keyword data.
+ * Detection language for name-based matching and generated room titles.
+ * `'auto'` is the match-all default across shipped keyword data and keeps
+ * HA area names as room titles when available.
  */
 export type SettingsLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
@@ -221,10 +223,12 @@ export interface RoomDisplayOverride {
 
 export interface Settings {
   /**
-   * Detection language for name-based matching (priorities 3-5).
+   * Detection language for name-based matching and generated room titles.
    * `'auto'` matches all available keyword sets simultaneously — today's
-   * behavior. Specific languages narrow the matcher to that set's
-   * keywords; priorities 1-2 (HA-supplied area names) stay multilingual.
+   * behavior — and preserves HA area names for room titles when available.
+   * Specific languages narrow the matcher to that set's keywords and use
+   * localized canonical room names for generated titles. Priorities 1-2
+   * (HA-supplied area names) stay multilingual for assignment.
    */
   language: SettingsLanguage
 
