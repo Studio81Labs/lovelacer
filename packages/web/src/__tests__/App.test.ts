@@ -1676,7 +1676,7 @@ describe('App invite gate', () => {
     expect(getInvite).toHaveBeenCalledOnce()
   })
 
-  it('does not render InviteGate when a legacy server reports accepted === false', async () => {
+  it('renders InviteGate when a legacy server reports accepted === false', async () => {
     vi.mocked(getInvite).mockResolvedValueOnce({ accepted: false })
     vi.mocked(getOnboarding).mockResolvedValueOnce({ completedAt: 1700000000 })
 
@@ -1688,7 +1688,7 @@ describe('App invite gate', () => {
     await Promise.resolve()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
   })
 
   it('does not render InviteGate when accepted === true', async () => {
@@ -1735,7 +1735,7 @@ describe('App invite gate', () => {
     expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
   })
 
-  it('keeps InviteGate hidden while a retired submit path is in flight', async () => {
+  it('keeps InviteGate visible while a legacy submit path is in flight', async () => {
     vi.mocked(getInvite).mockRejectedValueOnce({ error: 'network', message: 'offline' })
     vi.mocked(getOnboarding).mockResolvedValueOnce({ completedAt: 1700000000 })
     vi.mocked(postInvite).mockReturnValueOnce(new Promise(() => {}))
@@ -1749,10 +1749,11 @@ describe('App invite gate', () => {
     await wrapper.vm.$nextTick()
 
     const invite = useInviteStore()
+    invite.accepted = false
     void invite.submit('BETA-2026-ALPHA')
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
   })
 })
 
@@ -1808,7 +1809,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     expect(wrapper.find('main').exists()).toBe(true)
   })
 
-  it('legacy invite not accepted state does not show InviteGate', async () => {
+  it('legacy invite not accepted state shows InviteGate and hides onboarding/main views', async () => {
     const wrapper = mount(App, {
       global: {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
@@ -1817,7 +1818,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     const invite = useInviteStore()
     invite.accepted = false
     await wrapper.vm.$nextTick()
-    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
     expect(wrapper.find('main').exists()).toBe(false)
   })

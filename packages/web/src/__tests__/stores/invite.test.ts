@@ -50,17 +50,18 @@ describe('useInviteStore', () => {
     expect(store.phase).toBe('idle')
   })
 
-  it('submit with wrong code sets phase=error, preserves public access', async () => {
+  it('submit with wrong code sets phase=error, preserves prior accepted state', async () => {
     const apiError: ApiError = {
       error: 'invalid_code',
       message: 'Invite code not recognized.',
     }
     vi.mocked(postInvite).mockRejectedValueOnce(apiError)
     const store = useInviteStore()
+    store.accepted = false
     await store.submit('WRONG-CODE')
     expect(store.phase).toBe('error')
     expect(store.error).toEqual(apiError)
-    expect(store.accepted).toBe(true)
+    expect(store.accepted).toBe(false)
   })
 
   describe('shouldShowGate', () => {
@@ -79,11 +80,12 @@ describe('useInviteStore', () => {
       expect(store.shouldShowGate).toBe(false)
     })
 
-    it('is false even when a legacy server reports accepted=false', async () => {
+    it('is true when a legacy server reports accepted=false', async () => {
       vi.mocked(getInvite).mockResolvedValueOnce({ accepted: false })
       const store = useInviteStore()
       await store.loadStatus()
-      expect(store.shouldShowGate).toBe(false)
+      expect(store.accepted).toBe(false)
+      expect(store.shouldShowGate).toBe(true)
     })
 
     it('is false when accepted=true', async () => {
@@ -93,12 +95,13 @@ describe('useInviteStore', () => {
       expect(store.shouldShowGate).toBe(false)
     })
 
-    it('stays false while submit is in flight from the retired gate path', async () => {
+    it('stays true while legacy invite submission is in flight', async () => {
       vi.mocked(getInvite).mockRejectedValueOnce({ error: 'network', message: 'offline' })
       const store = useInviteStore()
       await store.loadStatus()
       expect(store.accepted).toBe(true)
       expect(store.shouldShowGate).toBe(false)
+      store.accepted = false
 
       // Hold the POST open so we can observe the in-flight state.
       let resolvePost: (value: { accepted: boolean }) => void = () => {}
@@ -110,8 +113,8 @@ describe('useInviteStore', () => {
 
       const submission = store.submit('BETA-2026-ALPHA')
       expect(store.phase).toBe('submitting')
-      expect(store.accepted).toBe(true)
-      expect(store.shouldShowGate).toBe(false)
+      expect(store.accepted).toBe(false)
+      expect(store.shouldShowGate).toBe(true)
 
       // Resolve with success so the test cleans up.
       resolvePost({ accepted: true })
