@@ -1,3 +1,17 @@
+## 0.5.0
+
+### Phase 2 — screenshot-capture install build
+
+Cuts a fresh Home Assistant add-on image for the screenshot refresh pass.
+
+This release keeps the 0.4.23 runtime shape that matched the working Smart
+Panel add-on base image/runtime combination, then republishes it under a clean
+0.5.x version line so a real HA Supervisor instance can install the current
+build and capture updated product screenshots.
+
+Known scope: no new runtime behavior beyond the 0.4.23 QA build; this is a
+release/packaging checkpoint for visual QA.
+
 ## 0.4.23
 
 ### Phase 2 — pre-release for local QA (Smart Panel runtime parity)

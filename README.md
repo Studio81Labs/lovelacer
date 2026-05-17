@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-amber" alt="License: MIT">
-  <img src="https://img.shields.io/badge/add--on-0.4.23-amber" alt="Add-on version">
+  <img src="https://img.shields.io/badge/add--on-0.5.0-amber" alt="Add-on version">
   <a href="https://github.com/Studio81Labs/lovelacer/actions/workflows/ci.yml"><img src="https://github.com/Studio81Labs/lovelacer/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
 </p>
 
