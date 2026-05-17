@@ -1676,8 +1676,9 @@ describe('App invite gate', () => {
     expect(getInvite).toHaveBeenCalledOnce()
   })
 
-  it('renders InviteGate when accepted === false', async () => {
+  it('renders InviteGate when a legacy server reports accepted === false', async () => {
     vi.mocked(getInvite).mockResolvedValueOnce({ accepted: false })
+    vi.mocked(getOnboarding).mockResolvedValueOnce({ completedAt: 1700000000 })
 
     const wrapper = mount(App, {
       global: {
@@ -1704,9 +1705,10 @@ describe('App invite gate', () => {
     expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
   })
 
-  it('does not render InviteGate while accepted === null (loading state)', () => {
+  it('does not render InviteGate while the compatibility invite status request is pending', () => {
     // Don't resolve the mock; accepted stays null.
     vi.mocked(getInvite).mockReturnValue(new Promise(() => {})) // never resolves
+    vi.mocked(getOnboarding).mockResolvedValueOnce({ completedAt: 1700000000 })
 
     const wrapper = mount(App, {
       global: {
@@ -1718,10 +1720,9 @@ describe('App invite gate', () => {
     expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
   })
 
-  it('renders InviteGate when loadStatus fails (network error) so the user is not stranded', async () => {
-    // Without this fallback, accepted stays null forever and every other
-    // API call returns 403 invite_required — page refresh is the only out.
+  it('does not render InviteGate when loadStatus fails now that access is public', async () => {
     vi.mocked(getInvite).mockRejectedValueOnce({ error: 'network', message: 'offline' })
+    vi.mocked(getOnboarding).mockResolvedValueOnce({ completedAt: 1700000000 })
 
     const wrapper = mount(App, {
       global: {
@@ -1731,14 +1732,12 @@ describe('App invite gate', () => {
     await Promise.resolve()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(false)
   })
 
-  it('keeps the typed code in the gate input while a submit from the recovery gate is in flight (regression: gate must not unmount)', async () => {
-    // Set up the recovery path: initial loadStatus fails so the gate
-    // surfaces with accepted=null + phase=error.
+  it('keeps InviteGate visible while a legacy submit path is in flight', async () => {
     vi.mocked(getInvite).mockRejectedValueOnce({ error: 'network', message: 'offline' })
-    // Hold the POST open so we can observe the in-flight render.
+    vi.mocked(getOnboarding).mockResolvedValueOnce({ completedAt: 1700000000 })
     vi.mocked(postInvite).mockReturnValueOnce(new Promise(() => {}))
 
     const wrapper = mount(App, {
@@ -1749,20 +1748,12 @@ describe('App invite gate', () => {
     await Promise.resolve()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
-
-    const input = wrapper.find('[data-testid="invite-input"]')
-    await input.setValue('BETA-2026-ALPHA')
-    await wrapper.find('form').trigger('submit')
+    const invite = useInviteStore()
+    invite.accepted = false
+    void invite.submit('BETA-2026-ALPHA')
     await wrapper.vm.$nextTick()
 
-    // Mid-request: gate must still be mounted (otherwise the local
-    // `code` ref is destroyed and remounts blank on failure) and the
-    // typed value must still be there.
     expect(wrapper.find('[data-testid="invite-gate"]').exists()).toBe(true)
-    expect((wrapper.find('[data-testid="invite-input"]').element as HTMLInputElement).value).toBe(
-      'BETA-2026-ALPHA',
-    )
   })
 })
 
@@ -1793,6 +1784,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
+    await flushPromises()
     const invite = useInviteStore()
     const onboarding = useOnboardingStore()
     invite.accepted = true
@@ -1817,7 +1809,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     expect(wrapper.find('main').exists()).toBe(true)
   })
 
-  it('invite not accepted → InviteGate visible, neither wizard nor main', async () => {
+  it('legacy invite not accepted state shows InviteGate and hides onboarding/main views', async () => {
     const wrapper = mount(App, {
       global: {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
@@ -1831,22 +1823,13 @@ describe('App.vue — onboarding gating (P2-7)', () => {
     expect(wrapper.find('main').exists()).toBe(false)
   })
 
-  it('main view does not flash during invite acceptance after a stale onboarding 403 (regression: Bugbot #25 Medium flicker)', async () => {
-    // Bug: on a fresh install, the initial onboarding.loadStatus 403'd
-    // (gated), leaving phase='error' and isResolved=true. When invite
-    // was accepted, the post-flush retry watch fired AFTER Vue's
-    // render — so `showMainView` briefly evaluated true with the stale
-    // resolved state, flashing the main view before the wizard mounted.
-    //
-    // Fix: drop the speculative onMounted load and gate loadStatus on
-    // invite.accepted via a `flush: 'pre'` watch so the synchronous
-    // `phase='loading'` mutation lands before the next render.
+  it('loads onboarding immediately under public access without flashing the main view', async () => {
     let resolveSecondLoad: (v: { completedAt: number | null }) => void = () => {}
     const secondLoadPromise = new Promise<{ completedAt: number | null }>((r) => {
       resolveSecondLoad = r
     })
     vi.mocked(getOnboarding).mockReset().mockReturnValueOnce(secondLoadPromise)
-    vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: false })
+    vi.mocked(getInvite).mockReset().mockResolvedValue({ accepted: true })
 
     const wrapper = mount(App, {
       global: {
@@ -1854,20 +1837,9 @@ describe('App.vue — onboarding gating (P2-7)', () => {
       },
     })
     await flushPromises()
-    // Invite gate is up; onboarding.loadStatus has NOT yet fired (no
-    // onMounted call), so the store is in its initial state.
     const onboarding = useOnboardingStore()
-    expect(onboarding.phase).toBe('idle')
-    expect(onboarding.completedAt).toBeUndefined()
-
-    // Simulate invite acceptance.
-    const invite = useInviteStore()
-    invite.accepted = true
-    // Pre-flush watch fires synchronously and queues loadStatus, which
-    // synchronously sets phase='loading'. After nextTick, the render
-    // should see isResolved=false and hide both views.
-    await wrapper.vm.$nextTick()
     expect(onboarding.phase).toBe('loading')
+    expect(onboarding.completedAt).toBeUndefined()
     expect(onboarding.isResolved).toBe(false)
     expect(wrapper.find('main').exists()).toBe(false) // no flicker
     expect(wrapper.find('[data-testid="onboarding-wizard"]').exists()).toBe(false)
@@ -1917,6 +1889,7 @@ describe('App.vue — onboarding gating (P2-7)', () => {
         plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
       },
     })
+    await flushPromises()
     const invite = useInviteStore()
     const onboarding = useOnboardingStore()
     invite.accepted = true

@@ -17,9 +17,9 @@ describe('useInviteStore', () => {
     vi.mocked(postInvite).mockReset()
   })
 
-  it('starts with accepted=null, phase=idle, error=null', () => {
+  it('starts accepted for public access, phase=idle, error=null', () => {
     const store = useInviteStore()
-    expect(store.accepted).toBeNull()
+    expect(store.accepted).toBe(true)
     expect(store.phase).toBe('idle')
     expect(store.error).toBeNull()
   })
@@ -32,14 +32,14 @@ describe('useInviteStore', () => {
     expect(store.phase).toBe('idle')
   })
 
-  it('loadStatus on error sets phase=error and preserves prior accepted', async () => {
+  it('loadStatus on error preserves public access and records the error', async () => {
     const apiError: ApiError = { error: 'network', message: 'offline' }
     vi.mocked(getInvite).mockRejectedValueOnce(apiError)
     const store = useInviteStore()
     await store.loadStatus()
     expect(store.phase).toBe('error')
     expect(store.error).toEqual(apiError)
-    expect(store.accepted).toBeNull() // unchanged from initial
+    expect(store.accepted).toBe(true)
   })
 
   it('submit with valid code sets accepted=true', async () => {
@@ -50,39 +50,41 @@ describe('useInviteStore', () => {
     expect(store.phase).toBe('idle')
   })
 
-  it('submit with wrong code sets phase=error, preserves accepted', async () => {
+  it('submit with wrong code sets phase=error, preserves prior accepted state', async () => {
     const apiError: ApiError = {
       error: 'invalid_code',
       message: 'Invite code not recognized.',
     }
     vi.mocked(postInvite).mockRejectedValueOnce(apiError)
     const store = useInviteStore()
+    store.accepted = false
     await store.submit('WRONG-CODE')
     expect(store.phase).toBe('error')
     expect(store.error).toEqual(apiError)
-    expect(store.accepted).toBeNull() // unchanged
+    expect(store.accepted).toBe(false)
   })
 
   describe('shouldShowGate', () => {
-    it('is false initially (accepted=null, phase=idle) so the page does not flash a modal during the status check', () => {
+    it('is false initially because the invite gate is no longer shown', () => {
       const store = useInviteStore()
       expect(store.shouldShowGate).toBe(false)
     })
 
-    it('is true when loadStatus fails (network error) so the user has a recovery path instead of being stranded', async () => {
+    it('is false when loadStatus fails because public access no longer uses the invite modal as recovery UI', async () => {
       const apiError: ApiError = { error: 'network', message: 'offline' }
       vi.mocked(getInvite).mockRejectedValueOnce(apiError)
       const store = useInviteStore()
       await store.loadStatus()
-      expect(store.accepted).toBeNull()
+      expect(store.accepted).toBe(true)
       expect(store.phase).toBe('error')
-      expect(store.shouldShowGate).toBe(true)
+      expect(store.shouldShowGate).toBe(false)
     })
 
-    it('is true when accepted=false', async () => {
+    it('is true when a legacy server reports accepted=false', async () => {
       vi.mocked(getInvite).mockResolvedValueOnce({ accepted: false })
       const store = useInviteStore()
       await store.loadStatus()
+      expect(store.accepted).toBe(false)
       expect(store.shouldShowGate).toBe(true)
     })
 
@@ -93,13 +95,13 @@ describe('useInviteStore', () => {
       expect(store.shouldShowGate).toBe(false)
     })
 
-    it('stays true while submit is in flight from the recovery-path gate (regression: prevents the modal from unmounting and losing the typed code)', async () => {
-      // Set up the recovery state: loadStatus failed.
+    it('stays true while legacy invite submission is in flight', async () => {
       vi.mocked(getInvite).mockRejectedValueOnce({ error: 'network', message: 'offline' })
       const store = useInviteStore()
       await store.loadStatus()
-      expect(store.accepted).toBeNull()
-      expect(store.shouldShowGate).toBe(true)
+      expect(store.accepted).toBe(true)
+      expect(store.shouldShowGate).toBe(false)
+      store.accepted = false
 
       // Hold the POST open so we can observe the in-flight state.
       let resolvePost: (value: { accepted: boolean }) => void = () => {}
@@ -110,11 +112,8 @@ describe('useInviteStore', () => {
       )
 
       const submission = store.submit('BETA-2026-ALPHA')
-      // Mid-request: phase=submitting, accepted still null. Gate must stay
-      // mounted, otherwise the InviteGate component's local `code` ref
-      // (the user's typed input) is destroyed.
       expect(store.phase).toBe('submitting')
-      expect(store.accepted).toBeNull()
+      expect(store.accepted).toBe(false)
       expect(store.shouldShowGate).toBe(true)
 
       // Resolve with success so the test cleans up.

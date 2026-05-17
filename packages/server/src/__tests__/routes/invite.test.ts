@@ -20,12 +20,12 @@ async function makeApp() {
 }
 
 describe('GET /api/invite', () => {
-  it('returns 200 { accepted: false } on a fresh store', async () => {
+  it('returns 200 { accepted: true } on a fresh store now that Lovelacer is public', async () => {
     const app = await makeApp()
     try {
       const res = await app.inject({ method: 'GET', url: '/api/invite' })
       expect(res.statusCode).toBe(200)
-      expect(res.json()).toEqual({ accepted: false })
+      expect(res.json()).toEqual({ accepted: true })
     } finally {
       await app.close()
     }

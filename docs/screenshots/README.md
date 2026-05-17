@@ -29,7 +29,7 @@ real HA install if available.
 ### `01-hero.png` — main view, ready state
 
 - Wizard already completed (onboarding row in SQLite has `completed_at`
-  set), invite gate already accepted.
+  set).
 - Click **Analyze**, wait for the preview to render.
 - Expand 2 rooms with mixed confidence pills.
 - Visible: the new mark + wordmark header, HealthBar (HA connected),
@@ -42,8 +42,8 @@ real HA install if available.
 
 - Fresh install state (clear the onboarding row in SQLite, or use a new
   `/data` volume for the add-on).
-- Accept the invite, then on the welcome step:
-  - Language dropdown set to **Auto (match all)** (the default).
+- On the welcome step, leave the language dropdown set to **Auto (match
+  all)** (the default).
 - Capture the **wizard panel only** (~1024×640 bounding box, not the
   full page). DevTools → Element screenshot on the
   `[data-testid="welcome-step"]` div.
@@ -76,12 +76,11 @@ real HA install if available.
 
 Recording script (≤45 seconds, ≤2 MB):
 
-1. Page loads → InviteGate visible.
-2. Type the invite code → click **Accept**.
-3. Wizard Welcome step → optional: change language → click **Continue**.
-4. Wizard Preview step → wait for analyze → click **Apply**.
-5. Apply success → Done step.
-6. Click **Open dashboard** → HA dashboard renders.
+1. Fresh install page loads → Wizard Welcome step visible.
+2. Optional: change language → click **Continue**.
+3. Wizard Preview step → wait for analyze → click **Apply**.
+4. Apply success → Done step.
+5. Click **Open dashboard** → HA dashboard renders.
 
 Tooling:
 
