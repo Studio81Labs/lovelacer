@@ -19,25 +19,28 @@ import {
   type LovelaceConfig,
   type RoomDisplayNames,
   type RoomDisplayOverrides,
+  type RoomNamePrefixCandidates,
 } from '@lovelacer/generator'
 import type { ApplyDashboardOptions, ApplyDashboardResult, HaClient } from '@lovelacer/ha-client'
-import type {
-  AnalyzedRoom,
-  CanonicalRoomId,
-  DiffResult,
-  FloorAssignment,
-  HaAreaRegistryEntry,
-  HaDeviceRegistryEntry,
-  HaEntityRegistryEntry,
-  HaFloorRegistryEntry,
-  NormalizedDevice,
-  NormalizedEntity,
-  Override,
-  RoomAssignment,
-  Settings,
-  SettingsSections,
-  SnapshotAssignment,
-  Suggestion,
+import {
+  ROOM_DISPLAY_NAMES,
+  type AnalyzedRoom,
+  type CanonicalRoomId,
+  type DiffResult,
+  type FloorAssignment,
+  type HaAreaRegistryEntry,
+  type HaDeviceRegistryEntry,
+  type HaEntityRegistryEntry,
+  type HaFloorRegistryEntry,
+  type NormalizedDevice,
+  type NormalizedEntity,
+  type Override,
+  type RoomAssignment,
+  type RoomDisplayLanguage,
+  type Settings,
+  type SettingsSections,
+  type SnapshotAssignment,
+  type Suggestion,
 } from '@lovelacer/shared'
 import type { AppliedSnapshotStore } from './storage/applied-snapshot-store.js'
 import type { DismissedSuggestionStore } from './storage/dismissed-suggestion-store.js'
@@ -337,34 +340,6 @@ function isValidSnapshotShape(value: unknown): value is NonNullable<ApplyInput['
 }
 
 /**
- * Display names for the 14 canonical rooms. Used as fallback when a room
- * has no entities with `haAreaId` set (i.e., entities matched only via
- * name signals so we can't pull a localized area name).
- *
- * Mirrors the titles used in `packages/generator/src/rooms.ts`'s
- * `ROOM_DISPLAY` table. The duplication is small and self-contained;
- * a future ticket may share the source-of-truth across the
- * server/generator boundary.
- */
-const CANONICAL_ROOM_NAMES: Record<CanonicalRoomId, string> = {
-  kitchen: 'Kitchen',
-  living_room: 'Living Room',
-  bedroom: 'Bedroom',
-  bathroom: 'Bathroom',
-  office: 'Office',
-  garage: 'Garage',
-  garden: 'Garden',
-  dining_room: 'Dining Room',
-  laundry: 'Laundry',
-  basement: 'Basement',
-  attic: 'Attic',
-  kids_room: "Kids' Room",
-  guest_room: 'Guest Room',
-  hallway: 'Hallway',
-  misc: 'Other',
-}
-
-/**
  * Internal pipeline state shared by `runAnalyze` and `runPreview`. Holds
  * everything they need from a single registry fetch so the two routes
  * never race against a HA registry mutation between calls.
@@ -383,6 +358,7 @@ interface PipelineState {
   sectionFlags: SettingsSections
   roomOverrides: RoomDisplayOverrides
   roomDisplayNames: RoomDisplayNames
+  roomNamePrefixCandidates: RoomNamePrefixCandidates
   hasRoomOrder: boolean
 }
 
@@ -454,6 +430,7 @@ async function runFullPipeline(
   // consistent across the entire pipeline call.
   const cfg: Settings = settings.get()
   const detectLanguage = cfg.language === 'auto' ? undefined : cfg.language
+  const displayLanguage: RoomDisplayLanguage | null = cfg.language === 'auto' ? null : cfg.language
   const roomOverrides = (cfg.roomOverrides ?? {}) as RoomDisplayOverrides
 
   // Pull registries sequentially instead of with Promise.all. The add-on
@@ -525,6 +502,7 @@ async function runFullPipeline(
   const hidden: AnalyzeOutput['hidden'] = []
   const dashboardEntityIds = collectDashboardEntityIds(assignments, entityById)
   const roomDisplayNames: RoomDisplayNames = {}
+  const roomNamePrefixCandidates: RoomNamePrefixCandidates = {}
 
   await timedSyncStage(options, 'build_analyze_output', () => {
     for (const override of overrides.getAll()) {
@@ -575,15 +553,19 @@ async function runFullPipeline(
         continue
       }
 
-      const { room, detectedDisplayName } = buildAnalyzedRoom(
+      const { room, detectedDisplayName, namePrefixCandidates } = buildAnalyzedRoom(
         grouping,
         roomAssignments,
         entityById,
         areaRegistry,
         roomOverrides,
+        displayLanguage,
       )
       rooms.push(room)
       roomDisplayNames[grouping.roomId] = detectedDisplayName
+      if (namePrefixCandidates.length > 0) {
+        roomNamePrefixCandidates[grouping.roomId] = namePrefixCandidates
+      }
     }
   })
 
@@ -630,6 +612,7 @@ async function runFullPipeline(
     sectionFlags: cfg.sections,
     roomOverrides,
     roomDisplayNames,
+    roomNamePrefixCandidates,
     hasRoomOrder: (cfg.roomOrder?.length ?? 0) > 0,
   }
 }
@@ -670,14 +653,25 @@ function buildAnalyzedRoom(
   entityById: ReadonlyMap<string, NormalizedEntity>,
   areas: HaAreaRegistryEntry[],
   roomOverrides: RoomDisplayOverrides,
-): { room: AnalyzedRoom; detectedDisplayName: string } {
-  // Find the dominant haAreaId (the most common area_id among entities in
-  // this room). If no entities have an area, fall back to canonical name.
+  displayLanguage: RoomDisplayLanguage | null,
+): { room: AnalyzedRoom; detectedDisplayName: string; namePrefixCandidates: string[] } {
+  // Find the dominant HA area (the most common entity/device area among
+  // entities in this room). Manual room overrides intentionally don't
+  // contribute their source HA area, because the user moved that entity
+  // away from the detector's area context.
   const areaCounts = new Map<string, number>()
+  const areasById = new Map(areas.map((area) => [area.area_id, area]))
   for (const a of roomAssignments) {
     const e = entityById.get(a.entityId)
-    if (e?.haAreaId !== null && e?.haAreaId !== undefined) {
-      areaCounts.set(e.haAreaId, (areaCounts.get(e.haAreaId) ?? 0) + 1)
+    if (e === undefined) continue
+    if (a.manual === true) continue
+
+    const candidateAreaIds = [e.haAreaId, e.device?.haAreaId ?? null]
+    for (const areaId of candidateAreaIds) {
+      if (areaId === null) continue
+      if (!areasById.has(areaId)) continue
+      areaCounts.set(areaId, (areaCounts.get(areaId) ?? 0) + 1)
+      break
     }
   }
 
@@ -695,10 +689,10 @@ function buildAnalyzedRoom(
   }
 
   const display = resolveRoomDisplay(grouping.roomId, roomOverrides)
+  const canonicalDisplayName = ROOM_DISPLAY_NAMES[displayLanguage ?? 'en'][grouping.roomId]
+  const haAreaDisplayName = haAreaId !== null ? areasById.get(haAreaId)?.name : undefined
   const detectedDisplayName =
-    haAreaId !== null
-      ? (areas.find((a) => a.area_id === haAreaId)?.name ?? CANONICAL_ROOM_NAMES[grouping.roomId])
-      : CANONICAL_ROOM_NAMES[grouping.roomId]
+    displayLanguage === null ? (haAreaDisplayName ?? canonicalDisplayName) : canonicalDisplayName
   const displayName = roomOverrides[grouping.roomId]?.name?.trim()
     ? display.title
     : detectedDisplayName
@@ -718,6 +712,7 @@ function buildAnalyzedRoom(
       assignments: roomAssignments,
     },
     detectedDisplayName,
+    namePrefixCandidates: haAreaDisplayName !== undefined ? [haAreaDisplayName] : [],
   }
 }
 
@@ -767,7 +762,12 @@ export async function runPreview(
     }),
   )
   const rooms = await timedSyncStage(options, 'build_room_views', () =>
-    buildRoomViews(dashboardGroupings, state.roomOverrides, state.roomDisplayNames),
+    buildRoomViews(
+      dashboardGroupings,
+      state.roomOverrides,
+      state.roomDisplayNames,
+      state.roomNamePrefixCandidates,
+    ),
   )
   const config = await timedSyncStage(options, 'build_lovelace_config', () =>
     buildLovelaceConfig({ home, rooms, ...(state.hasRoomOrder ? { sortRooms: false } : {}) }),

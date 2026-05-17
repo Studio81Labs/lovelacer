@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { bucketForConfidence, CANONICAL_ROOMS } from '../index.js'
+import { bucketForConfidence, CANONICAL_ROOMS, ROOM_DISPLAY_NAMES } from '../index.js'
 
 describe('bucketForConfidence', () => {
   it('returns "high" for confidence in [0.85, 1.0]', () => {
@@ -33,5 +33,16 @@ describe('CANONICAL_ROOMS', () => {
 
   it('contains no duplicates', () => {
     expect(new Set(CANONICAL_ROOMS).size).toBe(CANONICAL_ROOMS.length)
+  })
+})
+
+describe('ROOM_DISPLAY_NAMES', () => {
+  it('covers every canonical room for each explicit display language', () => {
+    for (const names of Object.values(ROOM_DISPLAY_NAMES)) {
+      expect(Object.keys(names).sort()).toEqual([...CANONICAL_ROOMS].sort())
+      for (const roomId of CANONICAL_ROOMS) {
+        expect(names[roomId].trim()).not.toBe('')
+      }
+    }
   })
 })

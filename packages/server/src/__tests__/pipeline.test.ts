@@ -90,6 +90,12 @@ function makeSettingsWithRoomOrder(roomOrder: string[]): SettingsStore {
   return settings
 }
 
+function makeSettingsWithLanguage(language: Settings['language']): SettingsStore {
+  const settings = makeSettings()
+  settings.save({ ...settings.get(), language })
+  return settings
+}
+
 function makeSettingsWithRoomOverrides(roomOverrides: Settings['roomOverrides']): SettingsStore {
   const settings = makeSettings()
   settings.save({ ...settings.get(), roomOverrides })
@@ -111,6 +117,26 @@ function collectNavigationPaths(value: unknown): string[] {
       : []
 
   return [...current, ...Object.values(record).flatMap((item) => collectNavigationPaths(item))]
+}
+
+function findCardByEntity(value: unknown, entityId: string): Record<string, unknown> | null {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findCardByEntity(item, entityId)
+      if (found !== null) return found
+    }
+    return null
+  }
+  if (typeof value !== 'object' || value === null) return null
+
+  const record = value as Record<string, unknown>
+  if (record.entity === entityId) return record
+
+  for (const item of Object.values(record)) {
+    const found = findCardByEntity(item, entityId)
+    if (found !== null) return found
+  }
+  return null
 }
 
 function makeAdministrativeHa(): HaClient {
@@ -238,6 +264,72 @@ function makeCustomNamedLivingRoomHa(): HaClient {
       name: 'Obývák LED Pásek Gauč',
       original_name: null,
       area_id: 'living_area',
+      device_id: null,
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: null,
+      device_class: null,
+    },
+  ]
+
+  return {
+    isConnected: () => true,
+    getEntityRegistry: vi.fn(async () => entities),
+    getDeviceRegistry: vi.fn(async () => []),
+    getAreaRegistry: vi.fn(async () => areas),
+    getFloorRegistry: vi.fn(async () => []),
+  } as unknown as HaClient
+}
+
+function makeDeviceAreaGarageHa(): HaClient {
+  const areas: HaAreaRegistryEntry[] = [
+    { area_id: 'garage_area', name: 'Garáž', floor_id: null, icon: null },
+  ]
+  const devices: HaDeviceRegistryEntry[] = [
+    {
+      id: 'garage_relay',
+      name: 'Garage Relay',
+      name_by_user: null,
+      manufacturer: null,
+      model: null,
+      area_id: 'garage_area',
+    },
+  ]
+  const entities: HaEntityRegistryEntry[] = [
+    {
+      entity_id: 'cover.garage_door',
+      name: 'Garage Door',
+      original_name: null,
+      area_id: null,
+      device_id: 'garage_relay',
+      platform: 'test',
+      hidden_by: null,
+      disabled_by: null,
+      entity_category: null,
+      device_class: null,
+    },
+  ]
+
+  return {
+    isConnected: () => true,
+    getEntityRegistry: vi.fn(async () => entities),
+    getDeviceRegistry: vi.fn(async () => devices),
+    getAreaRegistry: vi.fn(async () => areas),
+    getFloorRegistry: vi.fn(async () => []),
+  } as unknown as HaClient
+}
+
+function makeCustomAreaBedroomHa(): HaClient {
+  const areas: HaAreaRegistryEntry[] = [
+    { area_id: 'primary_suite', name: 'Primary Suite', floor_id: null, icon: null },
+  ]
+  const entities: HaEntityRegistryEntry[] = [
+    {
+      entity_id: 'light.primary_suite_bedroom_lamp',
+      name: 'Bedroom Lamp',
+      original_name: null,
+      area_id: 'primary_suite',
       device_id: null,
       platform: 'test',
       hidden_by: null,
@@ -392,6 +484,76 @@ describe('runPreview', () => {
 
     expect(roomTitles).toEqual([...roomTitles].sort((a, b) => a.localeCompare(b, 'en')))
     expect(roomTitles).toEqual(['Kancelář', 'Koupelna', 'Kuchyně', 'Ložnice', 'Obývací pokoj'])
+  })
+
+  it('uses HA device area display names for auto room titles', async () => {
+    const result = await runPreview(
+      makeDeviceAreaGarageHa(),
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+    )
+    const garage = result.rooms.find((room) => room.id === 'garage')
+    const view = result.config.views.find((candidate) => candidate.path === 'garage')
+
+    expect(garage?.haAreaId).toBe('garage_area')
+    expect(garage?.displayName).toBe('Garáž')
+    expect(view?.title).toBe('Garáž')
+  })
+
+  it('preserves custom HA area display names in auto mode for name-matched rooms', async () => {
+    const result = await runPreview(
+      makeCustomAreaBedroomHa(),
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettings(),
+    )
+    const bedroom = result.rooms.find((room) => room.id === 'bedroom')
+    const view = result.config.views.find((candidate) => candidate.path === 'bedroom')
+
+    expect(bedroom?.haAreaId).toBe('primary_suite')
+    expect(bedroom?.displayName).toBe('Primary Suite')
+    expect(view?.title).toBe('Primary Suite')
+  })
+
+  it('uses explicit detection language for generated room names instead of HA area names', async () => {
+    const result = await runPreview(
+      makeCzechHa(),
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettingsWithLanguage('en'),
+    )
+    const roomTitles = result.config.views.slice(1).map((view) => view.title)
+
+    expect(result.rooms.map((room) => room.displayName)).toEqual([
+      'Bathroom',
+      'Bedroom',
+      'Kitchen',
+      'Living Room',
+      'Office',
+    ])
+    expect(roomTitles).toEqual(['Bathroom', 'Bedroom', 'Kitchen', 'Living Room', 'Office'])
+
+    const kitchen = result.config.views.find((view) => view.path === 'kitchen')
+    const ceilingLight = findCardByEntity(kitchen, 'light.kuchyne_stropni_svetlo')
+    expect(ceilingLight?.name).toBe('stropní světlo')
+  })
+
+  it('localizes room names to Czech when language=cs instead of echoing a custom HA area name', async () => {
+    const result = await runPreview(
+      makeCustomNamedLivingRoomHa(),
+      makeStore(),
+      makeAppliedSnapshot(),
+      makeDismissed(),
+      makeSettingsWithLanguage('cs'),
+    )
+    const view = result.config.views.find((candidate) => candidate.path === 'living_room')
+
+    expect(result.rooms[0]?.displayName).toBe('Obývací pokoj')
+    expect(view?.title).toBe('Obývací pokoj')
   })
 
   it('orders generated room views by settings.roomOrder', async () => {

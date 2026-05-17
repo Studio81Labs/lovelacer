@@ -1,8 +1,9 @@
 /**
  * Canonical room identifiers used throughout the system.
  *
- * These are language-agnostic IDs. Localized display names live in
- * the keyword tables (added in P1a-2).
+ * These are language-agnostic IDs. Localized display names are keyed by
+ * these IDs below so detection can stay canonical while generated
+ * dashboards speak the user's selected language.
  */
 export const CANONICAL_ROOMS = [
   'kitchen',
@@ -23,6 +24,50 @@ export const CANONICAL_ROOMS = [
 ] as const
 
 export type CanonicalRoomId = (typeof CANONICAL_ROOMS)[number]
+
+/**
+ * Room title languages currently selectable through Settings.language.
+ * `auto` is intentionally not represented here: in auto mode the server
+ * preserves HA area names when it has them, falling back to English.
+ */
+export type RoomDisplayLanguage = 'en' | 'cs'
+
+export const ROOM_DISPLAY_NAMES: Record<RoomDisplayLanguage, Record<CanonicalRoomId, string>> = {
+  en: {
+    kitchen: 'Kitchen',
+    living_room: 'Living Room',
+    bedroom: 'Bedroom',
+    bathroom: 'Bathroom',
+    office: 'Office',
+    hallway: 'Hallway',
+    garage: 'Garage',
+    garden: 'Garden',
+    dining_room: 'Dining Room',
+    laundry: 'Laundry',
+    basement: 'Basement',
+    attic: 'Attic',
+    kids_room: "Kids' Room",
+    guest_room: 'Guest Room',
+    misc: 'Other',
+  },
+  cs: {
+    kitchen: 'Kuchyně',
+    living_room: 'Obývací pokoj',
+    bedroom: 'Ložnice',
+    bathroom: 'Koupelna',
+    office: 'Kancelář',
+    hallway: 'Chodba',
+    garage: 'Garáž',
+    garden: 'Zahrada',
+    dining_room: 'Jídelna',
+    laundry: 'Prádelna',
+    basement: 'Sklep',
+    attic: 'Půda',
+    kids_room: 'Dětský pokoj',
+    guest_room: 'Pokoj pro hosty',
+    misc: 'Ostatní',
+  },
+}
 
 /**
  * Domains we generate proper card mappings for in Phase 1a.

@@ -74,6 +74,10 @@ There are three related language surfaces:
 - `LanguageCode` in `packages/shared/src/types.ts` declares EN, CS, DE, ES, FR, IT, PL, and NL so adding a future keyword pack stays a data change.
 - `ROOM_KEYWORDS` in `packages/shared/src/room-keywords.ts` is the keyword data that ships today. It currently contains EN, CS, and DE rows.
 - `SUPPORTED_LANGUAGES` is the user-facing detection setting. It currently exposes `auto`, `en`, and `cs`; `auto` matches all shipped keyword rows, including DE.
+- Generated room titles follow the same setting: `auto` preserves HA area names
+  when available, while explicit languages (`en`, `cs`) use localized canonical
+  room names so users can control the dashboard language independently of their
+  HA area labels.
 
 ```typescript
 type RoomKeyword = {
