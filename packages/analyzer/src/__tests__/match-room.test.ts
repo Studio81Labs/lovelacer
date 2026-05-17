@@ -140,6 +140,20 @@ describe('findRoom — full ROOM_KEYWORDS integration', () => {
     const m = findRoom('Master koupelna svetlo')
     expect(m!.canonical).toBe('bathroom')
   })
+
+  it.each([
+    ['de', 'Wohnzimmer Lampe', 'living_room'],
+    ['es', 'Luz del salon', 'living_room'],
+    ['fr', 'Lampe du salon', 'living_room'],
+    ['it', 'Luce soggiorno', 'living_room'],
+    ['nl', 'Woonkamer lamp', 'living_room'],
+    ['pl', 'Salon lampa', 'living_room'],
+  ] as const)('detects %s room keywords', (language, candidate, expectedRoom) => {
+    const m = findRoom(candidate, { language })
+    expect(m).not.toBeNull()
+    expect(m!.canonical).toBe(expectedRoom)
+    expect(m!.language).toBe(language)
+  })
 })
 
 describe('findRoom — english-cluttered fixture sanity check', () => {

@@ -155,9 +155,8 @@ export interface Suggestion {
 /**
  * P2-6 — User-facing language setting values. Subset of `LanguageCode`
  * plus the `'auto'` sentinel, restricted to languages supported as
- * explicit settings today (EN + CS). `auto` matches all shipped keyword
- * rows, including DE. Expand this tuple when a language is ready to be
- * user-selectable, not merely present as keyword data.
+ * explicit settings today. Expand this tuple when a language is ready
+ * to be user-selectable, not merely present as keyword data.
  *
  * Exposed as a tuple `as const` so the route's Zod enum derives from
  * a single source of truth. `'auto'` matches all available keyword
@@ -166,7 +165,7 @@ export interface Suggestion {
  * keywords for priorities 3-5 and localize generated room titles from
  * canonical room IDs.
  */
-export const SUPPORTED_LANGUAGES = ['auto', 'en', 'cs'] as const
+export const SUPPORTED_LANGUAGES = ['auto', 'en', 'cs', 'de', 'es', 'fr', 'it', 'nl', 'pl'] as const
 
 /**
  * Detection language for name-based matching and generated room titles.
@@ -191,11 +190,11 @@ export type SettingsCardPack = (typeof SUPPORTED_CARD_PACKS)[number]
 /**
  * P2-9 — UI display language for the web app's interface. ORTHOGONAL
  * to `SettingsLanguage` (which controls room-name keyword detection).
- * Limited to the locales with shipped vue-i18n message bundles today
- * (EN + CS + DE). Exposed as a tuple `as const` so the route's Zod
- * enum and the web store's union type derive from a single source.
+ * Limited to the locales with shipped vue-i18n message bundles today.
+ * Exposed as a tuple `as const` so the route's Zod enum and the web
+ * store's union type derive from a single source.
  */
-export const SUPPORTED_UI_LANGUAGES = ['en', 'cs', 'de'] as const
+export const SUPPORTED_UI_LANGUAGES = ['en', 'cs', 'de', 'es', 'fr', 'it', 'nl', 'pl'] as const
 
 /**
  * UI display language. Persisted on the server alongside detection

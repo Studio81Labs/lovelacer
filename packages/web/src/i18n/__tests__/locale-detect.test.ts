@@ -22,13 +22,23 @@ describe('detectInitialLocale', () => {
     expect(detectInitialLocale()).toBe('de')
   })
 
+  it('detects every shipped UI locale from the browser language prefix', () => {
+    for (const locale of ['en', 'cs', 'de', 'es', 'fr', 'it', 'nl', 'pl'] as const) {
+      Object.defineProperty(navigator, 'language', {
+        value: `${locale}-${locale.toUpperCase()}`,
+        configurable: true,
+      })
+      expect(detectInitialLocale()).toBe(locale)
+    }
+  })
+
   it('falls back to en when navigator.language is unsupported', () => {
-    Object.defineProperty(navigator, 'language', { value: 'fr-FR', configurable: true })
+    Object.defineProperty(navigator, 'language', { value: 'sv-SE', configurable: true })
     expect(detectInitialLocale()).toBe('en')
   })
 
   it('rejects malicious or invalid localStorage values and falls through', () => {
-    Object.defineProperty(navigator, 'language', { value: 'fr-FR', configurable: true })
+    Object.defineProperty(navigator, 'language', { value: 'sv-SE', configurable: true })
     localStorage.setItem('lovelacer.uiLocale', '__proto__')
     expect(detectInitialLocale()).toBe('en')
   })

@@ -52,12 +52,20 @@ describe('SettingsModal', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders the language dropdown with Auto/English/Čeština options', () => {
+  it('renders every detection-language option', () => {
     const wrapper = mountModal()
     const select = wrapper.find('[data-testid="settings-language"]')
     expect(select.exists()).toBe(true)
     const opts = select.findAll('option').map((o) => o.attributes('value'))
-    expect(opts).toEqual(['auto', 'en', 'cs'])
+    expect(opts).toEqual(['auto', 'en', 'cs', 'de', 'es', 'fr', 'it', 'nl', 'pl'])
+  })
+
+  it('renders every shipped display language option', () => {
+    const wrapper = mountModal()
+    const select = wrapper.find('[data-testid="settings-ui-language"]')
+    expect(select.exists()).toBe(true)
+    const opts = select.findAll('option').map((o) => o.attributes('value'))
+    expect(opts).toEqual(['en', 'cs', 'de', 'es', 'fr', 'it', 'nl', 'pl'])
   })
 
   it('renders the card-pack dropdown disabled with only "default"', () => {

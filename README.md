@@ -106,8 +106,8 @@ Full breakdown in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - **Distribution:** Home Assistant Add-on (Supervisor-managed) as the primary channel, standalone Docker as a secondary one.
 - **Apply mode:** Lovelace **storage mode** by default (writes via WebSocket), with YAML export as a feature.
 - **Stack:** Node.js + Fastify backend, Vue 3 + Vite frontend, SQLite for local state.
-- **Room detection i18n:** User-selectable detection languages are Auto, EN, and CS. Auto matches every shipped keyword pack today (EN, CS, DE); ES, FR, IT, PL, and NL are reserved in the analyzer type contract for future keyword packs.
-- **UI i18n:** UI ships in English, Czech, and German (independent of room-detection language). German is alpha-quality; translation PRs welcome.
+- **Room detection i18n:** User-selectable detection languages are Auto, EN, CS, DE, ES, FR, IT, NL, and PL. Auto matches every shipped keyword pack.
+- **UI i18n:** UI ships in English, Czech, German, Spanish, French, Italian, Dutch, and Polish (independent of room-detection language). Non-EN translations are alpha-quality; translation PRs welcome.
 - **License:** MIT. AI features are part of the same code base; using them requires runtime configuration of an LLM provider.
 - **Visual identity:** Honey amber primary, warm stone neutrals, forest green accent. Instrument Serif (display) + Inter (UI) + JetBrains Mono (code). See [`docs/BRAND.md`](./docs/BRAND.md).
 

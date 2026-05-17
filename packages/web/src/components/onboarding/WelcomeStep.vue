@@ -38,6 +38,12 @@ const markUrl = `${import.meta.env.BASE_URL}brand/lovelacer-mark.svg`
       <option value="auto">{{ t('detectionLanguage.option.auto') }}</option>
       <option value="en">{{ t('detectionLanguage.option.en') }}</option>
       <option value="cs">{{ t('detectionLanguage.option.cs') }}</option>
+      <option value="de">{{ t('detectionLanguage.option.de') }}</option>
+      <option value="es">{{ t('detectionLanguage.option.es') }}</option>
+      <option value="fr">{{ t('detectionLanguage.option.fr') }}</option>
+      <option value="it">{{ t('detectionLanguage.option.it') }}</option>
+      <option value="nl">{{ t('detectionLanguage.option.nl') }}</option>
+      <option value="pl">{{ t('detectionLanguage.option.pl') }}</option>
     </select>
 
     <button

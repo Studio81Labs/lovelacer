@@ -20,7 +20,7 @@ const summary = computed(() => {
   const ent = p.summary.entityCount
   const rooms = p.summary.roomCount
   // Pluralization handled by the i18n catalogue (English | plural form).
-  // CS/DE bring their own plural rules in their respective locales.
+  // Other locales bring their own plural rules in their respective catalogs.
   return t('previewStep.summary', { entities: ent, count: rooms }, rooms)
 })
 

@@ -6,7 +6,7 @@ import en from '../locales/en.json'
  *
  * Tests use the real EN locale catalog so existing wrapper.text()
  * assertions like `expect(wrapper.text()).toContain('Continue')`
- * keep passing — EN is what they assert. CS/DE plural-rule
+ * keep passing — EN is what they assert. Locale plural-rule
  * behaviour gets its own targeted suite at
  * src/i18n/__tests__/plural-rules.test.ts.
  */

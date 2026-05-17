@@ -37,7 +37,7 @@ describe('WelcomeStep', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders heading and a language dropdown with 3 options', () => {
+  it('renders heading and every detection-language option', () => {
     const wrapper = mountWelcome()
     expect(wrapper.find('[data-testid="welcome-step"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('lovelacer')
@@ -46,7 +46,7 @@ describe('WelcomeStep', () => {
     const select = wrapper.find('[data-testid="welcome-language"]')
     expect(select.exists()).toBe(true)
     const opts = select.findAll('option').map((o) => o.attributes('value'))
-    expect(opts).toEqual(['auto', 'en', 'cs'])
+    expect(opts).toEqual(['auto', 'en', 'cs', 'de', 'es', 'fr', 'it', 'nl', 'pl'])
   })
 
   it('language dropdown is pre-selected from settings.effective.language', () => {
