@@ -100,25 +100,6 @@ export async function createApp(opts: CreateAppOptions) {
     ha: { connected: opts.ha.isConnected() },
   }))
 
-  // Gate hook: returns 403 invite_required for any /api/* request unless
-  // the invite has been accepted. /api/health and /api/invite are always
-  // public (Supervisor health-checks the former; the user submits the
-  // code to the latter on first run).
-  app.addHook('onRequest', async (req, reply) => {
-    if (!req.url.startsWith('/api/')) return
-    // Strip query string + fragment, then exact-match. Using startsWith
-    // would silently bypass /api/healthcheck or /api/invitations if those
-    // routes ever existed — exact match makes the bypass list explicit.
-    const path = req.url.split('?', 1)[0]?.split('#', 1)[0] ?? req.url
-    if (path === '/api/health' || path === '/api/invite') return
-    if (!opts.invite.isAccepted()) {
-      return reply.code(403).send({
-        error: 'invite_required',
-        message: 'Invite code required to continue.',
-      })
-    }
-  })
-
   await app.register(inviteRoute, { invite: opts.invite })
   await app.register(analyzeRoute, {
     ha: opts.ha,

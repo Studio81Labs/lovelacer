@@ -88,29 +88,27 @@ describe('invite gate hook', () => {
     }
   })
 
-  it('blocks POST /api/analyze with 403 invite_required when not accepted', async () => {
+  it('allows POST /api/analyze without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/analyze' })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).not.toBe(403)
     } finally {
       await app.close()
     }
   })
 
-  it('blocks POST /api/preview with 403 when not accepted', async () => {
+  it('allows POST /api/preview without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/preview' })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).not.toBe(403)
     } finally {
       await app.close()
     }
   })
 
-  it('blocks POST /api/apply with 403 when not accepted', async () => {
+  it('allows POST /api/apply without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({
@@ -118,40 +116,33 @@ describe('invite gate hook', () => {
         url: '/api/apply',
         payload: { config: { title: 'x', views: [] } },
       })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).not.toBe(403)
     } finally {
       await app.close()
     }
   })
 
-  it('blocks GET /api/overrides with 403 when not accepted', async () => {
+  it('allows GET /api/overrides without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({ method: 'GET', url: '/api/overrides' })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).toBe(200)
     } finally {
       await app.close()
     }
   })
 
-  it('blocks GET /api/export.yaml with 403 when not accepted', async () => {
-    // The export endpoint produces a downloadable YAML — must be gated like
-    // every other /api/* route. Locks the contract that the gate's exact-
-    // match bypass list does not include /api/export.yaml.
+  it('allows GET /api/export.yaml without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({ method: 'GET', url: '/api/export.yaml' })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).not.toBe(403)
     } finally {
       await app.close()
     }
   })
 
-  it('blocks POST /api/suggestions/dismiss with 403 when not accepted', async () => {
-    // P2-5 — the dismiss endpoint must be gated like every other /api/* route.
+  it('allows POST /api/suggestions/dismiss without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({
@@ -159,8 +150,7 @@ describe('invite gate hook', () => {
         url: '/api/suggestions/dismiss',
         payload: { entityId: 'sensor.foo', suggestionType: 'set_area_id' },
       })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).not.toBe(403)
     } finally {
       await app.close()
     }
@@ -181,7 +171,7 @@ describe('invite gate hook', () => {
     try {
       const res = await app.inject({ method: 'GET', url: '/api/invite' })
       expect(res.statusCode).toBe(200)
-      expect(res.json()).toEqual({ accepted: false })
+      expect(res.json()).toEqual({ accepted: true })
     } finally {
       await app.close()
     }
@@ -214,17 +204,11 @@ describe('invite gate hook', () => {
     }
   })
 
-  it('blocks /api/healthcheck (NOT a bypass) when not accepted', async () => {
+  it('does not use invite acceptance to block unknown API routes', async () => {
     const app = await makeApp({ accepted: false })
     try {
-      // Even though /api/healthcheck doesn't exist as a route, the gate
-      // should NOT bypass it just because the path starts with /api/health.
-      // Fastify will return 404 if the gate lets it through; 403 if the
-      // gate properly blocks it. The point: the gate should NOT prefix-
-      // match the public bypass list.
       const res = await app.inject({ method: 'GET', url: '/api/healthcheck' })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).toBe(404)
     } finally {
       await app.close()
     }
@@ -236,24 +220,23 @@ describe('invite gate hook', () => {
     try {
       const res = await app.inject({ method: 'GET', url: '/api/invite?cache=0' })
       expect(res.statusCode).toBe(200)
-      expect(res.json()).toEqual({ accepted: false })
+      expect(res.json()).toEqual({ accepted: true })
     } finally {
       await app.close()
     }
   })
 
-  it('blocks GET /api/settings with 403 when not accepted', async () => {
+  it('allows GET /api/settings without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({ method: 'GET', url: '/api/settings' })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).toBe(200)
     } finally {
       await app.close()
     }
   })
 
-  it('blocks PUT /api/settings with 403 when not accepted', async () => {
+  it('allows PUT /api/settings without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({
@@ -275,30 +258,27 @@ describe('invite gate hook', () => {
           },
         },
       })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).toBe(200)
     } finally {
       await app.close()
     }
   })
 
-  it('blocks GET /api/onboarding with 403 when not accepted', async () => {
+  it('allows GET /api/onboarding without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({ method: 'GET', url: '/api/onboarding' })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).toBe(200)
     } finally {
       await app.close()
     }
   })
 
-  it('blocks POST /api/onboarding/complete with 403 when not accepted', async () => {
+  it('allows POST /api/onboarding/complete without invite acceptance', async () => {
     const app = await makeApp({ accepted: false })
     try {
       const res = await app.inject({ method: 'POST', url: '/api/onboarding/complete' })
-      expect(res.statusCode).toBe(403)
-      expect(res.json()).toMatchObject({ error: 'invite_required' })
+      expect(res.statusCode).toBe(200)
     } finally {
       await app.close()
     }

@@ -283,7 +283,6 @@ export interface ApiError {
     | 'apply_failed'
     | 'invalid_body'
     | 'storage_error'
-    | 'invite_required'
     | 'invalid_code'
     | 'network'
   step?: 'list' | 'create' | 'save'

@@ -12,13 +12,14 @@ const PostBodySchema = z.object({
 })
 
 /**
- * GET  /api/invite — returns { accepted: boolean }.
+ * GET  /api/invite — returns { accepted: true } for compatibility with
+ *                    invite-gated clients from the closed beta.
  * POST /api/invite — body: { code }. Validates against
  *                    ACCEPTED_INVITE_CODES; persists on success.
  *
- * Both endpoints are public (bypass the gate hook). The hook in app.ts
- * lets through any request with path matching /api/invite (startsWith),
- * so this plugin is reachable on first run before acceptance.
+ * Both endpoints are public. POST remains so older clients with the gate
+ * component mounted can still submit an invite code during a rolling
+ * upgrade, but GET now reports accepted for fresh stores.
  *
  * Errors:
  * - 400 invalid_body — body fails zod schema (missing/empty code).
@@ -30,7 +31,7 @@ export const inviteRoute: FastifyPluginAsync<InviteRouteOptions> = async (
   opts,
 ) => {
   app.get('/api/invite', async () => {
-    return { accepted: opts.invite.isAccepted() }
+    return { accepted: true }
   })
 
   app.post('/api/invite', async (req, reply) => {

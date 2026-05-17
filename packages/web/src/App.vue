@@ -84,9 +84,9 @@ const markUrl = `${import.meta.env.BASE_URL}brand/lovelacer-mark.svg`
 // completedAt to a number) until the user clicks Continue/Skip.
 const wizardOpen = ref(false)
 
-// Open the wizard when we know we should: invite accepted + onboarding
-// not yet completed. Once opened, wizardOpen stays true until the
-// wizard emits close.
+// Open the wizard when onboarding is known to be incomplete. The invite
+// store now starts accepted because the closed-beta gate is retired, but
+// the boolean remains in this watcher while compatibility state exists.
 watch(
   [() => invite.accepted, () => onboarding.shouldShowWizard],
   ([accepted, shouldShow]) => {
@@ -97,18 +97,12 @@ watch(
   { immediate: true },
 )
 
-// Single source of truth for when onboarding status loads: only after
-// invite is accepted (so /api/onboarding doesn't 403 against the gate).
-// `immediate: true` handles the existing-install case where invite is
-// already accepted at mount; the conditional skips the no-op pre-mount
-// firing where `accepted === undefined`.
+// Single source of truth for when onboarding status loads. `immediate:
+// true` handles the public-release path where invite compatibility state
+// starts accepted at mount.
 //
-// `flush: 'pre'` is critical for the fresh-install path: when invite
-// flips from false to true, the loadStatus call must land its
-// synchronous `phase = 'loading'` mutation BEFORE the next render —
-// otherwise `onboarding.isResolved` could still be true from a stale
-// state and `showMainView` would briefly evaluate true between
-// invite acceptance and wizard mount, flashing the main view.
+// `flush: 'pre'` keeps the synchronous `phase = 'loading'` mutation ahead
+// of render if compatibility state changes during a rolling upgrade.
 watch(
   () => invite.accepted,
   (accepted) => {
@@ -318,8 +312,7 @@ onMounted(() => {
   // the user made on a different device until they opened Settings.
   void settings.loadFromServer()
   // Onboarding status loads via the watch on `invite.accepted` below
-  // (single source of truth) — firing it here would race the invite
-  // load and 403 on a fresh install.
+  // (single source of truth).
 })
 
 let loadedOnce = false
