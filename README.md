@@ -96,6 +96,7 @@ Full breakdown in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 | [`docs/AI_FEATURES.md`](./docs/AI_FEATURES.md)                   | Tier 2 / Tier 3 AI design, LLM provider abstraction, privacy boundaries                   |
 | [`docs/SMART_PANEL_BRIDGE.md`](./docs/SMART_PANEL_BRIDGE.md)     | Design note for the FastyBird Smart Panel export target                                   |
 | [`docs/BRAND.md`](./docs/BRAND.md)                               | Visual identity — palette, typography, logo usage, voice                                  |
+| [`docs/screenshots/README.md`](./docs/screenshots/README.md)     | Screenshot and demo GIF capture spec for the README                                       |
 | [`docs/ADDON_INSTALL.md`](./docs/ADDON_INSTALL.md)               | HA add-on installation walkthrough + troubleshooting                                      |
 | [`docs/ROADMAP.md`](./docs/ROADMAP.md)                           | Phased plan with real tickets and acceptance criteria                                     |
 

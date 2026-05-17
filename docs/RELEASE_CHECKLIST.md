@@ -117,6 +117,8 @@ to track a run. One issue per pre-release tag.
 - [ ] Inter + Instrument Serif fonts load self-hosted (no `fonts.googleapis.com` requests).
 - [ ] Add-on store listing in HA shows the banner image.
 - [ ] README screenshots are current (they reflect the shipped UI).
+- [ ] Required screenshot files from `docs/screenshots/README.md` exist and meet
+      the documented size limits.
 
 ## Privacy + scope
 
