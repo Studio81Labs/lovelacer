@@ -174,6 +174,13 @@ describe('findRoom — full ROOM_KEYWORDS integration', () => {
       expect(findRoom(candidate, { language: 'nl' })).toBeNull()
     },
   )
+
+  it.each(['Courant', 'Courant compteur', 'sensor.courant_compteur'] as const)(
+    'does not detect French garden from courant substring in %s',
+    (candidate) => {
+      expect(findRoom(candidate, { language: 'fr' })).toBeNull()
+    },
+  )
 })
 
 describe('findRoom — english-cluttered fixture sanity check', () => {

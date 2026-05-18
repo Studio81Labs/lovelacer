@@ -192,7 +192,7 @@ export const ROOM_KEYWORDS: RoomKeyword[] = [
   {
     canonical: 'garden',
     language: 'fr',
-    patterns: ['jardin', 'exterieur', 'terrasse', 'balcon', 'cour'],
+    patterns: ['jardin', 'exterieur', 'terrasse', 'balcon'],
   },
   {
     canonical: 'garden',
