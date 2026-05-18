@@ -20,10 +20,6 @@ Nothing changes until you click **Apply**.
 
 ---
 
-<p align="center">
-  <img src="docs/screenshots/demo.gif" alt="Lovelacer end-to-end: analyze, preview, apply." width="720">
-</p>
-
 ## Why Lovelacer exists
 
 Home Assistant is incredibly flexible, but the default dashboard often exposes too much raw structure:
