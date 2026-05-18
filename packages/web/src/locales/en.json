@@ -100,6 +100,8 @@
   "previewStep.summary": "Detected {entities} entities across {count} room. | Detected {entities} entities across {count} rooms.",
   "removedEntitiesPanel.heading": "{count} entity removed since last apply | {count} entities removed since last apply",
   "removedEntitiesPanel.misc": "Misc",
+  "removedEntitiesPanel.showFewer": "Show fewer",
+  "removedEntitiesPanel.showMore": "Show {count} more",
   "removedEntitiesPanel.wasIn": "· was in {room}",
   "roomList.avgConfidence": "{percent}% avg confidence",
   "roomList.diffAdded": "+{count} new",
