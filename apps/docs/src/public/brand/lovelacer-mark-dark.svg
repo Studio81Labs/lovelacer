@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 144" role="img" aria-label="Lovelacer">
+  <title>Lovelacer</title>
+  <!-- Top tile -->
+  <rect x="8"   y="8"   width="40" height="40" rx="4" fill="#F4B73D"/>
+  <!-- Middle tile -->
+  <rect x="8"   y="52"  width="40" height="40" rx="4" fill="#C76712"/>
+  <!-- Bottom row, left -->
+  <rect x="8"   y="96"  width="40" height="40" rx="4" fill="#F4B73D"/>
+  <!-- Bottom row, middle -->
+  <rect x="52"  y="96"  width="40" height="40" rx="4" fill="#7A3D08"/>
+  <!-- Bottom row, right (forest accent — same in both modes) -->
+  <rect x="96"  y="96"  width="40" height="40" rx="4" fill="#7CA84A"/>
+</svg>

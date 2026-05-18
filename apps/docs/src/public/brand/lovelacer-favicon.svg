@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect x="2"  y="2"   width="9" height="9" rx="1" fill="#C76712"/>
-  <rect x="2"  y="12"  width="9" height="9" rx="1" fill="#F4B73D"/>
-  <rect x="2"  y="22"  width="9" height="9" rx="1" fill="#C76712"/>
-  <rect x="12" y="22"  width="9" height="9" rx="1" fill="#FBE2A6"/>
-  <rect x="22" y="22"  width="9" height="9" rx="1" fill="#7CA84A"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Lovelacer">
+  <title>Lovelacer</title>
+  <!-- At favicon scale, simplify: 3 amber tiles + 1 forest. Drop the lightest cream tile (invisible at 16px anyway). -->
+  <rect x="2"  y="2"   width="9" height="9" rx="1.5" fill="#C76712"/>
+  <rect x="2"  y="12"  width="9" height="9" rx="1.5" fill="#F4B73D"/>
+  <rect x="2"  y="22"  width="9" height="9" rx="1.5" fill="#C76712"/>
+  <rect x="12" y="22"  width="9" height="9" rx="1.5" fill="#FBE2A6"/>
+  <rect x="22" y="22"  width="9" height="9" rx="1.5" fill="#7CA84A"/>
 </svg>
