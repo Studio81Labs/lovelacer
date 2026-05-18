@@ -100,6 +100,8 @@
   "previewStep.summary": "Detectadas {entities} entidades en {count} habitación. | Detectadas {entities} entidades en {count} habitaciones.",
   "removedEntitiesPanel.heading": "{count} entidad eliminada desde la última aplicación | {count} entidades eliminadas desde la última aplicación",
   "removedEntitiesPanel.misc": "Varios",
+  "removedEntitiesPanel.showFewer": "Mostrar menos",
+  "removedEntitiesPanel.showMore": "Mostrar {count} más",
   "removedEntitiesPanel.wasIn": "· estaba en {room}",
   "roomList.avgConfidence": "{percent} % de confianza media",
   "roomList.diffAdded": "+{count} nuevas",

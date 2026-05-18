@@ -100,6 +100,8 @@
   "previewStep.summary": "{entities} Entitäten in {count} Raum erkannt. | {entities} Entitäten in {count} Räumen erkannt.",
   "removedEntitiesPanel.heading": "{count} Entität seit der letzten Übernahme entfernt | {count} Entitäten seit der letzten Übernahme entfernt",
   "removedEntitiesPanel.misc": "Sonstige",
+  "removedEntitiesPanel.showFewer": "Weniger anzeigen",
+  "removedEntitiesPanel.showMore": "{count} weitere anzeigen",
   "removedEntitiesPanel.wasIn": "· war in {room}",
   "roomList.avgConfidence": "{percent} % durchschnittliche Konfidenz",
   "roomList.diffAdded": "+{count} neu",

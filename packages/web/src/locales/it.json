@@ -100,6 +100,8 @@
   "previewStep.summary": "Rilevate {entities} entità in {count} stanza. | Rilevate {entities} entità in {count} stanze.",
   "removedEntitiesPanel.heading": "{count} entità rimossa dall'ultima applicazione | {count} entità rimosse dall'ultima applicazione",
   "removedEntitiesPanel.misc": "Varie",
+  "removedEntitiesPanel.showFewer": "Mostra meno",
+  "removedEntitiesPanel.showMore": "Mostra altre {count}",
   "removedEntitiesPanel.wasIn": "· era in {room}",
   "roomList.avgConfidence": "{percent} % di confidenza media",
   "roomList.diffAdded": "+{count} nuove",

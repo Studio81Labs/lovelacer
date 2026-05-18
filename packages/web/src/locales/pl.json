@@ -100,6 +100,8 @@
   "previewStep.summary": "Wykryto {entities} encji w {count} pokoju. | Wykryto {entities} encji w {count} pokojach. | Wykryto {entities} encji w {count} pokojach.",
   "removedEntitiesPanel.heading": "{count} encja usunięta od ostatniego zastosowania | {count} encje usunięte od ostatniego zastosowania | {count} encji usuniętych od ostatniego zastosowania",
   "removedEntitiesPanel.misc": "Różne",
+  "removedEntitiesPanel.showFewer": "Pokaż mniej",
+  "removedEntitiesPanel.showMore": "Pokaż jeszcze {count}",
   "removedEntitiesPanel.wasIn": "· była w {room}",
   "roomList.avgConfidence": "{percent} % średniej pewności",
   "roomList.diffAdded": "+{count} nowych",

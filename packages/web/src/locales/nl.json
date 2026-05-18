@@ -100,6 +100,8 @@
   "previewStep.summary": "{entities} entiteiten gedetecteerd in {count} ruimte. | {entities} entiteiten gedetecteerd in {count} ruimtes.",
   "removedEntitiesPanel.heading": "{count} entiteit verwijderd sinds de laatste toepassing | {count} entiteiten verwijderd sinds de laatste toepassing",
   "removedEntitiesPanel.misc": "Overig",
+  "removedEntitiesPanel.showFewer": "Minder tonen",
+  "removedEntitiesPanel.showMore": "Nog {count} tonen",
   "removedEntitiesPanel.wasIn": "· stond in {room}",
   "roomList.avgConfidence": "{percent} % gemiddelde zekerheid",
   "roomList.diffAdded": "+{count} nieuw",

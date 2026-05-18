@@ -66,4 +66,65 @@ describe('RemovedEntitiesPanel', () => {
     expect(panel.text()).toContain('light.gone')
     expect(panel.text()).not.toContain('light.added')
   })
+
+  it('caps the removed entity list and lets users expand it', async () => {
+    const removed = Array.from({ length: 12 }, (_, index) => ({
+      entityId: `sensor.removed_${index + 1}`,
+      kind: 'removed' as const,
+      previousRoomId: 'office',
+    }))
+    const wrapper = mountPanel({
+      entities: removed,
+      perRoom: {},
+      totals: { added: 0, moved: 0, removed: removed.length },
+      appliedAt: 0,
+    })
+
+    expect(wrapper.findAll('[data-testid="removed-entity"]')).toHaveLength(10)
+    expect(wrapper.text()).toContain('12 entities removed since last apply')
+    expect(wrapper.text()).toContain('sensor.removed_10')
+    expect(wrapper.text()).not.toContain('sensor.removed_11')
+
+    const toggle = wrapper.get('[data-testid="removed-entities-toggle"]')
+    expect(toggle.text()).toBe('Show 2 more')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+
+    await toggle.trigger('click')
+
+    expect(wrapper.findAll('[data-testid="removed-entity"]')).toHaveLength(12)
+    expect(wrapper.text()).toContain('sensor.removed_12')
+    expect(toggle.text()).toBe('Show fewer')
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+  })
+
+  it('collapses the preview when a fresh diff arrives', async () => {
+    const makeRemoved = (prefix: string) =>
+      Array.from({ length: 12 }, (_, index) => ({
+        entityId: `sensor.${prefix}_${index + 1}`,
+        kind: 'removed' as const,
+        previousRoomId: 'office',
+      }))
+    const wrapper = mountPanel({
+      entities: makeRemoved('old'),
+      perRoom: {},
+      totals: { added: 0, moved: 0, removed: 12 },
+      appliedAt: 0,
+    })
+
+    await wrapper.get('[data-testid="removed-entities-toggle"]').trigger('click')
+    expect(wrapper.findAll('[data-testid="removed-entity"]')).toHaveLength(12)
+
+    await wrapper.setProps({
+      diff: {
+        entities: makeRemoved('new'),
+        perRoom: {},
+        totals: { added: 0, moved: 0, removed: 12 },
+        appliedAt: 1,
+      },
+    })
+
+    expect(wrapper.findAll('[data-testid="removed-entity"]')).toHaveLength(10)
+    expect(wrapper.text()).toContain('sensor.new_10')
+    expect(wrapper.text()).not.toContain('sensor.new_11')
+  })
 })
