@@ -1,9 +1,17 @@
 import { defineConfig } from 'vitepress'
 
+const siteDescription = 'Home Assistant dashboards that organize themselves.'
+const socialTitle = 'Lovelacer — Home Assistant dashboards that organize themselves'
+const socialDescription =
+  'Analyzes your HA registry, groups entities by room, and generates a clean Lovelace dashboard you can preview before applying.'
+const socialImage = '/social/og-1200x630.png'
+const socialImageAlt =
+  'Lovelacer wordmark beside a tilted screenshot of a generated Home Assistant dashboard'
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'Lovelacer',
-  description: 'Home Assistant dashboards that organize themselves.',
+  description: siteDescription,
   cleanUrls: true,
 
   head: [
@@ -26,17 +34,25 @@ export default defineConfig({
         href: '/brand/lovelacer-favicon-16.png',
       },
     ],
-    ['meta', { property: 'og:title', content: 'Lovelacer' }],
+    ['meta', { property: 'og:title', content: socialTitle }],
     [
       'meta',
       {
         property: 'og:description',
-        content: 'Home Assistant dashboards that organize themselves.',
+        content: socialDescription,
       },
     ],
-    ['meta', { property: 'og:image', content: '/brand/lovelacer-logo-1024.png' }],
+    ['meta', { property: 'og:image', content: socialImage }],
+    ['meta', { property: 'og:image:width', content: '1200' }],
+    ['meta', { property: 'og:image:height', content: '630' }],
+    ['meta', { property: 'og:image:alt', content: socialImageAlt }],
+    ['meta', { property: 'og:site_name', content: 'Lovelacer' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:title', content: socialTitle }],
+    ['meta', { name: 'twitter:description', content: socialDescription }],
+    ['meta', { name: 'twitter:image', content: socialImage }],
+    ['meta', { name: 'twitter:image:alt', content: socialImageAlt }],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
     [
