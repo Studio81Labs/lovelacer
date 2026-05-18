@@ -15,14 +15,14 @@ meaningfully.
 
 ## Required files
 
-| File                        | README role           | Shot type                  | Target size        |
-| --------------------------- | --------------------- | -------------------------- | ------------------ |
-| `demo.gif`                  | Hero motion demo      | Full happy path recording  | ≤2 MB, ≤45 seconds |
-| `01-hero.png`               | Primary product proof | Main app ready state       | ≤500 KB            |
-| `02-onboarding-welcome.png` | First-run setup       | Wizard panel crop          | ≤500 KB            |
-| `03-diff-view.png`          | Re-analysis proof     | Diff banner + changed rows | ≤500 KB            |
-| `04-suggestions.png`        | Suggestions proof     | Suggestions panel crop     | ≤500 KB            |
-| `05-applied-in-ha.png`      | End result proof      | Native HA dashboard        | ≤500 KB            |
+| File                        | README role         | Shot type                  | Target size        |
+| --------------------------- | ------------------- | -------------------------- | ------------------ |
+| `demo.gif`                  | Hero motion demo    | Full happy path recording  | ≤2 MB, ≤45 seconds |
+| `01-hero.png`               | Primary README hero | GitHub README hero card    | ≤500 KB            |
+| `02-onboarding-welcome.png` | First-run setup     | Wizard panel crop          | ≤500 KB            |
+| `03-diff-view.png`          | Re-analysis proof   | Diff banner + changed rows | ≤500 KB            |
+| `04-suggestions.png`        | Suggestions proof   | Suggestions panel crop     | ≤500 KB            |
+| `05-applied-in-ha.png`      | End result proof    | Native HA dashboard        | ≤500 KB            |
 
 Do not rename these files without updating every `<img>` reference in
 `README.md`.
@@ -53,20 +53,13 @@ real HA install if available.
 
 ## Per-shot recipe
 
-### `01-hero.png` — main view, ready state
+### `01-hero.png` — GitHub README hero card
 
-- Wizard already completed (onboarding row in SQLite has `completed_at`
-  set).
-- Click **Analyze**, wait for the preview to render.
-- Expand 2 rooms with mixed confidence pills.
-- Visible: the new mark + wordmark header, HealthBar (HA connected),
-  DiffBanner (with non-zero counts), SuggestionsPanel (1–2 suggestions
-  visible), RoomList (3–4 rooms with at least one expanded), MiscBucket
-  header (collapsed), DashboardPreview, ApplyBar.
-- Capture full page (Chrome DevTools → Capture full size screenshot).
-- This is the most important still image. If the page is too tall, keep
-  the top of the app, room list, dashboard preview, and apply bar visible;
-  it is okay if lower panels require scrolling.
+- Use the branded static hero card for the top of the GitHub README.
+- Visible: Lovelacer mark, wordmark, tagline, repository URL, and a
+  generated HA dashboard screenshot.
+- Keep the card at 1280 × 640 so it stays readable in GitHub's centered
+  README image layout.
 
 ### `02-onboarding-welcome.png` — wizard welcome step
 
