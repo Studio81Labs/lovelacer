@@ -217,9 +217,6 @@ before expanding into broader entity management workflows.
 | [`docs/HEURISTICS.md`](./docs/HEURISTICS.md)                     | Room detection, multi-language matching, and confidence scoring        |
 | [`docs/DASHBOARD_GENERATION.md`](./docs/DASHBOARD_GENERATION.md) | View layout, domain card mapping, and example outputs                  |
 | [`docs/AI_FEATURES.md`](./docs/AI_FEATURES.md)                   | Optional AI design, provider abstraction, and privacy boundaries       |
-| [`docs/SMART_PANEL_BRIDGE.md`](./docs/SMART_PANEL_BRIDGE.md)     | Design note for the FastyBird Smart Panel export target                |
-| [`docs/BRAND.md`](./docs/BRAND.md)                               | Visual identity, palette, typography, logo usage, and voice            |
-| [`docs/screenshots/README.md`](./docs/screenshots/README.md)     | Screenshot and demo GIF capture spec for the README                    |
 | [`docs/ADDON_INSTALL.md`](./docs/ADDON_INSTALL.md)               | Home Assistant add-on installation walkthrough and troubleshooting     |
 | [`docs/ROADMAP.md`](./docs/ROADMAP.md)                           | Phased plan with real tickets and acceptance criteria                  |
 
