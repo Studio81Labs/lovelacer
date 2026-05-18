@@ -3,13 +3,13 @@ const paths = [
   {
     title: 'Home Assistant Supervised',
     desc: 'You run HA OS or HA Supervised and have the add-on store. Add the custom repository, click Install, open Lovelacer from the sidebar.',
-    href: '/install/supervised',
+    href: '/docs/install/supervised',
     primary: true,
   },
   {
     title: 'Standalone Docker',
     desc: 'You run HA Core, HA Container, or want a local dev runtime. Run the published image with a long-lived access token. Same features.',
-    href: '/install/standalone-docker',
+    href: '/docs/install/standalone-docker',
     primary: false,
   },
 ]
@@ -35,9 +35,9 @@ const paths = [
       </div>
 
       <div class="lc-install__links">
-        <a href="/architecture">Architecture</a>
+        <a href="/docs/architecture">Architecture</a>
         <span class="lc-install__sep">·</span>
-        <a href="/faq">FAQ</a>
+        <a href="/docs/faq">FAQ</a>
         <span class="lc-install__sep">·</span>
         <a href="https://github.com/Studio81Labs/lovelacer">GitHub</a>
         <span class="lc-install__sep">·</span>

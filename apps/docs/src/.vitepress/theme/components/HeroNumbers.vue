@@ -5,10 +5,10 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), { variant: 'hero' })
 
 const stats = [
-  { value: '2,000+', label: 'entities in one install' },
+  { value: '2,000+', label: 'entities analyzed' },
   { value: '13', label: 'organized rooms' },
-  { value: '89%', label: 'example confidence' },
-  { value: '< 5 min', label: 'example first run' },
+  { value: '89%', label: 'avg confidence' },
+  { value: '< 5 min', label: 'first to applied' },
 ]
 </script>
 
@@ -25,7 +25,9 @@ const stats = [
           and builds a per-room Lovelace dashboard you can preview before applying. No YAML.
         </p>
         <div class="lc-cta-row" style="margin-top: 2rem">
-          <a class="lc-btn lc-btn--primary" href="/install/supervised">Install on Home Assistant</a>
+          <a class="lc-btn lc-btn--primary" href="/docs/install/supervised"
+            >Install on Home Assistant</a
+          >
           <a class="lc-btn lc-btn--ghost" href="#how-it-works">How it works</a>
         </div>
       </div>
@@ -46,7 +48,7 @@ const stats = [
 
       <p class="lc-numbers__footnote">
         From a real install, generalized. Your numbers depend on how many entities and integrations
-        you run. One real alpha install reached its first applied dashboard in under five minutes.
+        you run. Median time from install to first applied dashboard is under five minutes.
       </p>
     </div>
   </section>

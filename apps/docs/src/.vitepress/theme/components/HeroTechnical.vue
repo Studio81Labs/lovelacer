@@ -37,8 +37,10 @@ const columns = [
           external call is opt-in.
         </p>
         <div class="lc-cta-row" style="margin-top: 2rem">
-          <a class="lc-btn lc-btn--primary" href="/install/supervised">Install on Home Assistant</a>
-          <a class="lc-btn lc-btn--ghost" href="/architecture">Read the architecture</a>
+          <a class="lc-btn lc-btn--primary" href="/docs/install/supervised"
+            >Install on Home Assistant</a
+          >
+          <a class="lc-btn lc-btn--ghost" href="/docs/architecture">Read the architecture</a>
         </div>
       </div>
 

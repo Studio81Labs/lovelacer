@@ -20,7 +20,9 @@ const props = withDefaults(defineProps<Props>(), { variant: 'hero' })
           home — one tab per room, cards grouped by what they do.
         </p>
         <div class="lc-cta-row" style="margin-top: 2rem">
-          <a class="lc-btn lc-btn--primary" href="/install/supervised">Install on Home Assistant</a>
+          <a class="lc-btn lc-btn--primary" href="/docs/install/supervised"
+            >Install on Home Assistant</a
+          >
           <a class="lc-btn lc-btn--ghost" href="#how-it-works">How it works</a>
         </div>
       </div>
