@@ -167,7 +167,7 @@ export const ROOM_KEYWORDS: RoomKeyword[] = [
   },
   { canonical: 'hallway', language: 'fr', patterns: ['couloir', 'entree', 'hall'] },
   { canonical: 'hallway', language: 'it', patterns: ['corridoio', 'ingresso', 'atrio'] },
-  { canonical: 'hallway', language: 'nl', patterns: ['gang', 'hal', 'entree'] },
+  { canonical: 'hallway', language: 'nl', patterns: ['gang', 'entree'] },
   { canonical: 'hallway', language: 'pl', patterns: ['korytarz', 'przedpokoj', 'wejscie'] },
 
   // ── garage ───────────────────────────────────────────────────────

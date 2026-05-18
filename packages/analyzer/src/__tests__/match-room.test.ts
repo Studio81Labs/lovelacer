@@ -167,6 +167,13 @@ describe('findRoom — full ROOM_KEYWORDS integration', () => {
       expect(m!.language).toBe(language)
     },
   )
+
+  it.each(['Halogen Lamp', 'light.halogen_lamp'] as const)(
+    'does not detect Dutch hallway from halogen substring in %s',
+    (candidate) => {
+      expect(findRoom(candidate, { language: 'nl' })).toBeNull()
+    },
+  )
 })
 
 describe('findRoom — english-cluttered fixture sanity check', () => {
