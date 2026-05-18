@@ -1,13 +1,5 @@
 <p align="center">
-  <img src="packages/web/public/brand/lovelacer-lockup.svg" width="320" alt="Lovelacer">
-</p>
-
-<p align="center">
-  <em>Home Assistant dashboards that organize themselves.</em>
-</p>
-
-<p align="center">
-  Point Lovelacer at your Home Assistant install and get a clean starting dashboard you can actually use — in under five minutes, without writing YAML.
+  <img src="docs/screenshots/01-hero.png" alt="Lovelacer — Home Assistant dashboards that organize themselves" width="960">
 </p>
 
 <p align="center">
@@ -32,18 +24,12 @@ Lovelacer does that weekend's work in five minutes — read the entity registry,
 
 ## What you get
 
-|                                                                                                        |                                                                                                |
-| :----------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------: |
-| <img src="docs/screenshots/01-hero.png" alt="Main view: rooms detected, dashboard preview, apply bar"> | <img src="docs/screenshots/02-onboarding-welcome.png" alt="First-run wizard: pick a language"> |
-|              The main view after Analyze. Confidence pills, dashboard preview, apply bar.              |                  The first-run wizard. Pick a language; the rest auto-fills.                   |
-|     <img src="docs/screenshots/03-diff-view.png" alt="Re-analyze diff banner with per-row badges">     |            <img src="docs/screenshots/04-suggestions.png" alt="Suggestions panel">             |
-|                   Re-analyze after you add devices. The diff view shows what moved.                    |                     Smart suggestions. Accept improvements with one click.                     |
-
-<p align="center">
-  <img src="docs/screenshots/05-applied-in-ha.png" alt="The generated dashboard rendered inside HA's Lovelace UI" width="720">
-</p>
-
-<p align="center"><sub>The result. A native HA dashboard. No custom cards required.</sub></p>
+|                                                                                                |                                                                                                                  |
+| :--------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------: |
+| <img src="docs/screenshots/02-onboarding-welcome.png" alt="First-run wizard: pick a language"> |          <img src="docs/screenshots/03-diff-view.png" alt="Re-analyze diff banner with per-row badges">          |
+|                  The first-run wizard. Pick a language; the rest auto-fills.                   |                        Re-analyze after you add devices. The diff view shows what moved.                         |
+|            <img src="docs/screenshots/04-suggestions.png" alt="Suggestions panel">             | <img src="docs/screenshots/05-applied-in-ha.png" alt="The generated dashboard rendered inside HA's Lovelace UI"> |
+|                     Smart suggestions. Accept improvements with one click.                     |                           The result. A native HA dashboard. No custom cards required.                           |
 
 ## Quick start
 
