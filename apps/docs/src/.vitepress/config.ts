@@ -1,9 +1,11 @@
 import { defineConfig } from 'vitepress'
 
+// https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'Lovelacer',
   description: 'Home Assistant dashboards that organize themselves.',
   cleanUrls: true,
+
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/brand/lovelacer-favicon.svg' }],
     [
@@ -45,44 +47,52 @@ export default defineConfig({
       },
     ],
   ],
+
   themeConfig: {
     logo: {
       light: '/brand/lovelacer-lockup.svg',
       dark: '/brand/lovelacer-lockup-dark.svg',
       alt: 'Lovelacer',
     },
-    siteTitle: false,
+    siteTitle: false, // the lockup includes the wordmark
+
+    // Slimmed top nav — marketing visitors get docs entry point + GitHub
+    // Discord nav slot left commented for when there's a community to point at.
     nav: [
-      { text: 'Install', link: '/install/supervised' },
-      { text: 'Architecture', link: '/architecture' },
-      { text: 'FAQ', link: '/faq' },
+      { text: 'Docs', link: '/docs/install/supervised', activeMatch: '/docs/' },
       { text: 'GitHub', link: 'https://github.com/Studio81Labs/lovelacer' },
       { text: 'Discuss', link: 'https://github.com/Studio81Labs/lovelacer/discussions' },
+      // { text: 'Discord', link: 'https://discord.gg/...' }, // add when ready
     ],
-    sidebar: [
-      {
-        text: 'Start',
-        items: [
-          { text: 'Overview', link: '/' },
-          { text: 'Home Assistant Supervised', link: '/install/supervised' },
-          { text: 'Standalone Docker', link: '/install/standalone-docker' },
-        ],
-      },
-      {
-        text: 'Reference',
-        items: [
-          { text: 'Architecture', link: '/architecture' },
-          { text: 'FAQ', link: '/faq' },
-        ],
-      },
-    ],
-    search: {
-      provider: 'local',
+
+    sidebar: {
+      '/docs/': [
+        {
+          text: 'Install',
+          items: [
+            { text: 'Home Assistant Supervised', link: '/docs/install/supervised' },
+            { text: 'Standalone Docker', link: '/docs/install/standalone-docker' },
+          ],
+        },
+        {
+          text: 'Reference',
+          items: [
+            { text: 'Architecture', link: '/docs/architecture' },
+            { text: 'FAQ', link: '/docs/faq' },
+          ],
+        },
+      ],
     },
+
     socialLinks: [{ icon: 'github', link: 'https://github.com/Studio81Labs/lovelacer' }],
+
     footer: {
       message: 'MIT licensed. Built for Home Assistant users who want a useful first dashboard.',
-      copyright: 'Copyright (c) Studio81 Labs',
+      copyright: 'Copyright © Studio81 Labs',
+    },
+
+    search: {
+      provider: 'local',
     },
   },
 })

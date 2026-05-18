@@ -21,7 +21,7 @@ describe('add-on release documentation', () => {
 
   it('documents the current add-on release phase and Supervisor proxy wiring', () => {
     const installDocs = readText('docs/ADDON_INSTALL.md')
-    const publishedInstallDocs = readText('apps/docs/src/install/supervised.md')
+    const publishedInstallDocs = readText('apps/docs/src/docs/install/supervised.md')
 
     expect(runScript).toContain(`export HA_URL="${expectedHttpProxy}"`)
     expect(runScript).toContain(`export HA_WEBSOCKET_URL="${expectedWebsocketProxy}"`)
@@ -39,7 +39,7 @@ describe('add-on release documentation', () => {
 
   it('keeps architecture auth text aligned with runtime endpoints', () => {
     const architecture = readText('docs/ARCHITECTURE.md')
-    const publishedArchitecture = readText('apps/docs/src/architecture.md')
+    const publishedArchitecture = readText('apps/docs/src/docs/architecture.md')
 
     for (const doc of [architecture, publishedArchitecture]) {
       expect(doc).toContain(expectedHttpProxy)

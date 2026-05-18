@@ -30,20 +30,24 @@ describe('docs site workspace', () => {
   test('publishes the Phase 2 docs content required by the roadmap', () => {
     const requiredPages = [
       'apps/docs/src/index.md',
-      'apps/docs/src/install/supervised.md',
-      'apps/docs/src/install/standalone-docker.md',
-      'apps/docs/src/architecture.md',
-      'apps/docs/src/faq.md',
+      'apps/docs/src/docs/install/supervised.md',
+      'apps/docs/src/docs/install/standalone-docker.md',
+      'apps/docs/src/docs/architecture.md',
+      'apps/docs/src/docs/faq.md',
     ]
 
     for (const page of requiredPages) {
       expect(existsSync(join(repoRoot, page)), page).toBe(true)
     }
 
-    expect(readText('apps/docs/src/install/supervised.md')).toContain('Home Assistant Supervised')
-    expect(readText('apps/docs/src/install/standalone-docker.md')).toContain('standalone Docker')
-    expect(readText('apps/docs/src/architecture.md')).toContain('@lovelacer/ha-client')
-    expect(readText('apps/docs/src/faq.md')).toContain('AI features')
+    expect(readText('apps/docs/src/docs/install/supervised.md')).toContain(
+      'Home Assistant Supervised',
+    )
+    expect(readText('apps/docs/src/docs/install/standalone-docker.md')).toContain(
+      'standalone Docker',
+    )
+    expect(readText('apps/docs/src/docs/architecture.md')).toContain('@lovelacer/ha-client')
+    expect(readText('apps/docs/src/docs/faq.md')).toContain('AI features')
   })
 
   test('wires the marketing homepage theme and assets', () => {
@@ -74,7 +78,7 @@ describe('docs site workspace', () => {
       'HeroBeforeAfter',
     )
     expect(readText('apps/docs/src/.vitepress/theme/components/SectionInstall.vue')).toContain(
-      '/install/supervised',
+      '/docs/install/supervised',
     )
   })
 
