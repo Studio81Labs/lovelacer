@@ -3,14 +3,17 @@ import { createI18n } from 'vue-i18n'
 import en from '../../locales/en.json'
 import cs from '../../locales/cs.json'
 import de from '../../locales/de.json'
+import pl from '../../locales/pl.json'
+import { pluralRules } from '../index.js'
 
-function makeI18n(locale: 'en' | 'cs' | 'de') {
+function makeI18n(locale: 'en' | 'cs' | 'de' | 'pl') {
   return createI18n({
     legacy: false,
     locale,
     fallbackLocale: 'en',
     flatJson: true,
-    messages: { en, cs, de },
+    messages: { en, cs, de, pl },
+    pluralRules,
   })
 }
 
@@ -70,5 +73,27 @@ describe('plural rules — German (2 forms: 1 / other)', () => {
     const singularNoCount = singular.replace(/\d+/, '')
     const pluralNoCount = plural.replace(/\d+/, '')
     expect(singularNoCount).not.toBe(pluralNoCount)
+  })
+})
+
+describe('plural rules — Polish (3 forms: 1 / few / many)', () => {
+  const i18n = makeI18n('pl')
+  const t = i18n.global.t
+
+  it('dispatches singular form for count=1', () => {
+    expect(t('dashboardPreview.willCreate', { count: 1 }, 1)).toBe('Utworzy 1 widok dashboardu')
+  })
+
+  it('dispatches few-form for counts ending in 2-4 outside 12-14', () => {
+    expect(t('dashboardPreview.willCreate', { count: 2 }, 2)).toBe('Utworzy 2 widoki dashboardu')
+    expect(t('dashboardPreview.willCreate', { count: 22 }, 22)).toBe('Utworzy 22 widoki dashboardu')
+  })
+
+  it('dispatches many-form for 0, 5+, and teen counts', () => {
+    expect(t('dashboardPreview.willCreate', { count: 0 }, 0)).toBe('Utworzy 0 widoków dashboardu')
+    expect(t('dashboardPreview.willCreate', { count: 5 }, 5)).toBe('Utworzy 5 widoków dashboardu')
+    expect(t('dashboardPreview.willCreate', { count: 12 }, 12)).toBe(
+      'Utworzy 12 widoków dashboardu',
+    )
   })
 })

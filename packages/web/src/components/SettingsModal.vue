@@ -144,6 +144,11 @@ onMounted(async () => {
             <option value="en">{{ t('settings.uiLanguage.option.en') }}</option>
             <option value="cs">{{ t('settings.uiLanguage.option.cs') }}</option>
             <option value="de">{{ t('settings.uiLanguage.option.de') }}</option>
+            <option value="es">{{ t('settings.uiLanguage.option.es') }}</option>
+            <option value="fr">{{ t('settings.uiLanguage.option.fr') }}</option>
+            <option value="it">{{ t('settings.uiLanguage.option.it') }}</option>
+            <option value="nl">{{ t('settings.uiLanguage.option.nl') }}</option>
+            <option value="pl">{{ t('settings.uiLanguage.option.pl') }}</option>
           </select>
         </div>
 
@@ -164,6 +169,12 @@ onMounted(async () => {
             <option value="auto">{{ t('detectionLanguage.option.auto') }}</option>
             <option value="en">{{ t('detectionLanguage.option.en') }}</option>
             <option value="cs">{{ t('detectionLanguage.option.cs') }}</option>
+            <option value="de">{{ t('detectionLanguage.option.de') }}</option>
+            <option value="es">{{ t('detectionLanguage.option.es') }}</option>
+            <option value="fr">{{ t('detectionLanguage.option.fr') }}</option>
+            <option value="it">{{ t('detectionLanguage.option.it') }}</option>
+            <option value="nl">{{ t('detectionLanguage.option.nl') }}</option>
+            <option value="pl">{{ t('detectionLanguage.option.pl') }}</option>
           </select>
           <p class="mt-1 text-xs text-stone-500">
             {{ t('settings.detectionLanguage.help') }}

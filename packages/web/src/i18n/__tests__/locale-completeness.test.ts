@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import en from '../../locales/en.json'
 import cs from '../../locales/cs.json'
 import de from '../../locales/de.json'
+import es from '../../locales/es.json'
+import fr from '../../locales/fr.json'
+import itLocale from '../../locales/it.json'
+import nl from '../../locales/nl.json'
+import pl from '../../locales/pl.json'
 
 function flatten(obj: Record<string, unknown>, prefix = ''): string[] {
   const keys: string[] = []
@@ -18,28 +23,19 @@ function flatten(obj: Record<string, unknown>, prefix = ''): string[] {
 
 describe('locale completeness', () => {
   const enKeys = new Set(flatten(en as Record<string, unknown>))
+  const locales = { cs, de, es, fr, it: itLocale, nl, pl } as const
 
-  it('cs.json contains every key from en.json', () => {
-    const csKeys = new Set(flatten(cs as Record<string, unknown>))
-    const missing = Array.from(enKeys).filter((k) => !csKeys.has(k))
-    expect(missing, `missing ${missing.length} key(s) in cs.json`).toEqual([])
-  })
+  for (const [locale, messages] of Object.entries(locales)) {
+    it(`${locale}.json contains every key from en.json`, () => {
+      const localeKeys = new Set(flatten(messages as Record<string, unknown>))
+      const missing = Array.from(enKeys).filter((k) => !localeKeys.has(k))
+      expect(missing, `missing ${missing.length} key(s) in ${locale}.json`).toEqual([])
+    })
 
-  it('de.json contains every key from en.json', () => {
-    const deKeys = new Set(flatten(de as Record<string, unknown>))
-    const missing = Array.from(enKeys).filter((k) => !deKeys.has(k))
-    expect(missing, `missing ${missing.length} key(s) in de.json`).toEqual([])
-  })
-
-  it('cs.json does not contain stray keys not in en.json', () => {
-    const csKeys = Array.from(flatten(cs as Record<string, unknown>))
-    const extra = csKeys.filter((k) => !enKeys.has(k))
-    expect(extra, `${extra.length} stray key(s) in cs.json`).toEqual([])
-  })
-
-  it('de.json does not contain stray keys not in en.json', () => {
-    const deKeys = Array.from(flatten(de as Record<string, unknown>))
-    const extra = deKeys.filter((k) => !enKeys.has(k))
-    expect(extra, `${extra.length} stray key(s) in de.json`).toEqual([])
-  })
+    it(`${locale}.json does not contain stray keys not in en.json`, () => {
+      const localeKeys = Array.from(flatten(messages as Record<string, unknown>))
+      const extra = localeKeys.filter((k) => !enKeys.has(k))
+      expect(extra, `${extra.length} stray key(s) in ${locale}.json`).toEqual([])
+    })
+  }
 })

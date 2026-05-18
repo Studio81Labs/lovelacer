@@ -140,6 +140,54 @@ describe('findRoom — full ROOM_KEYWORDS integration', () => {
     const m = findRoom('Master koupelna svetlo')
     expect(m!.canonical).toBe('bathroom')
   })
+
+  it.each([
+    ['de', 'Wohnzimmer Lampe', 'living_room'],
+    ['es', 'Luz del salon', 'living_room'],
+    ['fr', 'Lampe du salon', 'living_room'],
+    ['it', 'Luce soggiorno', 'living_room'],
+    ['nl', 'Woonkamer lamp', 'living_room'],
+    ['pl', 'Salon lampa', 'living_room'],
+  ] as const)('detects %s room keywords', (language, candidate, expectedRoom) => {
+    const m = findRoom(candidate, { language })
+    expect(m).not.toBeNull()
+    expect(m!.canonical).toBe(expectedRoom)
+    expect(m!.language).toBe(language)
+  })
+
+  it.each([
+    ['es', 'Habitación de invitados', 'guest_room'],
+    ['fr', "Chambre d'amis", 'guest_room'],
+  ] as const)(
+    'detects %s localized guest-room labels before generic bedroom labels',
+    (language, candidate, expectedRoom) => {
+      const m = findRoom(candidate, { language })
+      expect(m).not.toBeNull()
+      expect(m!.canonical).toBe(expectedRoom)
+      expect(m!.language).toBe(language)
+    },
+  )
+
+  it.each(['Halogen Lamp', 'light.halogen_lamp'] as const)(
+    'does not detect Dutch hallway from halogen substring in %s',
+    (candidate) => {
+      expect(findRoom(candidate, { language: 'nl' })).toBeNull()
+    },
+  )
+
+  it.each(['Courant', 'Courant compteur', 'sensor.courant_compteur'] as const)(
+    'does not detect French garden from courant substring in %s',
+    (candidate) => {
+      expect(findRoom(candidate, { language: 'fr' })).toBeNull()
+    },
+  )
+
+  it.each(['Halloween lights', 'binary_sensor.hall_effect'] as const)(
+    'does not detect French hallway from hall substring in %s',
+    (candidate) => {
+      expect(findRoom(candidate, { language: 'fr' })).toBeNull()
+    },
+  )
 })
 
 describe('findRoom — english-cluttered fixture sanity check', () => {

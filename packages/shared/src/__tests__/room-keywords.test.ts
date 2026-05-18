@@ -1,27 +1,28 @@
 import { describe, it, expect } from 'vitest'
 import { CANONICAL_ROOMS } from '../constants.js'
 import { ROOM_KEYWORDS } from '../room-keywords.js'
-import type { LanguageCode } from '../index.js'
+import { SUPPORTED_LANGUAGES, type LanguageCode } from '../index.js'
 
-const NORMALIZED_PATTERN = /^[a-z0-9 ]+$/
+const NORMALIZED_PATTERN = /^[a-z0-9 ']+$/
 const NON_MISC_ROOMS = CANONICAL_ROOMS.filter((r) => r !== 'misc')
+const EXPECTED_DETECTION_LANGUAGES = ['auto', 'en', 'cs', 'de', 'es', 'fr', 'it', 'nl', 'pl']
 
 describe('ROOM_KEYWORDS', () => {
-  it('covers every non-misc canonical room in English', () => {
-    for (const room of NON_MISC_ROOMS) {
-      const enRules = ROOM_KEYWORDS.filter((r) => r.canonical === room && r.language === 'en')
-      expect(enRules.length, `missing English rules for ${room}`).toBeGreaterThanOrEqual(1)
+  it('exposes every shipped keyword language as a detection-language option', () => {
+    expect(SUPPORTED_LANGUAGES).toEqual(EXPECTED_DETECTION_LANGUAGES)
+  })
+
+  it('covers every non-misc canonical room in every explicit detection language', () => {
+    for (const language of SUPPORTED_LANGUAGES) {
+      if (language === 'auto') continue
+      for (const room of NON_MISC_ROOMS) {
+        const rules = ROOM_KEYWORDS.filter((r) => r.canonical === room && r.language === language)
+        expect(rules.length, `missing ${language} rules for ${room}`).toBeGreaterThanOrEqual(1)
+      }
     }
   })
 
-  it('covers every non-misc canonical room in Czech', () => {
-    for (const room of NON_MISC_ROOMS) {
-      const csRules = ROOM_KEYWORDS.filter((r) => r.canonical === room && r.language === 'cs')
-      expect(csRules.length, `missing Czech rules for ${room}`).toBeGreaterThanOrEqual(1)
-    }
-  })
-
-  it('every pattern is pre-normalized (lowercase, no diacritics, only [a-z0-9 ])', () => {
+  it("every pattern is pre-normalized (lowercase, no diacritics, only [a-z0-9 '])", () => {
     for (const rule of ROOM_KEYWORDS) {
       for (const pattern of rule.patterns) {
         expect(

@@ -4,7 +4,7 @@
  * Priority chain:
  *   1. localStorage cache (instant first-paint, no flash on reload)
  *   2. navigator.language prefix matched against supported locales
- *      (e.g. 'cs-CZ' → 'cs', 'de-AT' → 'de', 'fr-FR' → null → fallback)
+ *      (e.g. 'cs-CZ' → 'cs', 'de-AT' → 'de', 'sv-SE' → null → fallback)
  *   3. fallback to English
  *
  * Settings.uiLanguage from the server only takes effect AFTER first paint,
@@ -13,7 +13,7 @@
  */
 import type { UiLocale } from './index.js'
 
-const SUPPORTED: readonly UiLocale[] = ['en', 'cs', 'de']
+const SUPPORTED: readonly UiLocale[] = ['en', 'cs', 'de', 'es', 'fr', 'it', 'nl', 'pl']
 
 function isSupported(value: unknown): value is UiLocale {
   return typeof value === 'string' && (SUPPORTED as readonly string[]).includes(value)

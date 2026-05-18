@@ -191,7 +191,7 @@ export interface DiffResult {
  * stay as their string literal unions (no widening — there's no
  * CanonicalRoomId concern here).
  */
-export type SettingsLanguage = 'auto' | 'en' | 'cs'
+export type SettingsLanguage = 'auto' | 'en' | 'cs' | 'de' | 'es' | 'fr' | 'it' | 'nl' | 'pl'
 
 export type SettingsCardPack = 'default'
 
@@ -200,7 +200,7 @@ export type SettingsCardPack = 'default'
  * web's vue-i18n `UiLocale` is the same string union; this type lives
  * on `Settings` because the field is server-persisted.
  */
-export type UiLanguage = 'en' | 'cs' | 'de'
+export type UiLanguage = 'en' | 'cs' | 'de' | 'es' | 'fr' | 'it' | 'nl' | 'pl'
 
 export interface SettingsSections {
   welcome: boolean

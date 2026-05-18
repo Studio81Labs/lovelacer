@@ -9,7 +9,7 @@ The room detection algorithm. Determines, for every entity in the registry, whic
 1. **Trust HA first.** If the user has set up areas, we use them. We don't override explicit user data.
 2. **Be transparent about confidence.** Every assignment has a score. Low scores surface in the UI for review.
 3. **Fail to "Misc," not to wrong placement.** Better to bucket an unknown into a Misc room than confidently place it in the wrong one.
-4. **Multi-language from day one.** ~half of HA's user base is non-English-speaking; English-only matching is a non-starter. Current shipped keyword data covers EN, CS, and DE; the settings UI exposes Auto, EN, and CS.
+4. **Multi-language from day one.** ~half of HA's user base is non-English-speaking; English-only matching is a non-starter. Current shipped keyword data covers EN, CS, DE, ES, FR, IT, NL, and PL; the settings UI exposes each language plus Auto.
 5. **Respect overrides forever.** Once a user manually places an entity, we never re-decide for them.
 
 ## Detection priority chain
@@ -71,11 +71,11 @@ A `RoomKeyword` is a tuple of canonical room ID + language + matchers.
 
 There are three related language surfaces:
 
-- `LanguageCode` in `packages/shared/src/types.ts` declares EN, CS, DE, ES, FR, IT, PL, and NL so adding a future keyword pack stays a data change.
-- `ROOM_KEYWORDS` in `packages/shared/src/room-keywords.ts` is the keyword data that ships today. It currently contains EN, CS, and DE rows.
-- `SUPPORTED_LANGUAGES` is the user-facing detection setting. It currently exposes `auto`, `en`, and `cs`; `auto` matches all shipped keyword rows, including DE.
+- `LanguageCode` in `packages/shared/src/types.ts` declares EN, CS, DE, ES, FR, IT, PL, and NL.
+- `ROOM_KEYWORDS` in `packages/shared/src/room-keywords.ts` is the keyword data that ships today. It currently contains rows for every `LanguageCode`.
+- `SUPPORTED_LANGUAGES` is the user-facing detection setting. It currently exposes `auto`, `en`, `cs`, `de`, `es`, `fr`, `it`, `nl`, and `pl`; `auto` matches all shipped keyword rows.
 - Generated room titles follow the same setting: `auto` preserves HA area names
-  when available, while explicit languages (`en`, `cs`) use localized canonical
+  when available, while explicit languages use localized canonical
   room names so users can control the dashboard language independently of their
   HA area labels.
 
@@ -138,7 +138,7 @@ const KEYWORDS: RoomKeyword[] = [
 ]
 ```
 
-The complete keyword table lives in `packages/shared/src/room-keywords.ts` — checked in, version-controlled, community-extensible. Today it ships ~14 canonical rooms × 3 keyword languages (EN, CS, DE) plus aliases. The broader `LanguageCode` union reserves ES, FR, IT, PL, and NL for future additions.
+The complete keyword table lives in `packages/shared/src/room-keywords.ts` — checked in, version-controlled, community-extensible. Today it ships ~14 canonical rooms × 8 keyword languages (EN, CS, DE, ES, FR, IT, NL, PL) plus aliases.
 
 ### Normalization before matching
 
@@ -156,7 +156,7 @@ So `Light.Master_Bedroom_Lamp` becomes `light master bedroom lamp` and matches `
 Per Add-on `language` option:
 
 - `auto` (default) — try all loaded languages, take the highest-confidence match
-- explicit code — restrict matching to that language pack only. The user-facing setting currently supports `en` and `cs`; DE keywords participate through `auto` but are not yet an explicit selector option.
+- explicit code — restrict matching to that language pack only. The user-facing setting currently supports `en`, `cs`, `de`, `es`, `fr`, `it`, `nl`, and `pl`.
 
 `auto` works because keyword sets are designed to minimize cross-language collisions. `kuchyne` won't match anything in English; `kitchen` won't match anything in Czech.
 

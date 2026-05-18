@@ -1,3 +1,11 @@
+## Unreleased
+
+- UI translations now cover English, Czech, German, Spanish, French, Italian,
+  Dutch, and Polish. Browser-language detection and Settings → Display language
+  now expose every shipped UI locale.
+- Room detection keyword packs and generated canonical room titles now cover
+  the same EN / CS / DE / ES / FR / IT / NL / PL language set.
+
 ## 0.5.0
 
 ### Phase 2 — screenshot-capture install build
