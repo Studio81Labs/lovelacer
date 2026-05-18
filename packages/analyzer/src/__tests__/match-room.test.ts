@@ -154,6 +154,19 @@ describe('findRoom — full ROOM_KEYWORDS integration', () => {
     expect(m!.canonical).toBe(expectedRoom)
     expect(m!.language).toBe(language)
   })
+
+  it.each([
+    ['es', 'Habitación de invitados', 'guest_room'],
+    ['fr', "Chambre d'amis", 'guest_room'],
+  ] as const)(
+    'detects %s localized guest-room labels before generic bedroom labels',
+    (language, candidate, expectedRoom) => {
+      const m = findRoom(candidate, { language })
+      expect(m).not.toBeNull()
+      expect(m!.canonical).toBe(expectedRoom)
+      expect(m!.language).toBe(language)
+    },
+  )
 })
 
 describe('findRoom — english-cluttered fixture sanity check', () => {

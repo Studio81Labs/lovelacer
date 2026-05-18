@@ -3,7 +3,7 @@ import { CANONICAL_ROOMS } from '../constants.js'
 import { ROOM_KEYWORDS } from '../room-keywords.js'
 import { SUPPORTED_LANGUAGES, type LanguageCode } from '../index.js'
 
-const NORMALIZED_PATTERN = /^[a-z0-9 ]+$/
+const NORMALIZED_PATTERN = /^[a-z0-9 ']+$/
 const NON_MISC_ROOMS = CANONICAL_ROOMS.filter((r) => r !== 'misc')
 const EXPECTED_DETECTION_LANGUAGES = ['auto', 'en', 'cs', 'de', 'es', 'fr', 'it', 'nl', 'pl']
 
@@ -22,7 +22,7 @@ describe('ROOM_KEYWORDS', () => {
     }
   })
 
-  it('every pattern is pre-normalized (lowercase, no diacritics, only [a-z0-9 ])', () => {
+  it("every pattern is pre-normalized (lowercase, no diacritics, only [a-z0-9 '])", () => {
     for (const rule of ROOM_KEYWORDS) {
       for (const pattern of rule.patterns) {
         expect(

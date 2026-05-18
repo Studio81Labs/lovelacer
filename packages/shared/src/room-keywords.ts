@@ -5,7 +5,7 @@ import type { RoomKeyword } from './types.js'
  * to detect which canonical room an entity belongs to.
  *
  * STORAGE CONVENTION: patterns and excludes are stored PRE-NORMALIZED —
- * lowercase, no diacritics, single-space-separated, only [a-z0-9 ]. The
+ * lowercase, no diacritics, single-space-separated, only [a-z0-9 ']. The
  * matcher normalizes its input the same way and uses substring matching.
  * Writing `kuchyně` here will silently fail to match anything; the schema
  * test in __tests__/room-keywords.test.ts catches this at CI time.
@@ -305,12 +305,26 @@ export const ROOM_KEYWORDS: RoomKeyword[] = [
   {
     canonical: 'guest_room',
     language: 'es',
-    patterns: ['habitacion invitados', 'cuarto invitados', 'dormitorio invitados'],
+    patterns: [
+      'habitacion invitados',
+      'habitacion de invitados',
+      'cuarto invitados',
+      'cuarto de invitados',
+      'dormitorio invitados',
+      'dormitorio de invitados',
+    ],
   },
   {
     canonical: 'guest_room',
     language: 'fr',
-    patterns: ['chambre invite', 'chambre invites', 'chambre amis'],
+    patterns: [
+      'chambre invite',
+      'chambre invites',
+      "chambre d'invite",
+      "chambre d'invites",
+      'chambre amis',
+      "chambre d'amis",
+    ],
   },
   {
     canonical: 'guest_room',
