@@ -1,3 +1,5 @@
+# Lovelacer
+
 <p align="center">
   <img src="docs/screenshots/01-hero.png" alt="Lovelacer — Home Assistant dashboards that organize themselves" width="960">
 </p>
@@ -8,21 +10,184 @@
   <a href="https://github.com/Studio81Labs/lovelacer/actions/workflows/ci.yml"><img src="https://github.com/Studio81Labs/lovelacer/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
 </p>
 
+> Organize your Home Assistant entities and generate a clean dashboard in minutes.
+
+Lovelacer analyzes your Home Assistant setup, groups entities by room, filters noise, and generates a dashboard you can preview before applying.
+
+No YAML required.<br>
+No cloud required.<br>
+Nothing changes until you click **Apply**.
+
 ---
 
-<p align="center">
-  <img src="docs/screenshots/demo.gif" alt="Lovelacer end-to-end: analyze, preview, apply." width="720">
-</p>
+## Why Lovelacer exists
 
-<p align="center"><sub>From zero to a working dashboard in under a minute.</sub></p>
+Home Assistant is incredibly flexible, but the default dashboard often exposes too much raw structure:
 
-## Why this exists
+- duplicated sensors
+- helper entities
+- diagnostics
+- inconsistent naming
+- integrations dumping everything into one view
 
-Home Assistant is the most flexible smart home platform on the market and also the one most likely to leave a new user staring at a wall of `sensor.0x00158d000123abcd_battery` entities with no idea where to start. The official UI auto-generates a dashboard, but it's notoriously bad: every entity dumped into a single view, no grouping, no per-room structure, no opinion. The community workaround is to spend a weekend learning Lovelace YAML, custom cards, and the area/device data model.
+Lovelacer creates a cleaner starting point automatically.
 
-Lovelacer does that weekend's work in five minutes — read the entity registry, infer rooms, group sensibly, generate a real dashboard, preview before applying.
+Instead of manually organizing entities and building dashboards card by card, Lovelacer helps you:
 
-## What you get
+- detect rooms
+- group entities by domain
+- hide noise
+- preview the result
+- apply a separate generated dashboard safely
+
+## How it works
+
+### 1. Analyze your Home Assistant setup
+
+Lovelacer reads your Home Assistant entity, device, and area registries.
+
+It detects:
+
+- rooms
+- domains
+- noisy entities
+- low-confidence assignments
+
+### 2. Review and adjust
+
+Review grouped entities before anything is applied.
+
+You can:
+
+- move entities between rooms
+- hide unwanted entities
+- review low-confidence assignments
+
+### 3. Preview the generated dashboard
+
+Lovelacer generates a clean Lovelace dashboard using Home Assistant's native Sections layout.
+
+The generated dashboard:
+
+- stays fully editable in Home Assistant
+- uses built-in cards
+- is created separately from your existing dashboards
+
+### 4. Apply safely
+
+Nothing changes automatically.
+
+Lovelacer:
+
+- creates a separate dashboard
+- never overwrites your existing dashboard
+- lets you re-analyze and regenerate later
+
+## Current Scope
+
+The current release focuses on:
+
+- room detection
+- dashboard generation
+- review and preview workflow
+- safe dashboard apply flow
+
+Planned future exploration includes:
+
+- HomeKit targeting
+- Google Home targeting
+- Smart Panel export
+- optional AI-assisted suggestions
+
+These are intentionally not part of the first release.
+
+## Features
+
+- Room-based entity grouping
+- Confidence scoring
+- Entity review workflow
+- Dashboard preview
+- Storage-mode Lovelace generation
+- YAML export
+- No cloud dependency
+- No telemetry
+- Home Assistant add-on support
+- Standalone Docker support
+
+## Design Principles
+
+Lovelacer is intentionally:
+
+- local-first
+- deterministic
+- transparent
+- lightweight
+- Home Assistant-native
+
+It is **not**:
+
+- a replacement for Home Assistant
+- a custom dashboard runtime
+- an AI-first product
+- a locked cloud platform
+
+## Installation
+
+### Home Assistant Add-on
+
+Add the Lovelacer repository to Home Assistant add-ons:
+
+```txt
+https://github.com/Studio81Labs/lovelacer
+```
+
+Then:
+
+1. Install the add-on.
+2. Open Lovelacer.
+3. Click Analyze.
+4. Review the result.
+5. Apply the generated dashboard.
+
+Full add-on instructions and troubleshooting are in [`docs/ADDON_INSTALL.md`](./docs/ADDON_INSTALL.md).
+
+### Standalone Docker
+
+Standalone Docker support is available for Home Assistant Core users.
+
+Documentation coming soon.
+
+## Privacy
+
+Lovelacer works locally by default.
+
+- No telemetry
+- No cloud required
+- No external API calls
+- No data collection
+
+Future AI-assisted features will remain optional and opt-in.
+
+## Roadmap
+
+### Current Focus
+
+- stable public alpha
+- better heuristics
+- more integrations
+- improved room detection
+- dashboard polish
+
+### Exploring Next
+
+- entity targeting workflows
+- HomeKit filtering/export
+- Google Home targeting
+- Smart Panel integration
+
+See [`docs/ROADMAP.md`](./docs/ROADMAP.md) for the full project roadmap.
+
+## Screenshots
 
 |                                                                                                |                                                                                                                  |
 | :--------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------: |
@@ -31,76 +196,39 @@ Lovelacer does that weekend's work in five minutes — read the entity registry,
 |            <img src="docs/screenshots/04-suggestions.png" alt="Suggestions panel">             | <img src="docs/screenshots/05-applied-in-ha.png" alt="The generated dashboard rendered inside HA's Lovelace UI"> |
 |                     Smart suggestions. Accept improvements with one click.                     |                           The result. A native HA dashboard. No custom cards required.                           |
 
-## Quick start
+## Development Status
 
-1. In Home Assistant, open **Settings → Add-ons → ⋮ → Repositories**, paste `https://github.com/Studio81Labs/lovelacer`, and click **Add**.
-2. Find the **Lovelacer** card in the add-on store, click **Install**, then **Start**.
-3. Click **Open Web UI** and follow the wizard.
+Public alpha in progress.
 
-Full instructions and troubleshooting: [`docs/ADDON_INSTALL.md`](./docs/ADDON_INSTALL.md).
+The current version is focused on validating:
 
-## Architecture at a glance
+- heuristics quality
+- dashboard usefulness
+- review workflow UX
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Home Assistant Core                       │
-│  ┌──────────┐  ┌────────────┐  ┌────────────────────────┐  │
-│  │ Entities │  │   Areas    │  │  Lovelace Storage API  │  │
-│  └────┬─────┘  └──────┬─────┘  └───────────┬────────────┘  │
-└───────┼───────────────┼────────────────────┼───────────────┘
-        │ WebSocket API │                    │ WS lovelace/*
-        ▼               ▼                    ▲
-┌─────────────────────────────────────────────────────────────┐
-│              Lovelacer Add-on (Docker)                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐   │
-│  │ HA Client    │→ │ Analyzer +   │→ │ Generator       │   │
-│  │ (ws + rest)  │  │ Heuristics   │  │ (storage/YAML)  │   │
-│  └──────────────┘  └──────┬───────┘  └────────┬────────┘   │
-│                           ▼                   ▼             │
-│                    ┌─────────────────────────────────┐      │
-│                    │  Fastify API + SQLite (state)   │      │
-│                    └────────────────┬────────────────┘      │
-└─────────────────────────────────────┼────────────────────────┘
-                                      │ HTTP
-                                      ▼
-                              ┌──────────────┐
-                              │ Vue 3 SPA    │
-                              │ (Preview UI) │
-                              └──────────────┘
-```
-
-Full breakdown in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+before expanding into broader entity management workflows.
 
 ## Documents
 
-| File                                                             | Purpose                                                                                   |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [`docs/PRD.md`](./docs/PRD.md)                                   | Personas, problem, scope, competitive landscape, three-tier monetization, success metrics |
-| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)                 | Tech stack, components, storage-mode-vs-YAML-mode decision, HA integration                |
-| [`docs/HEURISTICS.md`](./docs/HEURISTICS.md)                     | Room detection chain, multi-language matching, confidence scoring                         |
-| [`docs/DASHBOARD_GENERATION.md`](./docs/DASHBOARD_GENERATION.md) | View layout, per-domain card mapping, example outputs                                     |
-| [`docs/AI_FEATURES.md`](./docs/AI_FEATURES.md)                   | Tier 2 / Tier 3 AI design, LLM provider abstraction, privacy boundaries                   |
-| [`docs/SMART_PANEL_BRIDGE.md`](./docs/SMART_PANEL_BRIDGE.md)     | Design note for the FastyBird Smart Panel export target                                   |
-| [`docs/BRAND.md`](./docs/BRAND.md)                               | Visual identity — palette, typography, logo usage, voice                                  |
-| [`docs/screenshots/README.md`](./docs/screenshots/README.md)     | Screenshot and demo GIF capture spec for the README                                       |
-| [`docs/ADDON_INSTALL.md`](./docs/ADDON_INSTALL.md)               | HA add-on installation walkthrough + troubleshooting                                      |
-| [`docs/ROADMAP.md`](./docs/ROADMAP.md)                           | Phased plan with real tickets and acceptance criteria                                     |
-
-## Project facts
-
-- **Name:** Lovelacer. Wordmark sets the trailing **r** in italic amber. A portmanteau of Lovelace and the agentive _-r_ suffix.
-- **Distribution:** Home Assistant Add-on (Supervisor-managed) as the primary channel, standalone Docker as a secondary one.
-- **Apply mode:** Lovelace **storage mode** by default (writes via WebSocket), with YAML export as a feature.
-- **Stack:** Node.js + Fastify backend, Vue 3 + Vite frontend, SQLite for local state.
-- **Room detection i18n:** User-selectable detection languages are Auto, EN, CS, DE, ES, FR, IT, NL, and PL. Auto matches every shipped keyword pack.
-- **UI i18n:** UI ships in English, Czech, German, Spanish, French, Italian, Dutch, and Polish (independent of room-detection language). Non-EN translations are alpha-quality; translation PRs welcome.
-- **License:** MIT. AI features are part of the same code base; using them requires runtime configuration of an LLM provider.
-- **Visual identity:** Honey amber primary, warm stone neutrals, forest green accent. Instrument Serif (display) + Inter (UI) + JetBrains Mono (code). See [`docs/BRAND.md`](./docs/BRAND.md).
-
-## Roadmap
-
-Phase 2 (alpha-ready) ships now. Phase 3 starts after public-alpha feedback. See [`docs/ROADMAP.md`](./docs/ROADMAP.md) for the full plan.
+| File                                                             | Purpose                                                                |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [`docs/PRD.md`](./docs/PRD.md)                                   | Personas, problem, scope, competitive landscape, monetization, metrics |
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)                 | Tech stack, components, storage mode, and Home Assistant integration   |
+| [`docs/HEURISTICS.md`](./docs/HEURISTICS.md)                     | Room detection, multi-language matching, and confidence scoring        |
+| [`docs/DASHBOARD_GENERATION.md`](./docs/DASHBOARD_GENERATION.md) | View layout, domain card mapping, and example outputs                  |
+| [`docs/AI_FEATURES.md`](./docs/AI_FEATURES.md)                   | Optional AI design, provider abstraction, and privacy boundaries       |
+| [`docs/SMART_PANEL_BRIDGE.md`](./docs/SMART_PANEL_BRIDGE.md)     | Design note for the FastyBird Smart Panel export target                |
+| [`docs/BRAND.md`](./docs/BRAND.md)                               | Visual identity, palette, typography, logo usage, and voice            |
+| [`docs/screenshots/README.md`](./docs/screenshots/README.md)     | Screenshot and demo GIF capture spec for the README                    |
+| [`docs/ADDON_INSTALL.md`](./docs/ADDON_INSTALL.md)               | Home Assistant add-on installation walkthrough and troubleshooting     |
+| [`docs/ROADMAP.md`](./docs/ROADMAP.md)                           | Phased plan with real tickets and acceptance criteria                  |
 
 ## License
 
 MIT. See [`LICENSE`](./LICENSE).
+
+## Acknowledgements
+
+Built for the Home Assistant community.
+
+Inspired by years of manually cleaning up dashboards, filters, and entity chaos.
