@@ -181,6 +181,13 @@ describe('findRoom — full ROOM_KEYWORDS integration', () => {
       expect(findRoom(candidate, { language: 'fr' })).toBeNull()
     },
   )
+
+  it.each(['Halloween lights', 'binary_sensor.hall_effect'] as const)(
+    'does not detect French hallway from hall substring in %s',
+    (candidate) => {
+      expect(findRoom(candidate, { language: 'fr' })).toBeNull()
+    },
+  )
 })
 
 describe('findRoom — english-cluttered fixture sanity check', () => {
