@@ -46,6 +46,38 @@ describe('docs site workspace', () => {
     expect(readText('apps/docs/src/faq.md')).toContain('AI features')
   })
 
+  test('wires the marketing homepage theme and assets', () => {
+    const requiredFiles = [
+      'apps/docs/src/.vitepress/theme/layouts/HomeLayout.vue',
+      'apps/docs/src/.vitepress/theme/components/HomePage.vue',
+      'apps/docs/src/.vitepress/theme/components/HeroBeforeAfter.vue',
+      'apps/docs/src/.vitepress/theme/components/SectionInstall.vue',
+      'apps/docs/src/.vitepress/theme/styles/tokens.css',
+      'apps/docs/src/.vitepress/theme/styles/overrides.css',
+      'apps/docs/src/public/screenshots/before-ha-default.png',
+      'apps/docs/src/public/screenshots/applied-dashboard.png',
+      'apps/docs/src/public/screenshots/room-list.png',
+      'apps/docs/src/public/screenshots/diff-view.png',
+      'apps/docs/src/public/brand/lovelacer-lockup-dark.svg',
+      'apps/docs/src/public/brand/lovelacer-logo-1024.png',
+    ]
+
+    for (const file of requiredFiles) {
+      expect(existsSync(join(repoRoot, file)), file).toBe(true)
+    }
+
+    expect(readText('apps/docs/src/index.md')).toContain(
+      'Home Assistant dashboards that organize themselves',
+    )
+    expect(readText('apps/docs/src/.vitepress/theme/index.ts')).toContain('HomeLayout')
+    expect(readText('apps/docs/src/.vitepress/theme/components/HomePage.vue')).toContain(
+      'HeroBeforeAfter',
+    )
+    expect(readText('apps/docs/src/.vitepress/theme/components/SectionInstall.vue')).toContain(
+      '/install/supervised',
+    )
+  })
+
   test('builds in CI and deploys to Cloudflare Workers from main', () => {
     const ciWorkflow = readText('.github/workflows/ci.yml')
     const deployWorkflow = readText('.github/workflows/docs-pages.yml')

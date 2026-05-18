@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1573 1267" role="img" aria-label="Home Assistant's stock auto-generated dashboard">
+  <title>Home Assistant default dashboard</title>
+  <desc>Representative example of Home Assistant's automatically generated dashboard before any organization. Shows the wall of entities a typical install presents to a new user.</desc>
+
+  <!-- HA dark theme background -->
+  <rect width="1573" height="1267" fill="#111827"/>
+
+  <!-- HA sidebar simulation (narrow) -->
+  <rect x="0" y="0" width="56" height="1267" fill="#1F2937"/>
+  <rect x="14" y="20" width="28" height="28" rx="4" fill="#374151"/>
+  <rect x="14" y="60" width="28" height="28" rx="4" fill="#374151"/>
+  <rect x="14" y="100" width="28" height="28" rx="4" fill="#03A9F4"/>
+  <rect x="14" y="140" width="28" height="28" rx="4" fill="#374151"/>
+  <rect x="14" y="180" width="28" height="28" rx="4" fill="#374151"/>
+
+  <!-- Top app bar -->
+  <rect x="56" y="0" width="1517" height="56" fill="#1F2937"/>
+  <text x="80" y="34" font-family="Roboto, system-ui, sans-serif" font-size="18" fill="#F9FAFB">Overview</text>
+
+  <!-- Single view tab -->
+  <rect x="56" y="56" width="120" height="40" fill="#03A9F4"/>
+  <text x="116" y="82" font-family="Roboto, system-ui, sans-serif" font-size="14" fill="#FFFFFF" text-anchor="middle">Default</text>
+
+  <!-- Wall of entity cards — all jumbled, no grouping -->
+  <g font-family="Roboto, system-ui, sans-serif" fill="#F9FAFB">
+
+    <!-- Row 1 -->
+    <g transform="translate(80, 120)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#FFC107"/>
+      <text x="56" y="26" font-size="13">light.0x842b95fffe96f43c_l1</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">on · brightness 254</text>
+      <text x="320" y="36" font-size="13" text-anchor="end">On</text>
+    </g>
+    <g transform="translate(440, 120)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x158d000123abcd_temp</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">21.4 °C</text>
+    </g>
+    <g transform="translate(800, 120)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#FFC107"/>
+      <text x="56" y="26" font-size="13">light.0x00158d4567ef_l2</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">off</text>
+    </g>
+    <g transform="translate(1160, 120)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#10B981"/>
+      <text x="56" y="26" font-size="13">binary_sensor.motion_4a2b</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">clear</text>
+    </g>
+
+    <!-- Row 2 -->
+    <g transform="translate(80, 200)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x842b95_battery</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">87%</text>
+    </g>
+    <g transform="translate(440, 200)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x158d000a_humidity</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">52%</text>
+    </g>
+    <g transform="translate(800, 200)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x842b95_linkquality</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">192</text>
+    </g>
+    <g transform="translate(1160, 200)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x158d_voltage</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">3.1 V</text>
+    </g>
+
+    <!-- Row 3 -->
+    <g transform="translate(80, 280)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#FFC107"/>
+      <text x="56" y="26" font-size="13">switch.0xa4c138_relay_l3</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">off</text>
+    </g>
+    <g transform="translate(440, 280)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.house_lighting_row_02</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">Input 3</text>
+    </g>
+    <g transform="translate(800, 280)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">update.0x842b95_firmware</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">up to date</text>
+    </g>
+    <g transform="translate(1160, 280)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">number.0x158d_calibration</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">0.0</text>
+    </g>
+
+    <!-- Row 4 -->
+    <g transform="translate(80, 360)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#10B981"/>
+      <text x="56" y="26" font-size="13">binary_sensor.0x842_cloud</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">connected</text>
+    </g>
+    <g transform="translate(440, 360)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">select.0x842b95_power_on</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">previous</text>
+    </g>
+    <g transform="translate(800, 360)">
+      <rect width="345" height="60" rx="4" fill="#FFC107"/>
+      <text x="56" y="26" font-size="13" fill="#000">light.0x84b95fffe_l1</text>
+      <text x="56" y="44" font-size="11" fill="#3F3F46">brightness 60%</text>
+    </g>
+    <g transform="translate(1160, 360)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">button.0x842b95_reboot</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">unknown</text>
+    </g>
+
+    <!-- Row 5 -->
+    <g transform="translate(80, 440)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x00158d_rssi</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">-67 dBm</text>
+    </g>
+    <g transform="translate(440, 440)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x842b95_uptime</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">17 days</text>
+    </g>
+    <g transform="translate(800, 440)">
+      <rect width="345" height="60" rx="4" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13" fill="#000">cover.0x842b95_position</text>
+      <text x="56" y="44" font-size="11" fill="#3F3F46">75% open</text>
+    </g>
+    <g transform="translate(1160, 440)">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x842b95_power</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">2.4 W</text>
+    </g>
+
+    <!-- Row 6-9: more rows, getting smaller to imply scrolling -->
+    <g transform="translate(80, 520)" opacity="0.95">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x158d000a_current</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">0.012 A</text>
+    </g>
+    <g transform="translate(440, 520)" opacity="0.95">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x158d000a_energy</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">142.7 kWh</text>
+    </g>
+    <g transform="translate(800, 520)" opacity="0.95">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#FFC107"/>
+      <text x="56" y="26" font-size="13">light.0x00158d567abc_l3</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">off</text>
+    </g>
+    <g transform="translate(1160, 520)" opacity="0.95">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0xa4c138_device_temp</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">23.5 °C</text>
+    </g>
+
+    <g transform="translate(80, 600)" opacity="0.85">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">number.0x158d_humidity_calib</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">0.0</text>
+    </g>
+    <g transform="translate(440, 600)" opacity="0.85">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x842b95_consumption</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">0.4 W</text>
+    </g>
+    <g transform="translate(800, 600)" opacity="0.85">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">select.0x842b95_indicator</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">on</text>
+    </g>
+    <g transform="translate(1160, 600)" opacity="0.85">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">switch.0xa4c138_l1</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">off</text>
+    </g>
+
+    <g transform="translate(80, 680)" opacity="0.7">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x842_temperature</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">22.8 °C</text>
+    </g>
+    <g transform="translate(440, 680)" opacity="0.7">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x842_pressure</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">1015 hPa</text>
+    </g>
+    <g transform="translate(800, 680)" opacity="0.7">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">binary_sensor.0x158d_battery</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">normal</text>
+    </g>
+    <g transform="translate(1160, 680)" opacity="0.7">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x842b_voltage</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">3.18 V</text>
+    </g>
+
+    <g transform="translate(80, 760)" opacity="0.55">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x842_illuminance</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">123 lx</text>
+    </g>
+    <g transform="translate(440, 760)" opacity="0.55">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">number.0x158d_min_threshold</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">-10</text>
+    </g>
+    <g transform="translate(800, 760)" opacity="0.55">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">sensor.0x84_button_action</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">unknown</text>
+    </g>
+    <g transform="translate(1160, 760)" opacity="0.55">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <circle cx="30" cy="30" r="14" fill="#9CA3AF"/>
+      <text x="56" y="26" font-size="13">switch.0xa4c138_indicator</text>
+      <text x="56" y="44" font-size="11" fill="#9CA3AF">on</text>
+    </g>
+
+    <g transform="translate(80, 840)" opacity="0.35">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <text x="56" y="26" font-size="13">…</text>
+    </g>
+    <g transform="translate(440, 840)" opacity="0.35">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <text x="56" y="26" font-size="13">…</text>
+    </g>
+    <g transform="translate(800, 840)" opacity="0.35">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <text x="56" y="26" font-size="13">…</text>
+    </g>
+    <g transform="translate(1160, 840)" opacity="0.35">
+      <rect width="345" height="60" rx="4" fill="#1F2937"/>
+      <text x="56" y="26" font-size="13">…</text>
+    </g>
+
+  </g>
+
+  <!-- Gradient fade at bottom to imply more content -->
+  <defs>
+    <linearGradient id="fadeBottom" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#111827" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#111827" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+  <rect x="56" y="900" width="1517" height="367" fill="url(#fadeBottom)"/>
+
+  <!-- Helper text overlay -->
+  <text x="786" y="1180" font-family="Roboto, sans-serif" font-size="14" fill="#6B7280" text-anchor="middle" font-style="italic">…and 2,000+ more entities below.</text>
+</svg>
