@@ -1,24 +1,30 @@
 <script setup lang="ts">
+import ThemedScreenshot from './ThemedScreenshot.vue'
+
 const steps = [
   {
     n: '01',
     title: 'Open Lovelacer in your HA sidebar',
     body: "The add-on installs into Home Assistant and shows up as an ingress entry. No separate auth, no port to expose, no tokens to copy. If you're running HA Core without Supervisor, the standalone Docker image takes a long-lived access token instead.",
-    screenshot: '/screenshots/empty-state.png',
+    screenshotName: 'empty-state',
+    singleSource: true,
     alt: 'Lovelacer empty state inviting the user to click Analyze',
   },
   {
     n: '02',
     title: 'Review the proposed rooms',
     body: "Lovelacer detects rooms from your registry, scores each entity's assignment, and lists them all. Edit a room's icon or name, drag entities between rooms, or hide ones you don't want on the dashboard. The diff at the top tells you what changed since the last apply.",
-    screenshot: '/screenshots/entity-overrides.png',
-    alt: 'Per-entity override panel showing each entity in the Obývák room with a dropdown to reassign and a hide button',
+    screenshotName: 'entity-overrides',
+    darkName: 'room-detail',
+    singleSource: false,
+    alt: 'Per-entity override panel showing each entity in a room with a dropdown to reassign and a hide button',
   },
   {
     n: '03',
     title: 'Apply and look at it in HA',
     body: "Apply writes a new dashboard via HA's storage API — your existing dashboards are untouched. Open the new one from the sidebar and decide whether to keep it as default, take elements from it into your own dashboard, or ignore it. Lovelacer never overwrites anything you didn't generate with it.",
-    screenshot: '/screenshots/applied-dashboard.png',
+    screenshotName: 'ha-jidelna',
+    singleSource: false,
     alt: 'The applied dashboard in HA, showing the Jídelna view with Lights, Climate, and Other sections',
   },
 ]
@@ -40,7 +46,12 @@ const steps = [
             <p class="lc-how__step-body">{{ step.body }}</p>
           </div>
           <figure class="lc-how__step-visual">
-            <img :src="step.screenshot" :alt="step.alt" class="lc-screenshot" loading="lazy" />
+            <ThemedScreenshot
+              :name="step.screenshotName"
+              :dark-name="step.darkName"
+              :single-source="step.singleSource"
+              :alt="step.alt"
+            />
           </figure>
         </li>
       </ol>

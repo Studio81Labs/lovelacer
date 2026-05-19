@@ -55,11 +55,21 @@ describe('docs site workspace', () => {
       'apps/docs/src/.vitepress/theme/layouts/HomeLayout.vue',
       'apps/docs/src/.vitepress/theme/components/HomePage.vue',
       'apps/docs/src/.vitepress/theme/components/HeroBeforeAfter.vue',
+      'apps/docs/src/.vitepress/theme/components/ThemedScreenshot.vue',
       'apps/docs/src/.vitepress/theme/components/SectionInstall.vue',
       'apps/docs/src/.vitepress/theme/styles/tokens.css',
       'apps/docs/src/.vitepress/theme/styles/overrides.css',
       'apps/docs/src/public/screenshots/before-ha-default.png',
       'apps/docs/src/public/screenshots/applied-dashboard.png',
+      'apps/docs/src/public/screenshots/ha-jidelna-light.png',
+      'apps/docs/src/public/screenshots/ha-jidelna-dark.png',
+      'apps/docs/src/public/screenshots/room-list-light.png',
+      'apps/docs/src/public/screenshots/room-list-applied-light.png',
+      'apps/docs/src/public/screenshots/room-list-applied-dark.png',
+      'apps/docs/src/public/screenshots/suggestions-light.png',
+      'apps/docs/src/public/screenshots/suggestions-dark.png',
+      'apps/docs/src/public/screenshots/entity-overrides-light.png',
+      'apps/docs/src/public/screenshots/room-detail-dark.png',
       'apps/docs/src/public/screenshots/room-list.png',
       'apps/docs/src/public/screenshots/diff-view.png',
       'apps/docs/src/public/brand/lovelacer-lockup-dark.svg',
@@ -76,6 +86,18 @@ describe('docs site workspace', () => {
     expect(readText('apps/docs/src/.vitepress/theme/index.ts')).toContain('HomeLayout')
     expect(readText('apps/docs/src/.vitepress/theme/components/HomePage.vue')).toContain(
       'HeroBeforeAfter',
+    )
+    expect(readText('apps/docs/src/.vitepress/theme/components/ThemedScreenshot.vue')).toContain(
+      'useData',
+    )
+    expect(readText('apps/docs/src/.vitepress/theme/components/HeroBeforeAfter.vue')).toContain(
+      'name="ha-jidelna"',
+    )
+    expect(readText('apps/docs/src/.vitepress/theme/components/SectionFeatures.vue')).toContain(
+      ':dark-name="f.darkName"',
+    )
+    expect(readText('apps/docs/src/.vitepress/theme/components/SectionHowItWorks.vue')).toContain(
+      ':single-source="step.singleSource"',
     )
     expect(readText('apps/docs/src/.vitepress/theme/components/SectionInstall.vue')).toContain(
       '/docs/install/supervised',
