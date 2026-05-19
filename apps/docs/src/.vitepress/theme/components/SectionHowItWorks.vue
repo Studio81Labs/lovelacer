@@ -6,9 +6,9 @@ const steps = [
     n: '01',
     title: 'Open Lovelacer in your HA sidebar',
     body: "The add-on installs into Home Assistant and shows up as an ingress entry. No separate auth, no port to expose, no tokens to copy. If you're running HA Core without Supervisor, the standalone Docker image takes a long-lived access token instead.",
-    screenshotName: 'empty-state',
-    singleSource: true,
-    alt: 'Lovelacer empty state inviting the user to click Analyze',
+    screenshotName: 'onboarding-1-language',
+    singleSource: false,
+    alt: 'Lovelacer first-run onboarding screen asking the user to pick a detection language',
   },
   {
     n: '02',

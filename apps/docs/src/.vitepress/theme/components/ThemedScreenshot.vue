@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useData } from 'vitepress'
+import {
+  getScreenshotMode,
+  getScreenshotSource,
+  type ScreenshotMode,
+  type ScreenshotModeSource,
+} from './screenshotSources'
 
 interface Props {
   name: string
@@ -22,16 +28,46 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { isDark } = useData()
 
+const mode = ref<ScreenshotMode>(isDark.value ? 'dark' : 'light')
+
+function syncMode() {
+  const source: ScreenshotModeSource = { isDark: isDark.value }
+
+  if (typeof document !== 'undefined') {
+    source.hasDocumentClass = (className) => document.documentElement.classList.contains(className)
+  }
+
+  mode.value = getScreenshotMode(source)
+}
+
+let themeObserver: MutationObserver | undefined
+
+watch(isDark, syncMode, { immediate: true })
+
+onMounted(() => {
+  syncMode()
+
+  themeObserver = new MutationObserver(syncMode)
+  themeObserver.observe(document.documentElement, {
+    attributeFilter: ['class'],
+    attributes: true,
+  })
+})
+
+onBeforeUnmount(() => {
+  themeObserver?.disconnect()
+})
+
 const src = computed(() => {
-  if (props.singleSource) {
-    return `/screenshots/${props.name}.${props.ext}`
-  }
-
-  if (isDark.value) {
-    return `/screenshots/${props.darkName ?? props.name}-dark.${props.ext}`
-  }
-
-  return `/screenshots/${props.name}-light.${props.ext}`
+  return getScreenshotSource(
+    {
+      name: props.name,
+      darkName: props.darkName,
+      ext: props.ext,
+      singleSource: props.singleSource,
+    },
+    mode.value,
+  )
 })
 </script>
 
