@@ -1,21 +1,24 @@
 <script setup lang="ts">
+import ThemedScreenshot from './ThemedScreenshot.vue'
+
 const features = [
   {
     title: 'Rooms detected from your data',
     body: "Lovelacer reads HA's area, device, and entity registries — then falls back to friendly-name parsing in your language for anything HA didn't already tag. Each assignment ships with a confidence score.",
-    screenshot: '/screenshots/room-list.png',
+    screenshotName: 'room-list',
+    darkName: 'room-list-applied',
     alt: 'Lovelacer room list showing 13 rooms detected from a Czech HA install, each with entity count and confidence percentage',
   },
   {
     title: 'Preview every change before you apply',
     body: 'Re-running analysis shows you a diff: which entities are new, which moved, which disappeared. Nothing is written to your dashboard until you click Apply.',
-    screenshot: '/screenshots/diff-view.png',
-    alt: 'Diff view showing 1,730 entities removed since last apply, with detail per entity',
+    screenshotName: 'room-list-applied',
+    alt: 'Room list view after applying with a success banner at the bottom',
   },
   {
     title: 'Suggestions for where HA itself is misconfigured',
     body: 'When Lovelacer can guess what room an entity belongs to but its area_id is empty, it suggests fixing the root cause in HA. Better entity hygiene means better dashboards next time — without Lovelacer needing to keep guessing.',
-    screenshot: '/screenshots/suggestions.png',
+    screenshotName: 'suggestions',
     alt: 'Suggestions panel showing five entities with detected rooms but missing area_id, each with an "Open HA settings" button',
   },
 ]
@@ -39,7 +42,7 @@ const features = [
             <p class="lc-features__row-body">{{ f.body }}</p>
           </div>
           <figure class="lc-features__visual">
-            <img :src="f.screenshot" :alt="f.alt" class="lc-screenshot" loading="lazy" />
+            <ThemedScreenshot :name="f.screenshotName" :dark-name="f.darkName" :alt="f.alt" />
           </figure>
         </article>
       </div>
