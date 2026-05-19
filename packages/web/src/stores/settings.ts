@@ -45,6 +45,13 @@ export const useSettingsStore = defineStore('settings', () => {
   const effective = computed<Settings>(
     () => dirtyState.value ?? serverState.value ?? DEFAULT_SETTINGS,
   )
+  const hasDashboardAffectingDirty = computed(() => {
+    if (dirtyState.value === null) return false
+    return !settingsEqual(
+      dashboardAffectingSettings(dirtyState.value),
+      dashboardAffectingSettings(serverState.value ?? DEFAULT_SETTINGS),
+    )
+  })
 
   function cloneSettings(settings: Settings): Settings {
     const next: Settings = {
@@ -76,6 +83,22 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function settingsEqual(a: Settings | null, b: Settings | null): boolean {
     return JSON.stringify(a) === JSON.stringify(b)
+  }
+
+  function dashboardAffectingSettings(settings: Settings): Settings {
+    const next: Settings = {
+      language: settings.language,
+      cardPack: settings.cardPack,
+      theme: 'system',
+      sections: { ...settings.sections },
+    }
+    if (settings.roomOrder !== undefined) {
+      next.roomOrder = [...settings.roomOrder]
+    }
+    if (settings.roomOverrides !== undefined) {
+      next.roomOverrides = cloneRoomOverrides(settings.roomOverrides)
+    }
+    return next
   }
 
   function withRoomOrder(
@@ -387,6 +410,7 @@ export const useSettingsStore = defineStore('settings', () => {
     serverState,
     dirtyState,
     hasDirty,
+    hasDashboardAffectingDirty,
     effective,
     setLanguage,
     setCardPack,

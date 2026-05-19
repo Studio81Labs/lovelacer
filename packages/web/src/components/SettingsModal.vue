@@ -84,7 +84,11 @@ function requestClose(): void {
 
 async function onSave(): Promise<void> {
   try {
-    await store.saveAndReanalyze()
+    if (store.hasDashboardAffectingDirty) {
+      await store.saveAndReanalyze()
+    } else {
+      await store.saveOnly()
+    }
     if (!store.hasDirty) {
       emit('close')
     }

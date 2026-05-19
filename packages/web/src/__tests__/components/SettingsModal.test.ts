@@ -134,7 +134,7 @@ describe('SettingsModal', () => {
     expect(save.attributes('disabled')).toBeDefined()
   })
 
-  it('Save button click calls store.saveAndReanalyze and emits close on success', async () => {
+  it('Save button click calls store.saveAndReanalyze and emits close on success when dashboard settings changed', async () => {
     const wrapper = mountModal()
     const store = useSettingsStore()
     // Make dirty
@@ -146,6 +146,20 @@ describe('SettingsModal', () => {
     await flushPromises()
 
     expect(vi.mocked(store.saveAndReanalyze)).toHaveBeenCalled()
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('theme-only save persists settings without reanalyzing', async () => {
+    const wrapper = mountModal()
+    const store = useSettingsStore()
+    await wrapper.find('[data-testid="settings-theme"]').setValue('dark')
+
+    await wrapper.find('[data-testid="settings-save"]').trigger('click')
+    await flushPromises()
+
+    expect(vi.mocked(store.saveOnly)).toHaveBeenCalled()
+    expect(vi.mocked(store.saveAndReanalyze)).not.toHaveBeenCalled()
+    expect(postPreview).not.toHaveBeenCalled()
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
