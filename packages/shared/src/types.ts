@@ -202,6 +202,14 @@ export const SUPPORTED_UI_LANGUAGES = ['en', 'cs', 'de', 'es', 'fr', 'it', 'nl',
  */
 export type UiLanguage = (typeof SUPPORTED_UI_LANGUAGES)[number]
 
+export const SUPPORTED_THEMES = ['system', 'light', 'dark'] as const
+
+/**
+ * Web UI color theme. `system` follows `prefers-color-scheme` and is the
+ * default for fresh installs.
+ */
+export type SettingsTheme = (typeof SUPPORTED_THEMES)[number]
+
 /** Visibility toggles for the seven sections of the home view. */
 export interface SettingsSections {
   welcome: boolean
@@ -256,6 +264,12 @@ export interface Settings {
   uiLanguage?: UiLanguage
 
   /**
+   * Color theme for the Lovelacer web UI. `system` follows the
+   * browser/OS preference and is the default.
+   */
+  theme: SettingsTheme
+
+  /**
    * Optional user-preferred room order. Values are room ids as surfaced
    * by analysis output. Missing ids are appended by the UI/server in
    * deterministic display-name order, so legacy rows and newly detected
@@ -277,6 +291,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   language: 'auto',
   cardPack: 'default',
+  theme: 'system',
   sections: {
     welcome: true,
     quickStats: true,

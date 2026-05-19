@@ -3,6 +3,7 @@ import { z } from 'zod'
 import {
   SUPPORTED_CARD_PACKS,
   SUPPORTED_LANGUAGES,
+  SUPPORTED_THEMES,
   SUPPORTED_UI_LANGUAGES,
   type Settings,
 } from '@lovelacer/shared'
@@ -33,6 +34,7 @@ const PutBodySchema = z.object({
   settings: z.object({
     language: z.enum(SUPPORTED_LANGUAGES),
     cardPack: z.enum(SUPPORTED_CARD_PACKS),
+    theme: z.enum(SUPPORTED_THEMES).default('system'),
     sections: SectionsSchema,
     uiLanguage: z.enum(SUPPORTED_UI_LANGUAGES).optional(),
     roomOrder: z.array(z.string()).optional(),
@@ -76,6 +78,7 @@ export const settingsRoute: FastifyPluginAsync<SettingsRouteOptions> = async (
       const next: Settings = {
         language: data.language,
         cardPack: data.cardPack,
+        theme: data.theme,
         sections: data.sections,
         ...(data.uiLanguage !== undefined && { uiLanguage: data.uiLanguage }),
         ...(data.roomOrder !== undefined && { roomOrder: data.roomOrder }),

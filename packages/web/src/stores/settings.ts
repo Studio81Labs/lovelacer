@@ -8,6 +8,7 @@ import type {
   SettingsCardPack,
   SettingsLanguage,
   SettingsSections,
+  SettingsTheme,
   UiLanguage,
 } from '../api/types.js'
 import { DEFAULT_SETTINGS } from '../api/types.js'
@@ -49,6 +50,7 @@ export const useSettingsStore = defineStore('settings', () => {
     const next: Settings = {
       language: settings.language,
       cardPack: settings.cardPack,
+      theme: settings.theme,
       sections: { ...settings.sections },
     }
     // uiLanguage is optional; only carry it forward when explicitly set.
@@ -199,6 +201,12 @@ export const useSettingsStore = defineStore('settings', () => {
   function setUiLanguage(lang: UiLanguage): void {
     const next = cloneEffective()
     next.uiLanguage = lang
+    dirtyState.value = next
+  }
+
+  function setTheme(theme: SettingsTheme): void {
+    const next = cloneEffective()
+    next.theme = theme
     dirtyState.value = next
   }
 
@@ -384,6 +392,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setCardPack,
     setSection,
     setUiLanguage,
+    setTheme,
     setRoomOrder,
     setRoomOverride,
     snapshotDirtyState,

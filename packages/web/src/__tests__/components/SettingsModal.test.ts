@@ -77,6 +77,18 @@ describe('SettingsModal', () => {
     expect(opts).toEqual(['default'])
   })
 
+  it('renders every theme option and stages the selected theme', async () => {
+    const wrapper = mountModal()
+    const select = wrapper.find('[data-testid="settings-theme"]')
+    expect(select.exists()).toBe(true)
+    const opts = select.findAll('option').map((o) => o.attributes('value'))
+    expect(opts).toEqual(['system', 'light', 'dark'])
+
+    await select.setValue('dark')
+    const store = useSettingsStore()
+    expect(store.effective.theme).toBe('dark')
+  })
+
   it('renders 7 section checkboxes with correct labels', () => {
     const wrapper = mountModal()
     const SECTION_KEYS = [

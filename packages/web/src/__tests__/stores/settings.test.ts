@@ -33,6 +33,7 @@ const SAMPLE: Settings = {
     cameras: true,
   },
   uiLanguage: 'en',
+  theme: 'dark',
 }
 
 describe('useSettingsStore', () => {
@@ -106,6 +107,18 @@ describe('useSettingsStore', () => {
     expect(store.dirtyState?.sections.cameras).toBe(false)
     // Other flags unchanged.
     expect(store.dirtyState?.sections.welcome).toBe(true)
+  })
+
+  it('setTheme clones effective into dirtyState and sets the field', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setTheme('dark')
+    expect(store.hasDirty).toBe(true)
+    expect(store.dirtyState?.theme).toBe('dark')
+    expect(store.effective.theme).toBe('dark')
+    expect(store.serverState?.theme).toBe('system')
   })
 
   it('setRoomOrder stages a copy of the preferred room order', async () => {
