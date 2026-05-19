@@ -298,6 +298,34 @@ describe('SettingsModal', () => {
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
+  it('disables settings controls while a UI-only close save is in flight', async () => {
+    let resolveSave: (value: { settings: typeof DEFAULT_SETTINGS }) => void = () => {}
+    vi.mocked(putSettings).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSave = resolve
+      }),
+    )
+    const wrapper = mountModal()
+    await wrapper.find('[data-testid="settings-ui-language"]').setValue('de')
+
+    await wrapper.find('[data-testid="settings-modal-backdrop"]').trigger('click')
+    await Promise.resolve()
+
+    expect(
+      wrapper.find('[data-testid="settings-ui-language"]').attributes('disabled'),
+    ).toBeDefined()
+    expect(wrapper.find('[data-testid="settings-theme-dark"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('[data-testid="settings-language"]').attributes('disabled')).toBeDefined()
+    expect(
+      wrapper.find('[data-testid="settings-section-cameras"]').attributes('disabled'),
+    ).toBeDefined()
+
+    resolveSave({ settings: { ...DEFAULT_SETTINGS, uiLanguage: 'de' } })
+    await flushPromises()
+
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
   it('clicking inside the modal does NOT emit close', async () => {
     const wrapper = mountModal()
     await wrapper.find('[data-testid="settings-modal"]').trigger('click')
