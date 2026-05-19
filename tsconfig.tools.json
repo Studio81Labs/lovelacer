@@ -9,7 +9,11 @@
       "@lovelacer/shared": ["./packages/shared/src/index.ts"]
     }
   },
-  "include": ["tests/**/*.ts", "dev/scripts/**/*.ts"],
+  "include": [
+    "tests/**/*.ts",
+    "dev/scripts/**/*.ts",
+    "apps/docs/src/.vitepress/theme/components/screenshotSources.ts"
+  ],
   "exclude": ["node_modules", "**/dist/**"],
   "references": [{ "path": "./packages/shared" }]
 }

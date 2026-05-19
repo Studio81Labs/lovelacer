@@ -119,15 +119,15 @@
   font-size: 0.875em;
 }
 
-/* Screenshot frame — adds subtle shadow + rounded corners */
+/* Screenshot frame — keep browser-window edges in CSS instead of baking them into image files. */
 .lc-screenshot {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 10px;
-  border: 1px solid var(--vp-c-border);
+  border-radius: 12px;
+  border: 6px solid #050505;
   box-shadow: 0 12px 32px -8px rgba(44, 44, 42, 0.18);
-  background: var(--vp-c-bg-alt);
+  background: #050505;
 }
 .dark .lc-screenshot {
   box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.45);
