@@ -3,7 +3,11 @@ import type { SettingsTheme } from './api/types.js'
 export type ResolvedTheme = 'light' | 'dark'
 
 export function currentSystemPrefersDark(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  )
 }
 
 export function resolveTheme(
