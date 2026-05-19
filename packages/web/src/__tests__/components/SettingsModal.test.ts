@@ -250,6 +250,28 @@ describe('SettingsModal', () => {
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
+  it('does not close if dashboard-affecting edits are made during theme-only close save', async () => {
+    let resolveSave: (value: { settings: typeof DEFAULT_SETTINGS }) => void = () => {}
+    vi.mocked(putSettings).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSave = resolve
+      }),
+    )
+    const wrapper = mountModal()
+    const store = useSettingsStore()
+    await wrapper.find('[data-testid="settings-theme-dark"]').trigger('click')
+
+    await wrapper.find('[data-testid="settings-modal-backdrop"]').trigger('click')
+    await Promise.resolve()
+    store.setLanguage('cs')
+    resolveSave({ settings: { ...DEFAULT_SETTINGS, theme: 'dark' } })
+    await flushPromises()
+
+    expect(wrapper.emitted('close')).toBeFalsy()
+    expect(store.hasDirty).toBe(true)
+    expect(store.hasDashboardAffectingDirty).toBe(true)
+  })
+
   it('clicking inside the modal does NOT emit close', async () => {
     const wrapper = mountModal()
     await wrapper.find('[data-testid="settings-modal"]').trigger('click')

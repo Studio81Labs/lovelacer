@@ -101,6 +101,7 @@ async function requestClose(): Promise<void> {
     } catch {
       return
     }
+    if (store.hasDirty) return
   }
   emit('close')
 }
