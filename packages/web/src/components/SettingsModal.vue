@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { getHealth } from '../api/client.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18nStore } from '../stores/i18n.js'
+import { applyThemeToDocument } from '../theme.js'
 import type { SettingsLanguage, SettingsSections, SettingsTheme, UiLanguage } from '../api/types.js'
 
 const emit = defineEmits<{ close: [] }>()
@@ -12,6 +13,9 @@ const store = useSettingsStore()
 const { t } = useI18n()
 const i18nStore = useI18nStore()
 const buildVersion = ref<string | null>(null)
+const closeSaveInFlight = ref(false)
+const settingsActionDisabled = computed(() => store.phase === 'saving' || closeSaveInFlight.value)
+const settingsControlsDisabled = computed(() => closeSaveInFlight.value)
 
 /**
  * P2-9 — capture the active locale at modal open time so we can restore
@@ -25,12 +29,35 @@ const buildVersion = ref<string | null>(null)
 const preEditLocale = ref(i18nStore.locale)
 
 function onUiLanguageChange(event: Event): void {
+  if (settingsControlsDisabled.value) return
+
   const lang = (event.target as HTMLSelectElement).value as UiLanguage
   store.setUiLanguage(lang)
   i18nStore.locale = lang
 }
 
+function onThemeChange(theme: SettingsTheme): void {
+  if (settingsControlsDisabled.value) return
+
+  store.setTheme(theme)
+  applyThemeToDocument(theme)
+}
+
+function onDetectionLanguageChange(event: Event): void {
+  if (settingsControlsDisabled.value) return
+
+  store.setLanguage((event.target as HTMLSelectElement).value as SettingsLanguage)
+}
+
+function onSectionChange(key: keyof SettingsSections, event: Event): void {
+  if (settingsControlsDisabled.value) return
+
+  store.setSection(key, (event.target as HTMLInputElement).checked)
+}
+
 function onDiscard(): void {
+  if (settingsActionDisabled.value) return
+
   // Revert the active locale to the pre-edit snapshot, then clear the
   // store's dirtyState. The store no longer reaches into i18n — that
   // separation matters because the store doesn't have a clean session
@@ -38,6 +65,7 @@ function onDiscard(): void {
   // modal opens).
   i18nStore.locale = preEditLocale.value
   store.discardChanges()
+  applyThemeToDocument(store.effective.theme)
 }
 
 /**
@@ -70,15 +98,35 @@ const SECTION_LABEL_KEYS: Record<keyof SettingsSections, string> = {
   cameras: 'settings.sections.cameras',
 }
 
+const THEME_OPTIONS: ReadonlyArray<{ value: SettingsTheme; labelKey: string }> = [
+  { value: 'system', labelKey: 'settings.theme.option.system' },
+  { value: 'light', labelKey: 'settings.theme.option.light' },
+  { value: 'dark', labelKey: 'settings.theme.option.dark' },
+]
+
 const closeTitle = computed(() =>
-  store.hasDirty ? t('settings.close.titleDirty') : t('settings.close.titleClean'),
+  store.hasDashboardAffectingDirty
+    ? t('settings.close.titleDirty')
+    : t('settings.close.titleClean'),
 )
 
-function requestClose(): void {
+async function requestClose(): Promise<void> {
   // Dirty guard: don't lose edits silently — applies to ALL close gestures
-  // (backdrop click, × button, future ESC handler). User must Discard or
-  // Save before any close path emits.
-  if (store.hasDirty) return
+  // (backdrop click, × button, future ESC handler). Dashboard-affecting
+  // edits still need the explicit Save/Re-analyze path, while UI-only
+  // edits such as theme can persist and close directly.
+  if (store.hasDashboardAffectingDirty || closeSaveInFlight.value) return
+  if (store.hasDirty) {
+    closeSaveInFlight.value = true
+    try {
+      await store.saveOnly()
+    } catch {
+      return
+    } finally {
+      closeSaveInFlight.value = false
+    }
+    if (store.hasDirty) return
+  }
   emit('close')
 }
 
@@ -124,7 +172,7 @@ onMounted(async () => {
           data-testid="settings-close"
           :aria-label="t('settings.close.aria')"
           class="ll-btn ll-btn-ghost h-8 w-8 px-0"
-          :disabled="store.hasDirty"
+          :disabled="store.hasDashboardAffectingDirty || settingsActionDisabled"
           :title="closeTitle"
           @click="requestClose"
         >
@@ -143,6 +191,7 @@ onMounted(async () => {
             data-testid="settings-ui-language"
             class="ll-control mt-1"
             :value="displayUiLanguage"
+            :disabled="settingsControlsDisabled"
             @change="onUiLanguageChange"
           >
             <option value="en">{{ t('settings.uiLanguage.option.en') }}</option>
@@ -158,20 +207,33 @@ onMounted(async () => {
 
         <!-- Theme -->
         <div>
-          <label for="settings-theme" class="block font-medium text-stone-700">
+          <p id="settings-theme-label" class="block font-medium text-stone-700">
             {{ t('settings.theme.label') }}
-          </label>
-          <select
-            id="settings-theme"
-            data-testid="settings-theme"
-            class="ll-control mt-1"
-            :value="store.effective.theme"
-            @change="store.setTheme(($event.target as HTMLSelectElement).value as SettingsTheme)"
+          </p>
+          <div
+            class="mt-1 grid grid-cols-3 overflow-hidden rounded-[var(--radius-control)] border border-warm-border bg-stone-25 p-1 ll-shadow-control"
+            role="radiogroup"
+            aria-labelledby="settings-theme-label"
           >
-            <option value="system">{{ t('settings.theme.option.system') }}</option>
-            <option value="light">{{ t('settings.theme.option.light') }}</option>
-            <option value="dark">{{ t('settings.theme.option.dark') }}</option>
-          </select>
+            <button
+              v-for="option in THEME_OPTIONS"
+              :key="option.value"
+              type="button"
+              role="radio"
+              :aria-checked="store.effective.theme === option.value"
+              :data-testid="`settings-theme-${option.value}`"
+              class="h-8 rounded-md px-2 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-amber-100"
+              :disabled="settingsControlsDisabled"
+              :class="
+                store.effective.theme === option.value
+                  ? 'bg-amber-500 text-amber-50 shadow-sm'
+                  : 'text-stone-700 hover:bg-warm-surface-hover'
+              "
+              @click="onThemeChange(option.value)"
+            >
+              {{ t(option.labelKey) }}
+            </button>
+          </div>
         </div>
 
         <!-- Language -->
@@ -184,9 +246,8 @@ onMounted(async () => {
             data-testid="settings-language"
             class="ll-control mt-1"
             :value="store.effective.language"
-            @change="
-              store.setLanguage(($event.target as HTMLSelectElement).value as SettingsLanguage)
-            "
+            :disabled="settingsControlsDisabled"
+            @change="onDetectionLanguageChange"
           >
             <option value="auto">{{ t('detectionLanguage.option.auto') }}</option>
             <option value="en">{{ t('detectionLanguage.option.en') }}</option>
@@ -223,7 +284,7 @@ onMounted(async () => {
         </div>
 
         <!-- Sections -->
-        <fieldset>
+        <fieldset :disabled="settingsControlsDisabled">
           <legend class="font-medium text-stone-700">{{ t('settings.sections.label') }}</legend>
           <div class="mt-1 space-y-1.5">
             <label
@@ -235,7 +296,8 @@ onMounted(async () => {
                 type="checkbox"
                 :data-testid="`settings-section-${key}`"
                 :checked="store.effective.sections[key]"
-                @change="store.setSection(key, ($event.target as HTMLInputElement).checked)"
+                :disabled="settingsControlsDisabled"
+                @change="onSectionChange(key, $event)"
               />
               <span>{{ t(SECTION_LABEL_KEYS[key]) }}</span>
             </label>
@@ -258,6 +320,7 @@ onMounted(async () => {
           type="button"
           data-testid="settings-discard"
           class="ll-btn ll-btn-secondary ll-btn-compact"
+          :disabled="settingsActionDisabled"
           @click="onDiscard"
         >
           {{ t('settings.discardChanges') }}
@@ -266,7 +329,7 @@ onMounted(async () => {
           type="button"
           data-testid="settings-save"
           class="ll-btn ll-btn-primary ll-btn-compact"
-          :disabled="!store.hasDirty || store.phase === 'saving'"
+          :disabled="!store.hasDirty || settingsActionDisabled"
           @click="onSave"
         >
           {{ t('settings.saveAndReanalyze') }}
