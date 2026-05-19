@@ -183,7 +183,7 @@ Backend uses these directly. Documented in setup guide.
 
 | Layer              | Choice                        | Rationale                                                            |
 | ------------------ | ----------------------------- | -------------------------------------------------------------------- |
-| Backend runtime    | Node.js 20 LTS                | Mature, async-friendly, broad lib support, you know it               |
+| Backend runtime    | Node.js 24 LTS                | Current LTS, async-friendly, broad lib support, you know it          |
 | Backend framework  | Fastify                       | Fast, schema-first (good for HA payload validation), small footprint |
 | WebSocket client   | `home-assistant-js-websocket` | Official-ish, used by HA's own frontend, handles auth + reconnection |
 | Local storage      | SQLite via `better-sqlite3`   | Zero ops, single file, perfect for overrides + cache                 |

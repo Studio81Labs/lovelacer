@@ -44,17 +44,17 @@ jobs:
         arch: [aarch64, amd64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6.0.8
         with:
           version: 9.12.0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6.4.0
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'pnpm'
 
       - name: Install workspace deps
@@ -74,7 +74,7 @@ jobs:
 
       - name: Login to GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -116,7 +116,7 @@ jobs:
           fi
 
       - name: Build add-on (${{ matrix.arch }})
-        uses: home-assistant/builder@2024.08.2
+        uses: home-assistant/builder@2026.03.2
         with:
           # Folded scalar (`>`): newlines fold into single spaces. The HA
           # builder action interpolates `args` into a `docker run \\ args`

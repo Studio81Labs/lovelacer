@@ -15,11 +15,11 @@ describe('Home Assistant add-on runtime image', () => {
     })
   })
 
-  it('uses the official Node 22 runtime instead of Alpine packaged nodejs', () => {
+  it('uses the official Node 24 runtime instead of Alpine packaged nodejs', () => {
     const dockerfile = readFileSync(resolve('apps/addon/Dockerfile'), 'utf8')
 
     expect(dockerfile).toContain('ARG BUILD_FROM=ghcr.io/hassio-addons/base:17.2.4')
-    expect(dockerfile).toContain('FROM node:22-alpine3.21 AS node-runtime')
+    expect(dockerfile).toContain('FROM node:24-alpine3.21 AS node-runtime')
     expect(dockerfile).toContain('COPY --from=node-runtime /usr/local/bin/node')
     expect(dockerfile).not.toContain('apk add --no-cache nodejs')
   })
@@ -27,7 +27,7 @@ describe('Home Assistant add-on runtime image', () => {
   it('rebuilds native modules before entering the Home Assistant base image', () => {
     const dockerfile = readFileSync(resolve('apps/addon/Dockerfile'), 'utf8')
 
-    expect(dockerfile).toContain('FROM node:22-alpine3.21 AS native-rebuild')
+    expect(dockerfile).toContain('FROM node:24-alpine3.21 AS native-rebuild')
     expect(dockerfile).toContain('RUN npm rebuild better-sqlite3')
     expect(dockerfile).toContain('COPY --from=native-rebuild /app ./')
     expect(dockerfile).not.toContain('--virtual .lovelacer-build-deps')

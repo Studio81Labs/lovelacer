@@ -1,7 +1,7 @@
 ARG BUILD_FROM=ghcr.io/hassio-addons/base:17.2.4
-FROM node:22-alpine3.21 AS node-runtime
+FROM node:24-alpine3.21 AS node-runtime
 
-FROM node:22-alpine3.21 AS native-rebuild
+FROM node:24-alpine3.21 AS native-rebuild
 
 RUN apk add --no-cache python3 make g++
 
@@ -32,7 +32,7 @@ RUN npm rebuild better-sqlite3
 FROM ${BUILD_FROM}
 
 # Match the working Smart Panel add-on shape more closely by using the
-# official Node 22 runtime instead of Alpine's packaged nodejs from the HA
+# official Node 24 runtime instead of Alpine's packaged nodejs from the HA
 # base image. Keep jq for /data/options.json parsing and libstdc++ for native
 # modules rebuilt in the builder stage.
 COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
