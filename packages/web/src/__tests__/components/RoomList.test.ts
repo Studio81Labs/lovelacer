@@ -156,6 +156,22 @@ describe('RoomList', () => {
     expect(wrapper.find('[data-testid="room-name-input"]').exists()).toBe(true)
   })
 
+  it('uses the primary action treatment for the inline room save button', async () => {
+    const wrapper = mount(RoomList, {
+      props: { rooms: [room()] },
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await expandFirstRoom(wrapper)
+    await wrapper.find('[data-testid="room-edit-button"]').trigger('click')
+
+    const save = wrapper.find('[data-testid="room-save-button"]')
+    expect(save.classes()).toContain('ll-btn-primary')
+    expect(save.classes()).not.toContain('ll-btn-dark')
+  })
+
   it('shows the room edit button only when the room is expanded', async () => {
     const wrapper = mount(RoomList, {
       props: { rooms: [room()] },

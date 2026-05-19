@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { getHealth } from '../api/client.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18nStore } from '../stores/i18n.js'
+import { applyThemeToDocument } from '../theme.js'
 import type { SettingsLanguage, SettingsSections, SettingsTheme, UiLanguage } from '../api/types.js'
 
 const emit = defineEmits<{ close: [] }>()
@@ -30,6 +31,11 @@ function onUiLanguageChange(event: Event): void {
   i18nStore.locale = lang
 }
 
+function onThemeChange(theme: SettingsTheme): void {
+  store.setTheme(theme)
+  applyThemeToDocument(theme)
+}
+
 function onDiscard(): void {
   // Revert the active locale to the pre-edit snapshot, then clear the
   // store's dirtyState. The store no longer reaches into i18n — that
@@ -38,6 +44,7 @@ function onDiscard(): void {
   // modal opens).
   i18nStore.locale = preEditLocale.value
   store.discardChanges()
+  applyThemeToDocument(store.effective.theme)
 }
 
 /**
@@ -70,15 +77,31 @@ const SECTION_LABEL_KEYS: Record<keyof SettingsSections, string> = {
   cameras: 'settings.sections.cameras',
 }
 
+const THEME_OPTIONS: ReadonlyArray<{ value: SettingsTheme; labelKey: string }> = [
+  { value: 'system', labelKey: 'settings.theme.option.system' },
+  { value: 'light', labelKey: 'settings.theme.option.light' },
+  { value: 'dark', labelKey: 'settings.theme.option.dark' },
+]
+
 const closeTitle = computed(() =>
-  store.hasDirty ? t('settings.close.titleDirty') : t('settings.close.titleClean'),
+  store.hasDashboardAffectingDirty
+    ? t('settings.close.titleDirty')
+    : t('settings.close.titleClean'),
 )
 
-function requestClose(): void {
+async function requestClose(): Promise<void> {
   // Dirty guard: don't lose edits silently — applies to ALL close gestures
-  // (backdrop click, × button, future ESC handler). User must Discard or
-  // Save before any close path emits.
-  if (store.hasDirty) return
+  // (backdrop click, × button, future ESC handler). Dashboard-affecting
+  // edits still need the explicit Save/Re-analyze path, while UI-only
+  // edits such as theme can persist and close directly.
+  if (store.hasDashboardAffectingDirty) return
+  if (store.hasDirty) {
+    try {
+      await store.saveOnly()
+    } catch {
+      return
+    }
+  }
   emit('close')
 }
 
@@ -124,7 +147,7 @@ onMounted(async () => {
           data-testid="settings-close"
           :aria-label="t('settings.close.aria')"
           class="ll-btn ll-btn-ghost h-8 w-8 px-0"
-          :disabled="store.hasDirty"
+          :disabled="store.hasDashboardAffectingDirty || store.phase === 'saving'"
           :title="closeTitle"
           @click="requestClose"
         >
@@ -158,20 +181,32 @@ onMounted(async () => {
 
         <!-- Theme -->
         <div>
-          <label for="settings-theme" class="block font-medium text-stone-700">
+          <p id="settings-theme-label" class="block font-medium text-stone-700">
             {{ t('settings.theme.label') }}
-          </label>
-          <select
-            id="settings-theme"
-            data-testid="settings-theme"
-            class="ll-control mt-1"
-            :value="store.effective.theme"
-            @change="store.setTheme(($event.target as HTMLSelectElement).value as SettingsTheme)"
+          </p>
+          <div
+            class="mt-1 grid grid-cols-3 overflow-hidden rounded-[var(--radius-control)] border border-warm-border bg-stone-25 p-1 ll-shadow-control"
+            role="radiogroup"
+            aria-labelledby="settings-theme-label"
           >
-            <option value="system">{{ t('settings.theme.option.system') }}</option>
-            <option value="light">{{ t('settings.theme.option.light') }}</option>
-            <option value="dark">{{ t('settings.theme.option.dark') }}</option>
-          </select>
+            <button
+              v-for="option in THEME_OPTIONS"
+              :key="option.value"
+              type="button"
+              role="radio"
+              :aria-checked="store.effective.theme === option.value"
+              :data-testid="`settings-theme-${option.value}`"
+              class="h-8 rounded-md px-2 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-amber-100"
+              :class="
+                store.effective.theme === option.value
+                  ? 'bg-amber-500 text-amber-50 shadow-sm'
+                  : 'text-stone-700 hover:bg-warm-surface-hover'
+              "
+              @click="onThemeChange(option.value)"
+            >
+              {{ t(option.labelKey) }}
+            </button>
+          </div>
         </div>
 
         <!-- Language -->

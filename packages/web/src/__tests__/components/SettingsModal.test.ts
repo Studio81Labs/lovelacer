@@ -46,10 +46,14 @@ describe('SettingsModal', () => {
     vi.mocked(getHealth).mockResolvedValue({ ok: true, version: 'dev', ha: { connected: true } })
     vi.mocked(putSettings).mockResolvedValue({ settings: DEFAULT_SETTINGS })
     vi.mocked(postPreview).mockResolvedValue(DEFAULT_PREVIEW)
+    document.documentElement.removeAttribute('data-theme')
+    document.documentElement.style.colorScheme = ''
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+    document.documentElement.removeAttribute('data-theme')
+    document.documentElement.style.colorScheme = ''
   })
 
   it('renders every detection-language option', () => {
@@ -79,14 +83,33 @@ describe('SettingsModal', () => {
 
   it('renders every theme option and stages the selected theme', async () => {
     const wrapper = mountModal()
-    const select = wrapper.find('[data-testid="settings-theme"]')
-    expect(select.exists()).toBe(true)
-    const opts = select.findAll('option').map((o) => o.attributes('value'))
-    expect(opts).toEqual(['system', 'light', 'dark'])
+    const options = ['system', 'light', 'dark']
+    expect(
+      options.map((theme) => wrapper.find(`[data-testid="settings-theme-${theme}"]`).exists()),
+    ).toEqual([true, true, true])
 
-    await select.setValue('dark')
+    await wrapper.find('[data-testid="settings-theme-dark"]').trigger('click')
     const store = useSettingsStore()
     expect(store.effective.theme).toBe('dark')
+  })
+
+  it('applies the selected theme to the document root immediately', async () => {
+    const wrapper = mountModal()
+
+    await wrapper.find('[data-testid="settings-theme-dark"]').trigger('click')
+
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+  })
+
+  it('does not depend on the native select change event for theme switching', async () => {
+    const wrapper = mountModal()
+
+    expect(wrapper.find('[data-testid="settings-theme"]').exists()).toBe(false)
+    await wrapper.find('[data-testid="settings-theme-dark"]').trigger('click')
+
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
   })
 
   it('renders 7 section checkboxes with correct labels', () => {
@@ -152,7 +175,7 @@ describe('SettingsModal', () => {
   it('theme-only save persists settings without reanalyzing', async () => {
     const wrapper = mountModal()
     const store = useSettingsStore()
-    await wrapper.find('[data-testid="settings-theme"]').setValue('dark')
+    await wrapper.find('[data-testid="settings-theme-dark"]').trigger('click')
 
     await wrapper.find('[data-testid="settings-save"]').trigger('click')
     await flushPromises()
@@ -213,6 +236,20 @@ describe('SettingsModal', () => {
     expect(wrapper.emitted('close')).toBeFalsy()
   })
 
+  it('backdrop click with theme-only changes saves and closes without reanalyzing', async () => {
+    const wrapper = mountModal()
+    const store = useSettingsStore()
+    await wrapper.find('[data-testid="settings-theme-dark"]').trigger('click')
+
+    await wrapper.find('[data-testid="settings-modal-backdrop"]').trigger('click')
+    await flushPromises()
+
+    expect(vi.mocked(store.saveOnly)).toHaveBeenCalled()
+    expect(vi.mocked(store.saveAndReanalyze)).not.toHaveBeenCalled()
+    expect(postPreview).not.toHaveBeenCalled()
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
   it('clicking inside the modal does NOT emit close', async () => {
     const wrapper = mountModal()
     await wrapper.find('[data-testid="settings-modal"]').trigger('click')
@@ -225,7 +262,22 @@ describe('SettingsModal', () => {
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
-  it('× close button is disabled while dirty (consistent with backdrop guard)', async () => {
+  it('× close button remains available for theme-only changes', async () => {
+    const wrapper = mountModal()
+    const store = useSettingsStore()
+    await wrapper.find('[data-testid="settings-theme-dark"]').trigger('click')
+
+    const closeBtn = wrapper.find('[data-testid="settings-close"]')
+    expect(closeBtn.attributes('disabled')).toBeUndefined()
+
+    await closeBtn.trigger('click')
+    await flushPromises()
+
+    expect(vi.mocked(store.saveOnly)).toHaveBeenCalled()
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('× close button is disabled while dashboard-affecting settings are dirty', async () => {
     const wrapper = mountModal()
     const store = useSettingsStore()
     store.setLanguage('cs')

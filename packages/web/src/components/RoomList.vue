@@ -435,7 +435,7 @@ function entityIdToFriendly(entityId: string): string {
               <button
                 type="button"
                 data-testid="room-save-button"
-                class="ll-btn ll-btn-dark px-3.5 text-xs"
+                class="ll-btn ll-btn-primary px-3.5 text-xs"
                 @click="saveRoomEdit(room.id)"
               >
                 {{ t('roomList.save') }}

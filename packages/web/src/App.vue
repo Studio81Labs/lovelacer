@@ -24,6 +24,7 @@ import { useSettingsStore } from './stores/settings.js'
 import { useOnboardingStore } from './stores/onboarding.js'
 import { useI18nStore } from './stores/i18n.js'
 import { roomIdToDisplay } from './rooms.js'
+import { applyThemeToDocument } from './theme.js'
 import type {
   EntityDiff,
   LovelaceView,
@@ -53,14 +54,8 @@ const systemDarkQuery =
     : window.matchMedia('(prefers-color-scheme: dark)')
 const systemPrefersDark = ref(systemDarkQuery?.matches ?? false)
 
-function resolveTheme(theme: SettingsTheme): 'light' | 'dark' {
-  return theme === 'system' ? (systemPrefersDark.value ? 'dark' : 'light') : theme
-}
-
 function applyTheme(theme: SettingsTheme): void {
-  const resolved = resolveTheme(theme)
-  document.documentElement.dataset.theme = resolved
-  document.documentElement.style.colorScheme = resolved
+  applyThemeToDocument(theme, systemPrefersDark.value)
 }
 
 function onSystemThemeChange(event: Pick<MediaQueryList, 'matches'>): void {

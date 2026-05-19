@@ -35,6 +35,7 @@
   /* ─── Neutral · Stone ─── */
   --color-stone-25: #faf8f4;
   --color-stone-50: #f1efe8;
+  --color-stone-100: #e4e1d8;
   --color-stone-200: #d3d1c7;
   --color-stone-500: #888780;
   --color-stone-700: #444441;
@@ -91,6 +92,7 @@ html[data-theme='dark'] {
 
   --color-stone-25: #151515;
   --color-stone-50: #20201e;
+  --color-stone-100: #2f2e2a;
   --color-stone-200: #3a3935;
   --color-stone-500: #a5a29a;
   --color-stone-700: #d8d4ca;
@@ -130,6 +132,19 @@ html[data-theme='dark'] .bg-white\/95 {
 
 html[data-theme='dark'] .border-white {
   border-color: var(--color-stone-200);
+}
+
+html[data-theme='dark'] .border-stone-100,
+html[data-theme='dark'] .border-stone-200 {
+  border-color: var(--color-stone-100);
+}
+
+html[data-theme='dark'] .divide-stone-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--color-stone-100);
+}
+
+html[data-theme='dark'] .ll-btn-primary {
+  color: var(--color-amber-50);
 }
 
 /*
