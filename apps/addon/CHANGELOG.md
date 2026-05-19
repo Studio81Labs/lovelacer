@@ -5,6 +5,8 @@
   now expose every shipped UI locale.
 - Room detection keyword packs and generated canonical room titles now cover
   the same EN / CS / DE / ES / FR / IT / NL / PL language set.
+- Project runtime metadata, CI jobs, and the Home Assistant add-on image now
+  target Node.js 24.
 
 ## 0.5.0
 

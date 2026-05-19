@@ -89,7 +89,7 @@ describe('docs site workspace', () => {
 
     expect(ciWorkflow).toContain('pnpm build')
     expect(deployWorkflow).toContain('Deploy documentation to Cloudflare Workers')
-    expect(deployWorkflow).toContain('node-version: 22')
+    expect(deployWorkflow).toContain('node-version: 24')
     expect(deployWorkflow).toContain('pnpm --filter @lovelacer/docs build')
     expect(deployWorkflow).toContain('pnpm dlx wrangler@latest deploy --name "$WORKER_NAME"')
     expect(deployWorkflow).toContain('DOCS_WORKER_NAME')

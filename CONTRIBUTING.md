@@ -4,7 +4,7 @@ Human-facing contribution guide. For agent-specific instructions see [AGENTS.md]
 
 ## Prerequisites
 
-- Node.js 20.10+
+- Node.js 24.0+
 - pnpm 9.12+
 - Docker (for the dev Home Assistant stack)
 
