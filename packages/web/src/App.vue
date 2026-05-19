@@ -63,8 +63,26 @@ function applyTheme(theme: SettingsTheme): void {
   document.documentElement.style.colorScheme = resolved
 }
 
-function onSystemThemeChange(event: MediaQueryListEvent): void {
+function onSystemThemeChange(event: Pick<MediaQueryList, 'matches'>): void {
   systemPrefersDark.value = event.matches
+}
+
+function addSystemThemeListener(): void {
+  if (systemDarkQuery === null) return
+  if (typeof systemDarkQuery.addEventListener === 'function') {
+    systemDarkQuery.addEventListener('change', onSystemThemeChange)
+    return
+  }
+  systemDarkQuery.addListener(onSystemThemeChange)
+}
+
+function removeSystemThemeListener(): void {
+  if (systemDarkQuery === null) return
+  if (typeof systemDarkQuery.removeEventListener === 'function') {
+    systemDarkQuery.removeEventListener('change', onSystemThemeChange)
+    return
+  }
+  systemDarkQuery.removeListener(onSystemThemeChange)
 }
 
 // P2-9 — post-load reconciliation watcher. When the settings store
@@ -338,7 +356,7 @@ watch(
 )
 
 onMounted(() => {
-  systemDarkQuery?.addEventListener('change', onSystemThemeChange)
+  addSystemThemeListener()
   void invite.loadStatus()
   // P2-9 — kick off settings load so the cross-device reconciliation
   // watcher above has a serverState.uiLanguage to react to. Previously
@@ -351,7 +369,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  systemDarkQuery?.removeEventListener('change', onSystemThemeChange)
+  removeSystemThemeListener()
 })
 
 let loadedOnce = false

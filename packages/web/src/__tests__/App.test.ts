@@ -196,6 +196,32 @@ describe('App integration', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
+  it('uses legacy media query listeners when addEventListener is unavailable', async () => {
+    const addListener = vi.fn()
+    const removeListener = vi.fn()
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: true,
+      addListener,
+      removeListener,
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await flushPromises()
+
+    expect(addListener).toHaveBeenCalledOnce()
+    expect(getInvite).toHaveBeenCalledOnce()
+    expect(getSettings).toHaveBeenCalledOnce()
+
+    wrapper.unmount()
+
+    expect(removeListener).toHaveBeenCalledOnce()
+  })
+
   it('restores the last cached analysis after app load', async () => {
     vi.mocked(getLatestAnalysis).mockResolvedValueOnce({
       analysis: mockPreview,
