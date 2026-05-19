@@ -13,6 +13,10 @@ const store = useSettingsStore()
 const { t } = useI18n()
 const i18nStore = useI18nStore()
 const buildVersion = ref<string | null>(null)
+const closeSaveInFlight = ref(false)
+const settingsInteractionDisabled = computed(
+  () => store.phase === 'saving' || closeSaveInFlight.value,
+)
 
 /**
  * P2-9 — capture the active locale at modal open time so we can restore
@@ -37,6 +41,8 @@ function onThemeChange(theme: SettingsTheme): void {
 }
 
 function onDiscard(): void {
+  if (settingsInteractionDisabled.value) return
+
   // Revert the active locale to the pre-edit snapshot, then clear the
   // store's dirtyState. The store no longer reaches into i18n — that
   // separation matters because the store doesn't have a clean session
@@ -94,12 +100,15 @@ async function requestClose(): Promise<void> {
   // (backdrop click, × button, future ESC handler). Dashboard-affecting
   // edits still need the explicit Save/Re-analyze path, while UI-only
   // edits such as theme can persist and close directly.
-  if (store.hasDashboardAffectingDirty) return
+  if (store.hasDashboardAffectingDirty || closeSaveInFlight.value) return
   if (store.hasDirty) {
+    closeSaveInFlight.value = true
     try {
       await store.saveOnly()
     } catch {
       return
+    } finally {
+      closeSaveInFlight.value = false
     }
     if (store.hasDirty) return
   }
@@ -148,7 +157,7 @@ onMounted(async () => {
           data-testid="settings-close"
           :aria-label="t('settings.close.aria')"
           class="ll-btn ll-btn-ghost h-8 w-8 px-0"
-          :disabled="store.hasDashboardAffectingDirty || store.phase === 'saving'"
+          :disabled="store.hasDashboardAffectingDirty || settingsInteractionDisabled"
           :title="closeTitle"
           @click="requestClose"
         >
@@ -294,6 +303,7 @@ onMounted(async () => {
           type="button"
           data-testid="settings-discard"
           class="ll-btn ll-btn-secondary ll-btn-compact"
+          :disabled="settingsInteractionDisabled"
           @click="onDiscard"
         >
           {{ t('settings.discardChanges') }}
@@ -302,7 +312,7 @@ onMounted(async () => {
           type="button"
           data-testid="settings-save"
           class="ll-btn ll-btn-primary ll-btn-compact"
-          :disabled="!store.hasDirty || store.phase === 'saving'"
+          :disabled="!store.hasDirty || settingsInteractionDisabled"
           @click="onSave"
         >
           {{ t('settings.saveAndReanalyze') }}

@@ -272,6 +272,32 @@ describe('SettingsModal', () => {
     expect(store.hasDashboardAffectingDirty).toBe(true)
   })
 
+  it('disables discard while a theme-only close save is in flight', async () => {
+    let resolveSave: (value: { settings: typeof DEFAULT_SETTINGS }) => void = () => {}
+    vi.mocked(putSettings).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSave = resolve
+      }),
+    )
+    const wrapper = mountModal()
+    const store = useSettingsStore()
+    await wrapper.find('[data-testid="settings-theme-dark"]').trigger('click')
+
+    await wrapper.find('[data-testid="settings-modal-backdrop"]').trigger('click')
+    await Promise.resolve()
+    const discard = wrapper.find('[data-testid="settings-discard"]')
+
+    expect(discard.attributes('disabled')).toBeDefined()
+
+    await discard.trigger('click')
+    expect(vi.mocked(store.discardChanges)).not.toHaveBeenCalled()
+
+    resolveSave({ settings: { ...DEFAULT_SETTINGS, theme: 'dark' } })
+    await flushPromises()
+
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
   it('clicking inside the modal does NOT emit close', async () => {
     const wrapper = mountModal()
     await wrapper.find('[data-testid="settings-modal"]').trigger('click')
