@@ -202,6 +202,8 @@ export type SettingsCardPack = 'default'
  */
 export type UiLanguage = 'en' | 'cs' | 'de' | 'es' | 'fr' | 'it' | 'nl' | 'pl'
 
+export type SettingsTheme = 'system' | 'light' | 'dark'
+
 export interface SettingsSections {
   welcome: boolean
   quickStats: boolean
@@ -231,6 +233,11 @@ export interface Settings {
    */
   uiLanguage?: UiLanguage
   /**
+   * Color theme for the Lovelacer web UI. `system` follows the OS/browser
+   * `prefers-color-scheme` setting and is the default.
+   */
+  theme: SettingsTheme
+  /**
    * Optional preferred ordering for analyzed rooms. Unknown/new rooms
    * are appended by display name when rendering.
    */
@@ -246,6 +253,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   language: 'auto',
   cardPack: 'default',
+  theme: 'system',
   sections: {
     welcome: true,
     quickStats: true,

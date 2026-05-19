@@ -77,6 +77,18 @@ describe('SettingsModal', () => {
     expect(opts).toEqual(['default'])
   })
 
+  it('renders every theme option and stages the selected theme', async () => {
+    const wrapper = mountModal()
+    const select = wrapper.find('[data-testid="settings-theme"]')
+    expect(select.exists()).toBe(true)
+    const opts = select.findAll('option').map((o) => o.attributes('value'))
+    expect(opts).toEqual(['system', 'light', 'dark'])
+
+    await select.setValue('dark')
+    const store = useSettingsStore()
+    expect(store.effective.theme).toBe('dark')
+  })
+
   it('renders 7 section checkboxes with correct labels', () => {
     const wrapper = mountModal()
     const SECTION_KEYS = [
@@ -122,7 +134,7 @@ describe('SettingsModal', () => {
     expect(save.attributes('disabled')).toBeDefined()
   })
 
-  it('Save button click calls store.saveAndReanalyze and emits close on success', async () => {
+  it('Save button click calls store.saveAndReanalyze and emits close on success when dashboard settings changed', async () => {
     const wrapper = mountModal()
     const store = useSettingsStore()
     // Make dirty
@@ -134,6 +146,20 @@ describe('SettingsModal', () => {
     await flushPromises()
 
     expect(vi.mocked(store.saveAndReanalyze)).toHaveBeenCalled()
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('theme-only save persists settings without reanalyzing', async () => {
+    const wrapper = mountModal()
+    const store = useSettingsStore()
+    await wrapper.find('[data-testid="settings-theme"]').setValue('dark')
+
+    await wrapper.find('[data-testid="settings-save"]').trigger('click')
+    await flushPromises()
+
+    expect(vi.mocked(store.saveOnly)).toHaveBeenCalled()
+    expect(vi.mocked(store.saveAndReanalyze)).not.toHaveBeenCalled()
+    expect(postPreview).not.toHaveBeenCalled()
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 

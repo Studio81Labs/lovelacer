@@ -3,12 +3,14 @@ import {
   DEFAULT_SETTINGS,
   SUPPORTED_CARD_PACKS,
   SUPPORTED_LANGUAGES,
+  SUPPORTED_THEMES,
   SUPPORTED_UI_LANGUAGES,
   type RoomDisplayOverride,
   type Settings,
   type SettingsCardPack,
   type SettingsLanguage,
   type SettingsSections,
+  type SettingsTheme,
   type UiLanguage,
 } from '@lovelacer/shared'
 import { initSqliteStore, type SqliteSource } from './sqlite.js'
@@ -90,7 +92,7 @@ export class SettingsStore {
       )
       return DEFAULT_SETTINGS
     }
-    return parsed
+    return { ...parsed, theme: parsed.theme ?? 'system' }
   }
 
   save(settings: Settings): void {
@@ -113,6 +115,7 @@ function isSettings(value: unknown): value is Settings {
 
   if (!isLanguage(v.language)) return false
   if (!isCardPack(v.cardPack)) return false
+  if (v.theme !== undefined && !isTheme(v.theme)) return false
   if (!isSections(v.sections)) return false
   // uiLanguage is optional: undefined means "user has not explicitly
   // chosen a UI language yet" (legacy rows + fresh installs). Only
@@ -134,6 +137,10 @@ function isCardPack(value: unknown): value is SettingsCardPack {
 
 function isUiLanguage(value: unknown): value is UiLanguage {
   return typeof value === 'string' && (SUPPORTED_UI_LANGUAGES as readonly string[]).includes(value)
+}
+
+function isTheme(value: unknown): value is SettingsTheme {
+  return typeof value === 'string' && (SUPPORTED_THEMES as readonly string[]).includes(value)
 }
 
 function isStringArray(value: unknown): value is string[] {

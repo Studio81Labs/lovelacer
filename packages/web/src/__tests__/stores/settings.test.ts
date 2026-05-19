@@ -33,6 +33,7 @@ const SAMPLE: Settings = {
     cameras: true,
   },
   uiLanguage: 'en',
+  theme: 'dark',
 }
 
 describe('useSettingsStore', () => {
@@ -106,6 +107,52 @@ describe('useSettingsStore', () => {
     expect(store.dirtyState?.sections.cameras).toBe(false)
     // Other flags unchanged.
     expect(store.dirtyState?.sections.welcome).toBe(true)
+  })
+
+  it('setTheme clones effective into dirtyState and sets the field', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setTheme('dark')
+    expect(store.hasDirty).toBe(true)
+    expect(store.dirtyState?.theme).toBe('dark')
+    expect(store.effective.theme).toBe('dark')
+    expect(store.serverState?.theme).toBe('system')
+  })
+
+  it('does not require reanalysis for theme-only dirty settings', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setTheme('dark')
+
+    expect(store.hasDirty).toBe(true)
+    expect(store.hasDashboardAffectingDirty).toBe(false)
+  })
+
+  it('does not require reanalysis for display-language-only dirty settings', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setUiLanguage('de')
+
+    expect(store.hasDirty).toBe(true)
+    expect(store.hasDashboardAffectingDirty).toBe(false)
+  })
+
+  it('requires reanalysis when dashboard-affecting settings change', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({ settings: DEFAULT_SETTINGS })
+    const store = useSettingsStore()
+    await store.loadFromServer()
+
+    store.setTheme('dark')
+    store.setSection('cameras', false)
+
+    expect(store.hasDirty).toBe(true)
+    expect(store.hasDashboardAffectingDirty).toBe(true)
   })
 
   it('setRoomOrder stages a copy of the preferred room order', async () => {

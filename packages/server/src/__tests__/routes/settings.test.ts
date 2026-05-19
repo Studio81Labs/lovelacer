@@ -34,6 +34,7 @@ const VALID_BODY: { settings: Settings } = {
       cameras: true,
     },
     uiLanguage: 'en',
+    theme: 'dark',
     roomOrder: ['bedroom', 'kitchen'],
     roomOverrides: {
       kitchen: {
@@ -184,6 +185,50 @@ describe('PUT /api/settings', () => {
     try {
       const bad = {
         settings: { ...VALID_BODY.settings, uiLanguage: 'klingon' },
+      }
+      const res = await app.inject({ method: 'PUT', url: '/api/settings', payload: bad })
+      expect(res.statusCode).toBe(400)
+      expect(res.json()).toMatchObject({ error: 'invalid_body' })
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('round-trips theme through PUT/GET', async () => {
+    const app = await makeApp()
+    try {
+      await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: {
+          settings: {
+            language: 'auto',
+            cardPack: 'default',
+            sections: {
+              welcome: true,
+              quickStats: true,
+              people: true,
+              roomsByFloor: true,
+              activeRooms: true,
+              scenes: true,
+              cameras: true,
+            },
+            theme: 'light',
+          },
+        },
+      })
+      const res = await app.inject({ method: 'GET', url: '/api/settings' })
+      expect(res.json().settings.theme).toBe('light')
+    } finally {
+      await app.close()
+    }
+  })
+
+  it('returns 400 invalid_body when theme is unknown', async () => {
+    const app = await makeApp()
+    try {
+      const bad = {
+        settings: { ...VALID_BODY.settings, theme: 'sepia' },
       }
       const res = await app.inject({ method: 'PUT', url: '/api/settings', payload: bad })
       expect(res.statusCode).toBe(400)

@@ -79,6 +79,59 @@ html {
   color: var(--color-stone-900);
 }
 
+html[data-theme='dark'] {
+  --color-amber-50: #2c1d10;
+  --color-amber-100: #4b2d12;
+  --color-amber-300: #d89539;
+  --color-amber-500: #f0ac4b;
+  --color-amber-600: #f5bd68;
+  --color-amber-700: #ffd995;
+  --color-amber-800: #c9781c;
+  --color-amber-900: #fff0cf;
+
+  --color-stone-25: #151515;
+  --color-stone-50: #20201e;
+  --color-stone-200: #3a3935;
+  --color-stone-500: #a5a29a;
+  --color-stone-700: #d8d4ca;
+  --color-stone-900: #f7f3ea;
+
+  --color-warm-surface: #2a2926;
+  --color-warm-surface-hover: #34322e;
+  --color-warm-surface-active: #3e3a35;
+  --color-warm-border: #46423b;
+  --color-warm-text: #f5efe4;
+  --color-warm-muted: #bbb3a6;
+
+  --color-forest-50: #13220f;
+  --color-forest-300: #82b956;
+  --color-forest-700: #a2d875;
+  --color-forest-900: #d7f4be;
+
+  --color-danger-50: #321616;
+  --color-danger-700: #f0a4a4;
+  --color-danger-900: #ffd6d6;
+
+  --shadow-control: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-button-secondary: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-button-primary: 0 2px 8px rgb(0 0 0 / 0.35);
+  --shadow-button-hover: 0 4px 14px rgb(0 0 0 / 0.35);
+}
+
+html[data-theme='dark'] .bg-white,
+html[data-theme='dark'] .odd\:bg-white:nth-child(odd),
+html[data-theme='dark'] .hover\:bg-white:hover {
+  background-color: var(--color-stone-50);
+}
+
+html[data-theme='dark'] .bg-white\/95 {
+  background-color: color-mix(in srgb, var(--color-stone-50) 95%, transparent);
+}
+
+html[data-theme='dark'] .border-white {
+  border-color: var(--color-stone-200);
+}
+
 /*
  * Wordmark utility — wraps the trailing italic-r so we don't have to
  * remember the markup every time. Use as:

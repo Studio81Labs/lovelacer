@@ -36,6 +36,7 @@ describe('SettingsStore (in-memory)', () => {
         cameras: true,
       },
       uiLanguage: 'en',
+      theme: 'dark',
       roomOrder: ['bedroom', 'kitchen'],
     }
     store.save(next)
@@ -77,6 +78,7 @@ describe('SettingsStore (in-memory)', () => {
     const settings = store.get()
     expect(settings.uiLanguage).toBeUndefined()
     expect(settings.roomOrder).toBeUndefined()
+    expect(settings.theme).toBe('system')
     // The other fields from the legacy payload are preserved verbatim.
     expect(settings.language).toBe('en')
   })
@@ -88,6 +90,32 @@ describe('SettingsStore (in-memory)', () => {
     }
     store.save(next)
     expect(store.get().uiLanguage).toBe('cs')
+  })
+
+  it('round-trips theme through save and get', () => {
+    const next: Settings = {
+      ...DEFAULT_SETTINGS,
+      theme: 'light',
+    }
+    store.save(next)
+    expect(store.get().theme).toBe('light')
+  })
+
+  it('falls back to DEFAULT_SETTINGS when theme is unsupported', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const db = (store as unknown as { db: DatabaseType }).db
+      db.prepare('INSERT OR REPLACE INTO settings (id, payload) VALUES (1, ?)').run(
+        JSON.stringify({
+          ...DEFAULT_SETTINGS,
+          theme: 'sepia',
+        }),
+      )
+      expect(store.get()).toEqual(DEFAULT_SETTINGS)
+      expect(warnSpy).toHaveBeenCalled()
+    } finally {
+      warnSpy.mockRestore()
+    }
   })
 
   it('round-trips roomOrder through save and get', () => {

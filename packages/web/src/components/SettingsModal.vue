@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { getHealth } from '../api/client.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18nStore } from '../stores/i18n.js'
-import type { SettingsLanguage, SettingsSections, UiLanguage } from '../api/types.js'
+import type { SettingsLanguage, SettingsSections, SettingsTheme, UiLanguage } from '../api/types.js'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -84,7 +84,11 @@ function requestClose(): void {
 
 async function onSave(): Promise<void> {
   try {
-    await store.saveAndReanalyze()
+    if (store.hasDashboardAffectingDirty) {
+      await store.saveAndReanalyze()
+    } else {
+      await store.saveOnly()
+    }
     if (!store.hasDirty) {
       emit('close')
     }
@@ -106,7 +110,7 @@ onMounted(async () => {
 <template>
   <div
     data-testid="settings-modal-backdrop"
-    class="fixed inset-0 z-40 flex items-start justify-center bg-stone-900/40 p-4"
+    class="fixed inset-0 z-40 flex items-start justify-center bg-black/60 p-4"
     @click="requestClose"
   >
     <div
@@ -149,6 +153,24 @@ onMounted(async () => {
             <option value="it">{{ t('settings.uiLanguage.option.it') }}</option>
             <option value="nl">{{ t('settings.uiLanguage.option.nl') }}</option>
             <option value="pl">{{ t('settings.uiLanguage.option.pl') }}</option>
+          </select>
+        </div>
+
+        <!-- Theme -->
+        <div>
+          <label for="settings-theme" class="block font-medium text-stone-700">
+            {{ t('settings.theme.label') }}
+          </label>
+          <select
+            id="settings-theme"
+            data-testid="settings-theme"
+            class="ll-control mt-1"
+            :value="store.effective.theme"
+            @change="store.setTheme(($event.target as HTMLSelectElement).value as SettingsTheme)"
+          >
+            <option value="system">{{ t('settings.theme.option.system') }}</option>
+            <option value="light">{{ t('settings.theme.option.light') }}</option>
+            <option value="dark">{{ t('settings.theme.option.dark') }}</option>
           </select>
         </div>
 

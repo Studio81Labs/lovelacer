@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { createI18n } from 'vue-i18n'
@@ -79,6 +79,7 @@ const mockPreview: PreviewOutput = {
 const defaultSettings: Settings = {
   language: 'auto',
   cardPack: 'default',
+  theme: 'system',
   sections: {
     welcome: true,
     quickStats: true,
@@ -91,6 +92,8 @@ const defaultSettings: Settings = {
 }
 
 describe('App integration', () => {
+  const originalMatchMedia = window.matchMedia
+
   beforeEach(() => {
     vi.mocked(postPreview).mockReset()
     vi.mocked(getHealth).mockReset()
@@ -109,6 +112,19 @@ describe('App integration', () => {
     vi.mocked(getSettings).mockResolvedValue({ settings: defaultSettings })
     vi.mocked(getLatestAnalysis).mockResolvedValue(null)
     vi.mocked(getHealth).mockResolvedValue({ ok: true, version: 'dev', ha: { connected: true } })
+    document.documentElement.removeAttribute('data-theme')
+    document.documentElement.style.colorScheme = ''
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })
+  })
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia
+    document.documentElement.removeAttribute('data-theme')
+    document.documentElement.style.colorScheme = ''
   })
 
   it('places health status and analyze action in the header toolbar', async () => {
@@ -139,6 +155,71 @@ describe('App integration', () => {
     expect(wrapper.find('[data-testid="header-actions"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="header-actions"]').text()).toContain('Analyze')
     expect(wrapper.find('[data-testid="standalone-analyze"]').exists()).toBe(false)
+  })
+
+  it('applies saved explicit dark theme to the document root', async () => {
+    vi.mocked(getSettings).mockResolvedValueOnce({
+      settings: { ...defaultSettings, theme: 'dark' },
+    })
+
+    mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await flushPromises()
+
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+  })
+
+  it('follows system dark mode when theme is system', async () => {
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })
+    vi.mocked(getSettings).mockResolvedValueOnce({
+      settings: { ...defaultSettings, theme: 'system' },
+    })
+
+    mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await flushPromises()
+
+    expect(window.matchMedia).toHaveBeenCalledWith('(prefers-color-scheme: dark)')
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('uses legacy media query listeners when addEventListener is unavailable', async () => {
+    const addListener = vi.fn()
+    const removeListener = vi.fn()
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: true,
+      addListener,
+      removeListener,
+    })
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({ stubActions: false, createSpy: vi.fn }), createTestI18n()],
+      },
+    })
+
+    await flushPromises()
+
+    expect(addListener).toHaveBeenCalledOnce()
+    expect(getInvite).toHaveBeenCalledOnce()
+    expect(getSettings).toHaveBeenCalledOnce()
+
+    wrapper.unmount()
+
+    expect(removeListener).toHaveBeenCalledOnce()
   })
 
   it('restores the last cached analysis after app load', async () => {

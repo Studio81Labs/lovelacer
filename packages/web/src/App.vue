@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import HealthBar from './components/HealthBar.vue'
 import AnalyzeButton from './components/AnalyzeButton.vue'
@@ -24,7 +24,13 @@ import { useSettingsStore } from './stores/settings.js'
 import { useOnboardingStore } from './stores/onboarding.js'
 import { useI18nStore } from './stores/i18n.js'
 import { roomIdToDisplay } from './rooms.js'
-import type { EntityDiff, LovelaceView, RoomDiffSummary, RoomDisplayOverride } from './api/types.js'
+import type {
+  EntityDiff,
+  LovelaceView,
+  RoomDiffSummary,
+  RoomDisplayOverride,
+  SettingsTheme,
+} from './api/types.js'
 
 const { t } = useI18n()
 const analyze = useAnalyzeStore()
@@ -40,6 +46,44 @@ const roomOrderSaveInFlight = ref(false)
 const roomOverrideSaveInFlight = ref(false)
 let pendingRoomOrder: string[] | null = null
 const pendingRoomOverrides = new Map<string, RoomDisplayOverride>()
+
+const systemDarkQuery =
+  typeof window === 'undefined' || typeof window.matchMedia !== 'function'
+    ? null
+    : window.matchMedia('(prefers-color-scheme: dark)')
+const systemPrefersDark = ref(systemDarkQuery?.matches ?? false)
+
+function resolveTheme(theme: SettingsTheme): 'light' | 'dark' {
+  return theme === 'system' ? (systemPrefersDark.value ? 'dark' : 'light') : theme
+}
+
+function applyTheme(theme: SettingsTheme): void {
+  const resolved = resolveTheme(theme)
+  document.documentElement.dataset.theme = resolved
+  document.documentElement.style.colorScheme = resolved
+}
+
+function onSystemThemeChange(event: Pick<MediaQueryList, 'matches'>): void {
+  systemPrefersDark.value = event.matches
+}
+
+function addSystemThemeListener(): void {
+  if (systemDarkQuery === null) return
+  if (typeof systemDarkQuery.addEventListener === 'function') {
+    systemDarkQuery.addEventListener('change', onSystemThemeChange)
+    return
+  }
+  systemDarkQuery.addListener(onSystemThemeChange)
+}
+
+function removeSystemThemeListener(): void {
+  if (systemDarkQuery === null) return
+  if (typeof systemDarkQuery.removeEventListener === 'function') {
+    systemDarkQuery.removeEventListener('change', onSystemThemeChange)
+    return
+  }
+  systemDarkQuery.removeListener(onSystemThemeChange)
+}
 
 // P2-9 — post-load reconciliation watcher. When the settings store
 // resolves `loadFromServer()`, sync `settings.serverState.uiLanguage`
@@ -71,6 +115,14 @@ watch(
       i18n.locale = next
     }
   },
+)
+
+watch(
+  [() => settings.effective.theme, () => systemPrefersDark.value],
+  ([theme]) => {
+    applyTheme(theme)
+  },
+  { immediate: true },
 )
 
 // Brand asset URL — ingress-relative via Vite's BASE_URL so the path
@@ -304,6 +356,7 @@ watch(
 )
 
 onMounted(() => {
+  addSystemThemeListener()
   void invite.loadStatus()
   // P2-9 — kick off settings load so the cross-device reconciliation
   // watcher above has a serverState.uiLanguage to react to. Previously
@@ -313,6 +366,10 @@ onMounted(() => {
   void settings.loadFromServer()
   // Onboarding status loads via the watch on `invite.accepted` below
   // (single source of truth).
+})
+
+onBeforeUnmount(() => {
+  removeSystemThemeListener()
 })
 
 let loadedOnce = false
