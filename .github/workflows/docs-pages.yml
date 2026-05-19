@@ -98,6 +98,9 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      - name: Install native build fallback
+        run: npm install --global node-gyp@12.3.0
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
