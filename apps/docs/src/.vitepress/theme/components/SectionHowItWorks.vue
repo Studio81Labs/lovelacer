@@ -4,8 +4,11 @@ import ThemedScreenshot from './ThemedScreenshot.vue'
 const steps = [
   {
     n: '01',
-    title: 'Open Lovelacer in your HA sidebar',
-    body: "The add-on installs into Home Assistant and shows up as an ingress entry. No separate auth, no port to expose, no tokens to copy. If you're running HA Core without Supervisor, the standalone Docker image takes a long-lived access token instead.",
+    title: 'Open Lovelacer from your Home Assistant sidebar',
+    body: [
+      'Lovelacer installs as a Home Assistant add-on and opens directly inside HA. No separate login, no exposed ports, no external service required.',
+      'Standalone Docker support is available for Home Assistant Core users.',
+    ],
     screenshotName: 'onboarding-1-language',
     singleSource: false,
     alt: 'Lovelacer first-run onboarding screen asking the user to pick a detection language',
@@ -13,7 +16,9 @@ const steps = [
   {
     n: '02',
     title: 'Review the proposed rooms',
-    body: "Lovelacer detects rooms from your registry, scores each entity's assignment, and lists them all. Edit a room's icon or name, drag entities between rooms, or hide ones you don't want on the dashboard. The diff at the top tells you what changed since the last apply.",
+    body: [
+      "Lovelacer groups entities by room, scores uncertain matches, and lets you review everything before applying. Rename rooms, change icons, move entities, or hide things you don't want on the dashboard.",
+    ],
     screenshotName: 'entity-overrides',
     darkName: 'room-detail',
     singleSource: false,
@@ -21,8 +26,10 @@ const steps = [
   },
   {
     n: '03',
-    title: 'Apply and look at it in HA',
-    body: "Apply writes a new dashboard via HA's storage API — your existing dashboards are untouched. Open the new one from the sidebar and decide whether to keep it as default, take elements from it into your own dashboard, or ignore it. Lovelacer never overwrites anything you didn't generate with it.",
+    title: 'Apply and open it in Home Assistant',
+    body: [
+      'Lovelacer creates a separate dashboard using Home Assistant’s native storage mode. Your existing dashboards stay untouched, and nothing is overwritten unless Lovelacer created it originally.',
+    ],
     screenshotName: 'ha-jidelna',
     singleSource: false,
     alt: 'The applied dashboard in HA, showing the Jídelna view with Lights, Climate, and Other sections',
@@ -43,7 +50,9 @@ const steps = [
           <div class="lc-how__step-text">
             <div class="lc-how__step-num">{{ step.n }}</div>
             <h3 class="lc-how__step-title">{{ step.title }}</h3>
-            <p class="lc-how__step-body">{{ step.body }}</p>
+            <p v-for="paragraph in step.body" :key="paragraph" class="lc-how__step-body">
+              {{ paragraph }}
+            </p>
           </div>
           <figure class="lc-how__step-visual">
             <ThemedScreenshot
@@ -118,6 +127,10 @@ const steps = [
   line-height: 1.65;
   color: var(--vp-c-text-2);
   margin: 0;
+}
+
+.lc-how__step-body + .lc-how__step-body {
+  margin-top: 0.875rem;
 }
 
 .lc-how__step-visual {

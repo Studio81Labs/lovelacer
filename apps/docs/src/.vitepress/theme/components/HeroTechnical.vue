@@ -7,18 +7,18 @@ const props = withDefaults(defineProps<Props>(), { variant: 'hero' })
 const columns = [
   {
     title: 'Heuristic-first',
-    body: 'A priority chain reads HA areas, device metadata, friendly names, and entity IDs in order — each signal scored and combined into a confidence number you can audit per entity.',
+    body: 'Lovelacer starts with Home Assistant’s own structure — areas, device metadata, friendly names, and entity IDs — then combines those signals into a confidence score you can review per entity.',
     detail: 'area_id  →  device.area_id  →  friendly_name  →  entity_id  →  device.name',
   },
   {
-    title: 'Multi-language',
-    body: 'Room detection works in eight languages by default. Czech, German, Spanish, French, Italian, Polish, Dutch — and English. The Czech kuchyně lands in the kitchen view; the German Wohnzimmer in the living room.',
-    detail: 'kuchyně · Wohnzimmer · cocina · cuisine · cucina · kuchnia · keuken · kitchen',
+    title: 'Multi-language room detection',
+    body: 'Room detection works across English, Czech, German, Spanish, French, Italian, Polish, and Dutch. Localized room names like kuchyně, Wohnzimmer, cocina, or cuisine still land in the right place.',
+    detail: 'kuchyně · Wohnzimmer · cocina · cuisine',
   },
   {
-    title: 'Local-first',
-    body: 'The default path is heuristic-only and never leaves your network. Optional AI features require explicit configuration, support a local Ollama provider, and are off by default.',
-    detail: 'No telemetry. No phone-home. The add-on runs in your Supervisor.',
+    title: 'Local-first by default',
+    body: 'The base product runs entirely locally and never leaves your network. Optional AI-assisted features remain opt-in and support local Ollama models for users who prefer fully local workflows.',
+    detail: 'No telemetry. No cloud dependency. No phone-home behavior.',
   },
 ]
 </script>

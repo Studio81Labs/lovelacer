@@ -1,20 +1,20 @@
 <script setup lang="ts">
 const works = [
-  'Eight-language room detection',
-  'Per-entity confidence scoring',
-  'Manual overrides that persist across re-runs',
-  'Suggestions for fixing HA registry gaps',
-  'Diff view before re-applying',
-  'YAML export of generated dashboards',
-  'Czech-first translations of generated card headings (room headings localize; group labels like "Lights & Outlets" are still English — known issue)',
+  'Multi-language room detection',
+  'Confidence scoring per entity',
+  'Review and override workflow',
+  'Diff before re-applying',
+  'YAML export',
+  'Local-first operation',
+  'Standalone Docker support',
 ]
 
 const coming = [
-  'AI fallback for low-confidence entities',
-  'Mushroom card pack (currently core HA cards only)',
-  'Smart Panel export target',
-  'Generated dashboard themes',
-  'More languages — anything community contributes',
+  'Optional AI-assisted suggestions',
+  'Mushroom card pack support',
+  'Smart Panel export targets',
+  'Additional languages and keyword packs',
+  'Better handling for large installs and edge cases',
 ]
 </script>
 
@@ -22,11 +22,9 @@ const coming = [
   <section class="lc-alpha">
     <div class="lc-section lc-section--narrow">
       <p class="lc-eyebrow">Where we are</p>
-      <h2 class="lc-display lc-alpha__title">Public alpha. <em>Useful</em> today.</h2>
+      <h2 class="lc-display lc-alpha__title">Current release. <em>Useful</em> today.</h2>
       <p class="lc-alpha__lede">
-        Lovelacer is in the polish phase before its v1 release. The core pipeline — analyze, review,
-        apply, suggest — is working on real installs in multiple languages. We're honest about
-        what's not done yet.
+        Focused on one thing: generating cleaner Home Assistant dashboards from real-world installs.
       </p>
 
       <div class="lc-alpha__cols">

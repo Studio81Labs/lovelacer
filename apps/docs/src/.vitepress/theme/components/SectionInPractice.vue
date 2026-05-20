@@ -5,7 +5,7 @@ const rooms = [
   { name: 'Ložnice', count: 38, conf: 86, hint: 'Bedroom' },
   { name: 'Pracovna', count: 172, conf: 85, hint: 'Office' },
   { name: 'Koupelna', count: 18, conf: 89, hint: 'Bathroom' },
-  { name: 'Garage', count: 16, conf: 85, hint: 'Garage' },
+  { name: 'Garáž', count: 16, conf: 85, hint: 'Garage' },
   { name: 'Zahrada', count: 26, conf: 86, hint: 'Garden' },
   { name: 'Chodba', count: 33, conf: 75, hint: 'Hallway' },
 ]
@@ -17,12 +17,14 @@ const rooms = [
       <header class="lc-practice__head">
         <p class="lc-eyebrow">From one real install</p>
         <h2 class="lc-display lc-practice__title">
-          Eight of the thirteen rooms Lovelacer found in a Czech HA install.
+          Eight of the thirteen rooms Lovelacer found in a Czech Home Assistant install.
         </h2>
         <p class="lc-practice__lede">
-          Same engine, same heuristics. Different home, different rooms, different language. The
-          screenshots throughout this page come from this install — generalized in the headlines,
-          real in the detail.
+          Same detection logic. Different home, different rooms, different language.
+        </p>
+        <p class="lc-practice__lede">
+          The screenshots across this page come from this install — real entities, real room names,
+          real clutter.
         </p>
       </header>
 
@@ -40,8 +42,7 @@ const rooms = [
       </div>
 
       <p class="lc-practice__footnote">
-        Detection language was set to <code class="lc-mono">auto</code>, which matches every loaded
-        keyword set — the Czech names resolved without any per-install configuration.
+        Localized room names resolved automatically without any per-install configuration.
       </p>
     </div>
   </section>
