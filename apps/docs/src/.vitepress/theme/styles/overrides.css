@@ -208,3 +208,35 @@
 .VPNavBar.has-sidebar .content {
   padding-right: 16px;
 }
+
+/* Larger header lockup, matching the preview package. */
+:root {
+  --vp-nav-height: 84px;
+}
+
+.VPNavBarTitle .VPImage,
+.VPNavBarTitle img {
+  width: auto !important;
+  height: 56px !important;
+  max-height: none !important;
+}
+
+.VPNavBarTitle .title {
+  gap: 0.5rem;
+}
+
+.lc-home {
+  margin-top: calc(-1 * var(--vp-nav-height)) !important;
+  padding-top: var(--vp-nav-height) !important;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --vp-nav-height: 72px;
+  }
+
+  .VPNavBarTitle .VPImage,
+  .VPNavBarTitle img {
+    height: 44px !important;
+  }
+}
