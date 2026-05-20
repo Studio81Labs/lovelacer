@@ -93,6 +93,12 @@ describe('docs site workspace', () => {
     expect(readText('apps/docs/src/.vitepress/theme/components/HeroBeforeAfter.vue')).toContain(
       'name="ha-jidelna"',
     )
+    expect(readText('apps/docs/src/.vitepress/theme/components/HeroBeforeAfter.vue')).toContain(
+      'lc-beforeafter__layered-after',
+    )
+    expect(readText('apps/docs/src/.vitepress/theme/styles/overrides.css')).toContain(
+      '--vp-nav-height: 84px',
+    )
     expect(readText('apps/docs/src/.vitepress/theme/components/SectionFeatures.vue')).toContain(
       ':dark-name="f.darkName"',
     )
