@@ -5,10 +5,10 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), { variant: 'hero' })
 
 const stats = [
-  { value: '2,000+', label: 'entities analyzed' },
+  { value: '2,000+', label: 'entities reviewed' },
   { value: '13', label: 'organized rooms' },
-  { value: '89%', label: 'avg confidence' },
-  { value: '< 5 min', label: 'first to applied' },
+  { value: '89%', label: 'high-confidence assignments' },
+  { value: '< 5 min', label: 'from install to applied dashboard' },
 ]
 </script>
 
@@ -47,8 +47,8 @@ const stats = [
       </div>
 
       <p class="lc-numbers__footnote">
-        From a real install, generalized. Your numbers depend on how many entities and integrations
-        you run. Median time from install to first applied dashboard is under five minutes.
+        Based on a real Home Assistant install with multiple integrations and years of accumulated
+        entities. Your results depend on how clean your existing setup already is.
       </p>
     </div>
   </section>

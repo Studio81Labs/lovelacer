@@ -103,8 +103,9 @@ export default defineConfig({
     socialLinks: [{ icon: 'github', link: 'https://github.com/Studio81Labs/lovelacer' }],
 
     footer: {
-      message: 'MIT licensed. Built for Home Assistant users who want a useful first dashboard.',
-      copyright: 'Copyright © Studio81 Labs',
+      message: 'MIT licensed. Built for Home Assistant users who want a cleaner starting point.',
+      copyright:
+        '<a href="https://studio81.cz" target="_blank" rel="noreferrer" style="text-decoration: none; text-decoration-line: none;">© Studio81 Labs</a>',
     },
 
     search: {

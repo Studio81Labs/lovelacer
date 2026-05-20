@@ -59,12 +59,11 @@ const isSection = props.variant === 'section'
               <span class="lc-beforeafter__desktop-title">Same Home Assistant install.</span>
               <span class="lc-beforeafter__mobile-title">Same Home Assistant<br />install.</span>
               <br />
-              One <em>worth</em> looking at.
+              Organized like a <em>home</em>.
             </h1>
             <p class="lc-beforeafter__lede">
-              Home Assistant generates a default dashboard that dumps every entity into a single
-              view. Lovelacer reads your registry, infers rooms, and produces a dashboard organized
-              like a home — one tab per room.
+              Home Assistant exposes raw entities and integrations. Lovelacer reads your registry,
+              infers rooms, and generates a clean dashboard you can preview before applying.
             </p>
             <div class="lc-cta-row">
               <a class="lc-btn lc-btn--primary" href="/docs/install/supervised">
@@ -73,8 +72,8 @@ const isSection = props.variant === 'section'
               <a class="lc-btn lc-btn--ghost" href="#how-it-works">How it works</a>
             </div>
             <p class="lc-beforeafter__footnote">
-              Real screenshots from a Czech HA install. Your dashboard will use your own room names
-              and language.
+              Real screenshots from a Czech Home Assistant install. Your dashboard will use your own
+              rooms, entities, and language.
             </p>
           </div>
 

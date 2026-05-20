@@ -3,21 +3,21 @@ import ThemedScreenshot from './ThemedScreenshot.vue'
 
 const features = [
   {
-    title: 'Rooms detected from your data',
-    body: "Lovelacer reads HA's area, device, and entity registries — then falls back to friendly-name parsing in your language for anything HA didn't already tag. Each assignment ships with a confidence score.",
+    title: 'Rooms detected from your Home Assistant setup',
+    body: 'Lovelacer uses Home Assistant areas when available, then falls back to room-name detection for entities that were never properly assigned. Every placement includes a confidence score, so you can review uncertain matches before applying.',
     screenshotName: 'room-list',
     darkName: 'room-list-applied',
     alt: 'Lovelacer room list showing 13 rooms detected from a Czech HA install, each with entity count and confidence percentage',
   },
   {
     title: 'Preview every change before you apply',
-    body: 'Re-running analysis shows you a diff: which entities are new, which moved, which disappeared. Nothing is written to your dashboard until you click Apply.',
+    body: 'Re-running analysis shows what changed: new entities, moved entities, and removed entities. Nothing is written to your dashboard until you click Apply.',
     screenshotName: 'room-list-applied',
     alt: 'Room list view after applying with a success banner at the bottom',
   },
   {
-    title: 'Suggestions for where HA itself is misconfigured',
-    body: 'When Lovelacer can guess what room an entity belongs to but its area_id is empty, it suggests fixing the root cause in HA. Better entity hygiene means better dashboards next time — without Lovelacer needing to keep guessing.',
+    title: 'Suggestions for fixing entity chaos at the source',
+    body: 'When Lovelacer can confidently place an entity but Home Assistant still has no room assigned, it suggests fixing the underlying area configuration. Cleaner entities lead to cleaner dashboards over time.',
     screenshotName: 'suggestions',
     alt: 'Suggestions panel showing five entities with detected rooms but missing area_id, each with an "Open HA settings" button',
   },

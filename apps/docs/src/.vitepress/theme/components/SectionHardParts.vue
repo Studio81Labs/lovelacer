@@ -2,27 +2,27 @@
 const items = [
   {
     title: 'Eight languages out of the box',
-    body: 'Czech, German, Spanish, French, Italian, Polish, Dutch, English. Detection picks up localized room words like kuchyně, Wohnzimmer, salón, cuisine, cucina, kuchnia, keuken. Add a language or extend a keyword set with a PR — the data is plain TypeScript.',
+    body: 'Room detection works across English, Czech, German, Spanish, French, Italian, Polish, and Dutch. Lovelacer recognizes localized room names and falls back gracefully when integrations use inconsistent naming.',
   },
   {
     title: 'Confidence scoring on every assignment',
-    body: 'Each room assignment lists the signals that produced it — HA area, device area, friendly name, entity ID — with weights and a single percentage. When a placement is wrong, you can see why, fix it once, and the override sticks across re-runs.',
+    body: 'Every placement includes a confidence score and the signals behind it — Home Assistant areas, device metadata, friendly names, and entity IDs. When something looks wrong, you can immediately see why.',
   },
   {
-    title: 'It tells you when HA itself needs cleaning',
-    body: "Found a high-confidence room match for an entity that has no area_id set in HA? Lovelacer surfaces a one-click action to fix the underlying registry. The next analysis won't need to guess.",
+    title: 'Suggestions for fixing entity chaos at the source',
+    body: 'If Lovelacer confidently identifies a room but Home Assistant still has no area assigned, it suggests fixing the underlying configuration instead of repeatedly guessing around it.',
   },
   {
     title: 'Diff before apply, never destructive',
-    body: 'Re-running on a changed install produces a diff with additions, removals, and movements per entity. Lovelacer applies as a new dashboard alongside your existing ones — your handcrafted views stay untouched.',
+    body: 'Re-running analysis shows additions, removals, and moved entities before anything changes. Lovelacer creates a separate dashboard and never overwrites your existing views.',
   },
   {
-    title: 'AI is opt-in, not the default',
-    body: "The base product is heuristic-only. AI features are gated behind explicit configuration and support local Ollama models for users who don't want anything leaving their network. Cost caps prevent runaway inference bills.",
+    title: 'AI is optional, not the product',
+    body: 'The base product is fully local and heuristic-driven. Future AI-assisted features remain opt-in and support local Ollama models for users who prefer keeping everything inside their network.',
   },
   {
-    title: 'Standalone Docker for HA Core users',
-    body: 'Lovelacer runs as a Supervisor add-on by default. If you run HA Core or HA Container, the same image works standalone with a long-lived access token — same features, same behavior, no Supervisor required.',
+    title: 'Standalone Docker support',
+    body: 'Lovelacer runs as a Home Assistant add-on by default, but the same image also works standalone for Home Assistant Core and Container users.',
   },
 ]
 </script>
