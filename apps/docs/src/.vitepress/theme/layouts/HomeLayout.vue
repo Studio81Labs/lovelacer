@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useData } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
+import AnalyticsConsent from '../components/AnalyticsConsent.vue'
 import HomePage from '../components/HomePage.vue'
 
 const { Layout } = DefaultTheme
@@ -16,6 +17,7 @@ const { frontmatter } = useData()
       <div />
     </template>
   </Layout>
+  <AnalyticsConsent />
 </template>
 
 <style>
