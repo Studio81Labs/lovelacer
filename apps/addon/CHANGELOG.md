@@ -1,10 +1,16 @@
-## Unreleased
+## 0.6.0
+
+### Phase 2 — language, theme, and docs refresh
 
 - UI translations now cover English, Czech, German, Spanish, French, Italian,
   Dutch, and Polish. Browser-language detection and Settings → Display language
   now expose every shipped UI locale.
 - Room detection keyword packs and generated canonical room titles now cover
   the same EN / CS / DE / ES / FR / IT / NL / PL language set.
+- Theme settings now let users switch the app appearance, with dark-theme
+  settings polish for improved contrast and readability.
+- Product screenshots, social imagery, and homepage / README copy have been
+  refreshed for the current interface.
 - Project runtime metadata, CI jobs, and the Home Assistant add-on image now
   target Node.js 24.
 
