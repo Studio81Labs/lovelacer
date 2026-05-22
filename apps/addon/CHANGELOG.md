@@ -1,3 +1,17 @@
+## 0.6.1
+
+### Phase 2 — generated dashboard navigation hotfix
+
+- Post-apply **Open dashboard** actions now open the generated Home Assistant
+  dashboard at its configured top-level `dashboard_url_path`, such as
+  `/lovelacer-home`, instead of treating it as a view inside the default
+  Lovelace dashboard.
+- Home Assistant add-on ingress now opens the generated dashboard in the top
+  browsing context, avoiding nested Lovelacer / Home Assistant frames after
+  apply.
+- Focused regression coverage now protects the shared dashboard-navigation
+  helper, the main Apply bar, and the onboarding completion flow.
+
 ## 0.6.0
 
 ### Phase 2 — language, theme, and docs refresh
