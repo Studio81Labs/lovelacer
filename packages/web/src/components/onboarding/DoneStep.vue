@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApplyStore } from '../../stores/apply.js'
+import { openHomeAssistantPath } from '../../navigation.js'
 
 defineEmits<{ finish: [] }>()
 
@@ -9,10 +10,10 @@ const { t } = useI18n()
 const apply = useApplyStore()
 
 const dashboardPath = computed(() => apply.result?.urlPath ?? 'lovelacer-home')
-const dashboardUrl = computed(() => `/lovelace/${dashboardPath.value}`)
+const dashboardUrl = computed(() => `/${dashboardPath.value}`)
 
 function openDashboard(): void {
-  window.open(dashboardUrl.value, '_blank')
+  openHomeAssistantPath(dashboardUrl.value)
 }
 </script>
 

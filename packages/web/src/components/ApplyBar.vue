@@ -5,6 +5,7 @@ import { useAnalyzeStore } from '../stores/analyze.js'
 import { useApplyStore } from '../stores/apply.js'
 import { useSettingsStore } from '../stores/settings.js'
 import type { SnapshotAssignment } from '../api/types.js'
+import { openHomeAssistantPath } from '../navigation.js'
 
 const { t } = useI18n()
 const analyze = useAnalyzeStore()
@@ -91,8 +92,13 @@ const lastAnalyzedLabel = computed(() => {
 
 const dashboardUrl = computed(() => {
   const path = apply.result?.urlPath
-  return path === undefined ? '' : `/lovelace/${path}`
+  return path === undefined ? '' : `/${path}`
 })
+
+function openDashboard(): void {
+  if (dashboardUrl.value === '') return
+  openHomeAssistantPath(dashboardUrl.value)
+}
 </script>
 
 <template>
@@ -139,13 +145,15 @@ const dashboardUrl = computed(() => {
         >
           {{ apply.phase === 'applying' ? t('applyBar.applying') : t('applyBar.apply') }}
         </button>
-        <a
+        <button
           v-else-if="apply.phase === 'success' && apply.result !== null"
-          :href="dashboardUrl"
+          type="button"
+          data-testid="apply-open-dashboard"
           class="ll-btn ll-btn-primary px-5"
+          @click="openDashboard"
         >
           {{ t('applyBar.openDashboard') }}
-        </a>
+        </button>
         <button
           v-else-if="showRetry"
           type="button"
