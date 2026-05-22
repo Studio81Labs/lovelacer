@@ -44,21 +44,21 @@ describe('DoneStep', () => {
     apply.result = { ok: true, urlPath: 'lovelacer-home', created: true }
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('All set!')
-    expect(wrapper.text()).toContain('/lovelace/lovelacer-home')
+    expect(wrapper.text()).toContain('/lovelacer-home')
   })
 
   it('falls back to a default urlPath when apply.result is null', () => {
     const wrapper = mountDone()
-    expect(wrapper.text()).toContain('/lovelace/lovelacer-home')
+    expect(wrapper.text()).toContain('/lovelacer-home')
   })
 
-  it('Open dashboard button calls window.open with the urlPath', async () => {
+  it('Open dashboard button opens the dashboard root path in a new tab when top-level', async () => {
     const wrapper = mountDone()
     const apply = useApplyStore()
     apply.result = { ok: true, urlPath: 'my-custom-dash', created: true }
     await wrapper.vm.$nextTick()
     await wrapper.find('[data-testid="done-open-dashboard"]').trigger('click')
-    expect(window.open).toHaveBeenCalledWith('/lovelace/my-custom-dash', '_blank')
+    expect(window.open).toHaveBeenCalledWith('/my-custom-dash', '_blank')
   })
 
   it('Continue button emits "finish"', async () => {

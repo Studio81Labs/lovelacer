@@ -26,10 +26,12 @@ const preview: PreviewOutput = {
 describe('ApplyBar', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    vi.stubGlobal('open', vi.fn())
   })
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('keeps the analyzed preview after apply success until the user explicitly starts over', async () => {
@@ -51,9 +53,13 @@ describe('ApplyBar', () => {
     expect(analyze.phase).toBe('ready')
     expect(analyze.preview).toEqual(preview)
     expect(apply.phase).toBe('success')
-    expect(wrapper.get('a').attributes('href')).toBe('/lovelace/lovelacer-home')
+    const openDashboard = wrapper.get('[data-testid="apply-open-dashboard"]')
+    await openDashboard.trigger('click')
+    expect(window.open).toHaveBeenCalledWith('/lovelacer-home', '_blank')
 
-    await wrapper.get('button').trigger('click')
+    const startOver = wrapper.findAll('button').find((button) => button.text() === 'Start over')
+    expect(startOver).toBeDefined()
+    await startOver!.trigger('click')
 
     expect(analyze.phase).toBe('idle')
     expect(analyze.preview).toBeNull()
