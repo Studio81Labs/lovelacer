@@ -1,6 +1,6 @@
 # Install on Home Assistant Supervised
 
-Phase 2 alpha installs through a custom add-on repository on your own Home Assistant instance.
+Public v1.0.0 release installs through a custom add-on repository on your own Home Assistant instance.
 
 Use this path for Home Assistant OS or Home Assistant Supervised. The add-on store is not available in Home Assistant Core or Home Assistant Container, so those installs should use the standalone Docker guide.
 

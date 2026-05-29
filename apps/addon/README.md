@@ -32,7 +32,7 @@ All add-on state (overrides, applied snapshots, settings, onboarding completion)
 
 ## Status
 
-Phase 2 alpha. Multi-language room detection uses shipped EN / CS / DE / ES / FR / IT / NL / PL keyword data; Settings exposes each language plus Auto. Re-analyze diff view shows what changed since the last apply. Per-entity overrides + smart suggestions panel. Settings UI for language and dashboard sections. Onboarding wizard for first-run.
+Public v1.0.0 release. Multi-language room detection uses shipped EN / CS / DE / ES / FR / IT / NL / PL keyword data; Settings exposes each language plus Auto. Re-analyze diff view shows what changed since the last apply. Per-entity overrides + smart suggestions panel. Settings UI for language and dashboard sections. Onboarding wizard for first-run.
 
 The single honest constraint: custom Lovelace cards (Mushroom, Tile-extras) are not generated — pure HA core cards only.
 

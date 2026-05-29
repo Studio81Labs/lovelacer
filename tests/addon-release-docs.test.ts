@@ -27,7 +27,7 @@ describe('add-on release documentation', () => {
     expect(runScript).toContain(`export HA_WEBSOCKET_URL="${expectedWebsocketProxy}"`)
 
     for (const doc of [installDocs, publishedInstallDocs]) {
-      expect(doc).toContain('Phase 2 alpha')
+      expect(doc).toContain('Public v1.0.0 release')
       expect(doc).toContain(expectedHttpProxy)
       expect(doc).toContain(expectedWebsocketProxy)
       expect(doc).toContain('SUPERVISOR_TOKEN')
