@@ -11,6 +11,9 @@ assignees: []
 - Tag: `vX.Y.Z`
 - Commit: `<sha>`
 - Add-on image: `ghcr.io/studio81labs/lovelacer-{arch}:X.Y.Z`
+- GitHub Release: `<url>`
+- Parent validation issue: #68
+- Supersedes previous smoke issue(s): `<issue links or none>`
 
 ## Environments
 
@@ -24,11 +27,31 @@ environments. Tick boxes inline as you go. The summary below mirrors the doc —
 if a section fails, link the bug issue here and keep this issue open until it's
 fixed or explicitly waived.
 
+### Public v1.0.0 gate
+
+- [ ] Parent validation issue #68 linked
+- [ ] Previous smoke-run issue(s) linked or explicitly not applicable
+- [ ] Open release / QA / v1.0.0 issue search completed
+- [ ] All release-blocking issues closed, fixed, superseded, or accepted as known issues
+- [ ] No required PRs remain open
+- [ ] Evidence log has owner, environment, and date for every completed section
+
 ### Pre-flight
 
-- [ ] Build, tests, lint clean
+- [ ] Build, tests, lint, typecheck, format, and brand checks clean
 - [ ] Version + changelog match the tag
 - [ ] CI green on the tagged commit
+- [ ] Release notes include install notes, upgrade notes, and known issues
+
+### Distribution artifacts
+
+- [ ] GitHub Release exists for the tag
+- [ ] GHCR images exist for `aarch64` and `amd64`
+- [ ] `latest`, `vX.Y.Z`, and `X.Y.Z` image tags resolve
+- [ ] GHCR packages are public
+- [ ] Fresh HA Supervisor install can pull anonymously
+- [ ] HA add-on store shows the expected version and metadata
+- [ ] Upgrade path from previous pre-release works
 
 ### Install
 
@@ -113,6 +136,7 @@ fixed or explicitly waived.
 - [ ] No external network requests
 - [ ] No unrelated HA state modified
 - [ ] State scoped to `/data`
+- [ ] Logs do not expose tokens, registry dumps, provider keys, or secrets
 
 ### Real-install soak
 
@@ -120,9 +144,30 @@ fixed or explicitly waived.
 - [ ] Re-analyze correct after a week
 - [ ] Survives an HA Core upgrade
 
+### Post-release verification
+
+- [ ] Public add-on repo fresh install after publication
+- [ ] Installed version is `X.Y.Z`
+- [ ] Ingress and sidebar entry open
+- [ ] Analyze -> Preview -> Apply works after publication
+- [ ] Generated dashboard opens from HA sidebar
+- [ ] Logs clean for at least 10 minutes after apply
+
 ## Bugs filed during this run
 
 <!-- Link any issues discovered. -->
+
+-
+
+## Accepted known issues
+
+<!-- List only explicitly accepted non-blockers that are called out in release notes. -->
+
+-
+
+## Evidence Log
+
+<!-- Add dated, environment-specific evidence as each section is completed. -->
 
 -
 

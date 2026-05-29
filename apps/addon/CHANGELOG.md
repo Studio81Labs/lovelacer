@@ -1,3 +1,16 @@
+## 1.0.0
+
+### Public release
+
+- Lovelacer is ready for public distribution as a Home Assistant add-on through
+  the custom add-on repository at `https://github.com/Studio81Labs/lovelacer`.
+- The v1.0.0 smoke and soak checklist passed on 2026-05-29, based on
+  maintainer-run dev stack and real HA validation recorded in #108.
+- This release includes the full local-first dashboard generation flow:
+  onboarding, multi-language room detection, review and overrides, preview,
+  re-analysis diffs, YAML export, suggestions, settings, and storage-mode apply.
+- No accepted known issues are currently listed for the public v1.0.0 launch.
+
 ## 0.6.1
 
 ### Phase 2 — generated dashboard navigation hotfix

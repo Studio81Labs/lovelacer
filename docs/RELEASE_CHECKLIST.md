@@ -14,17 +14,60 @@ separate supervised development host is explicitly added to the smoke run.
 Open the corresponding **Release smoke test** issue from the issue templates
 to track a run. One issue per pre-release tag.
 
+For the public `v1.0.0` release, the smoke issue is also the release ledger.
+Do not promote the tag until every open release-blocking issue is either closed
+as fixed, closed as superseded, or explicitly listed as an accepted known issue
+in the release notes.
+
 ---
+
+## Public v1.0.0 gate
+
+- [ ] Open a `Release smoke test: v1.0.0` GitHub issue before cutting the tag.
+- [ ] Link the parent release validation issue (#68) and any previous smoke-run
+      issue being superseded (for example #104) from the v1.0.0 smoke issue.
+- [ ] Search open GitHub issues for release blockers:
+      `is:issue is:open label:release`, `is:issue is:open label:qa`,
+      `is:issue is:open milestone:v1.0.0`, and `is:issue is:open "v1.0.0"`.
+- [ ] Every issue found above is closed, linked to a merged fix, or listed under
+      "Accepted known issues" in the v1.0.0 release notes.
+- [ ] No open PRs are required for v1.0.0, except documentation-only follow-ups
+      that are explicitly not release blocking.
+- [ ] The v1.0.0 smoke issue has an evidence log entry for each checklist
+      section below, including who ran it, the environment, and the date.
+- [ ] The final promotion decision is recorded in the smoke issue before the
+      GitHub Release is announced publicly.
 
 ## Pre-flight
 
 - [ ] `pnpm install && pnpm build` succeeds with no warnings.
 - [ ] `pnpm test` passes (78+ unit/fixture suites green).
 - [ ] `pnpm lint` clean.
+- [ ] `pnpm typecheck` clean.
+- [ ] `pnpm format:check` clean.
+- [ ] `pnpm check:brand` clean.
 - [ ] Before cutting the pre-release tag, choose the next `X.Y.Z` version and update `apps/addon/config.yaml` `version` to that exact value.
 - [ ] `apps/addon/CHANGELOG.md` has a top entry for the same `X.Y.Z` version, including user-facing changes and any known issues.
 - [ ] Create the git tag as `vX.Y.Z`; the tag version must match `apps/addon/config.yaml` without the `v` prefix and must have a matching changelog entry.
 - [ ] CI is green on the tagged commit (`build-addon.yml` produced multi-arch images).
+- [ ] GitHub Release body includes user-facing changes, install notes, upgrade
+      notes, and accepted known issues.
+- [ ] `README.md`, `docs/ADDON_INSTALL.md`, and add-on metadata mention the same
+      version and supported distribution path.
+
+## Distribution artifacts
+
+- [ ] `release.yml` completed for the tag and created the GitHub Release.
+- [ ] `build-addon.yml` produced and pushed both required architecture images:
+      `ghcr.io/studio81labs/lovelacer-aarch64:X.Y.Z` and
+      `ghcr.io/studio81labs/lovelacer-amd64:X.Y.Z`.
+- [ ] The same images are also reachable through `latest` and `vX.Y.Z` tags.
+- [ ] GHCR package visibility is public for every published architecture image.
+- [ ] A fresh HA Supervisor install can pull the image anonymously from GHCR.
+- [ ] The add-on repository entry in HA resolves `config.yaml` and displays the
+      expected version, name, icon, description, and banner.
+- [ ] Upgrade from the latest pre-release to `v1.0.0` is offered by HA and pulls
+      the `1.0.0` image without manual cache clearing.
 
 ## Install
 
@@ -126,12 +169,27 @@ to track a run. One issue per pre-release tag.
       (verify with `tcpdump` or browser devtools).
 - [ ] No existing automations, scripts, or unrelated dashboards are modified.
 - [ ] All add-on state lives in `/data` (verify by `docker exec` and `ls /data`).
+- [ ] Logs do not include HA tokens, entity registry dumps, provider keys, or
+      other secrets.
 
 ## Real-install soak (real HA only)
 
 - [ ] Add-on runs for 48h without crashing or excessive memory growth.
 - [ ] Apply, use the dashboard daily, re-analyze after a week — diff view is correct.
 - [ ] At least one HA Core update during the soak period — add-on survives the upgrade.
+
+## Post-release verification
+
+- [ ] After publishing `v1.0.0`, install from the public add-on repository on a
+      clean real HA Supervisor host or VM.
+- [ ] Confirm HA shows `1.0.0` as the installed Lovelacer version.
+- [ ] Open the ingress Web UI from the add-on page and from the HA sidebar.
+- [ ] Run Analyze -> Preview -> Apply once after public publication.
+- [ ] Confirm the generated dashboard opens from HA's sidebar.
+- [ ] Watch add-on logs for at least 10 minutes after apply; no uncaught errors.
+- [ ] Comment the post-release result on the v1.0.0 smoke issue.
+- [ ] Close the v1.0.0 smoke issue only after post-release verification passes
+      or any failures are filed as follow-up issues with severity labels.
 
 ---
 

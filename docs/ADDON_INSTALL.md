@@ -1,6 +1,6 @@
 # Installing the Lovelacer add-on
 
-Phase 2 alpha — install via custom add-on repository on your own HA instance.
+Public v1.0.0 release — install via custom add-on repository on your own HA instance.
 
 ## Prerequisites
 
@@ -39,7 +39,7 @@ The defaults work out of the box. To change them:
 
 Lovelacer publishes two channels:
 
-- **`latest` / `vX.Y.Z`** — tagged pre-releases and releases. Recommended.
+- **`latest` / `vX.Y.Z`** — tagged public releases. Recommended.
 - **`main` / `sha-<short>`** — bleeding edge from `main`. For our own dogfood; the add-on store always installs `latest`.
 
 When a new tagged release is published, HA's add-on store shows an **Update available** banner. Click it to pull the new image.

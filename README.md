@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-amber" alt="License: MIT">
-  <img src="https://img.shields.io/badge/add--on-0.6.1-amber" alt="Add-on version">
+  <img src="https://img.shields.io/badge/add--on-1.0.0-amber" alt="Add-on version">
   <a href="https://github.com/Studio81Labs/lovelacer/actions/workflows/ci.yml"><img src="https://github.com/Studio81Labs/lovelacer/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
 </p>
 
@@ -172,7 +172,7 @@ Future AI-assisted features will remain optional and opt-in.
 
 ### Current Focus
 
-- stable public alpha
+- stable public v1.0.0 release
 - better heuristics
 - more integrations
 - improved room detection
@@ -198,7 +198,7 @@ See [`docs/ROADMAP.md`](./docs/ROADMAP.md) for the full project roadmap.
 
 ## Development Status
 
-Public alpha in progress.
+Public v1.0.0 release.
 
 The current version is focused on validating:
 
