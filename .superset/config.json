@@ -1,5 +1,5 @@
 {
   "setup": ["./.superset/setup.sh"],
   "run": ["pnpm dev"],
-  "teardown": ["docker compose -f dev/ha-stack.yml down"]
+  "teardown": ["./.superset/teardown.sh"]
 }
