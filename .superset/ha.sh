@@ -19,6 +19,11 @@ marker=".superset/.ha-started"
 
 case "${1:-}" in
   up)
+    if docker ps --format '{{.Names}}' | grep -qx lovelacer-dev-ha; then
+      echo "HA (lovelacer-dev-ha) is already running — started by another checkout." >&2
+      echo "Leaving it untouched and not claiming ownership from this workspace." >&2
+      exit 0
+    fi
     docker compose -f dev/ha-stack.yml up -d
     touch "$marker"
     ;;
