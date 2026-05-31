@@ -24,8 +24,17 @@ case "${1:-}" in
       echo "Leaving it untouched and not claiming ownership from this workspace." >&2
       exit 0
     fi
+    # A fresh per-worktree dev/ha-config means a brand-new HA with its own
+    # onboarding — any HA_TOKEN copied from the root .env won't authenticate.
+    fresh=0
+    [ -e dev/ha-config/.storage ] || fresh=1
     docker compose -f dev/ha-stack.yml up -d
     touch "$marker"
+    if [ "$fresh" -eq 1 ]; then
+      echo "Started a fresh HA instance (empty dev/ha-config) on http://localhost:8123." >&2
+      echo "Any HA_TOKEN copied from the root .env will NOT work against it —" >&2
+      echo "onboard, generate a new long-lived token, and set HA_TOKEN in .env." >&2
+    fi
     ;;
   down)
     if [ ! -f "$marker" ]; then
