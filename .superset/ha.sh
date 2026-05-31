@@ -27,11 +27,22 @@ ha_container_id() {
 
 case "${1:-}" in
   up)
-    if docker ps --format '{{.Names}}' | grep -qx lovelacer-dev-ha; then
-      echo "HA (lovelacer-dev-ha) is already running — started by another checkout." >&2
-      echo "Leaving it untouched and not claiming ownership from this workspace." >&2
+    # ha_container_id uses `docker inspect`, so this sees an existing
+    # lovelacer-dev-ha in ANY state (running, stopped, exited) — not just
+    # running ones — and avoids adopting/restarting another checkout's stopped
+    # singleton.
+    existing_id=$(ha_container_id)
+    if [ -n "$existing_id" ]; then
+      if [ -f "$marker" ] && [ "$(cat "$marker")" = "$existing_id" ]; then
+        # This workspace already owns this exact container — (re)start it.
+        docker compose -f dev/ha-stack.yml up -d
+      else
+        echo "lovelacer-dev-ha already exists (started by another checkout)." >&2
+        echo "Leaving it untouched and not claiming ownership from this workspace." >&2
+      fi
       exit 0
     fi
+    # No container exists in any state — create one and claim ownership.
     # A fresh per-worktree dev/ha-config means a brand-new HA with its own
     # onboarding — any HA_TOKEN copied from the root .env won't authenticate.
     fresh=0
