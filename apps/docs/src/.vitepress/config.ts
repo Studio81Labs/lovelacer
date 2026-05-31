@@ -62,6 +62,16 @@ export default defineConfig({
         href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap',
       },
     ],
+    // Umami is cookieless and collects no personal data, so the tracking script
+    // loads directly with no consent banner or gate.
+    [
+      'script',
+      {
+        defer: '',
+        src: 'https://analytics.studio81.cz/script.js',
+        'data-website-id': 'b40619ec-1753-454b-861d-0be814164c51',
+      },
+    ],
   ],
 
   themeConfig: {
