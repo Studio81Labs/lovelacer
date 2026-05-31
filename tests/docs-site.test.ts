@@ -53,7 +53,6 @@ describe('docs site workspace', () => {
   test('wires the marketing homepage theme and assets', () => {
     const requiredFiles = [
       'apps/docs/src/.vitepress/theme/layouts/HomeLayout.vue',
-      'apps/docs/src/.vitepress/theme/components/AnalyticsConsent.vue',
       'apps/docs/src/.vitepress/theme/components/HomePage.vue',
       'apps/docs/src/.vitepress/theme/components/HeroBeforeAfter.vue',
       'apps/docs/src/.vitepress/theme/components/ThemedScreenshot.vue',
@@ -85,30 +84,14 @@ describe('docs site workspace', () => {
       'Home Assistant dashboards that organize themselves',
     )
     expect(readText('apps/docs/src/.vitepress/theme/index.ts')).toContain('HomeLayout')
-    expect(readText('apps/docs/src/.vitepress/theme/layouts/HomeLayout.vue')).toContain(
-      'AnalyticsConsent',
-    )
-    expect(readText('apps/docs/src/.vitepress/theme/components/AnalyticsConsent.vue')).toContain(
-      'https://analytics.studio81.cz/script.js',
-    )
-    expect(readText('apps/docs/src/.vitepress/theme/components/AnalyticsConsent.vue')).toContain(
-      'b40619ec-1753-454b-861d-0be814164c51',
-    )
-    expect(readText('apps/docs/src/.vitepress/theme/components/AnalyticsConsent.vue')).toContain(
-      'Cookie preferences',
-    )
-    expect(readText('apps/docs/src/.vitepress/theme/components/AnalyticsConsent.vue')).toContain(
-      'window.location.reload()',
-    )
-    expect(readText('apps/docs/src/.vitepress/theme/components/AnalyticsConsent.vue')).toContain(
-      'useRoute',
-    )
-    expect(readText('apps/docs/src/.vitepress/theme/components/AnalyticsConsent.vue')).toContain(
-      'refreshFooterTarget',
-    )
-    expect(readText('apps/docs/src/.vitepress/theme/components/AnalyticsConsent.vue')).toContain(
-      'lc-cookie-floating-link',
-    )
+
+    const config = readText('apps/docs/src/.vitepress/config.ts')
+
+    // Umami is cookieless, so the tracking script loads directly from <head> with
+    // no consent banner or gate.
+    expect(config).toContain('https://analytics.studio81.cz/script.js')
+    expect(config).toContain('b40619ec-1753-454b-861d-0be814164c51')
+    expect(config).not.toContain('Cookie preferences')
     expect(readText('apps/docs/src/.vitepress/theme/components/HomePage.vue')).toContain(
       'HeroBeforeAfter',
     )
