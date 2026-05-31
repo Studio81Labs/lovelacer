@@ -9,6 +9,10 @@
 #
 #   ./.superset/ha.sh up     # start HA + record ownership
 #   ./.superset/ha.sh down   # stop HA + clear ownership
+#
+# `down` refuses to act unless this workspace owns the marker, so it can't stop
+# a container the main repo or another workspace started. To force-stop the
+# shared stack from any checkout, use `pnpm dev:ha:down` directly.
 set -euo pipefail
 
 marker=".superset/.ha-started"
@@ -19,6 +23,11 @@ case "${1:-}" in
     touch "$marker"
     ;;
   down)
+    if [ ! -f "$marker" ]; then
+      echo "This workspace did not start HA (no $marker); refusing to stop the shared stack." >&2
+      echo "Use 'pnpm dev:ha:down' if you really want to stop it." >&2
+      exit 0
+    fi
     docker compose -f dev/ha-stack.yml down
     rm -f "$marker"
     ;;
