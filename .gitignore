@@ -61,6 +61,9 @@ apps/addon/web-dist/
 # Git worktrees (project-local)
 .worktrees/
 
+# Superset workspace-local HA ownership marker (see .superset/ha.sh)
+.superset/.ha-started
+
 # OS
 .DS_Store
 .claude/

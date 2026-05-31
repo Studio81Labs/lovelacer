@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Workspace-aware control for the local Home Assistant dev stack.
+#
+# The HA dev container is a singleton: dev/ha-stack.yml hardcodes
+# container_name: lovelacer-dev-ha and binds port 8123, so only one instance
+# can run across the main repo and all worktrees. Use this wrapper instead of
+# `pnpm dev:ha` inside a Superset workspace so teardown only stops the stack
+# this workspace actually started (tracked via a workspace-local marker).
+#
+#   ./.superset/ha.sh up     # start HA + record ownership
+#   ./.superset/ha.sh down   # stop HA + clear ownership
+#
+# `down` refuses to act unless this workspace owns the *currently running*
+# container, so it can't stop a container the main repo or another workspace
+# started. The marker stores the started container id and is revalidated before
+# every stop, so a stale marker (e.g. after a `pnpm dev:ha:down` force-stop and
+# a restart elsewhere) is cleared rather than acted on. To force-stop the shared
+# stack from any checkout, use `pnpm dev:ha:down` directly.
+set -euo pipefail
+
+marker=".superset/.ha-started"
+
+# Echo the running lovelacer-dev-ha container id, or nothing if it isn't up.
+ha_container_id() {
+  docker inspect -f '{{.Id}}' lovelacer-dev-ha 2>/dev/null || true
+}
+
+case "${1:-}" in
+  up)
+    # ha_container_id uses `docker inspect`, so this sees an existing
+    # lovelacer-dev-ha in ANY state (running, stopped, exited) — not just
+    # running ones — and avoids adopting/restarting another checkout's stopped
+    # singleton.
+    existing_id=$(ha_container_id)
+    if [ -n "$existing_id" ]; then
+      if [ -f "$marker" ] && [ "$(cat "$marker")" = "$existing_id" ]; then
+        # This workspace already owns this exact container — (re)start it.
+        docker compose -f dev/ha-stack.yml up -d
+      else
+        echo "lovelacer-dev-ha already exists (started by another checkout)." >&2
+        echo "Leaving it untouched and not claiming ownership from this workspace." >&2
+      fi
+      exit 0
+    fi
+    # No container exists in any state — create one and claim ownership.
+    # A fresh per-worktree dev/ha-config means a brand-new HA with its own
+    # onboarding — any HA_TOKEN copied from the root .env won't authenticate.
+    fresh=0
+    [ -e dev/ha-config/.storage ] || fresh=1
+    docker compose -f dev/ha-stack.yml up -d
+    # Record the started container id so later down/teardown can prove ownership.
+    ha_container_id > "$marker"
+    if [ "$fresh" -eq 1 ]; then
+      echo "Started a fresh HA instance (empty dev/ha-config) on http://localhost:8123." >&2
+      echo "Any HA_TOKEN copied from the root .env will NOT work against it —" >&2
+      echo "onboard, generate a new long-lived token, and set HA_TOKEN in .env." >&2
+    fi
+    ;;
+  down)
+    if [ ! -f "$marker" ]; then
+      echo "This workspace did not start HA (no $marker); refusing to stop the shared stack." >&2
+      echo "Use 'pnpm dev:ha:down' if you really want to stop it." >&2
+      exit 0
+    fi
+    owned_id=$(cat "$marker")
+    current_id=$(ha_container_id)
+    if [ -z "$current_id" ]; then
+      echo "The HA container this workspace started is no longer running; clearing stale marker." >&2
+      rm -f "$marker"
+      exit 0
+    fi
+    if [ "$current_id" != "$owned_id" ]; then
+      echo "Running lovelacer-dev-ha was started by another checkout; not stopping it." >&2
+      echo "Clearing this workspace's stale marker." >&2
+      rm -f "$marker"
+      exit 0
+    fi
+    docker compose -f dev/ha-stack.yml down
+    rm -f "$marker"
+    ;;
+  *)
+    echo "usage: $0 up|down" >&2
+    exit 1
+    ;;
+esac
