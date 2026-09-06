@@ -85,7 +85,7 @@ jobs:
     environment: ${{ needs.resolve.outputs.name }}
 
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ needs.resolve.outputs.checkout_ref }}
 
