@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/hassio-addons/base:17.2.4
+ARG BUILD_FROM=ghcr.io/hassio-addons/base:17.2.5
 FROM node:24-alpine3.21 AS node-runtime
 
 FROM node:24-alpine3.21 AS native-rebuild
